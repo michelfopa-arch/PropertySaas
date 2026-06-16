@@ -3,6 +3,7 @@ using PropertySaaS.Application.Common;
 using PropertySaaS.Application.Features;
 using PropertySaaS.Domain.Entities;
 using PropertySaaS.Infrastructure.Data;
+using PropertySaaS.Tests.TestDoubles;
 
 namespace PropertySaaS.Tests;
 
@@ -25,7 +26,7 @@ public class UnitTest1
             UserEmail = "owner@mapleleafpm.ca"
         };
 
-        var service = new SaasDataService(db, current);
+        var service = new SaasDataService(db, current, new NullNotificationService());
         var summary = await service.GetDashboardAsync();
 
         Assert.True(summary.Properties >= 1);
@@ -52,7 +53,7 @@ public class UnitTest1
             Role = "Viewer"
         };
 
-        var service = new SaasDataService(db, current);
+        var service = new SaasDataService(db, current, new NullNotificationService());
 
         await Assert.ThrowsAsync<InvalidOperationException>(() => service.AddPropertyAsync(new Property { Name = "Blocked", AddressLine1 = "1 Test St", City = "Toronto", Province = "ON" }));
     }

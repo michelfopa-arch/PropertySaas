@@ -126,6 +126,10 @@ namespace PropertySaaS.Infrastructure.Services
             configuration.GetSection("Stripe").Bind(stripeOptions);
             services.AddSingleton(stripeOptions);
 
+            services.Configure<ResendOptions>(configuration.GetSection("Resend"));
+            services.AddHttpClient<IEmailService, ResendEmailService>(client => client.BaseAddress = new Uri("https://api.resend.com/"));
+            services.AddScoped<INotificationService, NotificationService>();
+
             services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(configuration.GetConnectionString("PropertyDb")));
             services.AddScoped<IApplicationDbContext>(provider => provider.GetRequiredService<ApplicationDbContext>());
 
@@ -229,6 +233,8 @@ namespace PropertySaaS.Infrastructure.Services
         }
     }
 }
+
+
 
 
 

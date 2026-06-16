@@ -330,6 +330,39 @@ app.MapGet("/docs/jurisdiction/{documentKey}", (string documentKey, [FromService
     return Results.File(Encoding.UTF8.GetBytes(text), "text/plain", $"{profile.ProvinceCode.ToLowerInvariant()}-{documentKey}.txt");
 });
 
+app.MapPost("/notifications/compliance/digest", async ([FromServices] CurrentOrganization current, [FromServices] INotificationService notifications) =>
+{
+    if (!current.CanManageData)
+    {
+        return Results.Forbid();
+    }
+
+    await notifications.SendComplianceDueSoonDigestAsync();
+    return Results.Ok(new { message = "Compliance digest sent." });
+});
+
+app.MapPost("/notifications/support-alert", async ([FromBody] SupportAlertRequest? request, [FromServices] CurrentOrganization current, [FromServices] INotificationService notifications) =>
+{
+    if (!current.CanManageData)
+    {
+        return Results.Forbid();
+    }
+
+    if (request is null || string.IsNullOrWhiteSpace(request.Subject) || string.IsNullOrWhiteSpace(request.Message))
+    {
+        return Results.ValidationProblem(new Dictionary<string, string[]>
+        {
+            ["subject"] = new[] { "Subject is required." },
+            ["message"] = new[] { "Message is required." }
+        });
+    }
+
+    var subject = $"[PropertySaaS] {request.Subject.Trim()}";
+    var message = $"Organization: {current.OrganizationName}\nUser: {current.UserEmail}\n\n{request.Message.Trim()}";
+    await notifications.SendSupportAlertAsync(subject, message);
+    return Results.Ok(new { message = "Support alert sent." });
+});
+
 static string ResolvePreferredLanguage(HttpContext? httpContext, string? userPreferredLanguage, string? organizationPreferredLanguage, string? province)
 {
     var profile = JurisdictionCatalog.GetProfile(province);
@@ -366,4 +399,6 @@ app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
 app.Run();
+
+internal sealed record SupportAlertRequest(string? Subject, string? Message);
 

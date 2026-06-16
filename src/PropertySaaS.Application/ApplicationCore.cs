@@ -157,11 +157,13 @@ namespace PropertySaaS.Application.Features
     {
         private readonly IApplicationDbContext _db;
         private readonly CurrentOrganization _current;
+        private readonly INotificationService _notifications;
 
-        public SaasDataService(IApplicationDbContext db, CurrentOrganization current)
+        public SaasDataService(IApplicationDbContext db, CurrentOrganization current, INotificationService notifications)
         {
             _db = db;
             _current = current;
+            _notifications = notifications;
         }
 
         private void EnsureCanManageData()
@@ -394,6 +396,20 @@ namespace PropertySaaS.Application.Features
             _db.MaintenanceRequests.Add(request);
             _db.AuditLogs.Add(new AuditLog { OrganizationId = _current.OrganizationId, EntityName = nameof(MaintenanceRequest), Action = "Create", PerformedBy = _current.UserEmail, Details = $"Created maintenance request {request.Title}" });
             await _db.SaveChangesAsync();
+
+            var propertyName = await _db.Properties
+                .Where(x => x.Id == request.PropertyId && x.OrganizationId == _current.OrganizationId)
+                .Select(x => x.Name)
+                .FirstOrDefaultAsync() ?? "Unknown property";
+
+            var unitNumber = request.UnitId is null
+                ? null
+                : await _db.Units
+                    .Where(x => x.Id == request.UnitId.Value && x.OrganizationId == _current.OrganizationId)
+                    .Select(x => x.UnitNumber)
+                    .FirstOrDefaultAsync();
+
+            await _notifications.SendMaintenanceRequestCreatedAsync(request, propertyName, unitNumber);
         }
 
         public async Task DeleteMaintenanceAsync(Guid id)
@@ -471,6 +487,14 @@ namespace PropertySaaS.Application.Dashboard
         }
     }
 }
+
+
+
+
+
+
+
+
 
 
 
