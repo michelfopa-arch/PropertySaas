@@ -6,45 +6,84 @@
 <PageTitle>Tenants</PageTitle>
 
 <MudStack Spacing="3">
-    <MudText Typo="Typo.h4">Tenants</MudText>
+    <MudStack Spacing="0">
+        <MudText Typo="Typo.h4">Tenants</MudText>
+        <MudText Typo="Typo.body2">Keep resident information easy to scan here and use the lease or property pages when the team needs contract or asset context.</MudText>
+    </MudStack>
 
-    <MudPaper Class="pa-4">
-        <EditForm Model="_newTenant" OnValidSubmit="CreateAsync">
-            <MudGrid Spacing="2">
-                <MudItem xs="12" md="3"><MudTextField Label="Full name" Variant="Variant.Outlined" @bind-Value="_newTenant.FullName" /></MudItem>
-                <MudItem xs="12" md="3"><MudTextField Label="Email" Variant="Variant.Outlined" @bind-Value="_newTenant.Email" /></MudItem>
-                <MudItem xs="12" md="2"><MudTextField Label="Phone" Variant="Variant.Outlined" @bind-Value="_newTenant.PhoneNumber" /></MudItem>
-                <MudItem xs="12" md="2"><MudNumericField T="int" Label="Credit score" Variant="Variant.Outlined" @bind-Value="_newTenant.CreditScore" /></MudItem>
-                <MudItem xs="12" md="2"><MudTextField Label="Screening provider" Variant="Variant.Outlined" @bind-Value="_newTenant.ScreeningProvider" /></MudItem>
-            </MudGrid>
-
-            <MudStack Row="true" Spacing="2" Class="mt-4" Wrap="Wrap.Wrap">
+    <MudGrid Spacing="2" Class="align-center-grid">
+        <MudItem xs="12" lg="4">
+            <MudTextField T="string"
+                          Label="Search tenants"
+                          Variant="Variant.Outlined"
+                          Immediate="true"
+                          @bind-Value="_searchText"
+                          Adornment="Adornment.Start"
+                          AdornmentIcon="@Icons.Material.Filled.Search"
+                          Placeholder="Search by name, email, phone or provider" />
+        </MudItem>
+        <MudItem xs="12" sm="4" lg="2">
+            <MudSelect T="string" Label="Screening" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedProviderFilter">
+                <MudSelectItem T="string" Value="@string.Empty">All providers</MudSelectItem>
+                @foreach (var provider in ProviderOptions)
+                {
+                    <MudSelectItem T="string" Value="@provider">@provider</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12" sm="4" lg="2">
+            <MudSelect T="string" Label="Score band" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedScoreBand">
+                <MudSelectItem T="string" Value="@string.Empty">All scores</MudSelectItem>
+                <MudSelectItem T="string" Value='@("750+")'>750+</MudSelectItem>
+                <MudSelectItem T="string" Value='@("700-749")'>700-749</MudSelectItem>
+                <MudSelectItem T="string" Value='@("Under 700")'>Under 700</MudSelectItem>
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12" sm="4" lg="2">
+            <MudStack Row="true" Spacing="1" Class="properties-toolbar-actions">
+                @if (HasActiveFilters)
+                {
+                    <MudButton Variant="Variant.Outlined" Color="Color.Default" FullWidth="true" StartIcon="@Icons.Material.Filled.FilterAltOff" OnClick="ClearFilters">Reset</MudButton>
+                }
+            </MudStack>
+        </MudItem>
+        <MudItem xs="12" lg="2">
+            <MudStack Row="true" Spacing="1" Class="properties-toolbar-actions">
                 @if (CurrentOrganization.CanManageData)
                 {
-                    <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary">Add Tenant</MudButton>
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreatePanel">Add tenant</MudButton>
                 }
-                <MudButton Href="/import-export" Variant="Variant.Outlined" Color="Color.Default">Open Import / Export</MudButton>
-                <MudButton Href="/export/tenants" Variant="Variant.Outlined" Color="Color.Primary">Export CSV</MudButton>
             </MudStack>
-        </EditForm>
-    </MudPaper>
+        </MudItem>
+    </MudGrid>
 
-    <MudPaper Class="pa-4">
-        <MudText Typo="Typo.h6">Quick CSV Import</MudText>
-        <MudText Typo="Typo.body2" Class="mb-2">Paste CSV rows using format: FullName,Email,PhoneNumber,CreditScore,ScreeningProvider</MudText>
-        <MudTextField Lines="6" Variant="Variant.Outlined" @bind-Value="_csvInput" FullWidth="true" />
-        @if (CurrentOrganization.CanManageData)
-        {
-            <MudButton Variant="Variant.Filled" Color="Color.Secondary" Class="mt-3" OnClick="ImportCsvAsync">Import CSV Text</MudButton>
-        }
-        @if (!string.IsNullOrWhiteSpace(_importResult))
-        {
-            <MudAlert Severity="Severity.Info" Dense="true" Class="mt-3 mb-0">@_importResult</MudAlert>
-        }
-    </MudPaper>
+    <MudGrid Spacing="2">
+        <MudItem xs="12" sm="6" lg="3"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">Tenants shown</MudText><MudText Typo="Typo.h6">@FilteredTenants.Count()</MudText></MudPaper></MudItem>
+        <MudItem xs="12" sm="6" lg="3"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">Average score</MudText><MudText Typo="Typo.h6">@GetAverageScoreLabel()</MudText></MudPaper></MudItem>
+        <MudItem xs="12" sm="6" lg="3"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">Providers used</MudText><MudText Typo="Typo.h6">@FilteredTenants.Select(x => x.ScreeningProvider).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct(StringComparer.OrdinalIgnoreCase).Count()</MudText></MudPaper></MudItem>
+        <MudItem xs="12" sm="6" lg="3"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">High-score residents</MudText><MudText Typo="Typo.h6">@FilteredTenants.Count(x => x.CreditScore >= 750)</MudText></MudPaper></MudItem>
+    </MudGrid>
 
-    <MudPaper Class="pa-2">
-        <MudTable Items="_items" Dense="true" Hover="true" Breakpoint="Breakpoint.Sm">
+    <MudExpansionPanels>
+        <MudExpansionPanel Text="Bulk import">
+            <MudPaper Class="pa-4" Elevation="0">
+                <MudText Typo="Typo.h6">Quick CSV Import</MudText>
+                <MudText Typo="Typo.body2" Class="mb-2">Paste CSV rows using format: FullName,Email,PhoneNumber,CreditScore,ScreeningProvider</MudText>
+                <MudTextField Lines="6" Variant="Variant.Outlined" @bind-Value="_csvInput" FullWidth="true" />
+                @if (CurrentOrganization.CanManageData)
+                {
+                    <MudButton Variant="Variant.Filled" Color="Color.Secondary" Class="mt-3" OnClick="ImportCsvAsync">Import CSV Text</MudButton>
+                }
+                @if (!string.IsNullOrWhiteSpace(_importResult))
+                {
+                    <MudAlert Severity="Severity.Info" Dense="true" Class="mt-3 mb-0">@_importResult</MudAlert>
+                }
+            </MudPaper>
+        </MudExpansionPanel>
+    </MudExpansionPanels>
+
+    <MudPaper Class="pa-2 table-wrap properties-table-shell">
+        <MudTable Items="FilteredTenants.ToList()" Dense="true" Hover="true" Breakpoint="Breakpoint.Md" RowsPerPage="10">
             <HeaderContent>
                 <MudTh>Name</MudTh>
                 <MudTh>Email</MudTh>
@@ -54,40 +93,172 @@
                 <MudTh></MudTh>
             </HeaderContent>
             <RowTemplate>
-                <MudTd DataLabel="Name">@context.FullName</MudTd>
+                <MudTd DataLabel="Name">
+                    <MudStack Spacing="0">
+                        <MudText Typo="Typo.subtitle2">@context.FullName</MudText>
+                        <MudText Typo="Typo.caption" Class="property-address">@GetTenantScoreNarrative(context)</MudText>
+                    </MudStack>
+                </MudTd>
                 <MudTd DataLabel="Email">@context.Email</MudTd>
                 <MudTd DataLabel="Phone">@context.PhoneNumber</MudTd>
-                <MudTd DataLabel="Screening">@context.ScreeningProvider</MudTd>
-                <MudTd DataLabel="Score">@context.CreditScore</MudTd>
+                <MudTd DataLabel="Screening"><MudChip T="string" Variant="Variant.Outlined" Color="Color.Info">@GetProviderLabel(context.ScreeningProvider)</MudChip></MudTd>
+                <MudTd DataLabel="Score"><MudChip T="string" Variant="Variant.Filled" Color="@GetScoreColor(context.CreditScore)">@context.CreditScore</MudChip></MudTd>
                 <MudTd DataLabel="Actions">
-                    @if (CurrentOrganization.CanManageData)
-                    {
-                        <MudButton Variant="Variant.Outlined" Color="Color.Error" Size="Size.Small" OnClick="() => DeleteAsync(context.Id)">Delete</MudButton>
-                    }
+                    <MudStack Row="true" Spacing="1" Wrap="Wrap.Wrap">
+                        <MudButton Href="/leases" Variant="Variant.Text" Color="Color.Primary" Size="Size.Small">Open leases</MudButton>
+                        @if (CurrentOrganization.CanManageData)
+                        {
+                            <MudButton Variant="Variant.Text" Color="Color.Secondary" Size="Size.Small" OnClick="() => OpenEditPanel(context)">Edit</MudButton>
+                            <MudButton Variant="Variant.Text" Color="Color.Error" Size="Size.Small" OnClick="() => DeleteAsync(context.Id)">Delete</MudButton>
+                        }
+                    </MudStack>
                 </MudTd>
             </RowTemplate>
+            <NoRecordsContent>
+                <MudStack Class="pa-6 properties-empty-state" Spacing="1" AlignItems="AlignItems.Center">
+                    <MudIcon Icon="@Icons.Material.Filled.People" Size="Size.Large" Color="Color.Default" />
+                    <MudText Typo="Typo.subtitle1">No tenants match the current filters.</MudText>
+                    <MudText Typo="Typo.body2">Reset the filters or add a tenant to restore resident coverage.</MudText>
+                    @if (HasActiveFilters)
+                    {
+                        <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="ClearFilters">Reset filters</MudButton>
+                    }
+                </MudStack>
+            </NoRecordsContent>
+            <PagerContent>
+                <MudTablePager />
+            </PagerContent>
         </MudTable>
     </MudPaper>
+
+    <MudStack Row="true" Spacing="2" Wrap="Wrap.Wrap">
+        <MudButton Href="/import-export" Variant="Variant.Outlined" Color="Color.Default">Open Import / Export</MudButton>
+        <MudButton Href="/export/tenants" Variant="Variant.Outlined" Color="Color.Primary">Export CSV</MudButton>
+    </MudStack>
+
+    @if (_isFormPanelOpen)
+    {
+        <div class="property-form-backdrop" @onclick="CloseFormPanel">
+            <MudPaper Class="pa-5 property-form-drawer" Elevation="0" @onclick:stopPropagation="true">
+                <MudStack Spacing="3">
+                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                        <MudStack Spacing="0">
+                            <MudText Typo="Typo.h5">@(_isCreateMode ? "Add tenant" : "Edit tenant")</MudText>
+                            <MudText Typo="Typo.body2">Capture the resident basics here. Use leases for contract timing and properties for asset-specific execution.</MudText>
+                        </MudStack>
+                        <MudIconButton Icon="@Icons.Material.Filled.Close" Color="Color.Default" OnClick="CloseFormPanel" />
+                    </MudStack>
+
+                    <EditForm Model="ActiveTenant" OnValidSubmit="SaveFormAsync">
+                        <MudGrid Spacing="2">
+                            <MudItem xs="12" md="6"><MudTextField Label="Full name" Variant="Variant.Outlined" @bind-Value="ActiveTenant.FullName" /></MudItem>
+                            <MudItem xs="12" md="6"><MudTextField Label="Email" Variant="Variant.Outlined" @bind-Value="ActiveTenant.Email" /></MudItem>
+                            <MudItem xs="12" md="4"><MudTextField Label="Phone" Variant="Variant.Outlined" @bind-Value="ActiveTenant.PhoneNumber" /></MudItem>
+                            <MudItem xs="12" md="4"><MudNumericField T="int" Label="Credit score" Variant="Variant.Outlined" @bind-Value="ActiveTenant.CreditScore" /></MudItem>
+                            <MudItem xs="12" md="4"><MudTextField Label="Screening provider" Variant="Variant.Outlined" @bind-Value="ActiveTenant.ScreeningProvider" /></MudItem>
+                            <MudItem xs="12"><MudSwitch T="bool" Color="Color.Primary" Label="Screening completed" @bind-Value="ActiveTenant.ScreeningCompleted" /></MudItem>
+                            <MudItem xs="12"><MudPaper Class="pa-3 property-detail-panel" Elevation="0"><MudText Typo="Typo.subtitle2">Resident note</MudText><MudText Typo="Typo.body2">@GetFormGuidance()</MudText></MudPaper></MudItem>
+                        </MudGrid>
+
+                        <MudStack Row="true" Spacing="2" Class="mt-4" Justify="Justify.FlexEnd">
+                            <MudButton Variant="Variant.Text" Color="Color.Default" OnClick="CloseFormPanel">Cancel</MudButton>
+                            <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary">@(_isCreateMode ? "Create tenant" : "Save changes")</MudButton>
+                        </MudStack>
+                    </EditForm>
+                </MudStack>
+            </MudPaper>
+        </div>
+    }
 </MudStack>
 
 @code {
     private List<Tenant> _items = new();
     private Tenant _newTenant = new() { ScreeningCompleted = true, ScreeningProvider = "SingleKey" };
+    private Tenant _editTenant = new() { ScreeningCompleted = true, ScreeningProvider = "SingleKey" };
     private string _csvInput = string.Empty;
     private string? _importResult;
+    private string _searchText = string.Empty;
+    private string _selectedProviderFilter = string.Empty;
+    private string _selectedScoreBand = string.Empty;
+    private bool _isFormPanelOpen;
+    private bool _isCreateMode = true;
+
+    private bool HasActiveFilters => !string.IsNullOrWhiteSpace(_searchText) || !string.IsNullOrWhiteSpace(_selectedProviderFilter) || !string.IsNullOrWhiteSpace(_selectedScoreBand);
+    private Tenant ActiveTenant => _isCreateMode ? _newTenant : _editTenant;
+    private IEnumerable<string> ProviderOptions => _items.Select(x => GetProviderLabel(x.ScreeningProvider)).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(x => x);
+
+    private IEnumerable<Tenant> FilteredTenants => _items
+        .Where(tenant => string.IsNullOrWhiteSpace(_searchText)
+            || tenant.FullName.Contains(_searchText, StringComparison.OrdinalIgnoreCase)
+            || tenant.Email.Contains(_searchText, StringComparison.OrdinalIgnoreCase)
+            || tenant.PhoneNumber.Contains(_searchText, StringComparison.OrdinalIgnoreCase)
+            || GetProviderLabel(tenant.ScreeningProvider).Contains(_searchText, StringComparison.OrdinalIgnoreCase))
+        .Where(tenant => string.IsNullOrWhiteSpace(_selectedProviderFilter) || string.Equals(GetProviderLabel(tenant.ScreeningProvider), _selectedProviderFilter, StringComparison.OrdinalIgnoreCase))
+        .Where(tenant => string.IsNullOrWhiteSpace(_selectedScoreBand) || IsInScoreBand(tenant.CreditScore, _selectedScoreBand));
+
     protected override async Task OnInitializedAsync() => await ReloadAsync();
+
     private async Task ReloadAsync() => _items = await DataService.GetTenantsAsync();
-    private async Task CreateAsync()
+
+    private void OpenCreatePanel()
     {
-        await DataService.AddTenantAsync(_newTenant);
+        _isCreateMode = true;
         _newTenant = new Tenant { ScreeningCompleted = true, ScreeningProvider = "SingleKey" };
-        await ReloadAsync();
+        _isFormPanelOpen = true;
     }
+
+    private void OpenEditPanel(Tenant tenant)
+    {
+        _isCreateMode = false;
+        _editTenant = new Tenant
+        {
+            Id = tenant.Id,
+            FullName = tenant.FullName,
+            Email = tenant.Email,
+            PhoneNumber = tenant.PhoneNumber,
+            CreditScore = tenant.CreditScore,
+            ScreeningCompleted = tenant.ScreeningCompleted,
+            ScreeningProvider = tenant.ScreeningProvider
+        };
+        _isFormPanelOpen = true;
+    }
+
+    private void CloseFormPanel()
+    {
+        _isFormPanelOpen = false;
+        _isCreateMode = true;
+    }
+
+    private async Task SaveFormAsync()
+    {
+        if (_isCreateMode)
+        {
+            await DataService.AddTenantAsync(_newTenant);
+            _newTenant = new Tenant { ScreeningCompleted = true, ScreeningProvider = "SingleKey" };
+        }
+        else
+        {
+            await DataService.UpdateTenantAsync(_editTenant);
+            _editTenant = new Tenant { ScreeningCompleted = true, ScreeningProvider = "SingleKey" };
+        }
+
+        await ReloadAsync();
+        CloseFormPanel();
+    }
+
     private async Task DeleteAsync(Guid id)
     {
         await DataService.DeleteTenantAsync(id);
         await ReloadAsync();
     }
+
+    private void ClearFilters()
+    {
+        _searchText = string.Empty;
+        _selectedProviderFilter = string.Empty;
+        _selectedScoreBand = string.Empty;
+    }
+
     private async Task ImportCsvAsync()
     {
         var imported = 0;
@@ -129,9 +300,55 @@
             });
             imported++;
         }
+
         _csvInput = string.Empty;
         await ReloadAsync();
         _importResult = $"Imported {imported} row(s); skipped {skipped}.";
     }
-}
 
+    private string GetAverageScoreLabel()
+    {
+        var tenants = FilteredTenants.ToList();
+        return tenants.Count == 0 ? "0" : Math.Round(tenants.Average(x => x.CreditScore), 0).ToString();
+    }
+
+    private static string GetProviderLabel(string provider)
+        => string.IsNullOrWhiteSpace(provider) ? "Unspecified" : provider;
+
+    private static Color GetScoreColor(int creditScore)
+        => creditScore switch
+        {
+            >= 750 => Color.Success,
+            >= 700 => Color.Warning,
+            _ => Color.Error
+        };
+
+    private static bool IsInScoreBand(int creditScore, string scoreBand)
+        => scoreBand switch
+        {
+            "750+" => creditScore >= 750,
+            "700-749" => creditScore >= 700 && creditScore < 750,
+            "Under 700" => creditScore < 700,
+            _ => true
+        };
+
+    private static string GetTenantScoreNarrative(Tenant tenant)
+        => tenant.CreditScore switch
+        {
+            >= 750 => "Strong screening profile and low-friction follow-up candidate.",
+            >= 700 => "Solid screening baseline; keep documentation organized for lease execution.",
+            _ => "Needs closer review and a tighter follow-up checklist before finalizing the resident path."
+        };
+
+    private string GetFormGuidance()
+    {
+        if (!ActiveTenant.ScreeningCompleted)
+        {
+            return "Screening is marked incomplete. Keep the resident in review until supporting documents and provider checks are finalized.";
+        }
+
+        return ActiveTenant.CreditScore >= 750
+            ? "This resident profile looks strong. Use the leases page to keep dates and Ontario paperwork moving cleanly."
+            : "Capture the essentials here, then coordinate lease steps carefully so documentation and follow-up stay consistent.";
+    }
+}

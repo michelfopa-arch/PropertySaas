@@ -2,128 +2,336 @@
 @page "/leases"
 @inject SaasDataService DataService
 @inject PropertySaaS.Application.Common.CurrentOrganization CurrentOrganization
+@using PropertySaaS.Domain.Enums
 
 <PageTitle>Leases</PageTitle>
 
 <MudStack Spacing="3">
-    <MudText Typo="Typo.h4">Leases</MudText>
+    <MudStack Spacing="0">
+        <MudText Typo="Typo.h4">Leases</MudText>
+        <MudText Typo="Typo.body2">Review lease coverage from one table, then open the matching property profile when the team needs deeper execution detail.</MudText>
+    </MudStack>
 
-    <MudPaper Class="pa-4">
-        <EditForm Model="_newLease" OnValidSubmit="CreateAsync">
-            <MudGrid Spacing="2">
-                <MudItem xs="12" md="3">
-                    <MudSelect T="Guid?" Label="Unit" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedUnitId">
-                        <MudSelectItem T="Guid?" Value="@((Guid?)null)">Select unit</MudSelectItem>
-                        @foreach (var unit in _units)
-                        {
-                            <MudSelectItem T="Guid?" Value="@((Guid?)unit.Id)">@unit.UnitNumber</MudSelectItem>
-                        }
-                    </MudSelect>
-                </MudItem>
-                <MudItem xs="12" md="3">
-                    <MudSelect T="Guid?" Label="Tenant" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedTenantId">
-                        <MudSelectItem T="Guid?" Value="@((Guid?)null)">Select tenant</MudSelectItem>
-                        @foreach (var tenant in _tenants)
-                        {
-                            <MudSelectItem T="Guid?" Value="@((Guid?)tenant.Id)">@tenant.FullName</MudSelectItem>
-                        }
-                    </MudSelect>
-                </MudItem>
-                <MudItem xs="12" md="2"><MudDatePicker Label="Start date" Variant="Variant.Outlined" @bind-Date="_startDate" Editable="true" /></MudItem>
-                <MudItem xs="12" md="2"><MudDatePicker Label="End date" Variant="Variant.Outlined" @bind-Date="_endDate" Editable="true" /></MudItem>
-                <MudItem xs="12" md="2"><MudNumericField T="decimal" Label="Rent" Variant="Variant.Outlined" @bind-Value="_newLease.MonthlyRent" /></MudItem>
-                <MudItem xs="12" md="4"><MudCheckBox T="bool" Label="Ontario Lease Signed" @bind-Value="_newLease.StandardOntarioLeaseSigned" Color="Color.Primary" /></MudItem>
-            </MudGrid>
+    <MudGrid Spacing="2" Class="align-center-grid">
+        <MudItem xs="12" lg="4">
+            <MudTextField T="string"
+                          Label="Search leases"
+                          Variant="Variant.Outlined"
+                          Immediate="true"
+                          @bind-Value="_searchText"
+                          Adornment="Adornment.Start"
+                          AdornmentIcon="@Icons.Material.Filled.Search"
+                          Placeholder="Search by unit, tenant, status or Ontario workflow" />
+        </MudItem>
+        <MudItem xs="12" sm="4" lg="2">
+            <MudSelect T="string" Label="Status" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedStatusFilter">
+                <MudSelectItem T="string" Value="@string.Empty">All statuses</MudSelectItem>
+                @foreach (var option in StatusOptions)
+                {
+                    <MudSelectItem T="string" Value="@option">@option</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12" sm="4" lg="2">
+            <MudSelect T="string" Label="Ontario lease" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedOntarioFilter">
+                <MudSelectItem T="string" Value="@string.Empty">All</MudSelectItem>
+                <MudSelectItem T="string" Value='@("Signed")'>Signed</MudSelectItem>
+                <MudSelectItem T="string" Value='@("Missing")'>Missing</MudSelectItem>
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12" sm="4" lg="2">
+            <MudSelect T="string" Label="N1 workflow" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedWorkflowFilter">
+                <MudSelectItem T="string" Value="@string.Empty">All</MudSelectItem>
+                <MudSelectItem T="string" Value='@("Scheduled")'>Scheduled</MudSelectItem>
+                <MudSelectItem T="string" Value='@("Not Scheduled")'>Not Scheduled</MudSelectItem>
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12" lg="2">
+            <MudStack Row="true" Spacing="1" Class="properties-toolbar-actions">
+                @if (HasActiveFilters)
+                {
+                    <MudButton Variant="Variant.Outlined" Color="Color.Default" FullWidth="true" StartIcon="@Icons.Material.Filled.FilterAltOff" OnClick="ClearFilters">Reset</MudButton>
+                }
+                @if (CurrentOrganization.CanManageData)
+                {
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreatePanel">Add lease</MudButton>
+                }
+            </MudStack>
+        </MudItem>
+    </MudGrid>
 
-            @if (CurrentOrganization.CanManageData)
-            {
-                <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="mt-4">Add Lease</MudButton>
-            }
-        </EditForm>
-    </MudPaper>
+    <MudGrid Spacing="2">
+        <MudItem xs="12" sm="6" lg="3"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">Leases shown</MudText><MudText Typo="Typo.h6">@FilteredLeases.Count()</MudText></MudPaper></MudItem>
+        <MudItem xs="12" sm="6" lg="3"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">Active rent</MudText><MudText Typo="Typo.h6">@FilteredLeases.Sum(x => x.MonthlyRent).ToString("C")</MudText></MudPaper></MudItem>
+        <MudItem xs="12" sm="6" lg="3"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">Ontario missing</MudText><MudText Typo="Typo.h6">@FilteredLeases.Count(x => !x.StandardOntarioLeaseSigned)</MudText></MudPaper></MudItem>
+        <MudItem xs="12" sm="6" lg="3"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">N1 scheduled</MudText><MudText Typo="Typo.h6">@FilteredLeases.Count(x => x.N1IncreaseNoticeScheduled)</MudText></MudPaper></MudItem>
+    </MudGrid>
 
-    <MudPaper Class="pa-4">
-        <MudText Typo="Typo.h6">Quick CSV Import</MudText>
-        <MudText Typo="Typo.body2" Class="mb-2">Format: UnitNumber,TenantEmail,StartDate,EndDate,MonthlyRent</MudText>
-        <MudTextField Lines="5" Variant="Variant.Outlined" @bind-Value="_csvInput" FullWidth="true" />
-        @if (CurrentOrganization.CanManageData)
-        {
-            <MudButton Variant="Variant.Filled" Color="Color.Secondary" Class="mt-3" OnClick="ImportCsvAsync">Import CSV Text</MudButton>
-        }
-        @if (!string.IsNullOrWhiteSpace(_importResult))
-        {
-            <MudAlert Severity="Severity.Info" Dense="true" Class="mt-3 mb-0">@_importResult</MudAlert>
-        }
-    </MudPaper>
+    <MudExpansionPanels>
+        <MudExpansionPanel Text="Bulk import">
+            <MudPaper Class="pa-4" Elevation="0">
+                <MudText Typo="Typo.h6">Quick CSV Import</MudText>
+                <MudText Typo="Typo.body2" Class="mb-2">Format: UnitNumber,TenantEmail,StartDate,EndDate,MonthlyRent</MudText>
+                <MudTextField Lines="5" Variant="Variant.Outlined" @bind-Value="_csvInput" FullWidth="true" />
+                @if (CurrentOrganization.CanManageData)
+                {
+                    <MudButton Variant="Variant.Filled" Color="Color.Secondary" Class="mt-3" OnClick="ImportCsvAsync">Import CSV Text</MudButton>
+                }
+                @if (!string.IsNullOrWhiteSpace(_importResult))
+                {
+                    <MudAlert Severity="Severity.Info" Dense="true" Class="mt-3 mb-0">@_importResult</MudAlert>
+                }
+            </MudPaper>
+        </MudExpansionPanel>
+    </MudExpansionPanels>
 
-    <MudPaper Class="pa-2">
-        <MudTable Items="_items" Dense="true" Hover="true" Breakpoint="Breakpoint.Sm">
+    <MudPaper Class="pa-2 table-wrap properties-table-shell">
+        <MudTable Items="FilteredLeases.ToList()" Dense="true" Hover="true" Breakpoint="Breakpoint.Md" RowsPerPage="10">
             <HeaderContent>
-                <MudTh>Start</MudTh>
-                <MudTh>End</MudTh>
+                <MudTh>Unit</MudTh>
+                <MudTh>Tenant</MudTh>
+                <MudTh>Term</MudTh>
                 <MudTh>Rent</MudTh>
                 <MudTh>Status</MudTh>
-                <MudTh>Ontario Lease</MudTh>
-                <MudTh>N1 Workflow</MudTh>
+                <MudTh>Ontario</MudTh>
+                <MudTh>N1</MudTh>
                 <MudTh></MudTh>
             </HeaderContent>
             <RowTemplate>
-                <MudTd DataLabel="Start">@context.StartDate</MudTd>
-                <MudTd DataLabel="End">@context.EndDate</MudTd>
+                <MudTd DataLabel="Unit">
+                    <MudStack Spacing="0">
+                        <MudText Typo="Typo.subtitle2">@GetUnitLabel(context.UnitId)</MudText>
+                        <MudText Typo="Typo.caption" Class="property-address">@GetPropertyLabelForLease(context)</MudText>
+                    </MudStack>
+                </MudTd>
+                <MudTd DataLabel="Tenant">@GetTenantLabel(context.TenantId)</MudTd>
+                <MudTd DataLabel="Term">@($"{context.StartDate} ? {context.EndDate}")</MudTd>
                 <MudTd DataLabel="Rent">@context.MonthlyRent.ToString("C")</MudTd>
-                <MudTd DataLabel="Status">@context.Status</MudTd>
-                <MudTd DataLabel="Ontario Lease">@(context.StandardOntarioLeaseSigned ? "Signed" : "Missing")</MudTd>
-                <MudTd DataLabel="N1 Workflow">@(context.N1IncreaseNoticeScheduled ? "Scheduled" : "Not Scheduled")</MudTd>
+                <MudTd DataLabel="Status"><MudChip T="string" Variant="Variant.Filled" Color="@GetStatusColor(context.Status)">@context.Status</MudChip></MudTd>
+                <MudTd DataLabel="Ontario"><MudChip T="string" Variant="Variant.Outlined" Color="@(context.StandardOntarioLeaseSigned ? Color.Success : Color.Warning)">@(context.StandardOntarioLeaseSigned ? "Signed" : "Missing")</MudChip></MudTd>
+                <MudTd DataLabel="N1">@(context.N1IncreaseNoticeScheduled ? "Scheduled" : "Not Scheduled")</MudTd>
                 <MudTd DataLabel="Actions">
-                    @if (CurrentOrganization.CanManageData)
-                    {
-                        <MudButton Variant="Variant.Outlined" Color="Color.Error" Size="Size.Small" OnClick="() => DeleteAsync(context.Id)">Delete</MudButton>
-                    }
+                    <MudStack Row="true" Spacing="1" Wrap="Wrap.Wrap">
+                        <MudButton Href="@GetPropertyHref(context)" Variant="Variant.Text" Color="Color.Primary" Size="Size.Small">Property profile</MudButton>
+                        @if (CurrentOrganization.CanManageData)
+                        {
+                            <MudButton Variant="Variant.Text" Color="Color.Secondary" Size="Size.Small" OnClick="() => OpenEditPanel(context)">Edit</MudButton>
+                            <MudButton Variant="Variant.Text" Color="Color.Error" Size="Size.Small" OnClick="() => DeleteAsync(context.Id)">Delete</MudButton>
+                        }
+                    </MudStack>
                 </MudTd>
             </RowTemplate>
+            <NoRecordsContent>
+                <MudStack Class="pa-6 properties-empty-state" Spacing="1" AlignItems="AlignItems.Center">
+                    <MudIcon Icon="@Icons.Material.Filled.Description" Size="Size.Large" Color="Color.Default" />
+                    <MudText Typo="Typo.subtitle1">No leases match the current filters.</MudText>
+                    <MudText Typo="Typo.body2">Reset the filters or add a lease to restore portfolio coverage.</MudText>
+                    @if (HasActiveFilters)
+                    {
+                        <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="ClearFilters">Reset filters</MudButton>
+                    }
+                </MudStack>
+            </NoRecordsContent>
+            <PagerContent>
+                <MudTablePager />
+            </PagerContent>
         </MudTable>
     </MudPaper>
+
+    @if (_isFormPanelOpen)
+    {
+        <div class="property-form-backdrop" @onclick="CloseFormPanel">
+            <MudPaper Class="pa-5 property-form-drawer" Elevation="0" @onclick:stopPropagation="true">
+                <MudStack Spacing="3">
+                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                        <MudStack Spacing="0">
+                            <MudText Typo="Typo.h5">@(_isCreateMode ? "Add lease" : "Edit lease")</MudText>
+                            <MudText Typo="Typo.body2">Keep contract updates compact here and open the related property profile when operations need the full picture.</MudText>
+                        </MudStack>
+                        <MudIconButton Icon="@Icons.Material.Filled.Close" Color="Color.Default" OnClick="CloseFormPanel" />
+                    </MudStack>
+
+                    <EditForm Model="ActiveLease" OnValidSubmit="SaveFormAsync">
+                        <MudGrid Spacing="2">
+                            <MudItem xs="12" md="6">
+                                <MudSelect T="Guid?" Label="Unit" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="FormUnitId">
+                                    <MudSelectItem T="Guid?" Value="@((Guid?)null)">Select unit</MudSelectItem>
+                                    @foreach (var unit in _units)
+                                    {
+                                        <MudSelectItem T="Guid?" Value="@((Guid?)unit.Id)">@GetUnitDisplay(unit)</MudSelectItem>
+                                    }
+                                </MudSelect>
+                            </MudItem>
+                            <MudItem xs="12" md="6">
+                                <MudSelect T="Guid?" Label="Tenant" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="FormTenantId">
+                                    <MudSelectItem T="Guid?" Value="@((Guid?)null)">Select tenant</MudSelectItem>
+                                    @foreach (var tenant in _tenants)
+                                    {
+                                        <MudSelectItem T="Guid?" Value="@((Guid?)tenant.Id)">@tenant.FullName</MudSelectItem>
+                                    }
+                                </MudSelect>
+                            </MudItem>
+                            <MudItem xs="12" md="4"><MudDatePicker Label="Start date" Variant="Variant.Outlined" @bind-Date="_formStartDate" Editable="true" /></MudItem>
+                            <MudItem xs="12" md="4"><MudDatePicker Label="End date" Variant="Variant.Outlined" @bind-Date="_formEndDate" Editable="true" /></MudItem>
+                            <MudItem xs="12" md="4"><MudNumericField T="decimal" Label="Monthly rent" Variant="Variant.Outlined" Adornment="Adornment.Start" AdornmentText="$" @bind-Value="ActiveLease.MonthlyRent" /></MudItem>
+                            <MudItem xs="12" md="6">
+                                <MudSelect T="LeaseStatus" Label="Status" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="ActiveLease.Status">
+                                    @foreach (var status in Enum.GetValues<LeaseStatus>())
+                                    {
+                                        <MudSelectItem T="LeaseStatus" Value="@status">@status</MudSelectItem>
+                                    }
+                                </MudSelect>
+                            </MudItem>
+                            <MudItem xs="12" md="3"><MudSwitch T="bool" Color="Color.Primary" Label="Ontario lease signed" @bind-Value="ActiveLease.StandardOntarioLeaseSigned" /></MudItem>
+                            <MudItem xs="12" md="3"><MudSwitch T="bool" Color="Color.Primary" Label="N1 scheduled" @bind-Value="ActiveLease.N1IncreaseNoticeScheduled" /></MudItem>
+                            <MudItem xs="12"><MudPaper Class="pa-3 property-detail-panel" Elevation="0"><MudText Typo="Typo.subtitle2">Lease execution note</MudText><MudText Typo="Typo.body2">@GetLeaseGuidance()</MudText></MudPaper></MudItem>
+                        </MudGrid>
+
+                        <MudStack Row="true" Spacing="2" Class="mt-4" Justify="Justify.FlexEnd">
+                            <MudButton Variant="Variant.Text" Color="Color.Default" OnClick="CloseFormPanel">Cancel</MudButton>
+                            <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary">@(_isCreateMode ? "Create lease" : "Save changes")</MudButton>
+                        </MudStack>
+                    </EditForm>
+                </MudStack>
+            </MudPaper>
+        </div>
+    }
 </MudStack>
 
 @code {
     private List<Lease> _items = new();
     private List<Unit> _units = new();
     private List<Tenant> _tenants = new();
-    private Lease _newLease = new() { Status = PropertySaaS.Domain.Enums.LeaseStatus.Active };
-    private Guid? _selectedUnitId;
-    private Guid? _selectedTenantId;
-    private DateTime? _startDate = DateTime.Today;
-    private DateTime? _endDate = DateTime.Today.AddYears(1);
+    private List<Property> _properties = new();
+    private Lease _newLease = new() { Status = LeaseStatus.Active, StandardOntarioLeaseSigned = true };
+    private Lease _editLease = new() { Status = LeaseStatus.Active, StandardOntarioLeaseSigned = true };
+    private DateTime? _formStartDate = DateTime.Today;
+    private DateTime? _formEndDate = DateTime.Today.AddYears(1);
     private string _csvInput = string.Empty;
     private string? _importResult;
+    private string _searchText = string.Empty;
+    private string _selectedStatusFilter = string.Empty;
+    private string _selectedOntarioFilter = string.Empty;
+    private string _selectedWorkflowFilter = string.Empty;
+    private bool _isFormPanelOpen;
+    private bool _isCreateMode = true;
+
+    private bool HasActiveFilters => !string.IsNullOrWhiteSpace(_searchText) || !string.IsNullOrWhiteSpace(_selectedStatusFilter) || !string.IsNullOrWhiteSpace(_selectedOntarioFilter) || !string.IsNullOrWhiteSpace(_selectedWorkflowFilter);
+    private Lease ActiveLease => _isCreateMode ? _newLease : _editLease;
+    private IEnumerable<string> StatusOptions => Enum.GetNames<LeaseStatus>();
+
+    private Guid? FormUnitId
+    {
+        get => ActiveLease.UnitId == Guid.Empty ? null : ActiveLease.UnitId;
+        set => ActiveLease.UnitId = value ?? Guid.Empty;
+    }
+
+    private Guid? FormTenantId
+    {
+        get => ActiveLease.TenantId == Guid.Empty ? null : ActiveLease.TenantId;
+        set => ActiveLease.TenantId = value ?? Guid.Empty;
+    }
+
+    private IEnumerable<Lease> FilteredLeases => _items
+        .Where(lease => string.IsNullOrWhiteSpace(_searchText)
+            || GetUnitLabel(lease.UnitId).Contains(_searchText, StringComparison.OrdinalIgnoreCase)
+            || GetTenantLabel(lease.TenantId).Contains(_searchText, StringComparison.OrdinalIgnoreCase)
+            || lease.Status.ToString().Contains(_searchText, StringComparison.OrdinalIgnoreCase)
+            || GetOntarioLabel(lease).Contains(_searchText, StringComparison.OrdinalIgnoreCase)
+            || GetWorkflowLabel(lease).Contains(_searchText, StringComparison.OrdinalIgnoreCase))
+        .Where(lease => string.IsNullOrWhiteSpace(_selectedStatusFilter) || string.Equals(lease.Status.ToString(), _selectedStatusFilter, StringComparison.OrdinalIgnoreCase))
+        .Where(lease => string.IsNullOrWhiteSpace(_selectedOntarioFilter) || string.Equals(GetOntarioLabel(lease), _selectedOntarioFilter, StringComparison.OrdinalIgnoreCase))
+        .Where(lease => string.IsNullOrWhiteSpace(_selectedWorkflowFilter) || string.Equals(GetWorkflowLabel(lease), _selectedWorkflowFilter, StringComparison.OrdinalIgnoreCase));
+
     protected override async Task OnInitializedAsync() => await ReloadAsync();
+
     private async Task ReloadAsync()
     {
         _items = await DataService.GetLeasesAsync();
         _units = await DataService.GetUnitsAsync();
         _tenants = await DataService.GetTenantsAsync();
+        _properties = await DataService.GetPropertiesAsync();
     }
-    private async Task CreateAsync()
+
+    private void OpenCreatePanel()
     {
-        if (_selectedUnitId is null || _selectedUnitId == Guid.Empty) return;
-        if (_selectedTenantId is null || _selectedTenantId == Guid.Empty) return;
-        _newLease.UnitId = _selectedUnitId.Value;
-        _newLease.TenantId = _selectedTenantId.Value;
-        _newLease.StartDate = DateOnly.FromDateTime(_startDate ?? DateTime.Today);
-        _newLease.EndDate = DateOnly.FromDateTime(_endDate ?? DateTime.Today.AddYears(1));
-        await DataService.AddLeaseAsync(_newLease);
-        _newLease = new Lease { Status = PropertySaaS.Domain.Enums.LeaseStatus.Active };
-        _selectedUnitId = null;
-        _selectedTenantId = null;
-        _startDate = DateTime.Today;
-        _endDate = DateTime.Today.AddYears(1);
-        await ReloadAsync();
+        _isCreateMode = true;
+        _newLease = new Lease { Status = LeaseStatus.Active, StandardOntarioLeaseSigned = true };
+        _formStartDate = DateTime.Today;
+        _formEndDate = DateTime.Today.AddYears(1);
+        _isFormPanelOpen = true;
     }
+
+    private void OpenEditPanel(Lease lease)
+    {
+        _isCreateMode = false;
+        _editLease = new Lease
+        {
+            Id = lease.Id,
+            UnitId = lease.UnitId,
+            TenantId = lease.TenantId,
+            StartDate = lease.StartDate,
+            EndDate = lease.EndDate,
+            MonthlyRent = lease.MonthlyRent,
+            Status = lease.Status,
+            StandardOntarioLeaseSigned = lease.StandardOntarioLeaseSigned,
+            N1IncreaseNoticeScheduled = lease.N1IncreaseNoticeScheduled
+        };
+        _formStartDate = lease.StartDate.ToDateTime(TimeOnly.MinValue);
+        _formEndDate = lease.EndDate.ToDateTime(TimeOnly.MinValue);
+        _isFormPanelOpen = true;
+    }
+
+    private void CloseFormPanel()
+    {
+        _isFormPanelOpen = false;
+        _isCreateMode = true;
+    }
+
+    private async Task SaveFormAsync()
+    {
+        if (ActiveLease.UnitId == Guid.Empty || ActiveLease.TenantId == Guid.Empty)
+        {
+            return;
+        }
+
+        ActiveLease.StartDate = DateOnly.FromDateTime(_formStartDate ?? DateTime.Today);
+        ActiveLease.EndDate = DateOnly.FromDateTime(_formEndDate ?? DateTime.Today.AddYears(1));
+
+        if (ActiveLease.EndDate < ActiveLease.StartDate)
+        {
+            return;
+        }
+
+        if (_isCreateMode)
+        {
+            await DataService.AddLeaseAsync(_newLease);
+            _newLease = new Lease { Status = LeaseStatus.Active, StandardOntarioLeaseSigned = true };
+        }
+        else
+        {
+            await DataService.UpdateLeaseAsync(_editLease);
+            _editLease = new Lease { Status = LeaseStatus.Active, StandardOntarioLeaseSigned = true };
+        }
+
+        await ReloadAsync();
+        CloseFormPanel();
+    }
+
     private async Task DeleteAsync(Guid id)
     {
         await DataService.DeleteLeaseAsync(id);
         await ReloadAsync();
     }
+
+    private void ClearFilters()
+    {
+        _searchText = string.Empty;
+        _selectedStatusFilter = string.Empty;
+        _selectedOntarioFilter = string.Empty;
+        _selectedWorkflowFilter = string.Empty;
+    }
+
     private async Task ImportCsvAsync()
     {
         var imported = 0;
@@ -161,13 +369,71 @@
                 StartDate = start,
                 EndDate = end,
                 MonthlyRent = rent,
-                Status = PropertySaaS.Domain.Enums.LeaseStatus.Active,
+                Status = LeaseStatus.Active,
                 StandardOntarioLeaseSigned = true
             });
             imported++;
         }
+
         _csvInput = string.Empty;
         await ReloadAsync();
         _importResult = $"Imported {imported} row(s); skipped {skipped}.";
+    }
+
+    private string GetUnitLabel(Guid unitId)
+        => _units.FirstOrDefault(x => x.Id == unitId)?.UnitNumber ?? "Unknown unit";
+
+    private string GetTenantLabel(Guid tenantId)
+        => _tenants.FirstOrDefault(x => x.Id == tenantId)?.FullName ?? "Unknown tenant";
+
+    private string GetPropertyLabelForLease(Lease lease)
+    {
+        var unit = _units.FirstOrDefault(x => x.Id == lease.UnitId);
+        return unit is null ? "Unknown property" : GetPropertyName(unit.PropertyId);
+    }
+
+    private string GetPropertyHref(Lease lease)
+    {
+        var unit = _units.FirstOrDefault(x => x.Id == lease.UnitId);
+        return unit is null ? "/properties" : $"/properties/{unit.PropertyId}";
+    }
+
+    private string GetPropertyName(Guid propertyId)
+        => _properties.FirstOrDefault(x => x.Id == propertyId)?.Name ?? "Unknown property";
+
+    private string GetUnitDisplay(Unit unit)
+        => $"{unit.UnitNumber} · {GetPropertyName(unit.PropertyId)}";
+
+    private static string GetOntarioLabel(Lease lease)
+        => lease.StandardOntarioLeaseSigned ? "Signed" : "Missing";
+
+    private static string GetWorkflowLabel(Lease lease)
+        => lease.N1IncreaseNoticeScheduled ? "Scheduled" : "Not Scheduled";
+
+    private static Color GetStatusColor(LeaseStatus status)
+        => status switch
+        {
+            LeaseStatus.Active => Color.Success,
+            LeaseStatus.EndingSoon => Color.Warning,
+            LeaseStatus.Expired => Color.Error,
+            LeaseStatus.Terminated => Color.Error,
+            _ => Color.Info
+        };
+
+    private string GetLeaseGuidance()
+    {
+        if (ActiveLease.UnitId == Guid.Empty || ActiveLease.TenantId == Guid.Empty)
+        {
+            return "Link the lease to both a unit and a tenant so the portfolio, audit and property profile views stay aligned.";
+        }
+
+        if (!ActiveLease.StandardOntarioLeaseSigned)
+        {
+            return "Ontario lease is marked missing. Use the property profile and compliance workflow to close that gap before move-in activity continues.";
+        }
+
+        return ActiveLease.N1IncreaseNoticeScheduled
+            ? "N1 workflow is already scheduled. Keep dates, notice service and profile context aligned for the operating team."
+            : "Lease is connected and ready. Schedule the N1 workflow only when the timing is appropriate for this unit and resident.";
     }
 }

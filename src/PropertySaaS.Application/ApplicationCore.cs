@@ -169,6 +169,23 @@ namespace PropertySaaS.Application.Features
             await _db.SaveChangesAsync();
         }
 
+        public async Task UpdateTenantAsync(Tenant tenant)
+        {
+            EnsureCanManageData();
+            var entity = await _db.Tenants.FirstOrDefaultAsync(x => x.Id == tenant.Id && x.OrganizationId == _current.OrganizationId);
+            if (entity is null) return;
+
+            entity.FullName = tenant.FullName;
+            entity.Email = tenant.Email;
+            entity.PhoneNumber = tenant.PhoneNumber;
+            entity.CreditScore = tenant.CreditScore;
+            entity.ScreeningCompleted = tenant.ScreeningCompleted;
+            entity.ScreeningProvider = tenant.ScreeningProvider;
+
+            _db.AuditLogs.Add(new AuditLog { OrganizationId = _current.OrganizationId, EntityName = nameof(Tenant), Action = "Update", PerformedBy = _current.UserEmail, Details = $"Updated tenant {tenant.FullName}" });
+            await _db.SaveChangesAsync();
+        }
+
         public async Task AddUnitAsync(Unit unit)
         {
             EnsureCanManageData();
@@ -187,6 +204,23 @@ namespace PropertySaaS.Application.Features
             if (entity is null) return;
             _db.Units.Remove(entity);
             _db.AuditLogs.Add(new AuditLog { OrganizationId = _current.OrganizationId, EntityName = nameof(Unit), Action = "Delete", PerformedBy = _current.UserEmail, Details = $"Deleted unit {entity.UnitNumber}" });
+            await _db.SaveChangesAsync();
+        }
+
+        public async Task UpdateUnitAsync(Unit unit)
+        {
+            EnsureCanManageData();
+            var entity = await _db.Units.FirstOrDefaultAsync(x => x.Id == unit.Id && x.OrganizationId == _current.OrganizationId);
+            if (entity is null) return;
+
+            entity.PropertyId = unit.PropertyId;
+            entity.UnitNumber = unit.UnitNumber;
+            entity.Bedrooms = unit.Bedrooms;
+            entity.Bathrooms = unit.Bathrooms;
+            entity.MonthlyRent = unit.MonthlyRent;
+            entity.IsOccupied = unit.IsOccupied;
+
+            _db.AuditLogs.Add(new AuditLog { OrganizationId = _current.OrganizationId, EntityName = nameof(Unit), Action = "Update", PerformedBy = _current.UserEmail, Details = $"Updated unit {unit.UnitNumber}" });
             await _db.SaveChangesAsync();
         }
 
@@ -210,6 +244,25 @@ namespace PropertySaaS.Application.Features
             _db.AuditLogs.Add(new AuditLog { OrganizationId = _current.OrganizationId, EntityName = nameof(Lease), Action = "Delete", PerformedBy = _current.UserEmail, Details = $"Deleted lease {entity.Id}" });
             await _db.SaveChangesAsync();
         }
+
+        public async Task UpdateLeaseAsync(Lease lease)
+        {
+            EnsureCanManageData();
+            var entity = await _db.Leases.FirstOrDefaultAsync(x => x.Id == lease.Id && x.OrganizationId == _current.OrganizationId);
+            if (entity is null) return;
+
+            entity.UnitId = lease.UnitId;
+            entity.TenantId = lease.TenantId;
+            entity.StartDate = lease.StartDate;
+            entity.EndDate = lease.EndDate;
+            entity.MonthlyRent = lease.MonthlyRent;
+            entity.Status = lease.Status;
+            entity.StandardOntarioLeaseSigned = lease.StandardOntarioLeaseSigned;
+            entity.N1IncreaseNoticeScheduled = lease.N1IncreaseNoticeScheduled;
+
+            _db.AuditLogs.Add(new AuditLog { OrganizationId = _current.OrganizationId, EntityName = nameof(Lease), Action = "Update", PerformedBy = _current.UserEmail, Details = $"Updated lease {lease.Id}" });
+            await _db.SaveChangesAsync();
+        }
         public async Task AddMaintenanceAsync(MaintenanceRequest request)
         {
             EnsureCanManageData();
@@ -229,6 +282,26 @@ namespace PropertySaaS.Application.Features
             if (entity is null) return;
             _db.MaintenanceRequests.Remove(entity);
             _db.AuditLogs.Add(new AuditLog { OrganizationId = _current.OrganizationId, EntityName = nameof(MaintenanceRequest), Action = "Delete", PerformedBy = _current.UserEmail, Details = $"Deleted maintenance request {entity.Title}" });
+            await _db.SaveChangesAsync();
+        }
+
+        public async Task UpdateMaintenanceAsync(MaintenanceRequest request)
+        {
+            EnsureCanManageData();
+            var entity = await _db.MaintenanceRequests.FirstOrDefaultAsync(x => x.Id == request.Id && x.OrganizationId == _current.OrganizationId);
+            if (entity is null) return;
+
+            entity.PropertyId = request.PropertyId;
+            entity.UnitId = request.UnitId;
+            entity.Title = request.Title;
+            entity.Description = request.Description;
+            entity.Priority = request.Priority;
+            entity.Status = request.Status;
+            entity.VendorName = request.VendorName;
+            entity.EstimatedCost = request.EstimatedCost;
+            entity.RequestedDate = request.RequestedDate;
+
+            _db.AuditLogs.Add(new AuditLog { OrganizationId = _current.OrganizationId, EntityName = nameof(MaintenanceRequest), Action = "Update", PerformedBy = _current.UserEmail, Details = $"Updated maintenance request {request.Title}" });
             await _db.SaveChangesAsync();
         }
 

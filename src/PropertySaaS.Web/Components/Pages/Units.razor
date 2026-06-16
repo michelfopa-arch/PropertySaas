@@ -6,101 +6,285 @@
 <PageTitle>Units</PageTitle>
 
 <MudStack Spacing="3">
-    <MudText Typo="Typo.h4">Units</MudText>
+    <MudStack Spacing="0">
+        <MudText Typo="Typo.h4">Units</MudText>
+        <MudText Typo="Typo.body2">Keep the unit portfolio scannable. Edit quickly here and use each property profile for the full asset story.</MudText>
+    </MudStack>
 
-    <MudPaper Class="pa-4">
-        <EditForm Model="_newUnit" OnValidSubmit="CreateAsync">
-            <MudGrid Spacing="2">
-                <MudItem xs="12" md="2"><MudTextField Label="Unit" Variant="Variant.Outlined" @bind-Value="_newUnit.UnitNumber" /></MudItem>
-                <MudItem xs="12" md="2"><MudNumericField T="int" Label="Bedrooms" Variant="Variant.Outlined" @bind-Value="_newUnit.Bedrooms" /></MudItem>
-                <MudItem xs="12" md="2"><MudNumericField T="int" Label="Bathrooms" Variant="Variant.Outlined" @bind-Value="_newUnit.Bathrooms" /></MudItem>
-                <MudItem xs="12" md="3"><MudNumericField T="decimal" Label="Monthly rent" Variant="Variant.Outlined" @bind-Value="_newUnit.MonthlyRent" /></MudItem>
-                <MudItem xs="12" md="3">
-                    <MudSelect T="Guid?" Label="Property" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedPropertyId">
-                        <MudSelectItem T="Guid?" Value="@((Guid?)null)">Select property</MudSelectItem>
-                        @foreach (var property in _properties)
-                        {
-                            <MudSelectItem T="Guid?" Value="@((Guid?)property.Id)">@property.Name</MudSelectItem>
-                        }
-                    </MudSelect>
-                </MudItem>
-            </MudGrid>
+    <MudGrid Spacing="2" Class="align-center-grid">
+        <MudItem xs="12" lg="4">
+            <MudTextField T="string"
+                          Label="Search units"
+                          Variant="Variant.Outlined"
+                          Immediate="true"
+                          @bind-Value="_searchText"
+                          Adornment="Adornment.Start"
+                          AdornmentIcon="@Icons.Material.Filled.Search"
+                          Placeholder="Search by unit, property, layout or status" />
+        </MudItem>
+        <MudItem xs="12" sm="4" lg="2">
+            <MudSelect T="string" Label="Property" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedPropertyFilter">
+                <MudSelectItem T="string" Value="@string.Empty">All properties</MudSelectItem>
+                @foreach (var property in _properties)
+                {
+                    <MudSelectItem T="string" Value="@property.Name">@property.Name</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12" sm="4" lg="2">
+            <MudSelect T="string" Label="Status" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedOccupancyFilter">
+                <MudSelectItem T="string" Value="@string.Empty">All statuses</MudSelectItem>
+                <MudSelectItem T="string" Value='@("Occupied")'>Occupied</MudSelectItem>
+                <MudSelectItem T="string" Value='@("Vacant")'>Vacant</MudSelectItem>
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12" sm="4" lg="2">
+            <MudSelect T="string" Label="Bedrooms" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedBedroomFilter">
+                <MudSelectItem T="string" Value="@string.Empty">All layouts</MudSelectItem>
+                @foreach (var option in BedroomOptions)
+                {
+                    <MudSelectItem T="string" Value="@option">@option bd</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12" lg="2">
+            <MudStack Row="true" Spacing="1" Class="properties-toolbar-actions">
+                @if (HasActiveFilters)
+                {
+                    <MudButton Variant="Variant.Outlined" Color="Color.Default" FullWidth="true" StartIcon="@Icons.Material.Filled.FilterAltOff" OnClick="ClearFilters">Reset</MudButton>
+                }
+                @if (CurrentOrganization.CanManageData)
+                {
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreatePanel">Add unit</MudButton>
+                }
+            </MudStack>
+        </MudItem>
+    </MudGrid>
 
-            @if (CurrentOrganization.CanManageData)
-            {
-                <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="mt-4">Add Unit</MudButton>
-            }
-        </EditForm>
-    </MudPaper>
+    <MudGrid Spacing="2">
+        <MudItem xs="12" sm="6" lg="3"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">Units shown</MudText><MudText Typo="Typo.h6">@FilteredUnits.Count()</MudText></MudPaper></MudItem>
+        <MudItem xs="12" sm="6" lg="3"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">Vacant</MudText><MudText Typo="Typo.h6">@FilteredUnits.Count(x => !x.IsOccupied)</MudText></MudPaper></MudItem>
+        <MudItem xs="12" sm="6" lg="3"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">Monthly rent</MudText><MudText Typo="Typo.h6">@FilteredUnits.Sum(x => x.MonthlyRent).ToString("C")</MudText></MudPaper></MudItem>
+        <MudItem xs="12" sm="6" lg="3"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">Properties covered</MudText><MudText Typo="Typo.h6">@FilteredUnits.Select(x => x.PropertyId).Distinct().Count()</MudText></MudPaper></MudItem>
+    </MudGrid>
 
-    <MudPaper Class="pa-4">
-        <MudText Typo="Typo.h6">Quick CSV Import</MudText>
-        <MudText Typo="Typo.body2" Class="mb-2">Format: PropertyName,UnitNumber,Bedrooms,Bathrooms,MonthlyRent</MudText>
-        <MudTextField Lines="5" Variant="Variant.Outlined" @bind-Value="_csvInput" FullWidth="true" />
-        @if (CurrentOrganization.CanManageData)
-        {
-            <MudButton Variant="Variant.Filled" Color="Color.Secondary" Class="mt-3" OnClick="ImportCsvAsync">Import CSV Text</MudButton>
-        }
-        @if (!string.IsNullOrWhiteSpace(_importResult))
-        {
-            <MudAlert Severity="Severity.Info" Dense="true" Class="mt-3 mb-0">@_importResult</MudAlert>
-        }
-    </MudPaper>
+    <MudExpansionPanels>
+        <MudExpansionPanel Text="Bulk import">
+            <MudPaper Class="pa-4" Elevation="0">
+                <MudText Typo="Typo.h6">Quick CSV Import</MudText>
+                <MudText Typo="Typo.body2" Class="mb-2">Format: PropertyName,UnitNumber,Bedrooms,Bathrooms,MonthlyRent</MudText>
+                <MudTextField Lines="5" Variant="Variant.Outlined" @bind-Value="_csvInput" FullWidth="true" />
+                @if (CurrentOrganization.CanManageData)
+                {
+                    <MudButton Variant="Variant.Filled" Color="Color.Secondary" Class="mt-3" OnClick="ImportCsvAsync">Import CSV Text</MudButton>
+                }
+                @if (!string.IsNullOrWhiteSpace(_importResult))
+                {
+                    <MudAlert Severity="Severity.Info" Dense="true" Class="mt-3 mb-0">@_importResult</MudAlert>
+                }
+            </MudPaper>
+        </MudExpansionPanel>
+    </MudExpansionPanels>
 
-    <MudPaper Class="pa-2">
-        <MudTable Items="_items" Dense="true" Hover="true" Breakpoint="Breakpoint.Sm">
+    <MudPaper Class="pa-2 table-wrap properties-table-shell">
+        <MudTable Items="FilteredUnits.ToList()" Dense="true" Hover="true" Breakpoint="Breakpoint.Md" RowsPerPage="10">
             <HeaderContent>
                 <MudTh>Unit</MudTh>
-                <MudTh>Bedrooms</MudTh>
-                <MudTh>Bathrooms</MudTh>
+                <MudTh>Property</MudTh>
+                <MudTh>Layout</MudTh>
                 <MudTh>Rent</MudTh>
                 <MudTh>Status</MudTh>
                 <MudTh></MudTh>
             </HeaderContent>
             <RowTemplate>
-                <MudTd DataLabel="Unit">@context.UnitNumber</MudTd>
-                <MudTd DataLabel="Bedrooms">@context.Bedrooms</MudTd>
-                <MudTd DataLabel="Bathrooms">@context.Bathrooms</MudTd>
+                <MudTd DataLabel="Unit">
+                    <MudStack Spacing="0">
+                        <MudText Typo="Typo.subtitle2">@context.UnitNumber</MudText>
+                        <MudText Typo="Typo.caption" Class="property-address">@GetUnitSummary(context)</MudText>
+                    </MudStack>
+                </MudTd>
+                <MudTd DataLabel="Property"><MudButton Href="@($"/properties/{context.PropertyId}")" Variant="Variant.Text" Color="Color.Primary" Size="Size.Small">@GetPropertyName(context.PropertyId)</MudButton></MudTd>
+                <MudTd DataLabel="Layout">@($"{context.Bedrooms} bd / {context.Bathrooms} ba")</MudTd>
                 <MudTd DataLabel="Rent">@context.MonthlyRent.ToString("C")</MudTd>
-                <MudTd DataLabel="Status">@(context.IsOccupied ? "Occupied" : "Vacant")</MudTd>
+                <MudTd DataLabel="Status"><MudChip T="string" Variant="Variant.Filled" Color="@(context.IsOccupied ? Color.Success : Color.Warning)">@(context.IsOccupied ? "Occupied" : "Vacant")</MudChip></MudTd>
                 <MudTd DataLabel="Actions">
-                    @if (CurrentOrganization.CanManageData)
-                    {
-                        <MudButton Variant="Variant.Outlined" Color="Color.Error" Size="Size.Small" OnClick="() => DeleteAsync(context.Id)">Delete</MudButton>
-                    }
+                    <MudStack Row="true" Spacing="1" Wrap="Wrap.Wrap">
+                        <MudButton Href="@($"/properties/{context.PropertyId}")" Variant="Variant.Text" Color="Color.Primary" Size="Size.Small">Property profile</MudButton>
+                        @if (CurrentOrganization.CanManageData)
+                        {
+                            <MudButton Variant="Variant.Text" Color="Color.Secondary" Size="Size.Small" OnClick="() => OpenEditPanel(context)">Edit</MudButton>
+                            <MudButton Variant="Variant.Text" Color="Color.Error" Size="Size.Small" OnClick="() => DeleteAsync(context.Id)">Delete</MudButton>
+                        }
+                    </MudStack>
                 </MudTd>
             </RowTemplate>
+            <NoRecordsContent>
+                <MudStack Class="pa-6 properties-empty-state" Spacing="1" AlignItems="AlignItems.Center">
+                    <MudIcon Icon="@Icons.Material.Filled.MeetingRoom" Size="Size.Large" Color="Color.Default" />
+                    <MudText Typo="Typo.subtitle1">No units match the current filters.</MudText>
+                    <MudText Typo="Typo.body2">Reset the filters or add a new unit to complete the operating picture.</MudText>
+                    @if (HasActiveFilters)
+                    {
+                        <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="ClearFilters">Reset filters</MudButton>
+                    }
+                </MudStack>
+            </NoRecordsContent>
+            <PagerContent>
+                <MudTablePager />
+            </PagerContent>
         </MudTable>
     </MudPaper>
+
+    @if (_isFormPanelOpen)
+    {
+        <div class="property-form-backdrop" @onclick="CloseFormPanel">
+            <MudPaper Class="pa-5 property-form-drawer" Elevation="0" @onclick:stopPropagation="true">
+                <MudStack Spacing="3">
+                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                        <MudStack Spacing="0">
+                            <MudText Typo="Typo.h5">@(_isCreateMode ? "Add unit" : "Edit unit")</MudText>
+                            <MudText Typo="Typo.body2">Keep unit operations light here. Use the property profile when the team needs the broader asset story.</MudText>
+                        </MudStack>
+                        <MudIconButton Icon="@Icons.Material.Filled.Close" Color="Color.Default" OnClick="CloseFormPanel" />
+                    </MudStack>
+
+                    <EditForm Model="ActiveUnit" OnValidSubmit="SaveFormAsync">
+                        <MudGrid Spacing="2">
+                            <MudItem xs="12" md="6"><MudTextField Label="Unit number" Variant="Variant.Outlined" @bind-Value="ActiveUnit.UnitNumber" /></MudItem>
+                            <MudItem xs="12" md="6">
+                                <MudSelect T="Guid?" Label="Property" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="FormPropertyId">
+                                    <MudSelectItem T="Guid?" Value="@((Guid?)null)">Select property</MudSelectItem>
+                                    @foreach (var property in _properties)
+                                    {
+                                        <MudSelectItem T="Guid?" Value="@((Guid?)property.Id)">@property.Name</MudSelectItem>
+                                    }
+                                </MudSelect>
+                            </MudItem>
+                            <MudItem xs="12" md="4"><MudNumericField T="int" Label="Bedrooms" Variant="Variant.Outlined" @bind-Value="ActiveUnit.Bedrooms" /></MudItem>
+                            <MudItem xs="12" md="4"><MudNumericField T="int" Label="Bathrooms" Variant="Variant.Outlined" @bind-Value="ActiveUnit.Bathrooms" /></MudItem>
+                            <MudItem xs="12" md="4"><MudNumericField T="decimal" Label="Monthly rent" Variant="Variant.Outlined" Adornment="Adornment.Start" AdornmentText="$" @bind-Value="ActiveUnit.MonthlyRent" /></MudItem>
+                            <MudItem xs="12"><MudSwitch T="bool" Color="Color.Primary" Label="Marked as occupied" @bind-Value="ActiveUnit.IsOccupied" /></MudItem>
+                            <MudItem xs="12"><MudPaper Class="pa-3 property-detail-panel" Elevation="0"><MudText Typo="Typo.subtitle2">Unit execution note</MudText><MudText Typo="Typo.body2">@GetFormGuidance()</MudText></MudPaper></MudItem>
+                        </MudGrid>
+
+                        <MudStack Row="true" Spacing="2" Class="mt-4" Justify="Justify.FlexEnd">
+                            <MudButton Variant="Variant.Text" Color="Color.Default" OnClick="CloseFormPanel">Cancel</MudButton>
+                            <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary">@(_isCreateMode ? "Create unit" : "Save changes")</MudButton>
+                        </MudStack>
+                    </EditForm>
+                </MudStack>
+            </MudPaper>
+        </div>
+    }
 </MudStack>
 
 @code {
     private List<Unit> _items = new();
     private List<Property> _properties = new();
     private Unit _newUnit = new();
-    private Guid? _selectedPropertyId;
+    private Unit _editUnit = new();
     private string _csvInput = string.Empty;
     private string? _importResult;
+    private string _searchText = string.Empty;
+    private string _selectedPropertyFilter = string.Empty;
+    private string _selectedOccupancyFilter = string.Empty;
+    private string _selectedBedroomFilter = string.Empty;
+    private bool _isFormPanelOpen;
+    private bool _isCreateMode = true;
+
+    private bool HasActiveFilters => !string.IsNullOrWhiteSpace(_searchText) || !string.IsNullOrWhiteSpace(_selectedPropertyFilter) || !string.IsNullOrWhiteSpace(_selectedOccupancyFilter) || !string.IsNullOrWhiteSpace(_selectedBedroomFilter);
+    private Unit ActiveUnit => _isCreateMode ? _newUnit : _editUnit;
+    private IEnumerable<string> BedroomOptions => _items.Select(x => x.Bedrooms.ToString()).Distinct().OrderBy(x => int.Parse(x));
+
+    private Guid? FormPropertyId
+    {
+        get => ActiveUnit.PropertyId == Guid.Empty ? null : ActiveUnit.PropertyId;
+        set => ActiveUnit.PropertyId = value ?? Guid.Empty;
+    }
+
+    private IEnumerable<Unit> FilteredUnits => _items
+        .Where(unit => string.IsNullOrWhiteSpace(_searchText)
+            || unit.UnitNumber.Contains(_searchText, StringComparison.OrdinalIgnoreCase)
+            || GetPropertyName(unit.PropertyId).Contains(_searchText, StringComparison.OrdinalIgnoreCase)
+            || GetUnitSummary(unit).Contains(_searchText, StringComparison.OrdinalIgnoreCase)
+            || GetOccupancyLabel(unit).Contains(_searchText, StringComparison.OrdinalIgnoreCase))
+        .Where(unit => string.IsNullOrWhiteSpace(_selectedPropertyFilter) || string.Equals(GetPropertyName(unit.PropertyId), _selectedPropertyFilter, StringComparison.OrdinalIgnoreCase))
+        .Where(unit => string.IsNullOrWhiteSpace(_selectedOccupancyFilter) || string.Equals(GetOccupancyLabel(unit), _selectedOccupancyFilter, StringComparison.OrdinalIgnoreCase))
+        .Where(unit => string.IsNullOrWhiteSpace(_selectedBedroomFilter) || string.Equals(unit.Bedrooms.ToString(), _selectedBedroomFilter, StringComparison.OrdinalIgnoreCase));
+
     protected override async Task OnInitializedAsync() => await ReloadAsync();
+
     private async Task ReloadAsync()
     {
         _items = await DataService.GetUnitsAsync();
         _properties = await DataService.GetPropertiesAsync();
     }
-    private async Task CreateAsync()
+
+    private void OpenCreatePanel()
     {
-        if (_selectedPropertyId is null || _selectedPropertyId == Guid.Empty) return;
-        _newUnit.PropertyId = _selectedPropertyId.Value;
-        await DataService.AddUnitAsync(_newUnit);
+        _isCreateMode = true;
         _newUnit = new Unit();
-        _selectedPropertyId = null;
-        await ReloadAsync();
+        _isFormPanelOpen = true;
     }
+
+    private void OpenEditPanel(Unit unit)
+    {
+        _isCreateMode = false;
+        _editUnit = new Unit
+        {
+            Id = unit.Id,
+            PropertyId = unit.PropertyId,
+            UnitNumber = unit.UnitNumber,
+            Bedrooms = unit.Bedrooms,
+            Bathrooms = unit.Bathrooms,
+            MonthlyRent = unit.MonthlyRent,
+            IsOccupied = unit.IsOccupied
+        };
+        _isFormPanelOpen = true;
+    }
+
+    private void CloseFormPanel()
+    {
+        _isFormPanelOpen = false;
+        _isCreateMode = true;
+    }
+
+    private async Task SaveFormAsync()
+    {
+        if (ActiveUnit.PropertyId == Guid.Empty)
+        {
+            return;
+        }
+
+        if (_isCreateMode)
+        {
+            await DataService.AddUnitAsync(_newUnit);
+            _newUnit = new Unit();
+        }
+        else
+        {
+            await DataService.UpdateUnitAsync(_editUnit);
+            _editUnit = new Unit();
+        }
+
+        await ReloadAsync();
+        CloseFormPanel();
+    }
+
     private async Task DeleteAsync(Guid id)
     {
         await DataService.DeleteUnitAsync(id);
         await ReloadAsync();
     }
+
+    private void ClearFilters()
+    {
+        _searchText = string.Empty;
+        _selectedPropertyFilter = string.Empty;
+        _selectedOccupancyFilter = string.Empty;
+        _selectedBedroomFilter = string.Empty;
+    }
+
     private async Task ImportCsvAsync()
     {
         var imported = 0;
@@ -140,8 +324,30 @@
             });
             imported++;
         }
+
         _csvInput = string.Empty;
         await ReloadAsync();
         _importResult = $"Imported {imported} row(s); skipped {skipped}.";
+    }
+
+    private string GetPropertyName(Guid propertyId)
+        => _properties.FirstOrDefault(x => x.Id == propertyId)?.Name ?? "Unknown property";
+
+    private static string GetUnitSummary(Unit unit)
+        => $"{unit.Bedrooms} bd / {unit.Bathrooms} ba • {(unit.IsOccupied ? "Occupied" : "Vacant")}";
+
+    private static string GetOccupancyLabel(Unit unit)
+        => unit.IsOccupied ? "Occupied" : "Vacant";
+
+    private string GetFormGuidance()
+    {
+        if (ActiveUnit.PropertyId == Guid.Empty)
+        {
+            return "Attach the unit to a property first so leases, turnover and profile views stay connected.";
+        }
+
+        return ActiveUnit.IsOccupied
+            ? "This unit is marked occupied. Use the leases module to keep contract dates and Ontario paperwork in sync."
+            : "This unit is marked vacant. Keep rent current and use the property profile to align the leasing story before marketing.";
     }
 }

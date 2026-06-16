@@ -2,32 +2,80 @@
 @page "/maintenance"
 @inject SaasDataService DataService
 @inject PropertySaaS.Application.Common.CurrentOrganization CurrentOrganization
+@using PropertySaaS.Domain.Enums
 
 <PageTitle>Maintenance</PageTitle>
 
 <MudStack Spacing="3">
-    <MudText Typo="Typo.h4">Maintenance & vendor marketplace</MudText>
+    <MudStack Spacing="0">
+        <MudText Typo="Typo.h4">Maintenance & vendor marketplace</MudText>
+        <MudText Typo="Typo.body2">Keep operational requests visible in one table and open the property profile only when the team needs the deeper asset context.</MudText>
+    </MudStack>
 
-    <MudPaper Class="pa-4">
-        <EditForm Model="_newRequest" OnValidSubmit="CreateAsync">
-            <MudGrid Spacing="2">
-                <MudItem xs="12" md="3"><MudTextField Label="Title" Variant="Variant.Outlined" @bind-Value="_newRequest.Title" /></MudItem>
-                <MudItem xs="12" md="3"><MudTextField Label="Vendor" Variant="Variant.Outlined" @bind-Value="_newRequest.VendorName" /></MudItem>
-                <MudItem xs="12" md="3"><MudTextField Label="Status" Variant="Variant.Outlined" @bind-Value="_newRequest.Status" /></MudItem>
-                <MudItem xs="12" md="3"><MudNumericField T="decimal" Label="Estimated cost" Variant="Variant.Outlined" @bind-Value="_newRequest.EstimatedCost" /></MudItem>
-            </MudGrid>
+    <MudGrid Spacing="2" Class="align-center-grid">
+        <MudItem xs="12" lg="4">
+            <MudTextField T="string"
+                          Label="Search maintenance"
+                          Variant="Variant.Outlined"
+                          Immediate="true"
+                          @bind-Value="_searchText"
+                          Adornment="Adornment.Start"
+                          AdornmentIcon="@Icons.Material.Filled.Search"
+                          Placeholder="Search by title, vendor, property or status" />
+        </MudItem>
+        <MudItem xs="12" sm="4" lg="2">
+            <MudSelect T="string" Label="Priority" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedPriorityFilter">
+                <MudSelectItem T="string" Value="@string.Empty">All priorities</MudSelectItem>
+                @foreach (var option in PriorityOptions)
+                {
+                    <MudSelectItem T="string" Value="@option">@option</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12" sm="4" lg="2">
+            <MudSelect T="string" Label="Status" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedStatusFilter">
+                <MudSelectItem T="string" Value="@string.Empty">All statuses</MudSelectItem>
+                @foreach (var option in StatusOptions)
+                {
+                    <MudSelectItem T="string" Value="@option">@option</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12" sm="4" lg="2">
+            <MudSelect T="string" Label="Property" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedPropertyFilter">
+                <MudSelectItem T="string" Value="@string.Empty">All properties</MudSelectItem>
+                @foreach (var property in _properties)
+                {
+                    <MudSelectItem T="string" Value="@property.Name">@property.Name</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12" lg="2">
+            <MudStack Row="true" Spacing="1" Class="properties-toolbar-actions">
+                @if (HasActiveFilters)
+                {
+                    <MudButton Variant="Variant.Outlined" Color="Color.Default" FullWidth="true" StartIcon="@Icons.Material.Filled.FilterAltOff" OnClick="ClearFilters">Reset</MudButton>
+                }
+                @if (CurrentOrganization.CanManageData)
+                {
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreatePanel">Add request</MudButton>
+                }
+            </MudStack>
+        </MudItem>
+    </MudGrid>
 
-            @if (CurrentOrganization.CanManageData)
-            {
-                <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="mt-4">Add Request</MudButton>
-            }
-        </EditForm>
-    </MudPaper>
+    <MudGrid Spacing="2">
+        <MudItem xs="12" sm="6" lg="3"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">Requests shown</MudText><MudText Typo="Typo.h6">@FilteredRequests.Count()</MudText></MudPaper></MudItem>
+        <MudItem xs="12" sm="6" lg="3"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">Open or scheduled</MudText><MudText Typo="Typo.h6">@FilteredRequests.Count(x => !string.Equals(x.Status, "Closed", StringComparison.OrdinalIgnoreCase))</MudText></MudPaper></MudItem>
+        <MudItem xs="12" sm="6" lg="3"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">Estimated cost</MudText><MudText Typo="Typo.h6">@FilteredRequests.Sum(x => x.EstimatedCost).ToString("C")</MudText></MudPaper></MudItem>
+        <MudItem xs="12" sm="6" lg="3"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">Vendors engaged</MudText><MudText Typo="Typo.h6">@FilteredRequests.Select(x => x.VendorName).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct(StringComparer.OrdinalIgnoreCase).Count()</MudText></MudPaper></MudItem>
+    </MudGrid>
 
-    <MudPaper Class="pa-2">
-        <MudTable Items="_items" Dense="true" Hover="true" Breakpoint="Breakpoint.Sm">
+    <MudPaper Class="pa-2 table-wrap properties-table-shell">
+        <MudTable Items="FilteredRequests.ToList()" Dense="true" Hover="true" Breakpoint="Breakpoint.Md" RowsPerPage="10">
             <HeaderContent>
-                <MudTh>Title</MudTh>
+                <MudTh>Request</MudTh>
+                <MudTh>Property</MudTh>
                 <MudTh>Priority</MudTh>
                 <MudTh>Status</MudTh>
                 <MudTh>Vendor</MudTh>
@@ -35,38 +83,284 @@
                 <MudTh></MudTh>
             </HeaderContent>
             <RowTemplate>
-                <MudTd DataLabel="Title">@context.Title</MudTd>
-                <MudTd DataLabel="Priority">@context.Priority</MudTd>
-                <MudTd DataLabel="Status">@context.Status</MudTd>
-                <MudTd DataLabel="Vendor">@context.VendorName</MudTd>
+                <MudTd DataLabel="Request">
+                    <MudStack Spacing="0">
+                        <MudText Typo="Typo.subtitle2">@context.Title</MudText>
+                        <MudText Typo="Typo.caption" Class="property-address">@GetMaintenanceSummary(context)</MudText>
+                    </MudStack>
+                </MudTd>
+                <MudTd DataLabel="Property"><MudButton Href="@GetPropertyHref(context.PropertyId)" Variant="Variant.Text" Color="Color.Primary" Size="Size.Small">@GetPropertyName(context.PropertyId)</MudButton></MudTd>
+                <MudTd DataLabel="Priority"><MudChip T="string" Variant="Variant.Filled" Color="@GetPriorityColor(context.Priority)">@context.Priority</MudChip></MudTd>
+                <MudTd DataLabel="Status"><MudChip T="string" Variant="Variant.Outlined" Color="@GetStatusColor(context.Status)">@context.Status</MudChip></MudTd>
+                <MudTd DataLabel="Vendor">@GetVendorLabel(context.VendorName)</MudTd>
                 <MudTd DataLabel="Cost">@context.EstimatedCost.ToString("C")</MudTd>
                 <MudTd DataLabel="Actions">
-                    @if (CurrentOrganization.CanManageData)
-                    {
-                        <MudButton Variant="Variant.Outlined" Color="Color.Error" Size="Size.Small" OnClick="() => DeleteAsync(context.Id)">Delete</MudButton>
-                    }
+                    <MudStack Row="true" Spacing="1" Wrap="Wrap.Wrap">
+                        <MudButton Href="@GetPropertyHref(context.PropertyId)" Variant="Variant.Text" Color="Color.Primary" Size="Size.Small">Property profile</MudButton>
+                        @if (CurrentOrganization.CanManageData)
+                        {
+                            <MudButton Variant="Variant.Text" Color="Color.Secondary" Size="Size.Small" OnClick="() => OpenEditPanel(context)">Edit</MudButton>
+                            <MudButton Variant="Variant.Text" Color="Color.Error" Size="Size.Small" OnClick="() => DeleteAsync(context.Id)">Delete</MudButton>
+                        }
+                    </MudStack>
                 </MudTd>
             </RowTemplate>
+            <NoRecordsContent>
+                <MudStack Class="pa-6 properties-empty-state" Spacing="1" AlignItems="AlignItems.Center">
+                    <MudIcon Icon="@Icons.Material.Filled.Build" Size="Size.Large" Color="Color.Default" />
+                    <MudText Typo="Typo.subtitle1">No maintenance requests match the current filters.</MudText>
+                    <MudText Typo="Typo.body2">Reset the filters or add a request to restore operational visibility.</MudText>
+                    @if (HasActiveFilters)
+                    {
+                        <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="ClearFilters">Reset filters</MudButton>
+                    }
+                </MudStack>
+            </NoRecordsContent>
+            <PagerContent>
+                <MudTablePager />
+            </PagerContent>
         </MudTable>
     </MudPaper>
+
+    @if (_isFormPanelOpen)
+    {
+        <div class="property-form-backdrop" @onclick="CloseFormPanel">
+            <MudPaper Class="pa-5 property-form-drawer" Elevation="0" @onclick:stopPropagation="true">
+                <MudStack Spacing="3">
+                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                        <MudStack Spacing="0">
+                            <MudText Typo="Typo.h5">@(_isCreateMode ? "Add request" : "Edit request")</MudText>
+                            <MudText Typo="Typo.body2">Capture the ticket here, then use the linked property profile when the team needs the broader operating timeline.</MudText>
+                        </MudStack>
+                        <MudIconButton Icon="@Icons.Material.Filled.Close" Color="Color.Default" OnClick="CloseFormPanel" />
+                    </MudStack>
+
+                    <EditForm Model="ActiveRequest" OnValidSubmit="SaveFormAsync">
+                        <MudGrid Spacing="2">
+                            <MudItem xs="12" md="6"><MudTextField Label="Title" Variant="Variant.Outlined" @bind-Value="ActiveRequest.Title" /></MudItem>
+                            <MudItem xs="12" md="6"><MudTextField Label="Vendor" Variant="Variant.Outlined" @bind-Value="ActiveRequest.VendorName" /></MudItem>
+                            <MudItem xs="12" md="6">
+                                <MudSelect T="Guid?" Label="Property" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="FormPropertyId">
+                                    <MudSelectItem T="Guid?" Value="@((Guid?)null)">Select property</MudSelectItem>
+                                    @foreach (var property in _properties)
+                                    {
+                                        <MudSelectItem T="Guid?" Value="@((Guid?)property.Id)">@property.Name</MudSelectItem>
+                                    }
+                                </MudSelect>
+                            </MudItem>
+                            <MudItem xs="12" md="6">
+                                <MudSelect T="Guid?" Label="Unit" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="FormUnitId">
+                                    <MudSelectItem T="Guid?" Value="@((Guid?)null)">Optional unit</MudSelectItem>
+                                    @foreach (var unit in AvailableUnits)
+                                    {
+                                        <MudSelectItem T="Guid?" Value="@((Guid?)unit.Id)">@GetUnitDisplay(unit)</MudSelectItem>
+                                    }
+                                </MudSelect>
+                            </MudItem>
+                            <MudItem xs="12" md="4">
+                                <MudSelect T="MaintenancePriority" Label="Priority" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="ActiveRequest.Priority">
+                                    @foreach (var priority in Enum.GetValues<MaintenancePriority>())
+                                    {
+                                        <MudSelectItem T="MaintenancePriority" Value="@priority">@priority</MudSelectItem>
+                                    }
+                                </MudSelect>
+                            </MudItem>
+                            <MudItem xs="12" md="4"><MudTextField Label="Status" Variant="Variant.Outlined" @bind-Value="ActiveRequest.Status" /></MudItem>
+                            <MudItem xs="12" md="4"><MudNumericField T="decimal" Label="Estimated cost" Variant="Variant.Outlined" Adornment="Adornment.Start" AdornmentText="$" @bind-Value="ActiveRequest.EstimatedCost" /></MudItem>
+                            <MudItem xs="12"><MudDatePicker Label="Requested date" Variant="Variant.Outlined" @bind-Date="_formRequestedDate" Editable="true" /></MudItem>
+                            <MudItem xs="12"><MudTextField Label="Description" Variant="Variant.Outlined" Lines="4" @bind-Value="ActiveRequest.Description" /></MudItem>
+                            <MudItem xs="12"><MudPaper Class="pa-3 property-detail-panel" Elevation="0"><MudText Typo="Typo.subtitle2">Operations note</MudText><MudText Typo="Typo.body2">@GetFormGuidance()</MudText></MudPaper></MudItem>
+                        </MudGrid>
+
+                        <MudStack Row="true" Spacing="2" Class="mt-4" Justify="Justify.FlexEnd">
+                            <MudButton Variant="Variant.Text" Color="Color.Default" OnClick="CloseFormPanel">Cancel</MudButton>
+                            <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary">@(_isCreateMode ? "Create request" : "Save changes")</MudButton>
+                        </MudStack>
+                    </EditForm>
+                </MudStack>
+            </MudPaper>
+        </div>
+    }
 </MudStack>
 
 @code {
     private List<MaintenanceRequest> _items = new();
-    private MaintenanceRequest _newRequest = new() { Priority = PropertySaaS.Domain.Enums.MaintenancePriority.Medium, Status = "Open" };
-    protected override async Task OnInitializedAsync() => await ReloadAsync();
-    private async Task ReloadAsync() => _items = await DataService.GetMaintenanceAsync();
-    private async Task CreateAsync()
+    private List<Property> _properties = new();
+    private List<Unit> _units = new();
+    private MaintenanceRequest _newRequest = new() { Priority = MaintenancePriority.Medium, Status = "Open" };
+    private MaintenanceRequest _editRequest = new() { Priority = MaintenancePriority.Medium, Status = "Open" };
+    private DateTime? _formRequestedDate = DateTime.Today;
+    private string _searchText = string.Empty;
+    private string _selectedPriorityFilter = string.Empty;
+    private string _selectedStatusFilter = string.Empty;
+    private string _selectedPropertyFilter = string.Empty;
+    private bool _isFormPanelOpen;
+    private bool _isCreateMode = true;
+
+    private bool HasActiveFilters => !string.IsNullOrWhiteSpace(_searchText) || !string.IsNullOrWhiteSpace(_selectedPriorityFilter) || !string.IsNullOrWhiteSpace(_selectedStatusFilter) || !string.IsNullOrWhiteSpace(_selectedPropertyFilter);
+    private MaintenanceRequest ActiveRequest => _isCreateMode ? _newRequest : _editRequest;
+    private IEnumerable<string> PriorityOptions => Enum.GetNames<MaintenancePriority>();
+    private IEnumerable<string> StatusOptions => _items.Select(x => x.Status).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(x => x);
+    private IEnumerable<Unit> AvailableUnits => FormPropertyId is null || FormPropertyId == Guid.Empty ? _units : _units.Where(x => x.PropertyId == FormPropertyId.Value);
+
+    private Guid? FormPropertyId
     {
-        await DataService.AddMaintenanceAsync(_newRequest);
-        _newRequest = new MaintenanceRequest { Priority = PropertySaaS.Domain.Enums.MaintenancePriority.Medium, Status = "Open" };
-        await ReloadAsync();
+        get => ActiveRequest.PropertyId == Guid.Empty ? null : ActiveRequest.PropertyId;
+        set
+        {
+            ActiveRequest.PropertyId = value ?? Guid.Empty;
+            if (ActiveRequest.UnitId.HasValue && !AvailableUnits.Any(x => x.Id == ActiveRequest.UnitId.Value))
+            {
+                ActiveRequest.UnitId = null;
+            }
+        }
     }
+
+    private Guid? FormUnitId
+    {
+        get => ActiveRequest.UnitId;
+        set => ActiveRequest.UnitId = value;
+    }
+
+    private IEnumerable<MaintenanceRequest> FilteredRequests => _items
+        .Where(request => string.IsNullOrWhiteSpace(_searchText)
+            || request.Title.Contains(_searchText, StringComparison.OrdinalIgnoreCase)
+            || request.Status.Contains(_searchText, StringComparison.OrdinalIgnoreCase)
+            || GetVendorLabel(request.VendorName).Contains(_searchText, StringComparison.OrdinalIgnoreCase)
+            || GetPropertyName(request.PropertyId).Contains(_searchText, StringComparison.OrdinalIgnoreCase))
+        .Where(request => string.IsNullOrWhiteSpace(_selectedPriorityFilter) || string.Equals(request.Priority.ToString(), _selectedPriorityFilter, StringComparison.OrdinalIgnoreCase))
+        .Where(request => string.IsNullOrWhiteSpace(_selectedStatusFilter) || string.Equals(request.Status, _selectedStatusFilter, StringComparison.OrdinalIgnoreCase))
+        .Where(request => string.IsNullOrWhiteSpace(_selectedPropertyFilter) || string.Equals(GetPropertyName(request.PropertyId), _selectedPropertyFilter, StringComparison.OrdinalIgnoreCase));
+
+    protected override async Task OnInitializedAsync() => await ReloadAsync();
+
+    private async Task ReloadAsync()
+    {
+        _items = await DataService.GetMaintenanceAsync();
+        _properties = await DataService.GetPropertiesAsync();
+        _units = await DataService.GetUnitsAsync();
+    }
+
+    private void OpenCreatePanel()
+    {
+        _isCreateMode = true;
+        _newRequest = new MaintenanceRequest { Priority = MaintenancePriority.Medium, Status = "Open" };
+        _formRequestedDate = DateTime.Today;
+        _isFormPanelOpen = true;
+    }
+
+    private void OpenEditPanel(MaintenanceRequest request)
+    {
+        _isCreateMode = false;
+        _editRequest = new MaintenanceRequest
+        {
+            Id = request.Id,
+            PropertyId = request.PropertyId,
+            UnitId = request.UnitId,
+            Title = request.Title,
+            Description = request.Description,
+            Priority = request.Priority,
+            Status = request.Status,
+            VendorName = request.VendorName,
+            EstimatedCost = request.EstimatedCost,
+            RequestedDate = request.RequestedDate
+        };
+        _formRequestedDate = request.RequestedDate.ToDateTime(TimeOnly.MinValue);
+        _isFormPanelOpen = true;
+    }
+
+    private void CloseFormPanel()
+    {
+        _isFormPanelOpen = false;
+        _isCreateMode = true;
+    }
+
+    private async Task SaveFormAsync()
+    {
+        if (ActiveRequest.PropertyId == Guid.Empty)
+        {
+            return;
+        }
+
+        ActiveRequest.RequestedDate = DateOnly.FromDateTime(_formRequestedDate ?? DateTime.Today);
+
+        if (_isCreateMode)
+        {
+            await DataService.AddMaintenanceAsync(_newRequest);
+            _newRequest = new MaintenanceRequest { Priority = MaintenancePriority.Medium, Status = "Open" };
+        }
+        else
+        {
+            await DataService.UpdateMaintenanceAsync(_editRequest);
+            _editRequest = new MaintenanceRequest { Priority = MaintenancePriority.Medium, Status = "Open" };
+        }
+
+        await ReloadAsync();
+        CloseFormPanel();
+    }
+
     private async Task DeleteAsync(Guid id)
     {
         await DataService.DeleteMaintenanceAsync(id);
         await ReloadAsync();
     }
+
+    private void ClearFilters()
+    {
+        _searchText = string.Empty;
+        _selectedPriorityFilter = string.Empty;
+        _selectedStatusFilter = string.Empty;
+        _selectedPropertyFilter = string.Empty;
+    }
+
+    private string GetPropertyName(Guid propertyId)
+        => _properties.FirstOrDefault(x => x.Id == propertyId)?.Name ?? "Unknown property";
+
+    private string GetPropertyHref(Guid propertyId)
+        => propertyId == Guid.Empty ? "/properties" : $"/properties/{propertyId}";
+
+    private string GetUnitDisplay(Unit unit)
+        => $"{unit.UnitNumber} · {GetPropertyName(unit.PropertyId)}";
+
+    private static string GetVendorLabel(string vendor)
+        => string.IsNullOrWhiteSpace(vendor) ? "Unassigned" : vendor;
+
+    private string GetMaintenanceSummary(MaintenanceRequest request)
+    {
+        var scope = request.UnitId.HasValue ? $"Unit {GetUnitLabel(request.UnitId.Value)}" : "Property-level request";
+        return $"{scope} • {request.RequestedDate}";
+    }
+
+    private string GetUnitLabel(Guid unitId)
+        => _units.FirstOrDefault(x => x.Id == unitId)?.UnitNumber ?? "Unknown unit";
+
+    private static Color GetPriorityColor(MaintenancePriority priority)
+        => priority switch
+        {
+            MaintenancePriority.Emergency => Color.Error,
+            MaintenancePriority.High => Color.Warning,
+            MaintenancePriority.Medium => Color.Info,
+            _ => Color.Success
+        };
+
+    private static Color GetStatusColor(string status)
+        => status switch
+        {
+            "Closed" => Color.Success,
+            "Scheduled" => Color.Info,
+            "In Progress" => Color.Warning,
+            _ => Color.Default
+        };
+
+    private string GetFormGuidance()
+    {
+        if (ActiveRequest.PropertyId == Guid.Empty)
+        {
+            return "Attach the request to a property first so the operating team can trace the issue inside the asset profile.";
+        }
+
+        return ActiveRequest.Priority == MaintenancePriority.Emergency
+            ? "Emergency ticket: keep vendor handoff, timeline and resident communication tight from the first update."
+            : "Use this form for the essentials, then rely on the property profile to coordinate broader operational follow-up.";
+    }
 }
-
-

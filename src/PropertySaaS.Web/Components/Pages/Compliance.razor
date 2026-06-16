@@ -5,30 +5,100 @@
 <PageTitle>Compliance</PageTitle>
 
 <MudStack Spacing="3">
-    <MudText Typo="Typo.h4">Ontario RTA compliance reminders</MudText>
+    <MudStack Spacing="0">
+        <MudText Typo="Typo.h4">Ontario RTA compliance reminders</MudText>
+        <MudText Typo="Typo.body2">Keep reminder workflows scannable here and open the linked templates only when the team needs the full legal document package.</MudText>
+    </MudStack>
 
-    <MudGrid Spacing="3">
-        <MudItem xs="12" md="8">
-            <MudPaper Class="pa-2">
-                <MudTable Items="_items" Dense="true" Hover="true" Breakpoint="Breakpoint.Sm">
-                    <HeaderContent>
-                        <MudTh>Reminder</MudTh>
-                        <MudTh>Notice</MudTh>
-                        <MudTh>Due</MudTh>
-                        <MudTh>Reference</MudTh>
-                    </HeaderContent>
-                    <RowTemplate>
-                        <MudTd DataLabel="Reminder">@context.Title</MudTd>
-                        <MudTd DataLabel="Notice"><MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Info">@context.NoticeType</MudChip></MudTd>
-                        <MudTd DataLabel="Due">@context.DueDate</MudTd>
-                        <MudTd DataLabel="Reference">@context.Reference</MudTd>
-                    </RowTemplate>
-                </MudTable>
-            </MudPaper>
+    <MudGrid Spacing="2" Class="align-center-grid">
+        <MudItem xs="12" lg="4">
+            <MudTextField T="string"
+                          Label="Search reminders"
+                          Variant="Variant.Outlined"
+                          Immediate="true"
+                          @bind-Value="_searchText"
+                          Adornment="Adornment.Start"
+                          AdornmentIcon="@Icons.Material.Filled.Search"
+                          Placeholder="Search by title, notice or reference" />
         </MudItem>
+        <MudItem xs="12" sm="4" lg="2">
+            <MudSelect T="string" Label="Notice" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedNoticeFilter">
+                <MudSelectItem T="string" Value="@string.Empty">All notices</MudSelectItem>
+                @foreach (var option in NoticeOptions)
+                {
+                    <MudSelectItem T="string" Value="@option">@option</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12" sm="4" lg="2">
+            <MudSelect T="string" Label="State" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedStateFilter">
+                <MudSelectItem T="string" Value="@string.Empty">All states</MudSelectItem>
+                <MudSelectItem T="string" Value='@("Open")'>Open</MudSelectItem>
+                <MudSelectItem T="string" Value='@("Completed")'>Completed</MudSelectItem>
+                <MudSelectItem T="string" Value='@("Due soon")'>Due soon</MudSelectItem>
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12" sm="4" lg="2">
+            <MudStack Row="true" Spacing="1" Class="properties-toolbar-actions">
+                @if (HasActiveFilters)
+                {
+                    <MudButton Variant="Variant.Outlined" Color="Color.Default" FullWidth="true" StartIcon="@Icons.Material.Filled.FilterAltOff" OnClick="ClearFilters">Reset</MudButton>
+                }
+            </MudStack>
+        </MudItem>
+        <MudItem xs="12" lg="2">
+            <MudButton Href="/docs/ontario-standard-lease" Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" StartIcon="@Icons.Material.Filled.Description">Open templates</MudButton>
+        </MudItem>
+    </MudGrid>
 
-        <MudItem xs="12" md="4">
-            <MudPaper Class="pa-4 mb-4">
+    <MudGrid Spacing="2">
+        <MudItem xs="12" sm="6" lg="3"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">Reminders shown</MudText><MudText Typo="Typo.h6">@FilteredItems.Count()</MudText></MudPaper></MudItem>
+        <MudItem xs="12" sm="6" lg="3"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">Due soon</MudText><MudText Typo="Typo.h6">@FilteredItems.Count(x => !x.IsCompleted && x.DueDate <= DateOnly.FromDateTime(DateTime.Today.AddDays(14)))</MudText></MudPaper></MudItem>
+        <MudItem xs="12" sm="6" lg="3"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">Completed</MudText><MudText Typo="Typo.h6">@FilteredItems.Count(x => x.IsCompleted)</MudText></MudPaper></MudItem>
+        <MudItem xs="12" sm="6" lg="3"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">Notice types</MudText><MudText Typo="Typo.h6">@FilteredItems.Select(x => x.NoticeType).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct(StringComparer.OrdinalIgnoreCase).Count()</MudText></MudPaper></MudItem>
+    </MudGrid>
+
+    <MudPaper Class="pa-2 table-wrap properties-table-shell">
+        <MudTable Items="FilteredItems.ToList()" Dense="true" Hover="true" Breakpoint="Breakpoint.Md" RowsPerPage="10">
+            <HeaderContent>
+                <MudTh>Reminder</MudTh>
+                <MudTh>Notice</MudTh>
+                <MudTh>Due</MudTh>
+                <MudTh>State</MudTh>
+                <MudTh>Reference</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Reminder">
+                    <MudStack Spacing="0">
+                        <MudText Typo="Typo.subtitle2">@context.Title</MudText>
+                        <MudText Typo="Typo.caption" Class="property-address">@GetReminderNarrative(context)</MudText>
+                    </MudStack>
+                </MudTd>
+                <MudTd DataLabel="Notice"><MudChip T="string" Variant="Variant.Outlined" Color="Color.Info">@context.NoticeType</MudChip></MudTd>
+                <MudTd DataLabel="Due">@context.DueDate</MudTd>
+                <MudTd DataLabel="State"><MudChip T="string" Variant="Variant.Filled" Color="@GetStateColor(context)">@GetStateLabel(context)</MudChip></MudTd>
+                <MudTd DataLabel="Reference">@context.Reference</MudTd>
+            </RowTemplate>
+            <NoRecordsContent>
+                <MudStack Class="pa-6 properties-empty-state" Spacing="1" AlignItems="AlignItems.Center">
+                    <MudIcon Icon="@Icons.Material.Filled.Gavel" Size="Size.Large" Color="Color.Default" />
+                    <MudText Typo="Typo.subtitle1">No compliance reminders match the current filters.</MudText>
+                    <MudText Typo="Typo.body2">Reset the filters to bring the Ontario workflow backlog back into view.</MudText>
+                    @if (HasActiveFilters)
+                    {
+                        <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="ClearFilters">Reset filters</MudButton>
+                    }
+                </MudStack>
+            </NoRecordsContent>
+            <PagerContent>
+                <MudTablePager />
+            </PagerContent>
+        </MudTable>
+    </MudPaper>
+
+    <MudGrid Spacing="2">
+        <MudItem xs="12" md="6">
+            <MudPaper Class="pa-4 property-detail-panel h-100" Elevation="0">
                 <MudText Typo="Typo.h6" GutterBottom="true">Ontario templates</MudText>
                 <MudList T="string" Dense="true">
                     <MudListItem T="string" Href="/docs/ontario-standard-lease">Ontario Standard Lease Package</MudListItem>
@@ -36,8 +106,9 @@
                     <MudListItem T="string" Href="/docs/n1-template">N1 Rent Increase Notice</MudListItem>
                 </MudList>
             </MudPaper>
-
-            <MudPaper Class="pa-4">
+        </MudItem>
+        <MudItem xs="12" md="6">
+            <MudPaper Class="pa-4 property-detail-panel h-100" Elevation="0">
                 <MudText Typo="Typo.h6" GutterBottom="true">Operational checklist</MudText>
                 <MudList T="string" Dense="true">
                     <MudListItem T="string">Review 90-day rent increase workflows</MudListItem>
@@ -51,5 +122,57 @@
 
 @code {
     private List<ComplianceReminder> _items = new();
+    private string _searchText = string.Empty;
+    private string _selectedNoticeFilter = string.Empty;
+    private string _selectedStateFilter = string.Empty;
+
+    private bool HasActiveFilters => !string.IsNullOrWhiteSpace(_searchText) || !string.IsNullOrWhiteSpace(_selectedNoticeFilter) || !string.IsNullOrWhiteSpace(_selectedStateFilter);
+    private IEnumerable<string> NoticeOptions => _items.Select(x => x.NoticeType).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(x => x);
+
+    private IEnumerable<ComplianceReminder> FilteredItems => _items
+        .Where(item => string.IsNullOrWhiteSpace(_searchText)
+            || item.Title.Contains(_searchText, StringComparison.OrdinalIgnoreCase)
+            || item.NoticeType.Contains(_searchText, StringComparison.OrdinalIgnoreCase)
+            || item.Reference.Contains(_searchText, StringComparison.OrdinalIgnoreCase))
+        .Where(item => string.IsNullOrWhiteSpace(_selectedNoticeFilter) || string.Equals(item.NoticeType, _selectedNoticeFilter, StringComparison.OrdinalIgnoreCase))
+        .Where(item => string.IsNullOrWhiteSpace(_selectedStateFilter) || string.Equals(GetStateLabel(item), _selectedStateFilter, StringComparison.OrdinalIgnoreCase));
+
     protected override async Task OnInitializedAsync() => _items = await DataService.GetComplianceAsync();
+
+    private void ClearFilters()
+    {
+        _searchText = string.Empty;
+        _selectedNoticeFilter = string.Empty;
+        _selectedStateFilter = string.Empty;
+    }
+
+    private static string GetStateLabel(ComplianceReminder reminder)
+    {
+        if (reminder.IsCompleted)
+        {
+            return "Completed";
+        }
+
+        if (reminder.DueDate <= DateOnly.FromDateTime(DateTime.Today.AddDays(14)))
+        {
+            return "Due soon";
+        }
+
+        return "Open";
+    }
+
+    private static Color GetStateColor(ComplianceReminder reminder)
+        => GetStateLabel(reminder) switch
+        {
+            "Completed" => Color.Success,
+            "Due soon" => Color.Warning,
+            _ => Color.Info
+        };
+
+    private static string GetReminderNarrative(ComplianceReminder reminder)
+        => reminder.IsCompleted
+            ? "Workflow completed and available for audit reference."
+            : reminder.DueDate <= DateOnly.FromDateTime(DateTime.Today.AddDays(14))
+                ? "Time-sensitive Ontario action; keep service dates and supporting evidence tight."
+                : "Open reminder in the Ontario workflow queue.";
 }
