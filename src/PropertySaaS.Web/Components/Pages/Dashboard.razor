@@ -1,8 +1,10 @@
 @attribute [Authorize]
 @page "/dashboard"
 @inject SaasDataService DataService
+@inject PropertySaaS.Application.Common.CurrentOrganization CurrentOrganization
+@using PropertySaaS.Web.Localization
 
-<PageTitle>Dashboard</PageTitle>
+<PageTitle>@UiText.Get("Dashboard_PageTitle")</PageTitle>
 
 @if (_summary is null)
 {
@@ -14,33 +16,33 @@ else
 {
     <MudContainer MaxWidth="MaxWidth.False" Class="px-0">
         <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-4" Wrap="Wrap.Wrap">
-            <MudText Typo="Typo.h4">Portfolio dashboard</MudText>
+                <MudText Typo="Typo.h4">@UiText.Get("Dashboard_Title")</MudText>
             <MudChip T="string" Color="Color.Primary" Variant="Variant.Filled">@OccupancyCaption</MudChip>
         </MudStack>
 
         <MudGrid Spacing="3">
-            <MudItem xs="12" sm="6" md="3"><MetricCard Title="Properties" Value="@_summary.Properties.ToString()" Caption="Managed buildings" Icon="@Icons.Material.Filled.Apartment" /></MudItem>
-            <MudItem xs="12" sm="6" md="3"><MetricCard Title="Units" Value="@_summary.Units.ToString()" Caption="@OccupancyCaption" Icon="@Icons.Material.Filled.MeetingRoom" /></MudItem>
-            <MudItem xs="12" sm="6" md="3"><MetricCard Title="Active leases" Value="@_summary.ActiveLeases.ToString()" Caption="Ontario standard lease tracked" Icon="@Icons.Material.Filled.Description" /></MudItem>
-            <MudItem xs="12" sm="6" md="3"><MetricCard Title="Rent roll" Value="@RentRollValue" Caption="Monthly contracted rent" Icon="@Icons.Material.Filled.Paid" /></MudItem>
+            <MudItem xs="12" sm="6" md="3"><MetricCard Title="@UiText.Get("Nav_Properties")" Value="@_summary.Properties.ToString()" Caption="@UiText.Get("Dashboard_ManagedBuildings")" Icon="@Icons.Material.Filled.Apartment" /></MudItem>
+            <MudItem xs="12" sm="6" md="3"><MetricCard Title="@UiText.Get("Nav_Units")" Value="@_summary.Units.ToString()" Caption="@OccupancyCaption" Icon="@Icons.Material.Filled.MeetingRoom" /></MudItem>
+            <MudItem xs="12" sm="6" md="3"><MetricCard Title="@UiText.Get("Dashboard_ActiveLeases")" Value="@_summary.ActiveLeases.ToString()" Caption="@CurrentOrganization.Jurisdiction.LeasePackageLabel" Icon="@Icons.Material.Filled.Description" /></MudItem>
+            <MudItem xs="12" sm="6" md="3"><MetricCard Title="@UiText.Get("Dashboard_RentRoll")" Value="@RentRollValue" Caption="@UiText.Get("Dashboard_MonthlyContractedRent")" Icon="@Icons.Material.Filled.Paid" /></MudItem>
 
-            <MudItem xs="12" sm="6" md="4"><MetricCard Title="Open maintenance" Value="@_summary.OpenMaintenance.ToString()" Caption="Vendor coordination queue" Icon="@Icons.Material.Filled.BuildCircle" /></MudItem>
-            <MudItem xs="12" sm="6" md="4"><MetricCard Title="Compliance due soon" Value="@_summary.ComplianceDueSoon.ToString()" Caption="RTA notice and form workflow" Icon="@Icons.Material.Filled.EventNote" /></MudItem>
-            <MudItem xs="12" sm="6" md="4"><MetricCard Title="Tenants" Value="@_summary.Tenants.ToString()" Caption="Screening-ready contacts" Icon="@Icons.Material.Filled.Groups2" /></MudItem>
+            <MudItem xs="12" sm="6" md="4"><MetricCard Title="@UiText.Get("Dashboard_OpenMaintenance")" Value="@_summary.OpenMaintenance.ToString()" Caption="@UiText.Get("Dashboard_VendorCoordinationQueue")" Icon="@Icons.Material.Filled.BuildCircle" /></MudItem>
+            <MudItem xs="12" sm="6" md="4"><MetricCard Title="@UiText.Get("Dashboard_ComplianceDueSoon")" Value="@_summary.ComplianceDueSoon.ToString()" Caption="@UiText.Format("Dashboard_WorkflowQueue", CurrentOrganization.Jurisdiction.ProvinceDisplayName)" Icon="@Icons.Material.Filled.EventNote" /></MudItem>
+            <MudItem xs="12" sm="6" md="4"><MetricCard Title="@UiText.Get("Dashboard_Tenants")" Value="@_summary.Tenants.ToString()" Caption="@UiText.Get("Dashboard_ScreeningReadyContacts")" Icon="@Icons.Material.Filled.Groups2" /></MudItem>
 
-            <MudItem xs="12" sm="6" md="4"><MetricCard Title="Subscription tier" Value="@_summary.SubscriptionTier" Caption="Stripe-ready plan snapshot" Icon="@Icons.Material.Filled.Subscriptions" /></MudItem>
-            <MudItem xs="12" sm="6" md="4"><MetricCard Title="Ontario notices" Value="@_summary.OntarioNoticesInWorkflow.ToString()" Caption="Active N1/N4 and notice workflows" Icon="@Icons.Material.Filled.Gavel" /></MudItem>
-            <MudItem xs="12" sm="6" md="4"><MetricCard Title="Exports ready" Value="@_summary.ExportFeedsReady.ToString()" Caption="Properties, tenants and leases CSV" Icon="@Icons.Material.Filled.ImportExport" /></MudItem>
+            <MudItem xs="12" sm="6" md="4"><MetricCard Title="@UiText.Get("Dashboard_SubscriptionTier")" Value="@_summary.SubscriptionTier" Caption="@UiText.Get("Dashboard_StripeReadyPlanSnapshot")" Icon="@Icons.Material.Filled.Subscriptions" /></MudItem>
+            <MudItem xs="12" sm="6" md="4"><MetricCard Title="@UiText.Format("Dashboard_NoticesTitle", CurrentOrganization.Jurisdiction.ProvinceDisplayName)" Value="@_summary.JurisdictionNoticesInWorkflow.ToString()" Caption="@UiText.Format("Dashboard_NoticesCaption", string.Join("/", CurrentOrganization.Jurisdiction.NoticeTypes))" Icon="@Icons.Material.Filled.Gavel" /></MudItem>
+            <MudItem xs="12" sm="6" md="4"><MetricCard Title="@UiText.Get("Dashboard_ExportsReady")" Value="@_summary.ExportFeedsReady.ToString()" Caption="@UiText.Get("Dashboard_ExportsCaption")" Icon="@Icons.Material.Filled.ImportExport" /></MudItem>
 
-            <MudItem xs="12" md="6"><MetricCard Title="Occupied units" Value="@_summary.OccupiedUnits.ToString()" Caption="Income-producing inventory" Icon="@Icons.Material.Filled.DomainVerification" /></MudItem>
-            <MudItem xs="12" md="6"><MetricCard Title="Vacant units" Value="@_summary.VacantUnits.ToString()" Caption="Leasing opportunities to fill" Icon="@Icons.Material.Filled.HomeWork" /></MudItem>
+            <MudItem xs="12" md="6"><MetricCard Title="@UiText.Get("Dashboard_OccupiedUnits")" Value="@_summary.OccupiedUnits.ToString()" Caption="@UiText.Get("Dashboard_IncomeProducingInventory")" Icon="@Icons.Material.Filled.DomainVerification" /></MudItem>
+            <MudItem xs="12" md="6"><MetricCard Title="@UiText.Get("Dashboard_VacantUnits")" Value="@_summary.VacantUnits.ToString()" Caption="@UiText.Get("Dashboard_LeasingOpportunities")" Icon="@Icons.Material.Filled.HomeWork" /></MudItem>
         </MudGrid>
     </MudContainer>
 }
 
 @code {
     private DashboardSummaryDto? _summary;
-    private string OccupancyCaption => _summary is null ? string.Empty : $"{_summary.OccupancyRate}% occupied";
+    private string OccupancyCaption => _summary is null ? string.Empty : UiText.Format("Dashboard_OccupancyCaption", _summary.OccupancyRate);
     private string RentRollValue => _summary is null ? string.Empty : _summary.MonthlyRentRoll.ToString("C");
 
     protected override async Task OnInitializedAsync()

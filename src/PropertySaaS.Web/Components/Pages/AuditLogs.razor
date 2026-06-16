@@ -1,27 +1,28 @@
 @attribute [Authorize]
 @page "/audit-logs"
 @inject SaasDataService DataService
+@using PropertySaaS.Web.Localization
 
-<PageTitle>Audit Logs</PageTitle>
+<PageTitle>@UiText.Get("AuditLogs_PageTitle")</PageTitle>
 
 <MudStack Spacing="3">
-    <MudText Typo="Typo.h4">Audit logs</MudText>
+    <MudText Typo="Typo.h4">@UiText.Get("AuditLogs_Title")</MudText>
 
     <MudPaper Class="pa-2">
         <MudTable Items="_items" Dense="true" Hover="true" Breakpoint="Breakpoint.Sm">
             <HeaderContent>
-                <MudTh>When (UTC)</MudTh>
-                <MudTh>Entity</MudTh>
-                <MudTh>Action</MudTh>
-                <MudTh>By</MudTh>
-                <MudTh>Details</MudTh>
+                <MudTh>@UiText.Get("AuditLogs_ColumnWhenUtc")</MudTh>
+                <MudTh>@UiText.Get("AuditLogs_ColumnEntity")</MudTh>
+                <MudTh>@UiText.Get("AuditLogs_ColumnAction")</MudTh>
+                <MudTh>@UiText.Get("AuditLogs_ColumnBy")</MudTh>
+                <MudTh>@UiText.Get("AuditLogs_ColumnDetails")</MudTh>
             </HeaderContent>
             <RowTemplate>
-                <MudTd DataLabel="When (UTC)">@context.CreatedUtc</MudTd>
-                <MudTd DataLabel="Entity">@context.EntityName</MudTd>
-                <MudTd DataLabel="Action">@context.Action</MudTd>
-                <MudTd DataLabel="By">@context.PerformedBy</MudTd>
-                <MudTd DataLabel="Details">@context.Details</MudTd>
+                <MudTd DataLabel="@UiText.Get("AuditLogs_ColumnWhenUtc")">@context.CreatedUtc</MudTd>
+                <MudTd DataLabel="@UiText.Get("AuditLogs_ColumnEntity")">@context.EntityName</MudTd>
+                <MudTd DataLabel="@UiText.Get("AuditLogs_ColumnAction")">@context.Action</MudTd>
+                <MudTd DataLabel="@UiText.Get("AuditLogs_ColumnBy")">@context.PerformedBy</MudTd>
+                <MudTd DataLabel="@UiText.Get("AuditLogs_ColumnDetails")">@context.Details</MudTd>
             </RowTemplate>
         </MudTable>
     </MudPaper>

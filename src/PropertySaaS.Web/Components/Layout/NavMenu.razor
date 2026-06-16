@@ -1,17 +1,20 @@
+@using PropertySaaS.Web.Localization
+
 <MudNavMenu Class="material-nav-menu">
-    <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Campaign">Marketing</MudNavLink>
-    <MudNavLink Href="/pricing" Icon="@Icons.Material.Filled.Payments">Pricing</MudNavLink>
-    <MudNavLink Href="/dashboard" Icon="@Icons.Material.Filled.Dashboard">Dashboard</MudNavLink>
-    <MudNavLink Href="/properties" Icon="@Icons.Material.Filled.Apartment">Properties</MudNavLink>
-    <MudNavLink Href="/units" Icon="@Icons.Material.Filled.MeetingRoom">Units</MudNavLink>
-    <MudNavLink Href="/tenants" Icon="@Icons.Material.Filled.Groups">Tenants</MudNavLink>
-    <MudNavLink Href="/leases" Icon="@Icons.Material.Filled.Description">Leases</MudNavLink>
-    <MudNavLink Href="/maintenance" Icon="@Icons.Material.Filled.Build">Maintenance</MudNavLink>
-    <MudNavLink Href="/compliance" Icon="@Icons.Material.Filled.Gavel">Compliance</MudNavLink>
-    <MudNavLink Href="/subscriptions" Icon="@Icons.Material.Filled.Subscriptions">Subscriptions</MudNavLink>
-    <MudNavLink Href="/audit-logs" Icon="@Icons.Material.Filled.FactCheck">Audit Logs</MudNavLink>
-    <MudNavLink Href="/import-export" Icon="@Icons.Material.Filled.ImportExport">Import / Export</MudNavLink>
+    <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Campaign">@UiText.Get("Nav_Marketing")</MudNavLink>
+    <MudNavLink Href="/pricing" Icon="@Icons.Material.Filled.Payments">@UiText.Get("Nav_Pricing")</MudNavLink>
+    <MudNavLink Href="/dashboard" Icon="@Icons.Material.Filled.Dashboard">@UiText.Get("Nav_Dashboard")</MudNavLink>
+    <MudNavLink Href="/properties" Icon="@Icons.Material.Filled.Apartment">@UiText.Get("Nav_Properties")</MudNavLink>
+    <MudNavLink Href="/units" Icon="@Icons.Material.Filled.MeetingRoom">@UiText.Get("Nav_Units")</MudNavLink>
+    <MudNavLink Href="/tenants" Icon="@Icons.Material.Filled.Groups">@UiText.Get("Nav_Tenants")</MudNavLink>
+    <MudNavLink Href="/leases" Icon="@Icons.Material.Filled.Description">@UiText.Get("Nav_Leases")</MudNavLink>
+    <MudNavLink Href="/maintenance" Icon="@Icons.Material.Filled.Build">@UiText.Get("Nav_Maintenance")</MudNavLink>
+    <MudNavLink Href="/compliance" Icon="@Icons.Material.Filled.Gavel">@UiText.Get("Nav_Compliance")</MudNavLink>
+    <MudNavLink Href="/profile" Icon="@Icons.Material.Filled.Person">@UiText.Get("Nav_Profile")</MudNavLink>
+    <MudNavLink Href="/subscriptions" Icon="@Icons.Material.Filled.Subscriptions">@UiText.Get("Nav_Subscriptions")</MudNavLink>
+    <MudNavLink Href="/audit-logs" Icon="@Icons.Material.Filled.FactCheck">@UiText.Get("Nav_AuditLogs")</MudNavLink>
+    <MudNavLink Href="/import-export" Icon="@Icons.Material.Filled.ImportExport">@UiText.Get("Nav_ImportExport")</MudNavLink>
     <MudDivider Class="my-2" />
-    <MudNavLink Href="/account/login" Icon="@Icons.Material.Filled.Login">Sign in with Clerk</MudNavLink>
-    <MudNavLink Href="/account/logout" Icon="@Icons.Material.Filled.Logout">Sign out</MudNavLink>
+    <MudNavLink Href="/account/login" Icon="@Icons.Material.Filled.Login">@UiText.Get("Nav_SignIn")</MudNavLink>
+    <MudNavLink Href="/account/logout" Icon="@Icons.Material.Filled.Logout">@UiText.Get("Nav_SignOut")</MudNavLink>
 </MudNavMenu>

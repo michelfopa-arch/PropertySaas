@@ -1,10 +1,12 @@
 using System.Text;
+using System.Globalization;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Localization;
 using MudBlazor.Services;
 using PropertySaaS.Application.Abstractions;
 using PropertySaaS.Application.Common;
@@ -24,6 +26,7 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddApplicationServices();
 builder.Services.AddInfrastructureServices(builder.Configuration);
 builder.Services.AddAuthorization();
+builder.Services.AddLocalization(options => options.ResourcesPath = "Resources");
 var authenticationBuilder = builder.Services.AddAuthentication(options =>
 {
     options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
@@ -54,7 +57,10 @@ builder.Services.AddScoped<CurrentOrganization>(provider =>
             OrganizationId = appUser.OrganizationId,
             OrganizationName = org?.Name ?? "Maple Leaf Property Group",
             UserEmail = email,
-            Role = string.IsNullOrWhiteSpace(appUser.Role) ? "Owner" : appUser.Role
+            Role = string.IsNullOrWhiteSpace(appUser.Role) ? "Owner" : appUser.Role,
+            Province = org?.Province ?? "ON",
+            CountryCode = "CA",
+            PreferredLanguage = ResolvePreferredLanguage(httpContextAccessor.HttpContext, appUser.PreferredLanguage, org?.PreferredLanguage, org?.Province)
         };
     }
 
@@ -63,7 +69,10 @@ builder.Services.AddScoped<CurrentOrganization>(provider =>
         OrganizationId = Guid.Parse("11111111-1111-1111-1111-111111111111"),
         OrganizationName = "Maple Leaf Property Group",
         UserEmail = email,
-        Role = user?.Claims.FirstOrDefault(c => c.Type.Contains("role", StringComparison.OrdinalIgnoreCase))?.Value ?? "Owner"
+        Role = user?.Claims.FirstOrDefault(c => c.Type.Contains("role", StringComparison.OrdinalIgnoreCase))?.Value ?? "Owner",
+        Province = "ON",
+        CountryCode = "CA",
+        PreferredLanguage = ResolvePreferredLanguage(httpContextAccessor.HttpContext, null, null, "ON")
     };
 });
 
@@ -99,10 +108,22 @@ builder.Services.AddRazorComponents()
 
 var app = builder.Build();
 
+var supportedCultures = JurisdictionCatalog.SupportedCultureNames
+    .Select(cultureName => new CultureInfo(cultureName))
+    .ToList();
+
+app.UseRequestLocalization(new RequestLocalizationOptions
+{
+    DefaultRequestCulture = new RequestCulture("en-CA"),
+    SupportedCultures = supportedCultures,
+    SupportedUICultures = supportedCultures
+});
+
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     db.Database.EnsureCreated();
+    EnsureSchemaUpgrades(db);
 }
 
 if (!app.Environment.IsDevelopment())
@@ -157,6 +178,7 @@ app.Use(async (context, next) =>
                         Email = email,
                         FullName = context.User.Claims.FirstOrDefault(c => c.Type.Contains("name", StringComparison.OrdinalIgnoreCase))?.Value ?? email.Split('@')[0],
                         Role = "Owner",
+                        PreferredLanguage = ResolvePreferredLanguage(context, null, org.PreferredLanguage, org.Province),
                         IsActive = true
                     });
                     await db.SaveChangesAsync();
@@ -190,6 +212,35 @@ app.MapGet("/account/logout", async (HttpContext httpContext) =>
         return;
     }
     httpContext.Response.Redirect("/");
+});
+
+app.MapGet("/culture/set", (string culture, string? redirectUri, HttpContext httpContext) =>
+{
+    var normalizedCulture = string.IsNullOrWhiteSpace(culture)
+        ? "en-CA"
+        : culture.Trim();
+
+    if (!JurisdictionCatalog.SupportedCultureNames.Contains(normalizedCulture, StringComparer.OrdinalIgnoreCase))
+    {
+        normalizedCulture = "en-CA";
+    }
+
+    httpContext.Response.Cookies.Append(
+        CookieRequestCultureProvider.DefaultCookieName,
+        CookieRequestCultureProvider.MakeCookieValue(new RequestCulture(normalizedCulture)),
+        new CookieOptions
+        {
+            Expires = DateTimeOffset.UtcNow.AddYears(1),
+            IsEssential = true,
+            HttpOnly = false,
+            SameSite = SameSiteMode.Lax
+        });
+
+    var target = string.IsNullOrWhiteSpace(redirectUri) || !Uri.IsWellFormedUriString(redirectUri, UriKind.Relative)
+        ? "/profile"
+        : redirectUri;
+
+    return Results.LocalRedirect(target);
 });
 
 app.MapGet("/billing/checkout/{plan}", async (string plan, HttpContext httpContext, [FromServices] StripeBillingService billingService) =>
@@ -259,6 +310,57 @@ app.MapGet("/docs/n1-template", () =>
     var text = "N1 Rent Increase Notice Template\n\nTrack notice windows, guideline limits and service dates.";
     return Results.File(Encoding.UTF8.GetBytes(text), "text/plain", "n1-template.txt");
 });
+
+app.MapGet("/docs/jurisdiction/lease-package", ([FromServices] CurrentOrganization current) =>
+{
+    var profile = current.Jurisdiction;
+    var text = $"{profile.LeasePackageLabel}\n\nProvince: {profile.ProvinceDisplayName}\nLanguage: {current.PreferredLanguage}\n\n- Prepare jurisdiction-specific lease wording\n- Confirm required disclosures\n- Track signature and delivery audit trail";
+    return Results.File(Encoding.UTF8.GetBytes(text), "text/plain", $"{profile.ProvinceCode.ToLowerInvariant()}-lease-package.txt");
+});
+
+app.MapGet("/docs/jurisdiction/{documentKey}", (string documentKey, [FromServices] CurrentOrganization current) =>
+{
+    var profile = current.Jurisdiction;
+    if (!profile.DocumentTemplates.TryGetValue(documentKey, out var label))
+    {
+        return Results.NotFound();
+    }
+
+    var text = $"{label}\n\nProvince: {profile.ProvinceDisplayName}\nLanguage: {current.PreferredLanguage}\nDocument key: {documentKey}\n\n- Use the jurisdiction-specific workflow\n- Confirm current legal wording before issue\n- Retain audit trail for delivery and acknowledgment";
+    return Results.File(Encoding.UTF8.GetBytes(text), "text/plain", $"{profile.ProvinceCode.ToLowerInvariant()}-{documentKey}.txt");
+});
+
+static string ResolvePreferredLanguage(HttpContext? httpContext, string? userPreferredLanguage, string? organizationPreferredLanguage, string? province)
+{
+    var profile = JurisdictionCatalog.GetProfile(province);
+    var candidates = new[]
+    {
+        userPreferredLanguage,
+        organizationPreferredLanguage,
+        httpContext?.Request.Headers.AcceptLanguage.FirstOrDefault()?.Split(',').FirstOrDefault(),
+        profile.DefaultLanguage
+    };
+
+    return candidates.FirstOrDefault(candidate => !string.IsNullOrWhiteSpace(candidate) && profile.SupportedLanguages.Contains(candidate, StringComparer.OrdinalIgnoreCase))
+        ?? profile.DefaultLanguage;
+}
+
+static void EnsureSchemaUpgrades(ApplicationDbContext db)
+{
+    db.Database.ExecuteSqlRaw("""
+IF COL_LENGTH('Organizations', 'CountryCode') IS NULL
+    ALTER TABLE [Organizations] ADD [CountryCode] nvarchar(8) NOT NULL CONSTRAINT DF_Organizations_CountryCode DEFAULT 'CA';
+IF COL_LENGTH('Organizations', 'Province') IS NULL
+    ALTER TABLE [Organizations] ADD [Province] nvarchar(8) NOT NULL CONSTRAINT DF_Organizations_Province DEFAULT 'ON';
+IF COL_LENGTH('Organizations', 'PreferredLanguage') IS NULL
+    ALTER TABLE [Organizations] ADD [PreferredLanguage] nvarchar(16) NOT NULL CONSTRAINT DF_Organizations_PreferredLanguage DEFAULT 'en-CA';
+IF COL_LENGTH('Users', 'PreferredLanguage') IS NULL
+    ALTER TABLE [Users] ADD [PreferredLanguage] nvarchar(16) NOT NULL CONSTRAINT DF_Users_PreferredLanguage DEFAULT 'en-CA';
+IF COL_LENGTH('ComplianceReminders', 'Province') IS NULL
+    ALTER TABLE [ComplianceReminders] ADD [Province] nvarchar(8) NOT NULL CONSTRAINT DF_ComplianceReminders_Province DEFAULT 'ON';
+""");
+}
+
 app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();

@@ -1,3 +1,6 @@
+@using PropertySaaS.Web.Components.Pages
+@using PropertySaaS.Web.Localization
+
 <Router AppAssembly="typeof(Program).Assembly">
     <Found Context="routeData">
         <AuthorizeRouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)">
@@ -5,9 +8,9 @@
                 <LayoutView Layout="typeof(Layout.MainLayout)">
                     <div class="card card-soft">
                         <div class="card-body">
-                            <h3>Authentication required</h3>
-                            <p>Please sign in with Clerk to access this area.</p>
-                            <a class="btn btn-primary" href="/account/login">Sign in</a>
+                            <h3>@UiText.Get("Routes_AuthenticationRequired")</h3>
+                            <p>@UiText.Get("Routes_AuthenticationDescription")</p>
+                            <a class="btn btn-primary" href="/account/login">@UiText.Get("Routes_SignIn")</a>
                         </div>
                     </div>
                 </LayoutView>
@@ -15,4 +18,9 @@
         </AuthorizeRouteView>
         <FocusOnNavigate RouteData="routeData" Selector="h1" />
     </Found>
+    <NotFound>
+        <LayoutView Layout="typeof(Layout.MainLayout)">
+            <NotFound />
+        </LayoutView>
+    </NotFound>
 </Router>

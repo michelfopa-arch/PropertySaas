@@ -1,0 +1,1314 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+	<value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+	<value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+	<value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+	<value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Common_Reset" xml:space="preserve">
+	<value>Reset</value>
+  </data>
+  <data name="Common_ResetFilters" xml:space="preserve">
+	<value>Reset filters</value>
+  </data>
+  <data name="Common_Add" xml:space="preserve">
+	<value>Add</value>
+  </data>
+  <data name="Common_Edit" xml:space="preserve">
+	<value>Edit</value>
+  </data>
+  <data name="Common_Delete" xml:space="preserve">
+	<value>Delete</value>
+  </data>
+  <data name="Common_Cancel" xml:space="preserve">
+	<value>Cancel</value>
+  </data>
+  <data name="Common_SaveChanges" xml:space="preserve">
+	<value>Save changes</value>
+  </data>
+  <data name="Common_PropertyProfile" xml:space="preserve">
+	<value>Property profile</value>
+  </data>
+  <data name="Common_BulkImport" xml:space="preserve">
+	<value>Bulk import</value>
+  </data>
+  <data name="Common_QuickCsvImport" xml:space="preserve">
+	<value>Quick CSV Import</value>
+  </data>
+  <data name="Common_ImportCsvText" xml:space="preserve">
+	<value>Import CSV Text</value>
+  </data>
+  <data name="Properties_Title" xml:space="preserve">
+	<value>Properties</value>
+  </data>
+  <data name="Properties_Subtitle" xml:space="preserve">
+	<value>Portfolio view first, execution detail second. Open each property profile only when the team needs the full operating context.</value>
+  </data>
+  <data name="Properties_SearchLabel" xml:space="preserve">
+	<value>Search properties</value>
+  </data>
+  <data name="Properties_SearchPlaceholder" xml:space="preserve">
+	<value>Search by name, address, city, postal code or type</value>
+  </data>
+  <data name="Properties_AddProperty" xml:space="preserve">
+	<value>Add property</value>
+  </data>
+  <data name="Units_Title" xml:space="preserve">
+	<value>Units</value>
+  </data>
+  <data name="Units_Subtitle" xml:space="preserve">
+	<value>Keep the unit portfolio scannable. Edit quickly here and use each property profile for the full asset story.</value>
+  </data>
+  <data name="Units_SearchLabel" xml:space="preserve">
+	<value>Search units</value>
+  </data>
+  <data name="Units_SearchPlaceholder" xml:space="preserve">
+	<value>Search by unit, property, layout or status</value>
+  </data>
+  <data name="Units_AddUnit" xml:space="preserve">
+	<value>Add unit</value>
+  </data>
+	<data name="Units_FilterProperty" xml:space="preserve">
+	<value>Property</value>
+  </data>
+  <data name="Units_FilterAllProperties" xml:space="preserve">
+	<value>All properties</value>
+  </data>
+  <data name="Units_FilterStatus" xml:space="preserve">
+	<value>Status</value>
+  </data>
+  <data name="Units_FilterAllStatuses" xml:space="preserve">
+	<value>All statuses</value>
+  </data>
+  <data name="Units_Occupied" xml:space="preserve">
+	<value>Occupied</value>
+  </data>
+  <data name="Units_Vacant" xml:space="preserve">
+	<value>Vacant</value>
+  </data>
+  <data name="Units_FilterBedrooms" xml:space="preserve">
+	<value>Bedrooms</value>
+  </data>
+  <data name="Units_FilterAllLayouts" xml:space="preserve">
+	<value>All layouts</value>
+  </data>
+  <data name="Units_BedroomAbbreviation" xml:space="preserve">
+	<value>bd</value>
+  </data>
+  <data name="Units_BathroomAbbreviation" xml:space="preserve">
+	<value>ba</value>
+  </data>
+  <data name="Units_StatShown" xml:space="preserve">
+	<value>Units shown</value>
+  </data>
+  <data name="Units_StatVacant" xml:space="preserve">
+	<value>Vacant</value>
+  </data>
+  <data name="Units_StatMonthlyRent" xml:space="preserve">
+	<value>Monthly rent</value>
+  </data>
+  <data name="Units_StatPropertiesCovered" xml:space="preserve">
+	<value>Properties covered</value>
+  </data>
+  <data name="Units_CsvFormatHint" xml:space="preserve">
+	<value>Format: PropertyName,UnitNumber,Bedrooms,Bathrooms,MonthlyRent</value>
+  </data>
+  <data name="Units_ColumnUnit" xml:space="preserve">
+	<value>Unit</value>
+  </data>
+  <data name="Units_ColumnProperty" xml:space="preserve">
+	<value>Property</value>
+  </data>
+  <data name="Units_ColumnLayout" xml:space="preserve">
+	<value>Layout</value>
+  </data>
+  <data name="Units_ColumnRent" xml:space="preserve">
+	<value>Rent</value>
+  </data>
+  <data name="Units_ColumnStatus" xml:space="preserve">
+	<value>Status</value>
+  </data>
+  <data name="Units_ColumnActions" xml:space="preserve">
+	<value>Actions</value>
+  </data>
+  <data name="Units_NoRecordsTitle" xml:space="preserve">
+	<value>No units match the current filters.</value>
+  </data>
+  <data name="Units_NoRecordsSubtitle" xml:space="preserve">
+	<value>Reset the filters or add a new unit to complete the operating picture.</value>
+  </data>
+  <data name="Units_DrawerAddTitle" xml:space="preserve">
+	<value>Add unit</value>
+  </data>
+  <data name="Units_DrawerEditTitle" xml:space="preserve">
+	<value>Edit unit</value>
+  </data>
+  <data name="Units_DrawerSubtitle" xml:space="preserve">
+	<value>Keep unit operations light here. Use the property profile when the team needs the broader asset story.</value>
+  </data>
+  <data name="Units_FormUnitNumber" xml:space="preserve">
+	<value>Unit number</value>
+  </data>
+  <data name="Units_FormSelectProperty" xml:space="preserve">
+	<value>Select property</value>
+  </data>
+  <data name="Units_FormBathrooms" xml:space="preserve">
+	<value>Bathrooms</value>
+  </data>
+  <data name="Units_FormMarkedOccupied" xml:space="preserve">
+	<value>Marked as occupied</value>
+  </data>
+  <data name="Units_FormExecutionNote" xml:space="preserve">
+	<value>Unit execution note</value>
+  </data>
+  <data name="Units_Create" xml:space="preserve">
+	<value>Create unit</value>
+  </data>
+  <data name="Units_ImportResult" xml:space="preserve">
+	<value>Imported {0} row(s); skipped {1}.</value>
+  </data>
+  <data name="Units_UnknownProperty" xml:space="preserve">
+	<value>Unknown property</value>
+  </data>
+  <data name="Units_GuidanceSelectProperty" xml:space="preserve">
+	<value>Attach the unit to a property first so leases, turnover and profile views stay connected.</value>
+  </data>
+  <data name="Units_GuidanceOccupied" xml:space="preserve">
+	<value>This unit is marked occupied. Use the leases module to keep contract dates and Ontario paperwork in sync.</value>
+  </data>
+  <data name="Units_GuidanceVacant" xml:space="preserve">
+	<value>This unit is marked vacant. Keep rent current and use the property profile to align the leasing story before marketing.</value>
+  </data>
+  <data name="Leases_Title" xml:space="preserve">
+	<value>Leases</value>
+  </data>
+  <data name="Leases_Subtitle" xml:space="preserve">
+	<value>Review lease coverage from one table, then open the matching property profile when the team needs deeper execution detail.</value>
+  </data>
+  <data name="Leases_SearchLabel" xml:space="preserve">
+	<value>Search leases</value>
+  </data>
+  <data name="Leases_SearchPlaceholder" xml:space="preserve">
+	<value>Search by unit, tenant, status or Ontario workflow</value>
+  </data>
+  <data name="Leases_AddLease" xml:space="preserve">
+	<value>Add lease</value>
+  </data>
+	<data name="Leases_FilterStatus" xml:space="preserve">
+	<value>Status</value>
+  </data>
+  <data name="Leases_FilterAllStatuses" xml:space="preserve">
+	<value>All statuses</value>
+  </data>
+  <data name="Leases_FilterJurisdictionLease" xml:space="preserve">
+	<value>Jurisdiction lease</value>
+  </data>
+  <data name="Leases_FilterAll" xml:space="preserve">
+	<value>All</value>
+  </data>
+  <data name="Leases_OntarioSigned" xml:space="preserve">
+	<value>Signed</value>
+  </data>
+  <data name="Leases_OntarioMissing" xml:space="preserve">
+	<value>Missing</value>
+  </data>
+  <data name="Leases_FilterNoticeWorkflow" xml:space="preserve">
+	<value>Notice workflow</value>
+  </data>
+  <data name="Leases_WorkflowScheduled" xml:space="preserve">
+	<value>Scheduled</value>
+  </data>
+  <data name="Leases_WorkflowNotScheduled" xml:space="preserve">
+	<value>Not Scheduled</value>
+  </data>
+  <data name="Leases_StatShown" xml:space="preserve">
+	<value>Leases shown</value>
+  </data>
+  <data name="Leases_StatActiveRent" xml:space="preserve">
+	<value>Active rent</value>
+  </data>
+  <data name="Leases_StatJurisdictionMissing" xml:space="preserve">
+	<value>Jurisdiction lease missing</value>
+  </data>
+  <data name="Leases_StatNoticeScheduled" xml:space="preserve">
+	<value>Notice scheduled</value>
+  </data>
+  <data name="Leases_CsvFormatHint" xml:space="preserve">
+	<value>Format: UnitNumber,TenantEmail,StartDate,EndDate,MonthlyRent</value>
+  </data>
+  <data name="Leases_ColumnUnit" xml:space="preserve">
+	<value>Unit</value>
+  </data>
+  <data name="Leases_ColumnTenant" xml:space="preserve">
+	<value>Tenant</value>
+  </data>
+  <data name="Leases_ColumnTerm" xml:space="preserve">
+	<value>Term</value>
+  </data>
+  <data name="Leases_ColumnRent" xml:space="preserve">
+	<value>Rent</value>
+  </data>
+  <data name="Leases_ColumnStatus" xml:space="preserve">
+	<value>Status</value>
+  </data>
+  <data name="Leases_ColumnJurisdiction" xml:space="preserve">
+	<value>Jurisdiction</value>
+  </data>
+  <data name="Leases_ColumnNotice" xml:space="preserve">
+	<value>Notice</value>
+  </data>
+  <data name="Leases_ColumnActions" xml:space="preserve">
+	<value>Actions</value>
+  </data>
+  <data name="Leases_NoRecordsTitle" xml:space="preserve">
+	<value>No leases match the current filters.</value>
+  </data>
+  <data name="Leases_NoRecordsSubtitle" xml:space="preserve">
+	<value>Reset the filters or add a lease to restore portfolio coverage.</value>
+  </data>
+  <data name="Leases_DrawerEditTitle" xml:space="preserve">
+	<value>Edit lease</value>
+  </data>
+  <data name="Leases_DrawerSubtitle" xml:space="preserve">
+	<value>Keep contract updates compact here and open the related property profile when operations need the full picture.</value>
+  </data>
+  <data name="Leases_FormSelectUnit" xml:space="preserve">
+	<value>Select unit</value>
+  </data>
+  <data name="Leases_FormSelectTenant" xml:space="preserve">
+	<value>Select tenant</value>
+  </data>
+  <data name="Leases_FormStartDate" xml:space="preserve">
+	<value>Start date</value>
+  </data>
+  <data name="Leases_FormEndDate" xml:space="preserve">
+	<value>End date</value>
+  </data>
+  <data name="Leases_FormMonthlyRent" xml:space="preserve">
+	<value>Monthly rent</value>
+  </data>
+  <data name="Leases_FormJurisdictionLeaseSigned" xml:space="preserve">
+	<value>Jurisdiction lease signed</value>
+  </data>
+  <data name="Leases_FormExecutionNote" xml:space="preserve">
+	<value>Lease execution note</value>
+  </data>
+  <data name="Leases_Create" xml:space="preserve">
+	<value>Create lease</value>
+  </data>
+  <data name="Leases_ImportResult" xml:space="preserve">
+	<value>Imported {0} row(s); skipped {1}.</value>
+  </data>
+  <data name="Leases_UnknownUnit" xml:space="preserve">
+	<value>Unknown unit</value>
+  </data>
+  <data name="Leases_UnknownTenant" xml:space="preserve">
+	<value>Unknown tenant</value>
+  </data>
+  <data name="Leases_UnknownProperty" xml:space="preserve">
+	<value>Unknown property</value>
+  </data>
+  <data name="Leases_StatusActive" xml:space="preserve">
+	<value>Active</value>
+  </data>
+  <data name="Leases_StatusEndingSoon" xml:space="preserve">
+	<value>Ending soon</value>
+  </data>
+  <data name="Leases_StatusExpired" xml:space="preserve">
+	<value>Expired</value>
+  </data>
+  <data name="Leases_StatusTerminated" xml:space="preserve">
+	<value>Terminated</value>
+  </data>
+  <data name="Leases_GuidanceLinkUnitAndTenant" xml:space="preserve">
+	<value>Link the lease to both a unit and a tenant so the portfolio, audit and property profile views stay aligned.</value>
+  </data>
+  <data name="Leases_GuidanceMissingJurisdictionLease" xml:space="preserve">
+	<value>Jurisdiction lease is marked missing. Use the property profile and compliance workflow to close that gap before move-in activity continues.</value>
+  </data>
+  <data name="Leases_GuidanceScheduled" xml:space="preserve">
+	<value>The notice workflow is already scheduled. Keep dates, service and profile context aligned for the operating team.</value>
+  </data>
+  <data name="Leases_GuidanceReady" xml:space="preserve">
+	<value>Lease is connected and ready. Schedule the notice workflow only when the timing is appropriate for this unit and resident.</value>
+  </data>
+  <data name="Tenants_Title" xml:space="preserve">
+	<value>Tenants</value>
+  </data>
+  <data name="Tenants_Subtitle" xml:space="preserve">
+	<value>Keep resident information easy to scan here and use the lease or property pages when the team needs contract or asset context.</value>
+  </data>
+  <data name="Tenants_SearchLabel" xml:space="preserve">
+	<value>Search tenants</value>
+  </data>
+  <data name="Tenants_SearchPlaceholder" xml:space="preserve">
+	<value>Search by name, email, phone or provider</value>
+  </data>
+  <data name="Tenants_AddTenant" xml:space="preserve">
+	<value>Add tenant</value>
+  </data>
+	<data name="Tenants_FilterScreening" xml:space="preserve">
+	<value>Screening</value>
+  </data>
+  <data name="Tenants_FilterAllProviders" xml:space="preserve">
+	<value>All providers</value>
+  </data>
+  <data name="Tenants_FilterScoreBand" xml:space="preserve">
+	<value>Score band</value>
+  </data>
+  <data name="Tenants_FilterAllScores" xml:space="preserve">
+	<value>All scores</value>
+  </data>
+  <data name="Tenants_ScoreBandUnder700" xml:space="preserve">
+	<value>Under 700</value>
+  </data>
+  <data name="Tenants_StatShown" xml:space="preserve">
+	<value>Tenants shown</value>
+  </data>
+  <data name="Tenants_StatAverageScore" xml:space="preserve">
+	<value>Average score</value>
+  </data>
+  <data name="Tenants_StatProvidersUsed" xml:space="preserve">
+	<value>Providers used</value>
+  </data>
+  <data name="Tenants_StatHighScoreResidents" xml:space="preserve">
+	<value>High-score residents</value>
+  </data>
+  <data name="Tenants_CsvFormatHint" xml:space="preserve">
+	<value>Paste CSV rows using format: FullName,Email,PhoneNumber,CreditScore,ScreeningProvider</value>
+  </data>
+  <data name="Tenants_ColumnName" xml:space="preserve">
+	<value>Name</value>
+  </data>
+  <data name="Tenants_ColumnEmail" xml:space="preserve">
+	<value>Email</value>
+  </data>
+  <data name="Tenants_ColumnPhone" xml:space="preserve">
+	<value>Phone</value>
+  </data>
+  <data name="Tenants_ColumnScreening" xml:space="preserve">
+	<value>Screening</value>
+  </data>
+  <data name="Tenants_ColumnScore" xml:space="preserve">
+	<value>Score</value>
+  </data>
+  <data name="Tenants_ColumnActions" xml:space="preserve">
+	<value>Actions</value>
+  </data>
+  <data name="Tenants_OpenLeases" xml:space="preserve">
+	<value>Open leases</value>
+  </data>
+  <data name="Tenants_NoRecordsTitle" xml:space="preserve">
+	<value>No tenants match the current filters.</value>
+  </data>
+  <data name="Tenants_NoRecordsSubtitle" xml:space="preserve">
+	<value>Reset the filters or add a tenant to restore resident coverage.</value>
+  </data>
+  <data name="Tenants_OpenImportExport" xml:space="preserve">
+	<value>Open Import / Export</value>
+  </data>
+  <data name="Tenants_ExportCsv" xml:space="preserve">
+	<value>Export CSV</value>
+  </data>
+  <data name="Tenants_DrawerEditTitle" xml:space="preserve">
+	<value>Edit tenant</value>
+  </data>
+  <data name="Tenants_DrawerSubtitle" xml:space="preserve">
+	<value>Capture the resident basics here. Use leases for contract timing and properties for asset-specific execution.</value>
+  </data>
+  <data name="Tenants_FormFullName" xml:space="preserve">
+	<value>Full name</value>
+  </data>
+  <data name="Tenants_FormCreditScore" xml:space="preserve">
+	<value>Credit score</value>
+  </data>
+  <data name="Tenants_FormScreeningProvider" xml:space="preserve">
+	<value>Screening provider</value>
+  </data>
+  <data name="Tenants_FormScreeningCompleted" xml:space="preserve">
+	<value>Screening completed</value>
+  </data>
+  <data name="Tenants_FormResidentNote" xml:space="preserve">
+	<value>Resident note</value>
+  </data>
+  <data name="Tenants_Create" xml:space="preserve">
+	<value>Create tenant</value>
+  </data>
+  <data name="Tenants_ImportResult" xml:space="preserve">
+	<value>Imported {0} row(s); skipped {1}.</value>
+  </data>
+  <data name="Tenants_Unspecified" xml:space="preserve">
+	<value>Unspecified</value>
+  </data>
+  <data name="Tenants_NarrativeStrong" xml:space="preserve">
+	<value>Strong screening profile and low-friction follow-up candidate.</value>
+  </data>
+  <data name="Tenants_NarrativeSolid" xml:space="preserve">
+	<value>Solid screening baseline; keep documentation organized for lease execution.</value>
+  </data>
+  <data name="Tenants_NarrativeNeedsReview" xml:space="preserve">
+	<value>Needs closer review and a tighter follow-up checklist before finalizing the resident path.</value>
+  </data>
+  <data name="Tenants_GuidanceScreeningIncomplete" xml:space="preserve">
+	<value>Screening is marked incomplete. Keep the resident in review until supporting documents and provider checks are finalized.</value>
+  </data>
+  <data name="Tenants_GuidanceStrongProfile" xml:space="preserve">
+	<value>This resident profile looks strong. Use the leases page to keep dates and Ontario paperwork moving cleanly.</value>
+  </data>
+  <data name="Tenants_GuidanceCoordinateLeaseSteps" xml:space="preserve">
+	<value>Capture the essentials here, then coordinate lease steps carefully so documentation and follow-up stay consistent.</value>
+  </data>
+  <data name="Maintenance_Title" xml:space="preserve">
+	<value>Maintenance &amp; vendor marketplace</value>
+  </data>
+  <data name="Maintenance_Subtitle" xml:space="preserve">
+	<value>Keep operational requests visible in one table and open the property profile only when the team needs the deeper asset context.</value>
+  </data>
+  <data name="Maintenance_SearchLabel" xml:space="preserve">
+	<value>Search maintenance</value>
+  </data>
+  <data name="Maintenance_SearchPlaceholder" xml:space="preserve">
+	<value>Search by title, vendor, property or status</value>
+  </data>
+  <data name="Maintenance_AddRequest" xml:space="preserve">
+	<value>Add request</value>
+  </data>
+	<data name="Maintenance_FilterPriority" xml:space="preserve">
+	<value>Priority</value>
+  </data>
+  <data name="Maintenance_FilterAllPriorities" xml:space="preserve">
+	<value>All priorities</value>
+  </data>
+  <data name="Maintenance_FilterStatus" xml:space="preserve">
+	<value>Status</value>
+  </data>
+  <data name="Maintenance_FilterAllStatuses" xml:space="preserve">
+	<value>All statuses</value>
+  </data>
+  <data name="Maintenance_FilterProperty" xml:space="preserve">
+	<value>Property</value>
+  </data>
+  <data name="Maintenance_FilterAllProperties" xml:space="preserve">
+	<value>All properties</value>
+  </data>
+  <data name="Maintenance_StatShown" xml:space="preserve">
+	<value>Requests shown</value>
+  </data>
+  <data name="Maintenance_StatOpenOrScheduled" xml:space="preserve">
+	<value>Open or scheduled</value>
+  </data>
+  <data name="Maintenance_StatEstimatedCost" xml:space="preserve">
+	<value>Estimated cost</value>
+  </data>
+  <data name="Maintenance_StatVendorsEngaged" xml:space="preserve">
+	<value>Vendors engaged</value>
+  </data>
+  <data name="Maintenance_ColumnRequest" xml:space="preserve">
+	<value>Request</value>
+  </data>
+  <data name="Maintenance_ColumnProperty" xml:space="preserve">
+	<value>Property</value>
+  </data>
+  <data name="Maintenance_ColumnPriority" xml:space="preserve">
+	<value>Priority</value>
+  </data>
+  <data name="Maintenance_ColumnStatus" xml:space="preserve">
+	<value>Status</value>
+  </data>
+  <data name="Maintenance_ColumnVendor" xml:space="preserve">
+	<value>Vendor</value>
+  </data>
+  <data name="Maintenance_ColumnCost" xml:space="preserve">
+	<value>Cost</value>
+  </data>
+  <data name="Maintenance_ColumnActions" xml:space="preserve">
+	<value>Actions</value>
+  </data>
+  <data name="Maintenance_NoRecordsTitle" xml:space="preserve">
+	<value>No maintenance requests match the current filters.</value>
+  </data>
+  <data name="Maintenance_NoRecordsSubtitle" xml:space="preserve">
+	<value>Reset the filters or add a request to restore operational visibility.</value>
+  </data>
+  <data name="Maintenance_DrawerEditTitle" xml:space="preserve">
+	<value>Edit request</value>
+  </data>
+  <data name="Maintenance_DrawerSubtitle" xml:space="preserve">
+	<value>Capture the ticket here, then use the linked property profile when the team needs the broader operating timeline.</value>
+  </data>
+  <data name="Maintenance_FormTitle" xml:space="preserve">
+	<value>Title</value>
+  </data>
+  <data name="Maintenance_FormSelectProperty" xml:space="preserve">
+	<value>Select property</value>
+  </data>
+  <data name="Maintenance_FormUnit" xml:space="preserve">
+	<value>Unit</value>
+  </data>
+  <data name="Maintenance_FormOptionalUnit" xml:space="preserve">
+	<value>Optional unit</value>
+  </data>
+  <data name="Maintenance_FormEstimatedCost" xml:space="preserve">
+	<value>Estimated cost</value>
+  </data>
+  <data name="Maintenance_FormRequestedDate" xml:space="preserve">
+	<value>Requested date</value>
+  </data>
+  <data name="Maintenance_FormDescription" xml:space="preserve">
+	<value>Description</value>
+  </data>
+  <data name="Maintenance_FormOperationsNote" xml:space="preserve">
+	<value>Operations note</value>
+  </data>
+  <data name="Maintenance_Create" xml:space="preserve">
+	<value>Create request</value>
+  </data>
+  <data name="Maintenance_UnknownProperty" xml:space="preserve">
+	<value>Unknown property</value>
+  </data>
+  <data name="Maintenance_UnassignedVendor" xml:space="preserve">
+	<value>Unassigned</value>
+  </data>
+  <data name="Maintenance_ScopeUnit" xml:space="preserve">
+	<value>Unit</value>
+  </data>
+  <data name="Maintenance_ScopePropertyLevelRequest" xml:space="preserve">
+	<value>Property-level request</value>
+  </data>
+  <data name="Maintenance_UnknownUnit" xml:space="preserve">
+	<value>Unknown unit</value>
+  </data>
+  <data name="Maintenance_PriorityEmergency" xml:space="preserve">
+	<value>Emergency</value>
+  </data>
+  <data name="Maintenance_PriorityHigh" xml:space="preserve">
+	<value>High</value>
+  </data>
+  <data name="Maintenance_PriorityMedium" xml:space="preserve">
+	<value>Medium</value>
+  </data>
+  <data name="Maintenance_PriorityLow" xml:space="preserve">
+	<value>Low</value>
+  </data>
+  <data name="Maintenance_StatusClosed" xml:space="preserve">
+	<value>Closed</value>
+  </data>
+  <data name="Maintenance_StatusScheduled" xml:space="preserve">
+	<value>Scheduled</value>
+  </data>
+  <data name="Maintenance_StatusInProgress" xml:space="preserve">
+	<value>In Progress</value>
+  </data>
+  <data name="Maintenance_StatusOpen" xml:space="preserve">
+	<value>Open</value>
+  </data>
+  <data name="Maintenance_GuidanceAttachProperty" xml:space="preserve">
+	<value>Attach the request to a property first so the operating team can trace the issue inside the asset profile.</value>
+  </data>
+  <data name="Maintenance_GuidanceEmergency" xml:space="preserve">
+	<value>Emergency ticket: keep vendor handoff, timeline and resident communication tight from the first update.</value>
+  </data>
+  <data name="Maintenance_GuidanceDefault" xml:space="preserve">
+	<value>Use this form for the essentials, then rely on the property profile to coordinate broader operational follow-up.</value>
+  </data>
+  <data name="Compliance_Title" xml:space="preserve">
+	<value>Ontario RTA compliance reminders</value>
+  </data>
+  <data name="Compliance_Subtitle" xml:space="preserve">
+	<value>Keep reminder workflows scannable here and open the linked templates only when the team needs the full legal document package.</value>
+  </data>
+  <data name="Compliance_SearchLabel" xml:space="preserve">
+	<value>Search reminders</value>
+  </data>
+  <data name="Compliance_SearchPlaceholder" xml:space="preserve">
+	<value>Search by title, notice or reference</value>
+  </data>
+  <data name="Compliance_OpenTemplates" xml:space="preserve">
+	<value>Open templates</value>
+  </data>
+  <data name="Compliance_PageHeading" xml:space="preserve">
+	<value>{0} compliance reminders</value>
+  </data>
+  <data name="Compliance_PageSubtitle" xml:space="preserve">
+	<value>Keep {0} reminder workflows scannable here and open the linked templates only when the team needs the full legal document package.</value>
+  </data>
+  <data name="Compliance_FilterNotice" xml:space="preserve">
+	<value>Notice</value>
+  </data>
+  <data name="Compliance_FilterAllNotices" xml:space="preserve">
+	<value>All notices</value>
+  </data>
+  <data name="Compliance_FilterState" xml:space="preserve">
+	<value>State</value>
+  </data>
+  <data name="Compliance_FilterAllStates" xml:space="preserve">
+	<value>All states</value>
+  </data>
+  <data name="Compliance_StateOpen" xml:space="preserve">
+	<value>Open</value>
+  </data>
+  <data name="Compliance_StateCompleted" xml:space="preserve">
+	<value>Completed</value>
+  </data>
+  <data name="Compliance_StateDueSoon" xml:space="preserve">
+	<value>Due soon</value>
+  </data>
+  <data name="Compliance_StatShown" xml:space="preserve">
+	<value>Reminders shown</value>
+  </data>
+  <data name="Compliance_StatDueSoon" xml:space="preserve">
+	<value>Due soon</value>
+  </data>
+  <data name="Compliance_StatCompleted" xml:space="preserve">
+	<value>Completed</value>
+  </data>
+  <data name="Compliance_StatNoticeTypes" xml:space="preserve">
+	<value>Notice types</value>
+  </data>
+  <data name="Compliance_ColumnReminder" xml:space="preserve">
+	<value>Reminder</value>
+  </data>
+  <data name="Compliance_ColumnNotice" xml:space="preserve">
+	<value>Notice</value>
+  </data>
+  <data name="Compliance_ColumnDue" xml:space="preserve">
+	<value>Due</value>
+  </data>
+  <data name="Compliance_ColumnState" xml:space="preserve">
+	<value>State</value>
+  </data>
+  <data name="Compliance_ColumnReference" xml:space="preserve">
+	<value>Reference</value>
+  </data>
+  <data name="Compliance_NoRecordsTitle" xml:space="preserve">
+	<value>No compliance reminders match the current filters.</value>
+  </data>
+  <data name="Compliance_NoRecordsSubtitle" xml:space="preserve">
+	<value>Reset the filters to bring the {0} workflow backlog back into view.</value>
+  </data>
+  <data name="Compliance_TemplatesTitle" xml:space="preserve">
+	<value>{0} templates</value>
+  </data>
+  <data name="Compliance_OperationalChecklist" xml:space="preserve">
+	<value>Operational checklist</value>
+  </data>
+  <data name="Compliance_NarrativeCompleted" xml:space="preserve">
+	<value>Workflow completed and available for audit reference.</value>
+  </data>
+  <data name="Compliance_NarrativeDueSoon" xml:space="preserve">
+	<value>Time-sensitive jurisdiction action; keep service dates and supporting evidence tight.</value>
+  </data>
+  <data name="Compliance_NarrativeOpen" xml:space="preserve">
+	<value>Open reminder in the active jurisdiction workflow queue.</value>
+  </data>
+  <data name="Properties_FilterType" xml:space="preserve">
+	<value>Type</value>
+  </data>
+  <data name="Properties_FilterAllTypes" xml:space="preserve">
+	<value>All types</value>
+  </data>
+  <data name="Properties_FilterCity" xml:space="preserve">
+	<value>City</value>
+  </data>
+  <data name="Properties_FilterAllCities" xml:space="preserve">
+	<value>All cities</value>
+  </data>
+  <data name="Properties_FilterStage" xml:space="preserve">
+	<value>Stage</value>
+  </data>
+  <data name="Properties_FilterAllStages" xml:space="preserve">
+	<value>All stages</value>
+  </data>
+  <data name="Properties_StatShown" xml:space="preserve">
+	<value>Properties shown</value>
+  </data>
+  <data name="Properties_StatVacantUnits" xml:space="preserve">
+	<value>Vacant units</value>
+  </data>
+  <data name="Properties_StatAverageReadiness" xml:space="preserve">
+	<value>Average readiness</value>
+  </data>
+  <data name="Properties_StatRentRoll" xml:space="preserve">
+	<value>Rent roll</value>
+  </data>
+  <data name="Properties_CsvFormatHint" xml:space="preserve">
+	<value>Format: Name,AddressLine1,City,MonthlyRevenueTarget</value>
+  </data>
+  <data name="Properties_ColumnProperty" xml:space="preserve">
+	<value>Property</value>
+  </data>
+  <data name="Properties_ColumnType" xml:space="preserve">
+	<value>Type</value>
+  </data>
+  <data name="Properties_ColumnCity" xml:space="preserve">
+	<value>City</value>
+  </data>
+  <data name="Properties_ColumnUnits" xml:space="preserve">
+	<value>Units</value>
+  </data>
+  <data name="Properties_ColumnOccupancy" xml:space="preserve">
+	<value>Occupancy</value>
+  </data>
+  <data name="Properties_ColumnRentRoll" xml:space="preserve">
+	<value>Rent roll</value>
+  </data>
+  <data name="Properties_ColumnReadiness" xml:space="preserve">
+	<value>Readiness</value>
+  </data>
+  <data name="Properties_ColumnStage" xml:space="preserve">
+	<value>Stage</value>
+  </data>
+  <data name="Properties_ColumnActions" xml:space="preserve">
+	<value>Actions</value>
+  </data>
+  <data name="Properties_ViewDetails" xml:space="preserve">
+	<value>View details</value>
+  </data>
+  <data name="Properties_NoRecordsTitle" xml:space="preserve">
+	<value>No properties match the current filters.</value>
+  </data>
+  <data name="Properties_NoRecordsSubtitle" xml:space="preserve">
+	<value>Reset the filters or add a new address to keep growing the portfolio.</value>
+  </data>
+  <data name="Properties_DrawerAddTitle" xml:space="preserve">
+	<value>Add property</value>
+  </data>
+  <data name="Properties_DrawerEditTitle" xml:space="preserve">
+	<value>Edit property</value>
+  </data>
+  <data name="Properties_DrawerSubtitle" xml:space="preserve">
+	<value>Capture only what the team needs now. Full execution lives in the property profile.</value>
+  </data>
+  <data name="Properties_SectionIdentityLocation" xml:space="preserve">
+	<value>Identity and location</value>
+  </data>
+  <data name="Properties_FormName" xml:space="preserve">
+	<value>Property name</value>
+  </data>
+  <data name="Properties_FormType" xml:space="preserve">
+	<value>Property type</value>
+  </data>
+  <data name="Properties_FormAddress" xml:space="preserve">
+	<value>Address</value>
+  </data>
+  <data name="Properties_FormCity" xml:space="preserve">
+	<value>City</value>
+  </data>
+  <data name="Properties_FormProvince" xml:space="preserve">
+	<value>Province</value>
+  </data>
+  <data name="Properties_FormPostalCode" xml:space="preserve">
+	<value>Postal code</value>
+  </data>
+  <data name="Properties_FormYearBuilt" xml:space="preserve">
+	<value>Year built</value>
+  </data>
+  <data name="Properties_FormOptional" xml:space="preserve">
+	<value>Optional</value>
+  </data>
+  <data name="Properties_FormRevenueTarget" xml:space="preserve">
+	<value>Revenue target</value>
+  </data>
+  <data name="Properties_SectionPlaybook" xml:space="preserve">
+	<value>Commercialization playbook</value>
+  </data>
+  <data name="Properties_FormAmenityTemplate" xml:space="preserve">
+	<value>Amenity template</value>
+  </data>
+  <data name="Properties_FormNeighborhoodTemplate" xml:space="preserve">
+	<value>Neighborhood template</value>
+  </data>
+  <data name="Properties_FormLeasingStrategy" xml:space="preserve">
+	<value>Leasing strategy</value>
+  </data>
+  <data name="Properties_FormOperationsFocus" xml:space="preserve">
+	<value>Operations focus</value>
+  </data>
+  <data name="Properties_RecommendedMarketPack" xml:space="preserve">
+	<value>Recommended market pack</value>
+  </data>
+  <data name="Properties_UseRecommendedPack" xml:space="preserve">
+	<value>Use recommended pack</value>
+  </data>
+  <data name="Properties_ApplyGuidedPresets" xml:space="preserve">
+	<value>Apply guided presets</value>
+  </data>
+  <data name="Properties_FormAmenities" xml:space="preserve">
+	<value>Amenities</value>
+  </data>
+  <data name="Properties_FormNeighborhoodNotes" xml:space="preserve">
+	<value>Neighborhood notes</value>
+  </data>
+  <data name="Properties_FormLeasingNotes" xml:space="preserve">
+	<value>Leasing notes</value>
+  </data>
+  <data name="Properties_FormOperationalNotes" xml:space="preserve">
+	<value>Operational notes</value>
+  </data>
+  <data name="Properties_Create" xml:space="preserve">
+	<value>Create property</value>
+  </data>
+  <data name="Properties_ImportResult" xml:space="preserve">
+	<value>Imported {0} row(s); skipped {1}.</value>
+  </data>
+  <data name="Properties_NoUnits" xml:space="preserve">
+	<value>No units</value>
+  </data>
+  <data name="Properties_AssetStage_Setup" xml:space="preserve">
+	<value>Setup</value>
+  </data>
+  <data name="Properties_AssetStage_LeaseUp" xml:space="preserve">
+	<value>Lease-up</value>
+  </data>
+  <data name="Properties_AssetStage_StabilizePlaybook" xml:space="preserve">
+	<value>Stabilize playbook</value>
+  </data>
+  <data name="Properties_AssetStage_Stabilized" xml:space="preserve">
+	<value>Stabilized</value>
+  </data>
+  <data name="Properties_MarketSegment_Student" xml:space="preserve">
+	<value>Student market</value>
+  </data>
+  <data name="Properties_MarketSegment_Family" xml:space="preserve">
+	<value>Family rental market</value>
+  </data>
+  <data name="Properties_MarketSegment_Premium" xml:space="preserve">
+	<value>Premium renter market</value>
+  </data>
+  <data name="Properties_MarketSegment_Urban" xml:space="preserve">
+	<value>Urban commuter market</value>
+  </data>
+  <data name="Properties_MarketSegment_Core" xml:space="preserve">
+	<value>Core rental market</value>
+  </data>
+  <data name="Properties_MarketNarrative_DefaultCity" xml:space="preserve">
+	<value>this market</value>
+  </data>
+  <data name="Properties_MarketNarrative_Student" xml:space="preserve">
+	<value>In {0}, emphasize speed, predictability and recurring seasonal readiness to win in the student segment.</value>
+  </data>
+  <data name="Properties_MarketNarrative_Family" xml:space="preserve">
+	<value>In {0}, stability, storage, schools and resident experience should anchor the property story for family-oriented renters.</value>
+  </data>
+  <data name="Properties_MarketNarrative_Premium" xml:space="preserve">
+	<value>In {0}, lead with finish quality, convenience and a polished leasing journey to support stronger pricing confidence.</value>
+  </data>
+  <data name="Properties_MarketNarrative_Core" xml:space="preserve">
+	<value>In {0}, combine practical amenities, commuter convenience and disciplined follow-up to strengthen leasing conversion.</value>
+  </data>
+  <data name="Properties_PropertyType_MultiFamily" xml:space="preserve">
+	<value>Multi-family</value>
+  </data>
+  <data name="Properties_PropertyType_UrbanMidRise" xml:space="preserve">
+	<value>Urban mid-rise</value>
+  </data>
+  <data name="Properties_PropertyType_LowRiseApartment" xml:space="preserve">
+	<value>Low-rise apartment</value>
+  </data>
+  <data name="Properties_PropertyType_CondoBuilding" xml:space="preserve">
+	<value>Condo building</value>
+  </data>
+  <data name="Properties_PropertyType_PurposeBuiltRental" xml:space="preserve">
+	<value>Purpose-built rental</value>
+  </data>
+  <data name="Properties_PropertyType_DuplexTriplex" xml:space="preserve">
+	<value>Duplex / triplex</value>
+  </data>
+  <data name="Properties_PropertyType_TownhomeCluster" xml:space="preserve">
+	<value>Townhome cluster</value>
+  </data>
+  <data name="Properties_PropertyType_SingleFamilyRental" xml:space="preserve">
+	<value>Single-family rental</value>
+  </data>
+  <data name="Properties_PropertyType_StudentHousing" xml:space="preserve">
+	<value>Student housing</value>
+  </data>
+  <data name="Properties_PropertyType_WaterfrontCondo" xml:space="preserve">
+	<value>Waterfront condo</value>
+  </data>
+  <data name="Properties_PropertyType_MixedUseAsset" xml:space="preserve">
+	<value>Mixed-use asset</value>
+  </data>
+  <data name="Properties_PropertyType_MicroSuiteBuilding" xml:space="preserve">
+	<value>Micro-suite building</value>
+  </data>
+  <data name="Properties_PropertyType_LuxuryRental" xml:space="preserve">
+	<value>Luxury rental</value>
+  </data>
+  <data name="Properties_PropertyType_SuburbanFamilyAsset" xml:space="preserve">
+	<value>Suburban family asset</value>
+  </data>
+  <data name="Properties_PropertyType_TransitOrientedRental" xml:space="preserve">
+	<value>Transit-oriented rental</value>
+  </data>
+  <data name="Properties_PropertyType_ExecutiveFurnishedRental" xml:space="preserve">
+	<value>Executive furnished rental</value>
+  </data>
+  <data name="Properties_AmenityTemplate_EssentialUrbanLiving" xml:space="preserve">
+	<value>Essential urban living</value>
+  </data>
+  <data name="Properties_AmenityTemplate_LifestyleDrivenPremium" xml:space="preserve">
+	<value>Lifestyle-driven premium</value>
+  </data>
+  <data name="Properties_AmenityTemplate_FamilyConvenience" xml:space="preserve">
+	<value>Family convenience</value>
+  </data>
+  <data name="Properties_AmenityTemplate_StudentPracticalNeeds" xml:space="preserve">
+	<value>Student practical needs</value>
+  </data>
+  <data name="Properties_AmenityTemplate_TransitConvenience" xml:space="preserve">
+	<value>Transit convenience</value>
+  </data>
+  <data name="Properties_AmenityTemplate_ExecutiveFurnishedLiving" xml:space="preserve">
+	<value>Executive furnished living</value>
+  </data>
+  <data name="Properties_AmenityTemplate_PetFriendlyPositioning" xml:space="preserve">
+	<value>Pet-friendly positioning</value>
+  </data>
+  <data name="Properties_AmenityTemplate_RenovatedValueStory" xml:space="preserve">
+	<value>Renovated value story</value>
+  </data>
+  <data name="Properties_NeighborhoodTemplate_TransitLedUrbanAppeal" xml:space="preserve">
+	<value>Transit-led urban appeal</value>
+  </data>
+  <data name="Properties_NeighborhoodTemplate_FamilyOrientedNeighbourhood" xml:space="preserve">
+	<value>Family-oriented neighbourhood</value>
+  </data>
+  <data name="Properties_NeighborhoodTemplate_StudentConvenienceCorridor" xml:space="preserve">
+	<value>Student convenience corridor</value>
+  </data>
+  <data name="Properties_NeighborhoodTemplate_WaterfrontLifestyle" xml:space="preserve">
+	<value>Waterfront lifestyle</value>
+  </data>
+  <data name="Properties_NeighborhoodTemplate_ValueRepositioningPocket" xml:space="preserve">
+	<value>Value repositioning pocket</value>
+  </data>
+  <data name="Properties_NeighborhoodTemplate_DowntownConvenienceHub" xml:space="preserve">
+	<value>Downtown convenience hub</value>
+  </data>
+  <data name="Properties_NeighborhoodTemplate_SuburbanStabilityCorridor" xml:space="preserve">
+	<value>Suburban stability corridor</value>
+  </data>
+  <data name="Properties_NeighborhoodTemplate_ExecutiveRelocationPocket" xml:space="preserve">
+	<value>Executive relocation pocket</value>
+  </data>
+  <data name="Properties_LeasingTemplate_PremiumProfessionalPositioning" xml:space="preserve">
+	<value>Premium professional positioning</value>
+  </data>
+  <data name="Properties_LeasingTemplate_FastVacancyRecovery" xml:space="preserve">
+	<value>Fast vacancy recovery</value>
+  </data>
+  <data name="Properties_LeasingTemplate_LongStayHouseholdRetention" xml:space="preserve">
+	<value>Long-stay household retention</value>
+  </data>
+  <data name="Properties_LeasingTemplate_StudentTurnoverCadence" xml:space="preserve">
+	<value>Student turnover cadence</value>
+  </data>
+  <data name="Properties_LeasingTemplate_RenovationLedRentLift" xml:space="preserve">
+	<value>Renovation-led rent lift</value>
+  </data>
+  <data name="Properties_LeasingTemplate_TransitCommuterPositioning" xml:space="preserve">
+	<value>Transit commuter positioning</value>
+  </data>
+  <data name="Properties_LeasingTemplate_ExecutiveFurnishedDemand" xml:space="preserve">
+	<value>Executive furnished demand</value>
+  </data>
+  <data name="Properties_LeasingTemplate_PetFriendlyDemandCapture" xml:space="preserve">
+	<value>Pet-friendly demand capture</value>
+  </data>
+  <data name="Properties_OperationsTemplate_TurnoverSpeed" xml:space="preserve">
+	<value>Turnover speed</value>
+  </data>
+  <data name="Properties_OperationsTemplate_VendorCoordination" xml:space="preserve">
+	<value>Vendor coordination</value>
+  </data>
+  <data name="Properties_OperationsTemplate_PreventiveMaintenance" xml:space="preserve">
+	<value>Preventive maintenance</value>
+  </data>
+  <data name="Properties_OperationsTemplate_ResidentExperience" xml:space="preserve">
+	<value>Resident experience</value>
+  </data>
+  <data name="Properties_OperationsTemplate_ComplianceHeavyOperations" xml:space="preserve">
+	<value>Compliance-heavy operations</value>
+  </data>
+  <data name="Properties_OperationsTemplate_ListingReadiness" xml:space="preserve">
+	<value>Listing readiness</value>
+  </data>
+  <data name="Properties_OperationsTemplate_ConciergeStyleService" xml:space="preserve">
+	<value>Concierge-style service</value>
+  </data>
+  <data name="Properties_OperationsTemplate_SeasonalTurnoverControl" xml:space="preserve">
+	<value>Seasonal turnover control</value>
+  </data>
+  <data name="Properties_AmenitySummary_EssentialUrbanLiving" xml:space="preserve">
+	<value>Laundry access, secure entry, practical storage and daily convenience features that support reliable city living.</value>
+  </data>
+  <data name="Properties_AmenitySummary_LifestyleDrivenPremium" xml:space="preserve">
+	<value>Fitness, outdoor amenity space, upgraded finishes and convenience features that justify a stronger rent story.</value>
+  </data>
+  <data name="Properties_AmenitySummary_FamilyConvenience" xml:space="preserve">
+	<value>Parking, storage, durable layouts and practical amenities that make longer-stay household living easier.</value>
+  </data>
+  <data name="Properties_AmenitySummary_StudentPracticalNeeds" xml:space="preserve">
+	<value>Transit access, shared study-friendly layouts, durable finishes and simple move-in convenience for recurring turnovers.</value>
+  </data>
+  <data name="Properties_NeighborhoodNotes_TransitLedUrbanAppeal" xml:space="preserve">
+	<value>Strong appeal for renters seeking quick access to transit, daily retail and a smooth commute around {0}.</value>
+  </data>
+  <data name="Properties_NeighborhoodNotes_FamilyOrientedNeighbourhood" xml:space="preserve">
+	<value>Position around stability, schools, parks and daily convenience for households evaluating longer stays in {0}.</value>
+  </data>
+  <data name="Properties_NeighborhoodNotes_StudentConvenienceCorridor" xml:space="preserve">
+	<value>Best marketed around campus access, transit simplicity and predictable day-to-day convenience for students and guarantors.</value>
+  </data>
+  <data name="Properties_NeighborhoodNotes_WaterfrontLifestyle" xml:space="preserve">
+	<value>Lead with walkability, views, recreation access and lifestyle differentiation that strengthens emotional renter interest.</value>
+  </data>
+  <data name="Properties_NeighborhoodNotes_ValueRepositioningPocket" xml:space="preserve">
+	<value>Useful for renters trading a prime core address for more space, better value and practical commuting from this {0} pocket.</value>
+  </data>
+  <data name="Properties_LeasingNotes_PremiumProfessionalPositioning" xml:space="preserve">
+	<value>Lead with finish quality, low-friction commuting and a polished move-in experience for professionals and couples.</value>
+  </data>
+  <data name="Properties_LeasingNotes_FastVacancyRecovery" xml:space="preserve">
+	<value>Simplify the story, keep pricing sharp and run a tighter follow-up cadence to compress vacancy days without diluting quality.</value>
+  </data>
+  <data name="Properties_LeasingNotes_LongStayHouseholdRetention" xml:space="preserve">
+	<value>Emphasize stability, practical layout value and resident experience to attract lower-turnover households.</value>
+  </data>
+  <data name="Properties_LeasingNotes_StudentTurnoverCadence" xml:space="preserve">
+	<value>Prepare for seasonal peaks, standardize showings and keep documentation and move-in workflows fast for recurring cycles.</value>
+  </data>
+  <data name="Properties_LeasingNotes_RenovationLedRentLift" xml:space="preserve">
+	<value>Use upgraded finishes and clearer before/after positioning to support pricing confidence and stronger listing conversion.</value>
+  </data>
+  <data name="Properties_OperationalNotes_TurnoverSpeed" xml:space="preserve">
+	<value>Pre-book vendors, standardize refresh scope and reduce idle time between notice, maintenance and marketing launch.</value>
+  </data>
+  <data name="Properties_OperationalNotes_VendorCoordination" xml:space="preserve">
+	<value>Keep vendor expectations, access steps and closeout communication tight so the team can move from issue to completion faster.</value>
+  </data>
+  <data name="Properties_OperationalNotes_PreventiveMaintenance" xml:space="preserve">
+	<value>Prioritize recurring checks and small interventions early to prevent avoidable resident disruption and revenue leakage.</value>
+  </data>
+  <data name="Properties_OperationalNotes_ResidentExperience" xml:space="preserve">
+	<value>Maintain clear communication, dependable service timing and cleaner handoffs to strengthen renewals and referrals.</value>
+  </data>
+  <data name="Properties_OperationalNotes_ComplianceHeavyOperations" xml:space="preserve">
+	<value>Track Ontario notice windows, safety checks and documentation discipline so compliance work stays visible and repeatable.</value>
+  </data>
+  <data name="PropertyProfile_PageTitle" xml:space="preserve">
+	<value>Property Profile</value>
+  </data>
+  <data name="PropertyProfile_NotFound" xml:space="preserve">
+	<value>Property not found.</value>
+  </data>
+  <data name="PropertyProfile_BackToProperties" xml:space="preserve">
+	<value>Back to properties</value>
+  </data>
+  <data name="PropertyProfile_UnitsCount" xml:space="preserve">
+	<value>{0} unit(s)</value>
+  </data>
+  <data name="PropertyProfile_OccupiedCount" xml:space="preserve">
+	<value>{0} occupied</value>
+  </data>
+  <data name="PropertyProfile_VacantCount" xml:space="preserve">
+	<value>{0} vacant</value>
+  </data>
+  <data name="PropertyProfile_StatRevenueTarget" xml:space="preserve">
+	<value>Revenue target</value>
+  </data>
+  <data name="PropertyProfile_StatActualRentRoll" xml:space="preserve">
+	<value>Actual rent roll</value>
+  </data>
+  <data name="PropertyProfile_StatOccupancy" xml:space="preserve">
+	<value>Occupancy</value>
+  </data>
+  <data name="PropertyProfile_StatLeasingReadiness" xml:space="preserve">
+	<value>Leasing readiness</value>
+  </data>
+  <data name="PropertyProfile_TabOverview" xml:space="preserve">
+	<value>Overview</value>
+  </data>
+  <data name="PropertyProfile_TabOps" xml:space="preserve">
+	<value>Ops</value>
+  </data>
+  <data name="PropertyProfile_IdealRenterProfile" xml:space="preserve">
+	<value>Ideal renter profile</value>
+  </data>
+  <data name="PropertyProfile_SuggestedListingHeadline" xml:space="preserve">
+	<value>Suggested listing headline</value>
+  </data>
+  <data name="PropertyProfile_AssetStage" xml:space="preserve">
+	<value>Asset stage</value>
+  </data>
+  <data name="PropertyProfile_LeasingReadinessScore" xml:space="preserve">
+	<value>Leasing readiness score</value>
+  </data>
+  <data name="PropertyProfile_NoUnitsYet" xml:space="preserve">
+	<value>No units added yet for this property.</value>
+  </data>
+  <data name="PropertyProfile_LeasingPlaybook" xml:space="preserve">
+	<value>Leasing playbook</value>
+  </data>
+  <data name="PropertyProfile_LeasingPlaybookFallback" xml:space="preserve">
+	<value>Record who rents here best, pricing cues and showing narrative.</value>
+  </data>
+  <data name="PropertyProfile_PricingPosture" xml:space="preserve">
+	<value>Pricing posture</value>
+  </data>
+  <data name="PropertyProfile_RecommendedActions" xml:space="preserve">
+	<value>Recommended actions</value>
+  </data>
+  <data name="PropertyProfile_LiveLeases" xml:space="preserve">
+	<value>Live leases</value>
+  </data>
+  <data name="PropertyProfile_NoLeasesLinked" xml:space="preserve">
+	<value>No leases currently linked to this property.</value>
+  </data>
+  <data name="PropertyProfile_OntarioLease" xml:space="preserve">
+	<value>Ontario lease</value>
+  </data>
+  <data name="PropertyProfile_OperationalNotes" xml:space="preserve">
+	<value>Operational notes</value>
+  </data>
+  <data name="PropertyProfile_OperationalNotesFallback" xml:space="preserve">
+	<value>Store turnover, vendor and operational watchouts for the team.</value>
+  </data>
+  <data name="PropertyProfile_OperationsFocus" xml:space="preserve">
+	<value>Operations focus</value>
+  </data>
+  <data name="PropertyProfile_AmenitiesFallback" xml:space="preserve">
+	<value>Capture building amenities to arm leasing and showing conversations.</value>
+  </data>
+  <data name="PropertyProfile_MaintenancePipeline" xml:space="preserve">
+	<value>Maintenance pipeline</value>
+  </data>
+  <data name="PropertyProfile_NoMaintenanceLinked" xml:space="preserve">
+	<value>No maintenance items currently linked to this property.</value>
+  </data>
+  <data name="PropertyProfile_ComplianceReminder" xml:space="preserve">
+	<value>Compliance reminder</value>
+  </data>
+  <data name="PropertyProfile_ComplianceReminderBody" xml:space="preserve">
+	<value>Use this property profile to coordinate Ontario notices, unit turnover documentation and leasing readiness from one place.</value>
+  </data>
+  <data name="PropertyProfile_ExecutionChecklist" xml:space="preserve">
+	<value>Execution checklist</value>
+  </data>
+  <data name="PropertyProfile_ChecklistItem1" xml:space="preserve">
+	<value>Verify Ontario lease package is current for new move-ins</value>
+  </data>
+  <data name="PropertyProfile_ChecklistItem2" xml:space="preserve">
+	<value>Track notice service dates and supporting audit trail</value>
+  </data>
+  <data name="PropertyProfile_ChecklistItem3" xml:space="preserve">
+	<value>Review turnover documentation before relisting any vacant unit</value>
+  </data>
+  <data name="PropertyProfile_UpcomingOntarioReminders" xml:space="preserve">
+	<value>Upcoming Ontario reminders</value>
+  </data>
+  <data name="PropertyProfile_NoComplianceReminders" xml:space="preserve">
+	<value>No compliance reminders are currently available.</value>
+  </data>
+  <data name="PropertyProfile_Performance_SetupNeeded" xml:space="preserve">
+	<value>Setup needed</value>
+  </data>
+  <data name="PropertyProfile_Performance_Performing" xml:space="preserve">
+	<value>Performing</value>
+  </data>
+  <data name="PropertyProfile_Performance_NeedsLeasing" xml:space="preserve">
+	<value>Needs leasing</value>
+  </data>
+  <data name="PropertyProfile_Performance_Watchlist" xml:space="preserve">
+	<value>Watchlist</value>
+  </data>
+  <data name="PropertyProfile_ReadinessSummary_High" xml:space="preserve">
+	<value>This property is well documented and ready for consistent leasing execution.</value>
+  </data>
+  <data name="PropertyProfile_ReadinessSummary_Mid" xml:space="preserve">
+	<value>Good baseline, but more positioning detail would improve leasing consistency.</value>
+  </data>
+  <data name="PropertyProfile_ReadinessSummary_Low" xml:space="preserve">
+	<value>High upside: complete the playbook fields to strengthen leasing quality and team execution.</value>
+  </data>
+  <data name="PropertyProfile_IdealRenterProfile_Student" xml:space="preserve">
+	<value>Best positioned for students and parents prioritizing predictable operations, transit and nearby amenities.</value>
+  </data>
+  <data name="PropertyProfile_IdealRenterProfile_Family" xml:space="preserve">
+	<value>Strong fit for longer-stay households looking for neighbourhood stability, storage and practical daily living.</value>
+  </data>
+  <data name="PropertyProfile_IdealRenterProfile_Default" xml:space="preserve">
+	<value>Best suited for professionals and couples who value location quality, polished leasing presentation and smooth move-in execution.</value>
+  </data>
+  <data name="PropertyProfile_Headline_Student" xml:space="preserve">
+	<value>Student-ready living in {0} with practical convenience and fast move-in support.</value>
+  </data>
+  <data name="PropertyProfile_Headline_Family" xml:space="preserve">
+	<value>Stable family-oriented rental in {0} with practical space and everyday convenience.</value>
+  </data>
+  <data name="PropertyProfile_Headline_Premium" xml:space="preserve">
+	<value>Premium {0} living in {1} with polished presentation and strong renter appeal.</value>
+  </data>
+  <data name="PropertyProfile_Headline_Default" xml:space="preserve">
+	<value>Well-positioned {0} rental in {1} with commuter-friendly appeal and disciplined operations.</value>
+  </data>
+  <data name="PropertyProfile_AssetStageNarrative_Setup" xml:space="preserve">
+	<value>The asset structure is not fully mapped yet. Finish the base setup before relying on portfolio insights.</value>
+  </data>
+  <data name="PropertyProfile_AssetStageNarrative_LeaseUp" xml:space="preserve">
+	<value>This address needs focused vacancy execution, pricing discipline and sharper listing follow-through.</value>
+  </data>
+  <data name="PropertyProfile_AssetStageNarrative_StabilizePlaybook" xml:space="preserve">
+	<value>Occupancy is workable, but the commercial playbook still needs stronger documentation for repeatable team execution.</value>
+  </data>
+  <data name="PropertyProfile_AssetStageNarrative_Stabilized" xml:space="preserve">
+	<value>The property is documented and operationally steady enough to serve as a benchmark asset in the portfolio.</value>
+  </data>
+  <data name="PropertyProfile_PricingPosture_Vacant" xml:space="preserve">
+	<value>Protect revenue recovery first. Benchmark against the target of {0}, tighten showing speed and avoid overpricing vacant suites.</value>
+  </data>
+  <data name="PropertyProfile_PricingPosture_AboveTarget" xml:space="preserve">
+	<value>This asset is outperforming target. Preserve pricing discipline and document why this positioning resonates with renters.</value>
+  </data>
+  <data name="PropertyProfile_PricingPosture_BelowTarget" xml:space="preserve">
+	<value>Revenue sits below target. Review unit mix, renewal strategy and whether the property story supports the desired price point.</value>
+  </data>
+  <data name="PropertyProfile_PricingPosture_OnTarget" xml:space="preserve">
+	<value>Revenue is on target. Focus on keeping renewals smooth and protecting turnover quality rather than chasing avoidable concessions.</value>
+  </data>
+  <data name="PropertyProfile_OperationsFocus_Vacant" xml:space="preserve">
+	<value>Keep turnover speed high, align vendors early and remove friction between vacancy, maintenance and leasing handoff.</value>
+  </data>
+  <data name="PropertyProfile_OperationsFocus_Default" xml:space="preserve">
+	<value>Add repeatable operating notes so onsite staff and external vendors execute the asset the same way every time.</value>
+  </data>
+  <data name="PropertyProfile_Action_AddUnitMix" xml:space="preserve">
+	<value>Add the unit mix so occupancy, rent roll and leasing performance become measurable.</value>
+  </data>
+  <data name="PropertyProfile_Action_VacancyRecovery" xml:space="preserve">
+	<value>Launch a vacancy recovery sprint with sharper pricing, faster showings and tighter follow-up.</value>
+  </data>
+  <data name="PropertyProfile_Action_CompletePlaybook" xml:space="preserve">
+	<value>Complete the missing playbook inputs to improve consistency across listings, tours and renewals.</value>
+  </data>
+  <data name="PropertyProfile_Action_ReviewPricing" xml:space="preserve">
+	<value>Review the pricing story and positioning against the revenue target before offering concessions.</value>
+  </data>
+  <data name="PropertyProfile_Action_DocumentBenchmark" xml:space="preserve">
+	<value>Document what is working here and reuse this property as the benchmark playbook for similar assets.</value>
+  </data>
+  <data name="PropertyProfile_Action_StayAhead" xml:space="preserve">
+	<value>Stay ahead of renewals and maintenance windows to protect the current stabilized performance.</value>
+  </data>
+  <data name="PropertyProfile_PostalPending" xml:space="preserve">
+	<value>Postal pending</value>
+  </data>
+</root>

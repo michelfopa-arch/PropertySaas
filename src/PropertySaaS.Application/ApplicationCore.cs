@@ -23,13 +23,111 @@ namespace PropertySaaS.Application.Abstractions
 
 namespace PropertySaaS.Application.Common
 {
+    public class JurisdictionProfile
+    {
+        public string CountryCode { get; init; } = "CA";
+        public string ProvinceCode { get; init; } = "ON";
+        public string ProvinceDisplayName { get; init; } = "Ontario";
+        public string DefaultLanguage { get; init; } = "en-CA";
+        public IReadOnlyList<string> SupportedLanguages { get; init; } = new[] { "en-CA" };
+        public IReadOnlyList<string> NoticeTypes { get; init; } = Array.Empty<string>();
+        public string LeasePackageLabel { get; init; } = "Lease package";
+        public IReadOnlyDictionary<string, string> DocumentTemplates { get; init; } = new Dictionary<string, string>();
+        public IReadOnlyList<string> ComplianceChecklist { get; init; } = Array.Empty<string>();
+    }
+
+    public static class JurisdictionCatalog
+    {
+        private static readonly Dictionary<string, JurisdictionProfile> Profiles = new(StringComparer.OrdinalIgnoreCase)
+        {
+            ["ON"] = new JurisdictionProfile
+            {
+                ProvinceCode = "ON",
+                ProvinceDisplayName = "Ontario",
+                DefaultLanguage = "en-CA",
+                SupportedLanguages = new[] { "en-CA", "fr-CA" },
+                NoticeTypes = new[] { "N1", "N4", "SOL" },
+                LeasePackageLabel = "Ontario Standard Lease Package",
+                DocumentTemplates = new Dictionary<string, string>
+                {
+                    ["lease-package"] = "Ontario Standard Lease Package",
+                    ["non-payment-notice"] = "N4 Non-payment Notice",
+                    ["rent-increase-notice"] = "N1 Rent Increase Notice"
+                },
+                ComplianceChecklist = new[]
+                {
+                    "Review 90-day rent increase workflows",
+                    "Track the latest Ontario lease form version",
+                    "Retain audit trail for notices and service dates"
+                }
+            },
+            ["QC"] = new JurisdictionProfile
+            {
+                ProvinceCode = "QC",
+                ProvinceDisplayName = "Québec",
+                DefaultLanguage = "fr-CA",
+                SupportedLanguages = new[] { "fr-CA", "en-CA" },
+                NoticeTypes = new[] { "TAL", "RentReview", "LeaseRenewal" },
+                LeasePackageLabel = "Québec Residential Lease Package",
+                DocumentTemplates = new Dictionary<string, string>
+                {
+                    ["lease-package"] = "Québec Residential Lease Package",
+                    ["non-payment-notice"] = "Notice to pay rent or begin TAL file",
+                    ["rent-increase-notice"] = "Lease renewal and rent adjustment notice"
+                },
+                ComplianceChecklist = new[]
+                {
+                    "Track Tribunal administratif du logement timelines",
+                    "Prepare lease wording and notices in the appropriate language",
+                    "Retain delivery proof and resident communication history"
+                }
+            },
+            ["AB"] = new JurisdictionProfile
+            {
+                ProvinceCode = "AB",
+                ProvinceDisplayName = "Alberta",
+                DefaultLanguage = "en-CA",
+                SupportedLanguages = new[] { "en-CA", "fr-CA" },
+                NoticeTypes = new[] { "RentIncrease", "Termination", "Inspection" },
+                LeasePackageLabel = "Alberta Residential Tenancy Package",
+                DocumentTemplates = new Dictionary<string, string>
+                {
+                    ["lease-package"] = "Alberta Residential Tenancy Package",
+                    ["non-payment-notice"] = "Alberta non-payment notice workflow",
+                    ["rent-increase-notice"] = "Alberta rent increase notice"
+                },
+                ComplianceChecklist = new[]
+                {
+                    "Track notice windows for rent changes and terminations",
+                    "Review inspection and entry documentation requirements",
+                    "Keep service evidence and lease package history organized"
+                }
+            }
+        };
+
+        public static JurisdictionProfile GetProfile(string? province)
+            => Profiles.TryGetValue(province ?? string.Empty, out var profile)
+                ? profile
+                : Profiles["ON"];
+
+        public static IReadOnlyList<string> SupportedCultureNames => Profiles.Values
+            .SelectMany(x => x.SupportedLanguages)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(x => x)
+            .ToList();
+    }
+
     public class CurrentOrganization
     {
         public Guid OrganizationId { get; set; }
         public string OrganizationName { get; set; } = string.Empty;
         public string UserEmail { get; set; } = string.Empty;
         public string Role { get; set; } = "Owner";
+        public string Province { get; set; } = "ON";
+        public string CountryCode { get; set; } = "CA";
+        public string PreferredLanguage { get; set; } = "en-CA";
         public bool CanManageData => Role is "Owner" or "Manager";
+        public JurisdictionProfile Jurisdiction => JurisdictionCatalog.GetProfile(Province);
     }
 
     public class DashboardSummaryDto
@@ -42,7 +140,7 @@ namespace PropertySaaS.Application.Common
         public int ActiveLeases { get; set; }
         public int OpenMaintenance { get; set; }
         public int ComplianceDueSoon { get; set; }
-        public int OntarioNoticesInWorkflow { get; set; }
+        public int JurisdictionNoticesInWorkflow { get; set; }
         public int ExportFeedsReady { get; set; } = 3;
         public decimal MonthlyRentRoll { get; set; }
         public string SubscriptionTier { get; set; } = "Growth";
@@ -80,6 +178,7 @@ namespace PropertySaaS.Application.Features
             var units = await _db.Units.Where(x => x.OrganizationId == id).ToListAsync();
             var leases = await _db.Leases.Where(x => x.OrganizationId == id).ToListAsync();
             var organization = await _db.Organizations.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id);
+            var jurisdictionProfile = JurisdictionCatalog.GetProfile(_current.Province);
             return new DashboardSummaryDto
             {
                 Properties = await _db.Properties.CountAsync(x => x.OrganizationId == id),
@@ -89,7 +188,7 @@ namespace PropertySaaS.Application.Features
                 ActiveLeases = leases.Count(x => x.Status == LeaseStatus.Active || x.Status == LeaseStatus.EndingSoon),
                 OpenMaintenance = await _db.MaintenanceRequests.CountAsync(x => x.OrganizationId == id && x.Status != "Closed"),
                 ComplianceDueSoon = await _db.ComplianceReminders.CountAsync(x => x.OrganizationId == id && !x.IsCompleted && x.DueDate <= DateOnly.FromDateTime(DateTime.Today.AddDays(45))),
-                OntarioNoticesInWorkflow = leases.Count(x => x.N1IncreaseNoticeScheduled) + await _db.ComplianceReminders.CountAsync(x => x.OrganizationId == id && !x.IsCompleted && (x.NoticeType == "N1" || x.NoticeType == "N4")),
+                JurisdictionNoticesInWorkflow = leases.Count(x => x.N1IncreaseNoticeScheduled) + await _db.ComplianceReminders.CountAsync(x => x.OrganizationId == id && !x.IsCompleted && jurisdictionProfile.NoticeTypes.Contains(x.NoticeType)),
                 MonthlyRentRoll = units.Sum(x => x.MonthlyRent),
                 SubscriptionTier = organization?.SubscriptionTier.ToString() ?? "Growth"
             };
@@ -183,6 +282,28 @@ namespace PropertySaaS.Application.Features
             entity.ScreeningProvider = tenant.ScreeningProvider;
 
             _db.AuditLogs.Add(new AuditLog { OrganizationId = _current.OrganizationId, EntityName = nameof(Tenant), Action = "Update", PerformedBy = _current.UserEmail, Details = $"Updated tenant {tenant.FullName}" });
+            await _db.SaveChangesAsync();
+        }
+
+        public async Task<AppUser?> GetCurrentUserProfileAsync()
+            => await _db.Users.AsNoTracking().FirstOrDefaultAsync(x => x.OrganizationId == _current.OrganizationId && x.Email == _current.UserEmail);
+
+        public async Task UpdateCurrentUserPreferredLanguageAsync(string preferredLanguage)
+        {
+            var entity = await _db.Users.FirstOrDefaultAsync(x => x.OrganizationId == _current.OrganizationId && x.Email == _current.UserEmail);
+            if (entity is null) return;
+
+            var normalizedLanguage = string.IsNullOrWhiteSpace(preferredLanguage)
+                ? _current.Jurisdiction.DefaultLanguage
+                : preferredLanguage.Trim();
+
+            if (!_current.Jurisdiction.SupportedLanguages.Contains(normalizedLanguage, StringComparer.OrdinalIgnoreCase))
+            {
+                normalizedLanguage = _current.Jurisdiction.DefaultLanguage;
+            }
+
+            entity.PreferredLanguage = normalizedLanguage;
+            _db.AuditLogs.Add(new AuditLog { OrganizationId = _current.OrganizationId, EntityName = nameof(AppUser), Action = "Update", PerformedBy = _current.UserEmail, Details = $"Updated preferred language to {normalizedLanguage}" });
             await _db.SaveChangesAsync();
         }
 
@@ -341,7 +462,10 @@ namespace PropertySaaS.Application.Dashboard
                 OrganizationId = Guid.Parse("11111111-1111-1111-1111-111111111111"),
                 OrganizationName = "Maple Leaf Property Group",
                 UserEmail = "owner@mapleleafpm.ca",
-                Role = "Owner"
+                Role = "Owner",
+                Province = "ON",
+                CountryCode = "CA",
+                PreferredLanguage = "en-CA"
             });
             return services;
         }

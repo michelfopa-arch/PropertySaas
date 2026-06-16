@@ -1,29 +1,31 @@
 @attribute [Authorize]
 @page "/compliance"
 @inject SaasDataService DataService
+@inject PropertySaaS.Application.Common.CurrentOrganization CurrentOrganization
+@inject IStringLocalizer<SharedResource> Localizer
 
-<PageTitle>Compliance</PageTitle>
+<PageTitle>@Localizer["Compliance_Title"]</PageTitle>
 
 <MudStack Spacing="3">
     <MudStack Spacing="0">
-        <MudText Typo="Typo.h4">Ontario RTA compliance reminders</MudText>
-        <MudText Typo="Typo.body2">Keep reminder workflows scannable here and open the linked templates only when the team needs the full legal document package.</MudText>
+        <MudText Typo="Typo.h4">@string.Format(Localizer["Compliance_PageHeading"].Value, CurrentOrganization.Jurisdiction.ProvinceDisplayName)</MudText>
+        <MudText Typo="Typo.body2">@string.Format(Localizer["Compliance_PageSubtitle"].Value, CurrentOrganization.Jurisdiction.ProvinceDisplayName)</MudText>
     </MudStack>
 
     <MudGrid Spacing="2" Class="align-center-grid">
         <MudItem xs="12" lg="4">
             <MudTextField T="string"
-                          Label="Search reminders"
+                          Label="@Localizer["Compliance_SearchLabel"]"
                           Variant="Variant.Outlined"
                           Immediate="true"
                           @bind-Value="_searchText"
                           Adornment="Adornment.Start"
                           AdornmentIcon="@Icons.Material.Filled.Search"
-                          Placeholder="Search by title, notice or reference" />
+                          Placeholder="@Localizer["Compliance_SearchPlaceholder"]" />
         </MudItem>
         <MudItem xs="12" sm="4" lg="2">
-            <MudSelect T="string" Label="Notice" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedNoticeFilter">
-                <MudSelectItem T="string" Value="@string.Empty">All notices</MudSelectItem>
+            <MudSelect T="string" Label="@Localizer["Compliance_FilterNotice"]" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedNoticeFilter">
+                <MudSelectItem T="string" Value="@string.Empty">@Localizer["Compliance_FilterAllNotices"]</MudSelectItem>
                 @foreach (var option in NoticeOptions)
                 {
                     <MudSelectItem T="string" Value="@option">@option</MudSelectItem>
@@ -31,62 +33,62 @@
             </MudSelect>
         </MudItem>
         <MudItem xs="12" sm="4" lg="2">
-            <MudSelect T="string" Label="State" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedStateFilter">
-                <MudSelectItem T="string" Value="@string.Empty">All states</MudSelectItem>
-                <MudSelectItem T="string" Value='@("Open")'>Open</MudSelectItem>
-                <MudSelectItem T="string" Value='@("Completed")'>Completed</MudSelectItem>
-                <MudSelectItem T="string" Value='@("Due soon")'>Due soon</MudSelectItem>
+            <MudSelect T="string" Label="@Localizer["Compliance_FilterState"]" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedStateFilter">
+                <MudSelectItem T="string" Value="@string.Empty">@Localizer["Compliance_FilterAllStates"]</MudSelectItem>
+                <MudSelectItem T="string" Value='@Localizer["Compliance_StateOpen"].Value'>@Localizer["Compliance_StateOpen"]</MudSelectItem>
+                <MudSelectItem T="string" Value='@Localizer["Compliance_StateCompleted"].Value'>@Localizer["Compliance_StateCompleted"]</MudSelectItem>
+                <MudSelectItem T="string" Value='@Localizer["Compliance_StateDueSoon"].Value'>@Localizer["Compliance_StateDueSoon"]</MudSelectItem>
             </MudSelect>
         </MudItem>
         <MudItem xs="12" sm="4" lg="2">
             <MudStack Row="true" Spacing="1" Class="properties-toolbar-actions">
                 @if (HasActiveFilters)
                 {
-                    <MudButton Variant="Variant.Outlined" Color="Color.Default" FullWidth="true" StartIcon="@Icons.Material.Filled.FilterAltOff" OnClick="ClearFilters">Reset</MudButton>
+                    <MudButton Variant="Variant.Outlined" Color="Color.Default" FullWidth="true" StartIcon="@Icons.Material.Filled.FilterAltOff" OnClick="ClearFilters">@Localizer["Common_Reset"]</MudButton>
                 }
             </MudStack>
         </MudItem>
         <MudItem xs="12" lg="2">
-            <MudButton Href="/docs/ontario-standard-lease" Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" StartIcon="@Icons.Material.Filled.Description">Open templates</MudButton>
+            <MudButton Href="/docs/jurisdiction/lease-package" Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" StartIcon="@Icons.Material.Filled.Description">@Localizer["Compliance_OpenTemplates"]</MudButton>
         </MudItem>
     </MudGrid>
 
     <MudGrid Spacing="2">
-        <MudItem xs="12" sm="6" lg="3"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">Reminders shown</MudText><MudText Typo="Typo.h6">@FilteredItems.Count()</MudText></MudPaper></MudItem>
-        <MudItem xs="12" sm="6" lg="3"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">Due soon</MudText><MudText Typo="Typo.h6">@FilteredItems.Count(x => !x.IsCompleted && x.DueDate <= DateOnly.FromDateTime(DateTime.Today.AddDays(14)))</MudText></MudPaper></MudItem>
-        <MudItem xs="12" sm="6" lg="3"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">Completed</MudText><MudText Typo="Typo.h6">@FilteredItems.Count(x => x.IsCompleted)</MudText></MudPaper></MudItem>
-        <MudItem xs="12" sm="6" lg="3"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">Notice types</MudText><MudText Typo="Typo.h6">@FilteredItems.Select(x => x.NoticeType).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct(StringComparer.OrdinalIgnoreCase).Count()</MudText></MudPaper></MudItem>
+        <MudItem xs="12" sm="6" lg="3"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">@Localizer["Compliance_StatShown"]</MudText><MudText Typo="Typo.h6">@FilteredItems.Count()</MudText></MudPaper></MudItem>
+        <MudItem xs="12" sm="6" lg="3"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">@Localizer["Compliance_StatDueSoon"]</MudText><MudText Typo="Typo.h6">@FilteredItems.Count(x => !x.IsCompleted && x.DueDate <= DateOnly.FromDateTime(DateTime.Today.AddDays(14)))</MudText></MudPaper></MudItem>
+        <MudItem xs="12" sm="6" lg="3"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">@Localizer["Compliance_StatCompleted"]</MudText><MudText Typo="Typo.h6">@FilteredItems.Count(x => x.IsCompleted)</MudText></MudPaper></MudItem>
+        <MudItem xs="12" sm="6" lg="3"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">@Localizer["Compliance_StatNoticeTypes"]</MudText><MudText Typo="Typo.h6">@FilteredItems.Select(x => x.NoticeType).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct(StringComparer.OrdinalIgnoreCase).Count()</MudText></MudPaper></MudItem>
     </MudGrid>
 
     <MudPaper Class="pa-2 table-wrap properties-table-shell">
         <MudTable Items="FilteredItems.ToList()" Dense="true" Hover="true" Breakpoint="Breakpoint.Md" RowsPerPage="10">
             <HeaderContent>
-                <MudTh>Reminder</MudTh>
-                <MudTh>Notice</MudTh>
-                <MudTh>Due</MudTh>
-                <MudTh>State</MudTh>
-                <MudTh>Reference</MudTh>
+                <MudTh>@Localizer["Compliance_ColumnReminder"]</MudTh>
+                <MudTh>@Localizer["Compliance_ColumnNotice"]</MudTh>
+                <MudTh>@Localizer["Compliance_ColumnDue"]</MudTh>
+                <MudTh>@Localizer["Compliance_ColumnState"]</MudTh>
+                <MudTh>@Localizer["Compliance_ColumnReference"]</MudTh>
             </HeaderContent>
             <RowTemplate>
-                <MudTd DataLabel="Reminder">
+                <MudTd DataLabel="@Localizer["Compliance_ColumnReminder"]">
                     <MudStack Spacing="0">
                         <MudText Typo="Typo.subtitle2">@context.Title</MudText>
                         <MudText Typo="Typo.caption" Class="property-address">@GetReminderNarrative(context)</MudText>
                     </MudStack>
                 </MudTd>
-                <MudTd DataLabel="Notice"><MudChip T="string" Variant="Variant.Outlined" Color="Color.Info">@context.NoticeType</MudChip></MudTd>
-                <MudTd DataLabel="Due">@context.DueDate</MudTd>
-                <MudTd DataLabel="State"><MudChip T="string" Variant="Variant.Filled" Color="@GetStateColor(context)">@GetStateLabel(context)</MudChip></MudTd>
-                <MudTd DataLabel="Reference">@context.Reference</MudTd>
+                <MudTd DataLabel="@Localizer["Compliance_ColumnNotice"]"><MudChip T="string" Variant="Variant.Outlined" Color="Color.Info">@context.NoticeType</MudChip></MudTd>
+                <MudTd DataLabel="@Localizer["Compliance_ColumnDue"]">@context.DueDate</MudTd>
+                <MudTd DataLabel="@Localizer["Compliance_ColumnState"]"><MudChip T="string" Variant="Variant.Filled" Color="@GetStateColor(context)">@GetStateLabel(context)</MudChip></MudTd>
+                <MudTd DataLabel="@Localizer["Compliance_ColumnReference"]">@context.Reference</MudTd>
             </RowTemplate>
             <NoRecordsContent>
                 <MudStack Class="pa-6 properties-empty-state" Spacing="1" AlignItems="AlignItems.Center">
                     <MudIcon Icon="@Icons.Material.Filled.Gavel" Size="Size.Large" Color="Color.Default" />
-                    <MudText Typo="Typo.subtitle1">No compliance reminders match the current filters.</MudText>
-                    <MudText Typo="Typo.body2">Reset the filters to bring the Ontario workflow backlog back into view.</MudText>
+                    <MudText Typo="Typo.subtitle1">@Localizer["Compliance_NoRecordsTitle"]</MudText>
+                    <MudText Typo="Typo.body2">@string.Format(Localizer["Compliance_NoRecordsSubtitle"].Value, CurrentOrganization.Jurisdiction.ProvinceDisplayName)</MudText>
                     @if (HasActiveFilters)
                     {
-                        <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="ClearFilters">Reset filters</MudButton>
+                        <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="ClearFilters">@Localizer["Common_ResetFilters"]</MudButton>
                     }
                 </MudStack>
             </NoRecordsContent>
@@ -99,21 +101,24 @@
     <MudGrid Spacing="2">
         <MudItem xs="12" md="6">
             <MudPaper Class="pa-4 property-detail-panel h-100" Elevation="0">
-                <MudText Typo="Typo.h6" GutterBottom="true">Ontario templates</MudText>
+                <MudText Typo="Typo.h6" GutterBottom="true">@string.Format(Localizer["Compliance_TemplatesTitle"].Value, CurrentOrganization.Jurisdiction.ProvinceDisplayName)</MudText>
                 <MudList T="string" Dense="true">
-                    <MudListItem T="string" Href="/docs/ontario-standard-lease">Ontario Standard Lease Package</MudListItem>
-                    <MudListItem T="string" Href="/docs/n4-template">N4 Non-payment Notice</MudListItem>
-                    <MudListItem T="string" Href="/docs/n1-template">N1 Rent Increase Notice</MudListItem>
+                    <MudListItem T="string" Href="/docs/jurisdiction/lease-package">@CurrentOrganization.Jurisdiction.LeasePackageLabel</MudListItem>
+                    @foreach (var template in CurrentOrganization.Jurisdiction.DocumentTemplates.Where(x => x.Key != "lease-package"))
+                    {
+                        <MudListItem T="string" Href="@($"/docs/jurisdiction/{template.Key}")">@template.Value</MudListItem>
+                    }
                 </MudList>
             </MudPaper>
         </MudItem>
         <MudItem xs="12" md="6">
             <MudPaper Class="pa-4 property-detail-panel h-100" Elevation="0">
-                <MudText Typo="Typo.h6" GutterBottom="true">Operational checklist</MudText>
+                <MudText Typo="Typo.h6" GutterBottom="true">@Localizer["Compliance_OperationalChecklist"]</MudText>
                 <MudList T="string" Dense="true">
-                    <MudListItem T="string">Review 90-day rent increase workflows</MudListItem>
-                    <MudListItem T="string">Track latest Ontario lease form version</MudListItem>
-                    <MudListItem T="string">Retain audit trail for notices and service dates</MudListItem>
+                    @foreach (var item in CurrentOrganization.Jurisdiction.ComplianceChecklist)
+                    {
+                        <MudListItem T="string">@item</MudListItem>
+                    }
                 </MudList>
             </MudPaper>
         </MudItem>
@@ -137,7 +142,10 @@
         .Where(item => string.IsNullOrWhiteSpace(_selectedNoticeFilter) || string.Equals(item.NoticeType, _selectedNoticeFilter, StringComparison.OrdinalIgnoreCase))
         .Where(item => string.IsNullOrWhiteSpace(_selectedStateFilter) || string.Equals(GetStateLabel(item), _selectedStateFilter, StringComparison.OrdinalIgnoreCase));
 
-    protected override async Task OnInitializedAsync() => _items = await DataService.GetComplianceAsync();
+    protected override async Task OnInitializedAsync()
+        => _items = (await DataService.GetComplianceAsync())
+            .Where(x => string.Equals(x.Province, CurrentOrganization.Province, StringComparison.OrdinalIgnoreCase))
+            .ToList();
 
     private void ClearFilters()
     {
@@ -146,33 +154,40 @@
         _selectedStateFilter = string.Empty;
     }
 
-    private static string GetStateLabel(ComplianceReminder reminder)
+    private string GetStateLabel(ComplianceReminder reminder)
     {
         if (reminder.IsCompleted)
         {
-            return "Completed";
+            return Localizer["Compliance_StateCompleted"].Value;
         }
 
         if (reminder.DueDate <= DateOnly.FromDateTime(DateTime.Today.AddDays(14)))
         {
-            return "Due soon";
+            return Localizer["Compliance_StateDueSoon"].Value;
         }
 
-        return "Open";
+        return Localizer["Compliance_StateOpen"].Value;
     }
 
     private static Color GetStateColor(ComplianceReminder reminder)
-        => GetStateLabel(reminder) switch
+    {
+        if (reminder.IsCompleted)
         {
-            "Completed" => Color.Success,
-            "Due soon" => Color.Warning,
-            _ => Color.Info
-        };
+            return Color.Success;
+        }
 
-    private static string GetReminderNarrative(ComplianceReminder reminder)
+        if (reminder.DueDate <= DateOnly.FromDateTime(DateTime.Today.AddDays(14)))
+        {
+            return Color.Warning;
+        }
+
+        return Color.Info;
+    }
+
+    private string GetReminderNarrative(ComplianceReminder reminder)
         => reminder.IsCompleted
-            ? "Workflow completed and available for audit reference."
+            ? Localizer["Compliance_NarrativeCompleted"].Value
             : reminder.DueDate <= DateOnly.FromDateTime(DateTime.Today.AddDays(14))
-                ? "Time-sensitive Ontario action; keep service dates and supporting evidence tight."
-                : "Open reminder in the Ontario workflow queue.";
+                ? Localizer["Compliance_NarrativeDueSoon"].Value
+                : Localizer["Compliance_NarrativeOpen"].Value;
 }

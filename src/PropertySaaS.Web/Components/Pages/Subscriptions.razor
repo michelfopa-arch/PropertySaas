@@ -1,36 +1,37 @@
 @attribute [Authorize]
 @page "/subscriptions"
+@using PropertySaaS.Web.Localization
 
-<PageTitle>Subscriptions</PageTitle>
+<PageTitle>@UiText.Get("Subscriptions_PageTitle")</PageTitle>
 
 <MudStack Spacing="3">
-    <MudText Typo="Typo.h4">Subscription management</MudText>
+    <MudText Typo="Typo.h4">@UiText.Get("Subscriptions_Title")</MudText>
 
     <MudPaper Class="pa-4">
-        <MudText Typo="Typo.body1" Class="mb-3">Stripe checkout and billing portal endpoints are now live through application routes.</MudText>
+        <MudText Typo="Typo.body1" Class="mb-3">@UiText.Get("Subscriptions_Intro")</MudText>
         <MudStack Row="true" Spacing="2" Wrap="Wrap.Wrap">
-            <MudButton Href="/billing/checkout/starter" Variant="Variant.Filled" Color="Color.Primary">Start Starter</MudButton>
-            <MudButton Href="/billing/checkout/growth" Variant="Variant.Filled" Color="Color.Primary">Start Growth</MudButton>
-            <MudButton Href="/billing/checkout/pro" Variant="Variant.Filled" Color="Color.Primary">Start Pro</MudButton>
-            <MudButton Href="/billing/portal" Variant="Variant.Outlined" Color="Color.Default">Open Billing Portal</MudButton>
+            <MudButton Href="/billing/checkout/starter" Variant="Variant.Filled" Color="Color.Primary">@UiText.Get("Subscriptions_StartStarter")</MudButton>
+            <MudButton Href="/billing/checkout/growth" Variant="Variant.Filled" Color="Color.Primary">@UiText.Get("Subscriptions_StartGrowth")</MudButton>
+            <MudButton Href="/billing/checkout/pro" Variant="Variant.Filled" Color="Color.Primary">@UiText.Get("Subscriptions_StartPro")</MudButton>
+            <MudButton Href="/billing/portal" Variant="Variant.Outlined" Color="Color.Default">@UiText.Get("Subscriptions_OpenPortal")</MudButton>
         </MudStack>
     </MudPaper>
 
     <MudPaper Class="pa-4">
-        <MudText Typo="Typo.h6" GutterBottom="true">Clerk authentication</MudText>
-        <MudText Typo="Typo.body1" Class="mb-3">Development secrets are configured in local user-secrets. Use the buttons below to test sign-in and sign-out.</MudText>
+        <MudText Typo="Typo.h6" GutterBottom="true">@UiText.Get("Subscriptions_AuthTitle")</MudText>
+        <MudText Typo="Typo.body1" Class="mb-3">@UiText.Get("Subscriptions_AuthBody")</MudText>
         <MudStack Row="true" Spacing="2" Wrap="Wrap.Wrap">
-            <MudButton Href="/account/login" Variant="Variant.Filled" Color="Color.Secondary">Sign in with Clerk</MudButton>
-            <MudButton Href="/account/logout" Variant="Variant.Outlined" Color="Color.Default">Sign out</MudButton>
+            <MudButton Href="/account/login" Variant="Variant.Filled" Color="Color.Secondary">@UiText.Get("Nav_SignIn")</MudButton>
+            <MudButton Href="/account/logout" Variant="Variant.Outlined" Color="Color.Default">@UiText.Get("Nav_SignOut")</MudButton>
         </MudStack>
     </MudPaper>
 
     <MudPaper Class="pa-4">
-        <MudText Typo="Typo.h6" GutterBottom="true">Configuration checklist</MudText>
+        <MudText Typo="Typo.h6" GutterBottom="true">@UiText.Get("Subscriptions_ChecklistTitle")</MudText>
         <MudList T="string" Dense="true">
-            <MudListItem T="string">Stripe SecretKey and PriceIds must be configured for real checkout.</MudListItem>
-            <MudListItem T="string">Expose /billing/webhook for Stripe webhook events.</MudListItem>
-            <MudListItem T="string">Move Clerk and Stripe secrets to Azure Key Vault for production.</MudListItem>
+            <MudListItem T="string">@UiText.Get("Subscriptions_Checklist1")</MudListItem>
+            <MudListItem T="string">@UiText.Get("Subscriptions_Checklist2")</MudListItem>
+            <MudListItem T="string">@UiText.Get("Subscriptions_Checklist3")</MudListItem>
         </MudList>
     </MudPaper>
 </MudStack>

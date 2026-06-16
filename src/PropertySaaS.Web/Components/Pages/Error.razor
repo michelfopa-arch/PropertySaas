@@ -1,4 +1,5 @@
 @page "/Error"
+@using PropertySaaS.Web.Localization
 
-<h1>Application error</h1>
-<p>An unexpected error occurred.</p>
+<h1>@UiText.Get("Error_Title")</h1>
+<p>@UiText.Get("Error_Message")</p>

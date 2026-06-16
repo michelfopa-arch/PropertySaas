@@ -2,29 +2,30 @@
 @page "/units"
 @inject SaasDataService DataService
 @inject PropertySaaS.Application.Common.CurrentOrganization CurrentOrganization
+@inject IStringLocalizer<SharedResource> Localizer
 
-<PageTitle>Units</PageTitle>
+<PageTitle>@Localizer["Units_Title"]</PageTitle>
 
 <MudStack Spacing="3">
     <MudStack Spacing="0">
-        <MudText Typo="Typo.h4">Units</MudText>
-        <MudText Typo="Typo.body2">Keep the unit portfolio scannable. Edit quickly here and use each property profile for the full asset story.</MudText>
+        <MudText Typo="Typo.h4">@Localizer["Units_Title"]</MudText>
+        <MudText Typo="Typo.body2">@Localizer["Units_Subtitle"]</MudText>
     </MudStack>
 
     <MudGrid Spacing="2" Class="align-center-grid">
         <MudItem xs="12" lg="4">
             <MudTextField T="string"
-                          Label="Search units"
+                          Label="@Localizer["Units_SearchLabel"]"
                           Variant="Variant.Outlined"
                           Immediate="true"
                           @bind-Value="_searchText"
                           Adornment="Adornment.Start"
                           AdornmentIcon="@Icons.Material.Filled.Search"
-                          Placeholder="Search by unit, property, layout or status" />
+                          Placeholder="@Localizer["Units_SearchPlaceholder"]" />
         </MudItem>
         <MudItem xs="12" sm="4" lg="2">
-            <MudSelect T="string" Label="Property" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedPropertyFilter">
-                <MudSelectItem T="string" Value="@string.Empty">All properties</MudSelectItem>
+            <MudSelect T="string" Label="@Localizer["Units_FilterProperty"]" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedPropertyFilter">
+                <MudSelectItem T="string" Value="@string.Empty">@Localizer["Units_FilterAllProperties"]</MudSelectItem>
                 @foreach (var property in _properties)
                 {
                     <MudSelectItem T="string" Value="@property.Name">@property.Name</MudSelectItem>
@@ -32,18 +33,18 @@
             </MudSelect>
         </MudItem>
         <MudItem xs="12" sm="4" lg="2">
-            <MudSelect T="string" Label="Status" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedOccupancyFilter">
-                <MudSelectItem T="string" Value="@string.Empty">All statuses</MudSelectItem>
-                <MudSelectItem T="string" Value='@("Occupied")'>Occupied</MudSelectItem>
-                <MudSelectItem T="string" Value='@("Vacant")'>Vacant</MudSelectItem>
+            <MudSelect T="string" Label="@Localizer["Units_FilterStatus"]" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedOccupancyFilter">
+                <MudSelectItem T="string" Value="@string.Empty">@Localizer["Units_FilterAllStatuses"]</MudSelectItem>
+                <MudSelectItem T="string" Value='@Localizer["Units_Occupied"].Value'>@Localizer["Units_Occupied"]</MudSelectItem>
+                <MudSelectItem T="string" Value='@Localizer["Units_Vacant"].Value'>@Localizer["Units_Vacant"]</MudSelectItem>
             </MudSelect>
         </MudItem>
         <MudItem xs="12" sm="4" lg="2">
-            <MudSelect T="string" Label="Bedrooms" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedBedroomFilter">
-                <MudSelectItem T="string" Value="@string.Empty">All layouts</MudSelectItem>
+            <MudSelect T="string" Label="@Localizer["Units_FilterBedrooms"]" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedBedroomFilter">
+                <MudSelectItem T="string" Value="@string.Empty">@Localizer["Units_FilterAllLayouts"]</MudSelectItem>
                 @foreach (var option in BedroomOptions)
                 {
-                    <MudSelectItem T="string" Value="@option">@option bd</MudSelectItem>
+                    <MudSelectItem T="string" Value="@option">@option @Localizer["Units_BedroomAbbreviation"]</MudSelectItem>
                 }
             </MudSelect>
         </MudItem>
@@ -51,32 +52,32 @@
             <MudStack Row="true" Spacing="1" Class="properties-toolbar-actions">
                 @if (HasActiveFilters)
                 {
-                    <MudButton Variant="Variant.Outlined" Color="Color.Default" FullWidth="true" StartIcon="@Icons.Material.Filled.FilterAltOff" OnClick="ClearFilters">Reset</MudButton>
+                    <MudButton Variant="Variant.Outlined" Color="Color.Default" FullWidth="true" StartIcon="@Icons.Material.Filled.FilterAltOff" OnClick="ClearFilters">@Localizer["Common_Reset"]</MudButton>
                 }
                 @if (CurrentOrganization.CanManageData)
                 {
-                    <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreatePanel">Add unit</MudButton>
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreatePanel">@Localizer["Units_AddUnit"]</MudButton>
                 }
             </MudStack>
         </MudItem>
     </MudGrid>
 
     <MudGrid Spacing="2">
-        <MudItem xs="12" sm="6" lg="3"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">Units shown</MudText><MudText Typo="Typo.h6">@FilteredUnits.Count()</MudText></MudPaper></MudItem>
-        <MudItem xs="12" sm="6" lg="3"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">Vacant</MudText><MudText Typo="Typo.h6">@FilteredUnits.Count(x => !x.IsOccupied)</MudText></MudPaper></MudItem>
-        <MudItem xs="12" sm="6" lg="3"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">Monthly rent</MudText><MudText Typo="Typo.h6">@FilteredUnits.Sum(x => x.MonthlyRent).ToString("C")</MudText></MudPaper></MudItem>
-        <MudItem xs="12" sm="6" lg="3"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">Properties covered</MudText><MudText Typo="Typo.h6">@FilteredUnits.Select(x => x.PropertyId).Distinct().Count()</MudText></MudPaper></MudItem>
+        <MudItem xs="12" sm="6" lg="3"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">@Localizer["Units_StatShown"]</MudText><MudText Typo="Typo.h6">@FilteredUnits.Count()</MudText></MudPaper></MudItem>
+        <MudItem xs="12" sm="6" lg="3"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">@Localizer["Units_StatVacant"]</MudText><MudText Typo="Typo.h6">@FilteredUnits.Count(x => !x.IsOccupied)</MudText></MudPaper></MudItem>
+        <MudItem xs="12" sm="6" lg="3"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">@Localizer["Units_StatMonthlyRent"]</MudText><MudText Typo="Typo.h6">@FilteredUnits.Sum(x => x.MonthlyRent).ToString("C")</MudText></MudPaper></MudItem>
+        <MudItem xs="12" sm="6" lg="3"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">@Localizer["Units_StatPropertiesCovered"]</MudText><MudText Typo="Typo.h6">@FilteredUnits.Select(x => x.PropertyId).Distinct().Count()</MudText></MudPaper></MudItem>
     </MudGrid>
 
     <MudExpansionPanels>
-        <MudExpansionPanel Text="Bulk import">
+        <MudExpansionPanel Text="@Localizer["Common_BulkImport"]">
             <MudPaper Class="pa-4" Elevation="0">
-                <MudText Typo="Typo.h6">Quick CSV Import</MudText>
-                <MudText Typo="Typo.body2" Class="mb-2">Format: PropertyName,UnitNumber,Bedrooms,Bathrooms,MonthlyRent</MudText>
+                <MudText Typo="Typo.h6">@Localizer["Common_QuickCsvImport"]</MudText>
+                <MudText Typo="Typo.body2" Class="mb-2">@Localizer["Units_CsvFormatHint"]</MudText>
                 <MudTextField Lines="5" Variant="Variant.Outlined" @bind-Value="_csvInput" FullWidth="true" />
                 @if (CurrentOrganization.CanManageData)
                 {
-                    <MudButton Variant="Variant.Filled" Color="Color.Secondary" Class="mt-3" OnClick="ImportCsvAsync">Import CSV Text</MudButton>
+                    <MudButton Variant="Variant.Filled" Color="Color.Secondary" Class="mt-3" OnClick="ImportCsvAsync">@Localizer["Common_ImportCsvText"]</MudButton>
                 }
                 @if (!string.IsNullOrWhiteSpace(_importResult))
                 {
@@ -89,31 +90,31 @@
     <MudPaper Class="pa-2 table-wrap properties-table-shell">
         <MudTable Items="FilteredUnits.ToList()" Dense="true" Hover="true" Breakpoint="Breakpoint.Md" RowsPerPage="10">
             <HeaderContent>
-                <MudTh>Unit</MudTh>
-                <MudTh>Property</MudTh>
-                <MudTh>Layout</MudTh>
-                <MudTh>Rent</MudTh>
-                <MudTh>Status</MudTh>
+                <MudTh>@Localizer["Units_ColumnUnit"]</MudTh>
+                <MudTh>@Localizer["Units_ColumnProperty"]</MudTh>
+                <MudTh>@Localizer["Units_ColumnLayout"]</MudTh>
+                <MudTh>@Localizer["Units_ColumnRent"]</MudTh>
+                <MudTh>@Localizer["Units_ColumnStatus"]</MudTh>
                 <MudTh></MudTh>
             </HeaderContent>
             <RowTemplate>
-                <MudTd DataLabel="Unit">
+                <MudTd DataLabel="@Localizer["Units_ColumnUnit"]">
                     <MudStack Spacing="0">
                         <MudText Typo="Typo.subtitle2">@context.UnitNumber</MudText>
                         <MudText Typo="Typo.caption" Class="property-address">@GetUnitSummary(context)</MudText>
                     </MudStack>
                 </MudTd>
-                <MudTd DataLabel="Property"><MudButton Href="@($"/properties/{context.PropertyId}")" Variant="Variant.Text" Color="Color.Primary" Size="Size.Small">@GetPropertyName(context.PropertyId)</MudButton></MudTd>
-                <MudTd DataLabel="Layout">@($"{context.Bedrooms} bd / {context.Bathrooms} ba")</MudTd>
-                <MudTd DataLabel="Rent">@context.MonthlyRent.ToString("C")</MudTd>
-                <MudTd DataLabel="Status"><MudChip T="string" Variant="Variant.Filled" Color="@(context.IsOccupied ? Color.Success : Color.Warning)">@(context.IsOccupied ? "Occupied" : "Vacant")</MudChip></MudTd>
-                <MudTd DataLabel="Actions">
+                <MudTd DataLabel="@Localizer["Units_ColumnProperty"]"><MudButton Href="@($"/properties/{context.PropertyId}")" Variant="Variant.Text" Color="Color.Primary" Size="Size.Small">@GetPropertyName(context.PropertyId)</MudButton></MudTd>
+                <MudTd DataLabel="@Localizer["Units_ColumnLayout"]">@GetLayoutLabel(context.Bedrooms, context.Bathrooms)</MudTd>
+                <MudTd DataLabel="@Localizer["Units_ColumnRent"]">@context.MonthlyRent.ToString("C")</MudTd>
+                <MudTd DataLabel="@Localizer["Units_ColumnStatus"]"><MudChip T="string" Variant="Variant.Filled" Color="@(context.IsOccupied ? Color.Success : Color.Warning)">@GetOccupancyLabel(context)</MudChip></MudTd>
+                <MudTd DataLabel="@Localizer["Units_ColumnActions"]">
                     <MudStack Row="true" Spacing="1" Wrap="Wrap.Wrap">
-                        <MudButton Href="@($"/properties/{context.PropertyId}")" Variant="Variant.Text" Color="Color.Primary" Size="Size.Small">Property profile</MudButton>
+                        <MudButton Href="@($"/properties/{context.PropertyId}")" Variant="Variant.Text" Color="Color.Primary" Size="Size.Small">@Localizer["Common_PropertyProfile"]</MudButton>
                         @if (CurrentOrganization.CanManageData)
                         {
-                            <MudButton Variant="Variant.Text" Color="Color.Secondary" Size="Size.Small" OnClick="() => OpenEditPanel(context)">Edit</MudButton>
-                            <MudButton Variant="Variant.Text" Color="Color.Error" Size="Size.Small" OnClick="() => DeleteAsync(context.Id)">Delete</MudButton>
+                            <MudButton Variant="Variant.Text" Color="Color.Secondary" Size="Size.Small" OnClick="() => OpenEditPanel(context)">@Localizer["Common_Edit"]</MudButton>
+                            <MudButton Variant="Variant.Text" Color="Color.Error" Size="Size.Small" OnClick="() => DeleteAsync(context.Id)">@Localizer["Common_Delete"]</MudButton>
                         }
                     </MudStack>
                 </MudTd>
@@ -121,11 +122,11 @@
             <NoRecordsContent>
                 <MudStack Class="pa-6 properties-empty-state" Spacing="1" AlignItems="AlignItems.Center">
                     <MudIcon Icon="@Icons.Material.Filled.MeetingRoom" Size="Size.Large" Color="Color.Default" />
-                    <MudText Typo="Typo.subtitle1">No units match the current filters.</MudText>
-                    <MudText Typo="Typo.body2">Reset the filters or add a new unit to complete the operating picture.</MudText>
+                    <MudText Typo="Typo.subtitle1">@Localizer["Units_NoRecordsTitle"]</MudText>
+                    <MudText Typo="Typo.body2">@Localizer["Units_NoRecordsSubtitle"]</MudText>
                     @if (HasActiveFilters)
                     {
-                        <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="ClearFilters">Reset filters</MudButton>
+                        <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="ClearFilters">@Localizer["Common_ResetFilters"]</MudButton>
                     }
                 </MudStack>
             </NoRecordsContent>
@@ -142,34 +143,34 @@
                 <MudStack Spacing="3">
                     <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
                         <MudStack Spacing="0">
-                            <MudText Typo="Typo.h5">@(_isCreateMode ? "Add unit" : "Edit unit")</MudText>
-                            <MudText Typo="Typo.body2">Keep unit operations light here. Use the property profile when the team needs the broader asset story.</MudText>
+                            <MudText Typo="Typo.h5">@(_isCreateMode ? Localizer["Units_DrawerAddTitle"] : Localizer["Units_DrawerEditTitle"])</MudText>
+                            <MudText Typo="Typo.body2">@Localizer["Units_DrawerSubtitle"]</MudText>
                         </MudStack>
                         <MudIconButton Icon="@Icons.Material.Filled.Close" Color="Color.Default" OnClick="CloseFormPanel" />
                     </MudStack>
 
                     <EditForm Model="ActiveUnit" OnValidSubmit="SaveFormAsync">
                         <MudGrid Spacing="2">
-                            <MudItem xs="12" md="6"><MudTextField Label="Unit number" Variant="Variant.Outlined" @bind-Value="ActiveUnit.UnitNumber" /></MudItem>
+                            <MudItem xs="12" md="6"><MudTextField Label="@Localizer["Units_FormUnitNumber"]" Variant="Variant.Outlined" @bind-Value="ActiveUnit.UnitNumber" /></MudItem>
                             <MudItem xs="12" md="6">
-                                <MudSelect T="Guid?" Label="Property" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="FormPropertyId">
-                                    <MudSelectItem T="Guid?" Value="@((Guid?)null)">Select property</MudSelectItem>
+                                <MudSelect T="Guid?" Label="@Localizer["Units_ColumnProperty"]" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="FormPropertyId">
+                                    <MudSelectItem T="Guid?" Value="@((Guid?)null)">@Localizer["Units_FormSelectProperty"]</MudSelectItem>
                                     @foreach (var property in _properties)
                                     {
                                         <MudSelectItem T="Guid?" Value="@((Guid?)property.Id)">@property.Name</MudSelectItem>
                                     }
                                 </MudSelect>
                             </MudItem>
-                            <MudItem xs="12" md="4"><MudNumericField T="int" Label="Bedrooms" Variant="Variant.Outlined" @bind-Value="ActiveUnit.Bedrooms" /></MudItem>
-                            <MudItem xs="12" md="4"><MudNumericField T="int" Label="Bathrooms" Variant="Variant.Outlined" @bind-Value="ActiveUnit.Bathrooms" /></MudItem>
-                            <MudItem xs="12" md="4"><MudNumericField T="decimal" Label="Monthly rent" Variant="Variant.Outlined" Adornment="Adornment.Start" AdornmentText="$" @bind-Value="ActiveUnit.MonthlyRent" /></MudItem>
-                            <MudItem xs="12"><MudSwitch T="bool" Color="Color.Primary" Label="Marked as occupied" @bind-Value="ActiveUnit.IsOccupied" /></MudItem>
-                            <MudItem xs="12"><MudPaper Class="pa-3 property-detail-panel" Elevation="0"><MudText Typo="Typo.subtitle2">Unit execution note</MudText><MudText Typo="Typo.body2">@GetFormGuidance()</MudText></MudPaper></MudItem>
+                            <MudItem xs="12" md="4"><MudNumericField T="int" Label="@Localizer["Units_FilterBedrooms"]" Variant="Variant.Outlined" @bind-Value="ActiveUnit.Bedrooms" /></MudItem>
+                            <MudItem xs="12" md="4"><MudNumericField T="int" Label="@Localizer["Units_FormBathrooms"]" Variant="Variant.Outlined" @bind-Value="ActiveUnit.Bathrooms" /></MudItem>
+                            <MudItem xs="12" md="4"><MudNumericField T="decimal" Label="@Localizer["Units_StatMonthlyRent"]" Variant="Variant.Outlined" Adornment="Adornment.Start" AdornmentText="$" @bind-Value="ActiveUnit.MonthlyRent" /></MudItem>
+                            <MudItem xs="12"><MudSwitch T="bool" Color="Color.Primary" Label="@Localizer["Units_FormMarkedOccupied"]" @bind-Value="ActiveUnit.IsOccupied" /></MudItem>
+                            <MudItem xs="12"><MudPaper Class="pa-3 property-detail-panel" Elevation="0"><MudText Typo="Typo.subtitle2">@Localizer["Units_FormExecutionNote"]</MudText><MudText Typo="Typo.body2">@GetFormGuidance()</MudText></MudPaper></MudItem>
                         </MudGrid>
 
                         <MudStack Row="true" Spacing="2" Class="mt-4" Justify="Justify.FlexEnd">
-                            <MudButton Variant="Variant.Text" Color="Color.Default" OnClick="CloseFormPanel">Cancel</MudButton>
-                            <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary">@(_isCreateMode ? "Create unit" : "Save changes")</MudButton>
+                            <MudButton Variant="Variant.Text" Color="Color.Default" OnClick="CloseFormPanel">@Localizer["Common_Cancel"]</MudButton>
+                            <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary">@(_isCreateMode ? Localizer["Units_Create"] : Localizer["Common_SaveChanges"])</MudButton>
                         </MudStack>
                     </EditForm>
                 </MudStack>
@@ -327,27 +328,30 @@
 
         _csvInput = string.Empty;
         await ReloadAsync();
-        _importResult = $"Imported {imported} row(s); skipped {skipped}.";
+        _importResult = string.Format(Localizer["Units_ImportResult"].Value, imported, skipped);
     }
 
     private string GetPropertyName(Guid propertyId)
-        => _properties.FirstOrDefault(x => x.Id == propertyId)?.Name ?? "Unknown property";
+        => _properties.FirstOrDefault(x => x.Id == propertyId)?.Name ?? Localizer["Units_UnknownProperty"].Value;
 
-    private static string GetUnitSummary(Unit unit)
-        => $"{unit.Bedrooms} bd / {unit.Bathrooms} ba • {(unit.IsOccupied ? "Occupied" : "Vacant")}";
+    private string GetLayoutLabel(int bedrooms, int bathrooms)
+        => $"{bedrooms} {Localizer["Units_BedroomAbbreviation"].Value} / {bathrooms} {Localizer["Units_BathroomAbbreviation"].Value}";
 
-    private static string GetOccupancyLabel(Unit unit)
-        => unit.IsOccupied ? "Occupied" : "Vacant";
+    private string GetUnitSummary(Unit unit)
+        => $"{GetLayoutLabel(unit.Bedrooms, unit.Bathrooms)} • {GetOccupancyLabel(unit)}";
+
+    private string GetOccupancyLabel(Unit unit)
+        => unit.IsOccupied ? Localizer["Units_Occupied"].Value : Localizer["Units_Vacant"].Value;
 
     private string GetFormGuidance()
     {
         if (ActiveUnit.PropertyId == Guid.Empty)
         {
-            return "Attach the unit to a property first so leases, turnover and profile views stay connected.";
+            return Localizer["Units_GuidanceSelectProperty"].Value;
         }
 
         return ActiveUnit.IsOccupied
-            ? "This unit is marked occupied. Use the leases module to keep contract dates and Ontario paperwork in sync."
-            : "This unit is marked vacant. Keep rent current and use the property profile to align the leasing story before marketing.";
+            ? Localizer["Units_GuidanceOccupied"].Value
+            : Localizer["Units_GuidanceVacant"].Value;
     }
 }

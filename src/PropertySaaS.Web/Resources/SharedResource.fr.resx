@@ -1,0 +1,1314 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+	<value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+	<value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+	<value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+	<value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Common_Reset" xml:space="preserve">
+	<value>Réinitialiser</value>
+  </data>
+  <data name="Common_ResetFilters" xml:space="preserve">
+	<value>Réinitialiser les filtres</value>
+  </data>
+  <data name="Common_Add" xml:space="preserve">
+	<value>Ajouter</value>
+  </data>
+  <data name="Common_Edit" xml:space="preserve">
+	<value>Modifier</value>
+  </data>
+  <data name="Common_Delete" xml:space="preserve">
+	<value>Supprimer</value>
+  </data>
+  <data name="Common_Cancel" xml:space="preserve">
+	<value>Annuler</value>
+  </data>
+  <data name="Common_SaveChanges" xml:space="preserve">
+	<value>Enregistrer les modifications</value>
+  </data>
+  <data name="Common_PropertyProfile" xml:space="preserve">
+	<value>Profil propriété</value>
+  </data>
+  <data name="Common_BulkImport" xml:space="preserve">
+	<value>Import en lot</value>
+  </data>
+  <data name="Common_QuickCsvImport" xml:space="preserve">
+	<value>Import CSV rapide</value>
+  </data>
+  <data name="Common_ImportCsvText" xml:space="preserve">
+	<value>Importer le texte CSV</value>
+  </data>
+  <data name="Properties_Title" xml:space="preserve">
+	<value>Propriétés</value>
+  </data>
+  <data name="Properties_Subtitle" xml:space="preserve">
+	<value>Vue portefeuille d’abord, exécution détaillée ensuite. Ouvrez le profil d’une propriété seulement lorsque l’équipe a besoin du contexte opérationnel complet.</value>
+  </data>
+  <data name="Properties_SearchLabel" xml:space="preserve">
+	<value>Rechercher des propriétés</value>
+  </data>
+  <data name="Properties_SearchPlaceholder" xml:space="preserve">
+	<value>Rechercher par nom, adresse, ville, code postal ou type</value>
+  </data>
+  <data name="Properties_AddProperty" xml:space="preserve">
+	<value>Ajouter une propriété</value>
+  </data>
+  <data name="Units_Title" xml:space="preserve">
+	<value>Unités</value>
+  </data>
+  <data name="Units_Subtitle" xml:space="preserve">
+	<value>Gardez le portefeuille d’unités lisible. Modifiez rapidement ici et utilisez le profil propriété pour le contexte complet de l’actif.</value>
+  </data>
+  <data name="Units_SearchLabel" xml:space="preserve">
+	<value>Rechercher des unités</value>
+  </data>
+  <data name="Units_SearchPlaceholder" xml:space="preserve">
+	<value>Rechercher par unité, propriété, configuration ou statut</value>
+  </data>
+  <data name="Units_AddUnit" xml:space="preserve">
+	<value>Ajouter une unité</value>
+  </data>
+	<data name="Units_FilterProperty" xml:space="preserve">
+	<value>Propriété</value>
+  </data>
+  <data name="Units_FilterAllProperties" xml:space="preserve">
+	<value>Toutes les propriétés</value>
+  </data>
+  <data name="Units_FilterStatus" xml:space="preserve">
+	<value>Statut</value>
+  </data>
+  <data name="Units_FilterAllStatuses" xml:space="preserve">
+	<value>Tous les statuts</value>
+  </data>
+  <data name="Units_Occupied" xml:space="preserve">
+	<value>Occupée</value>
+  </data>
+  <data name="Units_Vacant" xml:space="preserve">
+	<value>Vacante</value>
+  </data>
+  <data name="Units_FilterBedrooms" xml:space="preserve">
+	<value>Chambres</value>
+  </data>
+  <data name="Units_FilterAllLayouts" xml:space="preserve">
+	<value>Toutes les configurations</value>
+  </data>
+  <data name="Units_BedroomAbbreviation" xml:space="preserve">
+	<value>ch</value>
+  </data>
+  <data name="Units_BathroomAbbreviation" xml:space="preserve">
+	<value>sdb</value>
+  </data>
+  <data name="Units_StatShown" xml:space="preserve">
+	<value>Unités affichées</value>
+  </data>
+  <data name="Units_StatVacant" xml:space="preserve">
+	<value>Vacantes</value>
+  </data>
+  <data name="Units_StatMonthlyRent" xml:space="preserve">
+	<value>Loyer mensuel</value>
+  </data>
+  <data name="Units_StatPropertiesCovered" xml:space="preserve">
+	<value>Propriétés couvertes</value>
+  </data>
+  <data name="Units_CsvFormatHint" xml:space="preserve">
+	<value>Format : PropertyName,UnitNumber,Bedrooms,Bathrooms,MonthlyRent</value>
+  </data>
+  <data name="Units_ColumnUnit" xml:space="preserve">
+	<value>Unité</value>
+  </data>
+  <data name="Units_ColumnProperty" xml:space="preserve">
+	<value>Propriété</value>
+  </data>
+  <data name="Units_ColumnLayout" xml:space="preserve">
+	<value>Configuration</value>
+  </data>
+  <data name="Units_ColumnRent" xml:space="preserve">
+	<value>Loyer</value>
+  </data>
+  <data name="Units_ColumnStatus" xml:space="preserve">
+	<value>Statut</value>
+  </data>
+  <data name="Units_ColumnActions" xml:space="preserve">
+	<value>Actions</value>
+  </data>
+  <data name="Units_NoRecordsTitle" xml:space="preserve">
+	<value>Aucune unité ne correspond aux filtres actuels.</value>
+  </data>
+  <data name="Units_NoRecordsSubtitle" xml:space="preserve">
+	<value>Réinitialisez les filtres ou ajoutez une nouvelle unité pour compléter la vue opérationnelle.</value>
+  </data>
+  <data name="Units_DrawerAddTitle" xml:space="preserve">
+	<value>Ajouter une unité</value>
+  </data>
+  <data name="Units_DrawerEditTitle" xml:space="preserve">
+	<value>Modifier l’unité</value>
+  </data>
+  <data name="Units_DrawerSubtitle" xml:space="preserve">
+	<value>Gardez les opérations d’unité légères ici. Utilisez la fiche propriété lorsque l’équipe a besoin du contexte plus large de l’actif.</value>
+  </data>
+  <data name="Units_FormUnitNumber" xml:space="preserve">
+	<value>Numéro d’unité</value>
+  </data>
+  <data name="Units_FormSelectProperty" xml:space="preserve">
+	<value>Sélectionner une propriété</value>
+  </data>
+  <data name="Units_FormBathrooms" xml:space="preserve">
+	<value>Salles de bain</value>
+  </data>
+  <data name="Units_FormMarkedOccupied" xml:space="preserve">
+	<value>Marquée occupée</value>
+  </data>
+  <data name="Units_FormExecutionNote" xml:space="preserve">
+	<value>Note d’exécution de l’unité</value>
+  </data>
+  <data name="Units_Create" xml:space="preserve">
+	<value>Créer l’unité</value>
+  </data>
+  <data name="Units_ImportResult" xml:space="preserve">
+	<value>{0} ligne(s) importée(s) ; {1} ignorée(s).</value>
+  </data>
+  <data name="Units_UnknownProperty" xml:space="preserve">
+	<value>Propriété inconnue</value>
+  </data>
+  <data name="Units_GuidanceSelectProperty" xml:space="preserve">
+	<value>Rattachez d’abord l’unité à une propriété pour garder connectés les baux, rotations et vues profil.</value>
+  </data>
+  <data name="Units_GuidanceOccupied" xml:space="preserve">
+	<value>Cette unité est marquée occupée. Utilisez le module des baux pour garder dates contractuelles et documents Ontario synchronisés.</value>
+  </data>
+  <data name="Units_GuidanceVacant" xml:space="preserve">
+	<value>Cette unité est marquée vacante. Gardez le loyer à jour et utilisez la fiche propriété pour aligner le narratif locatif avant commercialisation.</value>
+  </data>
+  <data name="Leases_Title" xml:space="preserve">
+	<value>Baux</value>
+  </data>
+  <data name="Leases_Subtitle" xml:space="preserve">
+	<value>Consultez la couverture des baux depuis un seul tableau, puis ouvrez le profil propriété correspondant lorsque l’équipe a besoin d’un contexte d’exécution plus détaillé.</value>
+  </data>
+  <data name="Leases_SearchLabel" xml:space="preserve">
+	<value>Rechercher des baux</value>
+  </data>
+  <data name="Leases_SearchPlaceholder" xml:space="preserve">
+	<value>Rechercher par unité, locataire, statut ou workflow Ontario</value>
+  </data>
+  <data name="Leases_AddLease" xml:space="preserve">
+	<value>Ajouter un bail</value>
+  </data>
+	<data name="Leases_FilterStatus" xml:space="preserve">
+	<value>Statut</value>
+  </data>
+  <data name="Leases_FilterAllStatuses" xml:space="preserve">
+	<value>Tous les statuts</value>
+  </data>
+  <data name="Leases_FilterJurisdictionLease" xml:space="preserve">
+	<value>Bail juridiction</value>
+  </data>
+  <data name="Leases_FilterAll" xml:space="preserve">
+	<value>Tous</value>
+  </data>
+  <data name="Leases_OntarioSigned" xml:space="preserve">
+	<value>Signé</value>
+  </data>
+  <data name="Leases_OntarioMissing" xml:space="preserve">
+	<value>Manquant</value>
+  </data>
+  <data name="Leases_FilterNoticeWorkflow" xml:space="preserve">
+	<value>Workflow d’avis</value>
+  </data>
+  <data name="Leases_WorkflowScheduled" xml:space="preserve">
+	<value>Planifié</value>
+  </data>
+  <data name="Leases_WorkflowNotScheduled" xml:space="preserve">
+	<value>Non planifié</value>
+  </data>
+  <data name="Leases_StatShown" xml:space="preserve">
+	<value>Baux affichés</value>
+  </data>
+  <data name="Leases_StatActiveRent" xml:space="preserve">
+	<value>Loyer actif</value>
+  </data>
+  <data name="Leases_StatJurisdictionMissing" xml:space="preserve">
+	<value>Bail juridiction manquant</value>
+  </data>
+  <data name="Leases_StatNoticeScheduled" xml:space="preserve">
+	<value>Avis planifié</value>
+  </data>
+  <data name="Leases_CsvFormatHint" xml:space="preserve">
+	<value>Format : UnitNumber,TenantEmail,StartDate,EndDate,MonthlyRent</value>
+  </data>
+  <data name="Leases_ColumnUnit" xml:space="preserve">
+	<value>Unité</value>
+  </data>
+  <data name="Leases_ColumnTenant" xml:space="preserve">
+	<value>Locataire</value>
+  </data>
+  <data name="Leases_ColumnTerm" xml:space="preserve">
+	<value>Période</value>
+  </data>
+  <data name="Leases_ColumnRent" xml:space="preserve">
+	<value>Loyer</value>
+  </data>
+  <data name="Leases_ColumnStatus" xml:space="preserve">
+	<value>Statut</value>
+  </data>
+  <data name="Leases_ColumnJurisdiction" xml:space="preserve">
+	<value>Juridiction</value>
+  </data>
+  <data name="Leases_ColumnNotice" xml:space="preserve">
+	<value>Avis</value>
+  </data>
+  <data name="Leases_ColumnActions" xml:space="preserve">
+	<value>Actions</value>
+  </data>
+  <data name="Leases_NoRecordsTitle" xml:space="preserve">
+	<value>Aucun bail ne correspond aux filtres actuels.</value>
+  </data>
+  <data name="Leases_NoRecordsSubtitle" xml:space="preserve">
+	<value>Réinitialisez les filtres ou ajoutez un bail pour rétablir la couverture du portefeuille.</value>
+  </data>
+  <data name="Leases_DrawerEditTitle" xml:space="preserve">
+	<value>Modifier le bail</value>
+  </data>
+  <data name="Leases_DrawerSubtitle" xml:space="preserve">
+	<value>Gardez ici les mises à jour contractuelles compactes et ouvrez la fiche propriété liée quand les opérations ont besoin de la vue complète.</value>
+  </data>
+  <data name="Leases_FormSelectUnit" xml:space="preserve">
+	<value>Sélectionner une unité</value>
+  </data>
+  <data name="Leases_FormSelectTenant" xml:space="preserve">
+	<value>Sélectionner un locataire</value>
+  </data>
+  <data name="Leases_FormStartDate" xml:space="preserve">
+	<value>Date de début</value>
+  </data>
+  <data name="Leases_FormEndDate" xml:space="preserve">
+	<value>Date de fin</value>
+  </data>
+  <data name="Leases_FormMonthlyRent" xml:space="preserve">
+	<value>Loyer mensuel</value>
+  </data>
+  <data name="Leases_FormJurisdictionLeaseSigned" xml:space="preserve">
+	<value>Bail juridiction signé</value>
+  </data>
+  <data name="Leases_FormExecutionNote" xml:space="preserve">
+	<value>Note d’exécution du bail</value>
+  </data>
+  <data name="Leases_Create" xml:space="preserve">
+	<value>Créer le bail</value>
+  </data>
+  <data name="Leases_ImportResult" xml:space="preserve">
+	<value>{0} ligne(s) importée(s) ; {1} ignorée(s).</value>
+  </data>
+  <data name="Leases_UnknownUnit" xml:space="preserve">
+	<value>Unité inconnue</value>
+  </data>
+  <data name="Leases_UnknownTenant" xml:space="preserve">
+	<value>Locataire inconnu</value>
+  </data>
+  <data name="Leases_UnknownProperty" xml:space="preserve">
+	<value>Propriété inconnue</value>
+  </data>
+  <data name="Leases_StatusActive" xml:space="preserve">
+	<value>Actif</value>
+  </data>
+  <data name="Leases_StatusEndingSoon" xml:space="preserve">
+	<value>Se termine bientôt</value>
+  </data>
+  <data name="Leases_StatusExpired" xml:space="preserve">
+	<value>Expiré</value>
+  </data>
+  <data name="Leases_StatusTerminated" xml:space="preserve">
+	<value>Résilié</value>
+  </data>
+  <data name="Leases_GuidanceLinkUnitAndTenant" xml:space="preserve">
+	<value>Liez le bail à une unité et à un locataire pour garder alignées les vues portefeuille, audit et fiche propriété.</value>
+  </data>
+  <data name="Leases_GuidanceMissingJurisdictionLease" xml:space="preserve">
+	<value>Le bail de juridiction est marqué manquant. Utilisez la fiche propriété et le workflow conformité pour combler cet écart avant la poursuite de l’entrée dans les lieux.</value>
+  </data>
+  <data name="Leases_GuidanceScheduled" xml:space="preserve">
+	<value>Le workflow d’avis est déjà planifié. Gardez alignés les dates, la notification et le contexte de fiche pour l’équipe opérationnelle.</value>
+  </data>
+  <data name="Leases_GuidanceReady" xml:space="preserve">
+	<value>Le bail est connecté et prêt. Planifiez le workflow d’avis seulement quand le timing est approprié pour cette unité et ce résident.</value>
+  </data>
+  <data name="Tenants_Title" xml:space="preserve">
+	<value>Locataires</value>
+  </data>
+  <data name="Tenants_Subtitle" xml:space="preserve">
+	<value>Gardez les informations des résidents faciles à consulter ici et utilisez les pages de bail ou de propriété lorsque l’équipe a besoin du contexte contractuel ou de l’actif.</value>
+  </data>
+  <data name="Tenants_SearchLabel" xml:space="preserve">
+	<value>Rechercher des locataires</value>
+  </data>
+  <data name="Tenants_SearchPlaceholder" xml:space="preserve">
+	<value>Rechercher par nom, e-mail, téléphone ou fournisseur</value>
+  </data>
+  <data name="Tenants_AddTenant" xml:space="preserve">
+	<value>Ajouter un locataire</value>
+  </data>
+	<data name="Tenants_FilterScreening" xml:space="preserve">
+	<value>Vérification</value>
+  </data>
+  <data name="Tenants_FilterAllProviders" xml:space="preserve">
+	<value>Tous les fournisseurs</value>
+  </data>
+  <data name="Tenants_FilterScoreBand" xml:space="preserve">
+	<value>Tranche de score</value>
+  </data>
+  <data name="Tenants_FilterAllScores" xml:space="preserve">
+	<value>Tous les scores</value>
+  </data>
+  <data name="Tenants_ScoreBandUnder700" xml:space="preserve">
+	<value>Sous 700</value>
+  </data>
+  <data name="Tenants_StatShown" xml:space="preserve">
+	<value>Locataires affichés</value>
+  </data>
+  <data name="Tenants_StatAverageScore" xml:space="preserve">
+	<value>Score moyen</value>
+  </data>
+  <data name="Tenants_StatProvidersUsed" xml:space="preserve">
+	<value>Fournisseurs utilisés</value>
+  </data>
+  <data name="Tenants_StatHighScoreResidents" xml:space="preserve">
+	<value>Résidents à score élevé</value>
+  </data>
+  <data name="Tenants_CsvFormatHint" xml:space="preserve">
+	<value>Collez des lignes CSV au format : FullName,Email,PhoneNumber,CreditScore,ScreeningProvider</value>
+  </data>
+  <data name="Tenants_ColumnName" xml:space="preserve">
+	<value>Nom</value>
+  </data>
+  <data name="Tenants_ColumnEmail" xml:space="preserve">
+	<value>Email</value>
+  </data>
+  <data name="Tenants_ColumnPhone" xml:space="preserve">
+	<value>Téléphone</value>
+  </data>
+  <data name="Tenants_ColumnScreening" xml:space="preserve">
+	<value>Vérification</value>
+  </data>
+  <data name="Tenants_ColumnScore" xml:space="preserve">
+	<value>Score</value>
+  </data>
+  <data name="Tenants_ColumnActions" xml:space="preserve">
+	<value>Actions</value>
+  </data>
+  <data name="Tenants_OpenLeases" xml:space="preserve">
+	<value>Ouvrir les baux</value>
+  </data>
+  <data name="Tenants_NoRecordsTitle" xml:space="preserve">
+	<value>Aucun locataire ne correspond aux filtres actuels.</value>
+  </data>
+  <data name="Tenants_NoRecordsSubtitle" xml:space="preserve">
+	<value>Réinitialisez les filtres ou ajoutez un locataire pour rétablir la couverture résidents.</value>
+  </data>
+  <data name="Tenants_OpenImportExport" xml:space="preserve">
+	<value>Ouvrir Import / Export</value>
+  </data>
+  <data name="Tenants_ExportCsv" xml:space="preserve">
+	<value>Exporter CSV</value>
+  </data>
+  <data name="Tenants_DrawerEditTitle" xml:space="preserve">
+	<value>Modifier le locataire</value>
+  </data>
+  <data name="Tenants_DrawerSubtitle" xml:space="preserve">
+	<value>Capturez ici les informations de base du résident. Utilisez les baux pour le calendrier contractuel et les propriétés pour l’exécution spécifique à l’actif.</value>
+  </data>
+  <data name="Tenants_FormFullName" xml:space="preserve">
+	<value>Nom complet</value>
+  </data>
+  <data name="Tenants_FormCreditScore" xml:space="preserve">
+	<value>Score de crédit</value>
+  </data>
+  <data name="Tenants_FormScreeningProvider" xml:space="preserve">
+	<value>Fournisseur de vérification</value>
+  </data>
+  <data name="Tenants_FormScreeningCompleted" xml:space="preserve">
+	<value>Vérification complétée</value>
+  </data>
+  <data name="Tenants_FormResidentNote" xml:space="preserve">
+	<value>Note résident</value>
+  </data>
+  <data name="Tenants_Create" xml:space="preserve">
+	<value>Créer le locataire</value>
+  </data>
+  <data name="Tenants_ImportResult" xml:space="preserve">
+	<value>{0} ligne(s) importée(s) ; {1} ignorée(s).</value>
+  </data>
+  <data name="Tenants_Unspecified" xml:space="preserve">
+	<value>Non précisé</value>
+  </data>
+  <data name="Tenants_NarrativeStrong" xml:space="preserve">
+	<value>Profil de vérification solide et candidat avec peu de friction de suivi.</value>
+  </data>
+  <data name="Tenants_NarrativeSolid" xml:space="preserve">
+	<value>Base de vérification solide ; gardez la documentation organisée pour l’exécution du bail.</value>
+  </data>
+  <data name="Tenants_NarrativeNeedsReview" xml:space="preserve">
+	<value>Nécessite une revue plus poussée et une checklist de suivi plus stricte avant de finaliser le parcours résident.</value>
+  </data>
+  <data name="Tenants_GuidanceScreeningIncomplete" xml:space="preserve">
+	<value>La vérification est marquée incomplète. Gardez le résident en revue jusqu’à finalisation des documents et contrôles fournisseur.</value>
+  </data>
+  <data name="Tenants_GuidanceStrongProfile" xml:space="preserve">
+	<value>Ce profil résident semble solide. Utilisez la page des baux pour garder les dates et documents bien synchronisés.</value>
+  </data>
+  <data name="Tenants_GuidanceCoordinateLeaseSteps" xml:space="preserve">
+	<value>Capturez ici l’essentiel, puis coordonnez soigneusement les étapes du bail pour garder la documentation et le suivi cohérents.</value>
+  </data>
+  <data name="Maintenance_Title" xml:space="preserve">
+	<value>Maintenance et marketplace fournisseurs</value>
+  </data>
+  <data name="Maintenance_Subtitle" xml:space="preserve">
+	<value>Gardez les demandes opérationnelles visibles dans un seul tableau et ouvrez le profil propriété seulement lorsque l’équipe a besoin du contexte détaillé de l’actif.</value>
+  </data>
+  <data name="Maintenance_SearchLabel" xml:space="preserve">
+	<value>Rechercher de la maintenance</value>
+  </data>
+  <data name="Maintenance_SearchPlaceholder" xml:space="preserve">
+	<value>Rechercher par titre, fournisseur, propriété ou statut</value>
+  </data>
+  <data name="Maintenance_AddRequest" xml:space="preserve">
+	<value>Ajouter une demande</value>
+  </data>
+	<data name="Maintenance_FilterPriority" xml:space="preserve">
+	<value>Priorité</value>
+  </data>
+  <data name="Maintenance_FilterAllPriorities" xml:space="preserve">
+	<value>Toutes les priorités</value>
+  </data>
+  <data name="Maintenance_FilterStatus" xml:space="preserve">
+	<value>Statut</value>
+  </data>
+  <data name="Maintenance_FilterAllStatuses" xml:space="preserve">
+	<value>Tous les statuts</value>
+  </data>
+  <data name="Maintenance_FilterProperty" xml:space="preserve">
+	<value>Propriété</value>
+  </data>
+  <data name="Maintenance_FilterAllProperties" xml:space="preserve">
+	<value>Toutes les propriétés</value>
+  </data>
+  <data name="Maintenance_StatShown" xml:space="preserve">
+	<value>Demandes affichées</value>
+  </data>
+  <data name="Maintenance_StatOpenOrScheduled" xml:space="preserve">
+	<value>Ouvertes ou planifiées</value>
+  </data>
+  <data name="Maintenance_StatEstimatedCost" xml:space="preserve">
+	<value>Coût estimé</value>
+  </data>
+  <data name="Maintenance_StatVendorsEngaged" xml:space="preserve">
+	<value>Fournisseurs engagés</value>
+  </data>
+  <data name="Maintenance_ColumnRequest" xml:space="preserve">
+	<value>Demande</value>
+  </data>
+  <data name="Maintenance_ColumnProperty" xml:space="preserve">
+	<value>Propriété</value>
+  </data>
+  <data name="Maintenance_ColumnPriority" xml:space="preserve">
+	<value>Priorité</value>
+  </data>
+  <data name="Maintenance_ColumnStatus" xml:space="preserve">
+	<value>Statut</value>
+  </data>
+  <data name="Maintenance_ColumnVendor" xml:space="preserve">
+	<value>Fournisseur</value>
+  </data>
+  <data name="Maintenance_ColumnCost" xml:space="preserve">
+	<value>Coût</value>
+  </data>
+  <data name="Maintenance_ColumnActions" xml:space="preserve">
+	<value>Actions</value>
+  </data>
+  <data name="Maintenance_NoRecordsTitle" xml:space="preserve">
+	<value>Aucune demande de maintenance ne correspond aux filtres actuels.</value>
+  </data>
+  <data name="Maintenance_NoRecordsSubtitle" xml:space="preserve">
+	<value>Réinitialisez les filtres ou ajoutez une demande pour restaurer la visibilité opérationnelle.</value>
+  </data>
+  <data name="Maintenance_DrawerEditTitle" xml:space="preserve">
+	<value>Modifier la demande</value>
+  </data>
+  <data name="Maintenance_DrawerSubtitle" xml:space="preserve">
+	<value>Capturez ici le ticket, puis utilisez la fiche propriété liée quand l’équipe a besoin du contexte opérationnel plus large.</value>
+  </data>
+  <data name="Maintenance_FormTitle" xml:space="preserve">
+	<value>Titre</value>
+  </data>
+  <data name="Maintenance_FormSelectProperty" xml:space="preserve">
+	<value>Sélectionner une propriété</value>
+  </data>
+  <data name="Maintenance_FormUnit" xml:space="preserve">
+	<value>Unité</value>
+  </data>
+  <data name="Maintenance_FormOptionalUnit" xml:space="preserve">
+	<value>Unité optionnelle</value>
+  </data>
+  <data name="Maintenance_FormEstimatedCost" xml:space="preserve">
+	<value>Coût estimé</value>
+  </data>
+  <data name="Maintenance_FormRequestedDate" xml:space="preserve">
+	<value>Date de demande</value>
+  </data>
+  <data name="Maintenance_FormDescription" xml:space="preserve">
+	<value>Description</value>
+  </data>
+  <data name="Maintenance_FormOperationsNote" xml:space="preserve">
+	<value>Note opérationnelle</value>
+  </data>
+  <data name="Maintenance_Create" xml:space="preserve">
+	<value>Créer la demande</value>
+  </data>
+  <data name="Maintenance_UnknownProperty" xml:space="preserve">
+	<value>Propriété inconnue</value>
+  </data>
+  <data name="Maintenance_UnassignedVendor" xml:space="preserve">
+	<value>Non assigné</value>
+  </data>
+  <data name="Maintenance_ScopeUnit" xml:space="preserve">
+	<value>Unité</value>
+  </data>
+  <data name="Maintenance_ScopePropertyLevelRequest" xml:space="preserve">
+	<value>Demande au niveau propriété</value>
+  </data>
+  <data name="Maintenance_UnknownUnit" xml:space="preserve">
+	<value>Unité inconnue</value>
+  </data>
+  <data name="Maintenance_PriorityEmergency" xml:space="preserve">
+	<value>Urgence</value>
+  </data>
+  <data name="Maintenance_PriorityHigh" xml:space="preserve">
+	<value>Haute</value>
+  </data>
+  <data name="Maintenance_PriorityMedium" xml:space="preserve">
+	<value>Moyenne</value>
+  </data>
+  <data name="Maintenance_PriorityLow" xml:space="preserve">
+	<value>Faible</value>
+  </data>
+  <data name="Maintenance_StatusClosed" xml:space="preserve">
+	<value>Fermée</value>
+  </data>
+  <data name="Maintenance_StatusScheduled" xml:space="preserve">
+	<value>Planifiée</value>
+  </data>
+  <data name="Maintenance_StatusInProgress" xml:space="preserve">
+	<value>En cours</value>
+  </data>
+  <data name="Maintenance_StatusOpen" xml:space="preserve">
+	<value>Ouverte</value>
+  </data>
+  <data name="Maintenance_GuidanceAttachProperty" xml:space="preserve">
+	<value>Rattachez d’abord la demande à une propriété pour que l’équipe opérationnelle puisse suivre le problème dans la fiche actif.</value>
+  </data>
+  <data name="Maintenance_GuidanceEmergency" xml:space="preserve">
+	<value>Ticket d’urgence : gardez le relais fournisseur, le calendrier et la communication résident très serrés dès la première mise à jour.</value>
+  </data>
+  <data name="Maintenance_GuidanceDefault" xml:space="preserve">
+	<value>Utilisez ce formulaire pour l’essentiel, puis appuyez-vous sur la fiche propriété pour coordonner le suivi opérationnel plus large.</value>
+  </data>
+  <data name="Compliance_Title" xml:space="preserve">
+	<value>Rappels de conformité RTA Ontario</value>
+  </data>
+  <data name="Compliance_Subtitle" xml:space="preserve">
+	<value>Gardez les workflows de rappel lisibles ici et ouvrez les modèles liés seulement lorsque l’équipe a besoin du package juridique complet.</value>
+  </data>
+  <data name="Compliance_SearchLabel" xml:space="preserve">
+	<value>Rechercher des rappels</value>
+  </data>
+  <data name="Compliance_SearchPlaceholder" xml:space="preserve">
+	<value>Rechercher par titre, avis ou référence</value>
+  </data>
+  <data name="Compliance_OpenTemplates" xml:space="preserve">
+	<value>Ouvrir les modèles</value>
+  </data>
+  <data name="Compliance_PageHeading" xml:space="preserve">
+	<value>Rappels de conformité {0}</value>
+  </data>
+  <data name="Compliance_PageSubtitle" xml:space="preserve">
+	<value>Gardez ici les workflows de rappel {0} faciles à parcourir et ouvrez les modèles liés seulement quand l’équipe a besoin du dossier juridique complet.</value>
+  </data>
+  <data name="Compliance_FilterNotice" xml:space="preserve">
+	<value>Avis</value>
+  </data>
+  <data name="Compliance_FilterAllNotices" xml:space="preserve">
+	<value>Tous les avis</value>
+  </data>
+  <data name="Compliance_FilterState" xml:space="preserve">
+	<value>État</value>
+  </data>
+  <data name="Compliance_FilterAllStates" xml:space="preserve">
+	<value>Tous les états</value>
+  </data>
+  <data name="Compliance_StateOpen" xml:space="preserve">
+	<value>Ouvert</value>
+  </data>
+  <data name="Compliance_StateCompleted" xml:space="preserve">
+	<value>Terminé</value>
+  </data>
+  <data name="Compliance_StateDueSoon" xml:space="preserve">
+	<value>Bientôt dû</value>
+  </data>
+  <data name="Compliance_StatShown" xml:space="preserve">
+	<value>Rappels affichés</value>
+  </data>
+  <data name="Compliance_StatDueSoon" xml:space="preserve">
+	<value>Bientôt dû</value>
+  </data>
+  <data name="Compliance_StatCompleted" xml:space="preserve">
+	<value>Terminés</value>
+  </data>
+  <data name="Compliance_StatNoticeTypes" xml:space="preserve">
+	<value>Types d’avis</value>
+  </data>
+  <data name="Compliance_ColumnReminder" xml:space="preserve">
+	<value>Rappel</value>
+  </data>
+  <data name="Compliance_ColumnNotice" xml:space="preserve">
+	<value>Avis</value>
+  </data>
+  <data name="Compliance_ColumnDue" xml:space="preserve">
+	<value>Échéance</value>
+  </data>
+  <data name="Compliance_ColumnState" xml:space="preserve">
+	<value>État</value>
+  </data>
+  <data name="Compliance_ColumnReference" xml:space="preserve">
+	<value>Référence</value>
+  </data>
+  <data name="Compliance_NoRecordsTitle" xml:space="preserve">
+	<value>Aucun rappel de conformité ne correspond aux filtres actuels.</value>
+  </data>
+  <data name="Compliance_NoRecordsSubtitle" xml:space="preserve">
+	<value>Réinitialisez les filtres pour remettre en vue le backlog workflow {0}.</value>
+  </data>
+  <data name="Compliance_TemplatesTitle" xml:space="preserve">
+	<value>Modèles {0}</value>
+  </data>
+  <data name="Compliance_OperationalChecklist" xml:space="preserve">
+	<value>Checklist opérationnelle</value>
+  </data>
+  <data name="Compliance_NarrativeCompleted" xml:space="preserve">
+	<value>Workflow terminé et disponible pour référence d’audit.</value>
+  </data>
+  <data name="Compliance_NarrativeDueSoon" xml:space="preserve">
+	<value>Action de juridiction sensible au temps ; gardez serrés les dates de notification et justificatifs.</value>
+  </data>
+  <data name="Compliance_NarrativeOpen" xml:space="preserve">
+	<value>Rappel ouvert dans la file de workflow active de la juridiction.</value>
+  </data>
+  <data name="Properties_FilterType" xml:space="preserve">
+	<value>Type</value>
+  </data>
+  <data name="Properties_FilterAllTypes" xml:space="preserve">
+	<value>Tous les types</value>
+  </data>
+  <data name="Properties_FilterCity" xml:space="preserve">
+	<value>Ville</value>
+  </data>
+  <data name="Properties_FilterAllCities" xml:space="preserve">
+	<value>Toutes les villes</value>
+  </data>
+  <data name="Properties_FilterStage" xml:space="preserve">
+	<value>Étape</value>
+  </data>
+  <data name="Properties_FilterAllStages" xml:space="preserve">
+	<value>Toutes les étapes</value>
+  </data>
+  <data name="Properties_StatShown" xml:space="preserve">
+	<value>Propriétés affichées</value>
+  </data>
+  <data name="Properties_StatVacantUnits" xml:space="preserve">
+	<value>Unités vacantes</value>
+  </data>
+  <data name="Properties_StatAverageReadiness" xml:space="preserve">
+	<value>Préparation moyenne</value>
+  </data>
+  <data name="Properties_StatRentRoll" xml:space="preserve">
+	<value>Loyers contractuels</value>
+  </data>
+  <data name="Properties_CsvFormatHint" xml:space="preserve">
+	<value>Format : Name,AddressLine1,City,MonthlyRevenueTarget</value>
+  </data>
+  <data name="Properties_ColumnProperty" xml:space="preserve">
+	<value>Propriété</value>
+  </data>
+  <data name="Properties_ColumnType" xml:space="preserve">
+	<value>Type</value>
+  </data>
+  <data name="Properties_ColumnCity" xml:space="preserve">
+	<value>Ville</value>
+  </data>
+  <data name="Properties_ColumnUnits" xml:space="preserve">
+	<value>Unités</value>
+  </data>
+  <data name="Properties_ColumnOccupancy" xml:space="preserve">
+	<value>Occupation</value>
+  </data>
+  <data name="Properties_ColumnRentRoll" xml:space="preserve">
+	<value>Loyers contractuels</value>
+  </data>
+  <data name="Properties_ColumnReadiness" xml:space="preserve">
+	<value>Préparation</value>
+  </data>
+  <data name="Properties_ColumnStage" xml:space="preserve">
+	<value>Étape</value>
+  </data>
+  <data name="Properties_ColumnActions" xml:space="preserve">
+	<value>Actions</value>
+  </data>
+  <data name="Properties_ViewDetails" xml:space="preserve">
+	<value>Voir les détails</value>
+  </data>
+  <data name="Properties_NoRecordsTitle" xml:space="preserve">
+	<value>Aucune propriété ne correspond aux filtres actuels.</value>
+  </data>
+  <data name="Properties_NoRecordsSubtitle" xml:space="preserve">
+	<value>Réinitialisez les filtres ou ajoutez une nouvelle adresse pour continuer à développer le portefeuille.</value>
+  </data>
+  <data name="Properties_DrawerAddTitle" xml:space="preserve">
+	<value>Ajouter une propriété</value>
+  </data>
+  <data name="Properties_DrawerEditTitle" xml:space="preserve">
+	<value>Modifier la propriété</value>
+  </data>
+  <data name="Properties_DrawerSubtitle" xml:space="preserve">
+	<value>Capturez seulement ce dont l’équipe a besoin maintenant. L’exécution complète vit dans la fiche propriété.</value>
+  </data>
+  <data name="Properties_SectionIdentityLocation" xml:space="preserve">
+	<value>Identité et localisation</value>
+  </data>
+  <data name="Properties_FormName" xml:space="preserve">
+	<value>Nom de la propriété</value>
+  </data>
+  <data name="Properties_FormType" xml:space="preserve">
+	<value>Type de propriété</value>
+  </data>
+  <data name="Properties_FormAddress" xml:space="preserve">
+	<value>Adresse</value>
+  </data>
+  <data name="Properties_FormCity" xml:space="preserve">
+	<value>Ville</value>
+  </data>
+  <data name="Properties_FormProvince" xml:space="preserve">
+	<value>Province</value>
+  </data>
+  <data name="Properties_FormPostalCode" xml:space="preserve">
+	<value>Code postal</value>
+  </data>
+  <data name="Properties_FormYearBuilt" xml:space="preserve">
+	<value>Année de construction</value>
+  </data>
+  <data name="Properties_FormOptional" xml:space="preserve">
+	<value>Optionnel</value>
+  </data>
+  <data name="Properties_FormRevenueTarget" xml:space="preserve">
+	<value>Objectif de revenu</value>
+  </data>
+  <data name="Properties_SectionPlaybook" xml:space="preserve">
+	<value>Playbook de commercialisation</value>
+  </data>
+  <data name="Properties_FormAmenityTemplate" xml:space="preserve">
+	<value>Modèle d’équipements</value>
+  </data>
+  <data name="Properties_FormNeighborhoodTemplate" xml:space="preserve">
+	<value>Modèle de quartier</value>
+  </data>
+  <data name="Properties_FormLeasingStrategy" xml:space="preserve">
+	<value>Stratégie locative</value>
+  </data>
+  <data name="Properties_FormOperationsFocus" xml:space="preserve">
+	<value>Focus opérationnel</value>
+  </data>
+  <data name="Properties_RecommendedMarketPack" xml:space="preserve">
+	<value>Pack marché recommandé</value>
+  </data>
+  <data name="Properties_UseRecommendedPack" xml:space="preserve">
+	<value>Utiliser le pack recommandé</value>
+  </data>
+  <data name="Properties_ApplyGuidedPresets" xml:space="preserve">
+	<value>Appliquer les préréglages guidés</value>
+  </data>
+  <data name="Properties_FormAmenities" xml:space="preserve">
+	<value>Équipements</value>
+  </data>
+  <data name="Properties_FormNeighborhoodNotes" xml:space="preserve">
+	<value>Notes quartier</value>
+  </data>
+  <data name="Properties_FormLeasingNotes" xml:space="preserve">
+	<value>Notes locatives</value>
+  </data>
+  <data name="Properties_FormOperationalNotes" xml:space="preserve">
+	<value>Notes opérationnelles</value>
+  </data>
+  <data name="Properties_Create" xml:space="preserve">
+	<value>Créer la propriété</value>
+  </data>
+  <data name="Properties_ImportResult" xml:space="preserve">
+	<value>{0} ligne(s) importée(s) ; {1} ignorée(s).</value>
+  </data>
+  <data name="Properties_NoUnits" xml:space="preserve">
+	<value>Aucune unité</value>
+  </data>
+  <data name="Properties_AssetStage_Setup" xml:space="preserve">
+	<value>Configuration</value>
+  </data>
+  <data name="Properties_AssetStage_LeaseUp" xml:space="preserve">
+	<value>Mise en location</value>
+  </data>
+  <data name="Properties_AssetStage_StabilizePlaybook" xml:space="preserve">
+	<value>Stabilisation du playbook</value>
+  </data>
+  <data name="Properties_AssetStage_Stabilized" xml:space="preserve">
+	<value>Stabilisé</value>
+  </data>
+  <data name="Properties_MarketSegment_Student" xml:space="preserve">
+	<value>Marché étudiant</value>
+  </data>
+  <data name="Properties_MarketSegment_Family" xml:space="preserve">
+	<value>Marché locatif familial</value>
+  </data>
+  <data name="Properties_MarketSegment_Premium" xml:space="preserve">
+	<value>Marché locatif premium</value>
+  </data>
+  <data name="Properties_MarketSegment_Urban" xml:space="preserve">
+	<value>Marché navetteur urbain</value>
+  </data>
+  <data name="Properties_MarketSegment_Core" xml:space="preserve">
+	<value>Marché locatif principal</value>
+  </data>
+  <data name="Properties_MarketNarrative_DefaultCity" xml:space="preserve">
+	<value>ce marché</value>
+  </data>
+  <data name="Properties_MarketNarrative_Student" xml:space="preserve">
+	<value>À {0}, mettez l’accent sur la rapidité, la prévisibilité et la préparation saisonnière récurrente pour gagner sur le segment étudiant.</value>
+  </data>
+  <data name="Properties_MarketNarrative_Family" xml:space="preserve">
+	<value>À {0}, la stabilité, le rangement, les écoles et l’expérience résident doivent ancrer le narratif de la propriété pour les locataires orientés famille.</value>
+  </data>
+  <data name="Properties_MarketNarrative_Premium" xml:space="preserve">
+	<value>À {0}, mettez en avant la qualité des finitions, la commodité et un parcours locatif soigné pour soutenir une meilleure confiance tarifaire.</value>
+  </data>
+  <data name="Properties_MarketNarrative_Core" xml:space="preserve">
+	<value>À {0}, combinez équipements pratiques, commodité de déplacement et suivi discipliné pour renforcer la conversion locative.</value>
+  </data>
+  <data name="Properties_PropertyType_MultiFamily" xml:space="preserve">
+	<value>Multilogement</value>
+  </data>
+  <data name="Properties_PropertyType_UrbanMidRise" xml:space="preserve">
+	<value>Immeuble urbain de moyenne hauteur</value>
+  </data>
+  <data name="Properties_PropertyType_LowRiseApartment" xml:space="preserve">
+	<value>Appartement de faible hauteur</value>
+  </data>
+  <data name="Properties_PropertyType_CondoBuilding" xml:space="preserve">
+	<value>Immeuble en copropriété</value>
+  </data>
+  <data name="Properties_PropertyType_PurposeBuiltRental" xml:space="preserve">
+	<value>Locatif construit à dessein</value>
+  </data>
+  <data name="Properties_PropertyType_DuplexTriplex" xml:space="preserve">
+	<value>Duplex / triplex</value>
+  </data>
+  <data name="Properties_PropertyType_TownhomeCluster" xml:space="preserve">
+	<value>Ensemble de maisons de ville</value>
+  </data>
+  <data name="Properties_PropertyType_SingleFamilyRental" xml:space="preserve">
+	<value>Location unifamiliale</value>
+  </data>
+  <data name="Properties_PropertyType_StudentHousing" xml:space="preserve">
+	<value>Logement étudiant</value>
+  </data>
+  <data name="Properties_PropertyType_WaterfrontCondo" xml:space="preserve">
+	<value>Copropriété au bord de l’eau</value>
+  </data>
+  <data name="Properties_PropertyType_MixedUseAsset" xml:space="preserve">
+	<value>Actif à usage mixte</value>
+  </data>
+  <data name="Properties_PropertyType_MicroSuiteBuilding" xml:space="preserve">
+	<value>Immeuble de micro-suites</value>
+  </data>
+  <data name="Properties_PropertyType_LuxuryRental" xml:space="preserve">
+	<value>Location de luxe</value>
+  </data>
+  <data name="Properties_PropertyType_SuburbanFamilyAsset" xml:space="preserve">
+	<value>Actif familial de banlieue</value>
+  </data>
+  <data name="Properties_PropertyType_TransitOrientedRental" xml:space="preserve">
+	<value>Location axée sur le transport en commun</value>
+  </data>
+  <data name="Properties_PropertyType_ExecutiveFurnishedRental" xml:space="preserve">
+	<value>Location exécutive meublée</value>
+  </data>
+  <data name="Properties_AmenityTemplate_EssentialUrbanLiving" xml:space="preserve">
+	<value>Vie urbaine essentielle</value>
+  </data>
+  <data name="Properties_AmenityTemplate_LifestyleDrivenPremium" xml:space="preserve">
+	<value>Premium orienté style de vie</value>
+  </data>
+  <data name="Properties_AmenityTemplate_FamilyConvenience" xml:space="preserve">
+	<value>Confort familial</value>
+  </data>
+  <data name="Properties_AmenityTemplate_StudentPracticalNeeds" xml:space="preserve">
+	<value>Besoins pratiques étudiants</value>
+  </data>
+  <data name="Properties_AmenityTemplate_TransitConvenience" xml:space="preserve">
+	<value>Commodité transport en commun</value>
+  </data>
+  <data name="Properties_AmenityTemplate_ExecutiveFurnishedLiving" xml:space="preserve">
+	<value>Habitation exécutive meublée</value>
+  </data>
+  <data name="Properties_AmenityTemplate_PetFriendlyPositioning" xml:space="preserve">
+	<value>Positionnement animal accepté</value>
+  </data>
+  <data name="Properties_AmenityTemplate_RenovatedValueStory" xml:space="preserve">
+	<value>Narratif de valeur rénové</value>
+  </data>
+  <data name="Properties_NeighborhoodTemplate_TransitLedUrbanAppeal" xml:space="preserve">
+	<value>Attractivité urbaine axée transport</value>
+  </data>
+  <data name="Properties_NeighborhoodTemplate_FamilyOrientedNeighbourhood" xml:space="preserve">
+	<value>Quartier orienté famille</value>
+  </data>
+  <data name="Properties_NeighborhoodTemplate_StudentConvenienceCorridor" xml:space="preserve">
+	<value>Corridor pratique étudiant</value>
+  </data>
+  <data name="Properties_NeighborhoodTemplate_WaterfrontLifestyle" xml:space="preserve">
+	<value>Style de vie au bord de l’eau</value>
+  </data>
+  <data name="Properties_NeighborhoodTemplate_ValueRepositioningPocket" xml:space="preserve">
+	<value>Secteur de repositionnement valeur</value>
+  </data>
+  <data name="Properties_NeighborhoodTemplate_DowntownConvenienceHub" xml:space="preserve">
+	<value>Pôle pratique centre-ville</value>
+  </data>
+  <data name="Properties_NeighborhoodTemplate_SuburbanStabilityCorridor" xml:space="preserve">
+	<value>Corridor de stabilité de banlieue</value>
+  </data>
+  <data name="Properties_NeighborhoodTemplate_ExecutiveRelocationPocket" xml:space="preserve">
+	<value>Secteur relocalisation exécutive</value>
+  </data>
+  <data name="Properties_LeasingTemplate_PremiumProfessionalPositioning" xml:space="preserve">
+	<value>Positionnement premium professionnel</value>
+  </data>
+  <data name="Properties_LeasingTemplate_FastVacancyRecovery" xml:space="preserve">
+	<value>Résorption rapide des vacances</value>
+  </data>
+  <data name="Properties_LeasingTemplate_LongStayHouseholdRetention" xml:space="preserve">
+	<value>Rétention des ménages long séjour</value>
+  </data>
+  <data name="Properties_LeasingTemplate_StudentTurnoverCadence" xml:space="preserve">
+	<value>Cadence de rotation étudiante</value>
+  </data>
+  <data name="Properties_LeasingTemplate_RenovationLedRentLift" xml:space="preserve">
+	<value>Hausse de loyer portée par la rénovation</value>
+  </data>
+  <data name="Properties_LeasingTemplate_TransitCommuterPositioning" xml:space="preserve">
+	<value>Positionnement navetteurs transport</value>
+  </data>
+  <data name="Properties_LeasingTemplate_ExecutiveFurnishedDemand" xml:space="preserve">
+	<value>Demande exécutive meublée</value>
+  </data>
+  <data name="Properties_LeasingTemplate_PetFriendlyDemandCapture" xml:space="preserve">
+	<value>Capture de demande animal accepté</value>
+  </data>
+  <data name="Properties_OperationsTemplate_TurnoverSpeed" xml:space="preserve">
+	<value>Vitesse de rotation</value>
+  </data>
+  <data name="Properties_OperationsTemplate_VendorCoordination" xml:space="preserve">
+	<value>Coordination fournisseurs</value>
+  </data>
+  <data name="Properties_OperationsTemplate_PreventiveMaintenance" xml:space="preserve">
+	<value>Maintenance préventive</value>
+  </data>
+  <data name="Properties_OperationsTemplate_ResidentExperience" xml:space="preserve">
+	<value>Expérience résident</value>
+  </data>
+  <data name="Properties_OperationsTemplate_ComplianceHeavyOperations" xml:space="preserve">
+	<value>Opérations à forte conformité</value>
+  </data>
+  <data name="Properties_OperationsTemplate_ListingReadiness" xml:space="preserve">
+	<value>Préparation des annonces</value>
+  </data>
+  <data name="Properties_OperationsTemplate_ConciergeStyleService" xml:space="preserve">
+	<value>Service style conciergerie</value>
+  </data>
+  <data name="Properties_OperationsTemplate_SeasonalTurnoverControl" xml:space="preserve">
+	<value>Contrôle des rotations saisonnières</value>
+  </data>
+  <data name="Properties_AmenitySummary_EssentialUrbanLiving" xml:space="preserve">
+	<value>Accès buanderie, entrée sécurisée, rangement pratique et commodités quotidiennes soutenant une vie urbaine fiable.</value>
+  </data>
+  <data name="Properties_AmenitySummary_LifestyleDrivenPremium" xml:space="preserve">
+	<value>Fitness, espace extérieur, finitions améliorées et commodités qui justifient un narratif locatif plus fort.</value>
+  </data>
+  <data name="Properties_AmenitySummary_FamilyConvenience" xml:space="preserve">
+	<value>Stationnement, rangement, plans durables et équipements pratiques facilitant la vie des ménages de longue durée.</value>
+  </data>
+  <data name="Properties_AmenitySummary_StudentPracticalNeeds" xml:space="preserve">
+	<value>Accès au transport, plans partagés propices à l’étude, finitions durables et simplicité d’entrée pour les rotations récurrentes.</value>
+  </data>
+  <data name="Properties_NeighborhoodNotes_TransitLedUrbanAppeal" xml:space="preserve">
+	<value>Fort attrait pour les locataires recherchant un accès rapide au transport, aux commerces quotidiens et à des déplacements fluides autour de {0}.</value>
+  </data>
+  <data name="Properties_NeighborhoodNotes_FamilyOrientedNeighbourhood" xml:space="preserve">
+	<value>Positionnez autour de la stabilité, des écoles, des parcs et de la commodité quotidienne pour des ménages évaluant des séjours plus longs à {0}.</value>
+  </data>
+  <data name="Properties_NeighborhoodNotes_StudentConvenienceCorridor" xml:space="preserve">
+	<value>À commercialiser surtout autour de l’accès campus, de la simplicité transport et d’une commodité quotidienne prévisible pour étudiants et garants.</value>
+  </data>
+  <data name="Properties_NeighborhoodNotes_WaterfrontLifestyle" xml:space="preserve">
+	<value>Mettez en avant la marchabilité, les vues, l’accès loisirs et une différenciation lifestyle qui renforce l’intérêt émotionnel des locataires.</value>
+  </data>
+  <data name="Properties_NeighborhoodNotes_ValueRepositioningPocket" xml:space="preserve">
+	<value>Utile pour des locataires échangeant une adresse cœur de ville contre plus d’espace, une meilleure valeur et des déplacements pratiques depuis ce secteur de {0}.</value>
+  </data>
+  <data name="Properties_LeasingNotes_PremiumProfessionalPositioning" xml:space="preserve">
+	<value>Mettez en avant la qualité des finitions, des déplacements fluides et une expérience d’entrée soignée pour professionnels et couples.</value>
+  </data>
+  <data name="Properties_LeasingNotes_FastVacancyRecovery" xml:space="preserve">
+	<value>Simplifiez le narratif, gardez un pricing affûté et resserrez le suivi pour compresser les jours vacants sans diluer la qualité.</value>
+  </data>
+  <data name="Properties_LeasingNotes_LongStayHouseholdRetention" xml:space="preserve">
+	<value>Accentuez la stabilité, la valeur pratique des plans et l’expérience résident pour attirer des ménages à faible rotation.</value>
+  </data>
+  <data name="Properties_LeasingNotes_StudentTurnoverCadence" xml:space="preserve">
+	<value>Préparez les pics saisonniers, standardisez les visites et gardez rapides la documentation et les workflows d’entrée pour des cycles récurrents.</value>
+  </data>
+  <data name="Properties_LeasingNotes_RenovationLedRentLift" xml:space="preserve">
+	<value>Utilisez les finitions améliorées et un positionnement avant/après plus clair pour soutenir la confiance tarifaire et une meilleure conversion d’annonce.</value>
+  </data>
+  <data name="Properties_OperationalNotes_TurnoverSpeed" xml:space="preserve">
+	<value>Pré-réservez les fournisseurs, standardisez la portée de rafraîchissement et réduisez le temps mort entre préavis, maintenance et lancement marketing.</value>
+  </data>
+  <data name="Properties_OperationalNotes_VendorCoordination" xml:space="preserve">
+	<value>Gardez serrés attentes fournisseurs, accès et communication de clôture pour permettre à l’équipe de passer plus vite du problème à la résolution.</value>
+  </data>
+  <data name="Properties_OperationalNotes_PreventiveMaintenance" xml:space="preserve">
+	<value>Priorisez les vérifications récurrentes et petites interventions tôt pour éviter perturbations résidents et fuite de revenu évitables.</value>
+  </data>
+  <data name="Properties_OperationalNotes_ResidentExperience" xml:space="preserve">
+	<value>Maintenez une communication claire, des délais de service fiables et des relais plus propres pour renforcer renouvellements et références.</value>
+  </data>
+  <data name="Properties_OperationalNotes_ComplianceHeavyOperations" xml:space="preserve">
+	<value>Suivez les fenêtres de préavis Ontario, contrôles sécurité et discipline documentaire pour rendre la conformité visible et répétable.</value>
+  </data>
+  <data name="PropertyProfile_PageTitle" xml:space="preserve">
+	<value>Profil propriété</value>
+  </data>
+  <data name="PropertyProfile_NotFound" xml:space="preserve">
+	<value>Propriété introuvable.</value>
+  </data>
+  <data name="PropertyProfile_BackToProperties" xml:space="preserve">
+	<value>Retour aux propriétés</value>
+  </data>
+  <data name="PropertyProfile_UnitsCount" xml:space="preserve">
+	<value>{0} unité(s)</value>
+  </data>
+  <data name="PropertyProfile_OccupiedCount" xml:space="preserve">
+	<value>{0} occupée(s)</value>
+  </data>
+  <data name="PropertyProfile_VacantCount" xml:space="preserve">
+	<value>{0} vacante(s)</value>
+  </data>
+  <data name="PropertyProfile_StatRevenueTarget" xml:space="preserve">
+	<value>Objectif de revenu</value>
+  </data>
+  <data name="PropertyProfile_StatActualRentRoll" xml:space="preserve">
+	<value>Loyers réels</value>
+  </data>
+  <data name="PropertyProfile_StatOccupancy" xml:space="preserve">
+	<value>Occupation</value>
+  </data>
+  <data name="PropertyProfile_StatLeasingReadiness" xml:space="preserve">
+	<value>Préparation locative</value>
+  </data>
+  <data name="PropertyProfile_TabOverview" xml:space="preserve">
+	<value>Vue d’ensemble</value>
+  </data>
+  <data name="PropertyProfile_TabOps" xml:space="preserve">
+	<value>Ops</value>
+  </data>
+  <data name="PropertyProfile_IdealRenterProfile" xml:space="preserve">
+	<value>Profil locataire idéal</value>
+  </data>
+  <data name="PropertyProfile_SuggestedListingHeadline" xml:space="preserve">
+	<value>Titre d’annonce suggéré</value>
+  </data>
+  <data name="PropertyProfile_AssetStage" xml:space="preserve">
+	<value>Étape de l’actif</value>
+  </data>
+  <data name="PropertyProfile_LeasingReadinessScore" xml:space="preserve">
+	<value>Score de préparation locative</value>
+  </data>
+  <data name="PropertyProfile_NoUnitsYet" xml:space="preserve">
+	<value>Aucune unité n’a encore été ajoutée à cette propriété.</value>
+  </data>
+  <data name="PropertyProfile_LeasingPlaybook" xml:space="preserve">
+	<value>Playbook locatif</value>
+  </data>
+  <data name="PropertyProfile_LeasingPlaybookFallback" xml:space="preserve">
+	<value>Documentez qui loue le mieux ici, les repères tarifaires et le narratif de visite.</value>
+  </data>
+  <data name="PropertyProfile_PricingPosture" xml:space="preserve">
+	<value>Posture tarifaire</value>
+  </data>
+  <data name="PropertyProfile_RecommendedActions" xml:space="preserve">
+	<value>Actions recommandées</value>
+  </data>
+  <data name="PropertyProfile_LiveLeases" xml:space="preserve">
+	<value>Baux en cours</value>
+  </data>
+  <data name="PropertyProfile_NoLeasesLinked" xml:space="preserve">
+	<value>Aucun bail n’est actuellement lié à cette propriété.</value>
+  </data>
+  <data name="PropertyProfile_OntarioLease" xml:space="preserve">
+	<value>Bail Ontario</value>
+  </data>
+  <data name="PropertyProfile_OperationalNotes" xml:space="preserve">
+	<value>Notes opérationnelles</value>
+  </data>
+  <data name="PropertyProfile_OperationalNotesFallback" xml:space="preserve">
+	<value>Stockez pour l’équipe les points d’attention sur rotation, fournisseurs et opérations.</value>
+  </data>
+  <data name="PropertyProfile_OperationsFocus" xml:space="preserve">
+	<value>Focus opérationnel</value>
+  </data>
+  <data name="PropertyProfile_AmenitiesFallback" xml:space="preserve">
+	<value>Capturez les équipements du bâtiment pour soutenir les conversations de location et de visite.</value>
+  </data>
+  <data name="PropertyProfile_MaintenancePipeline" xml:space="preserve">
+	<value>Pipeline maintenance</value>
+  </data>
+  <data name="PropertyProfile_NoMaintenanceLinked" xml:space="preserve">
+	<value>Aucun élément de maintenance n’est actuellement lié à cette propriété.</value>
+  </data>
+  <data name="PropertyProfile_ComplianceReminder" xml:space="preserve">
+	<value>Rappel conformité</value>
+  </data>
+  <data name="PropertyProfile_ComplianceReminderBody" xml:space="preserve">
+	<value>Utilisez ce profil propriété pour coordonner avis Ontario, documentation de rotation et préparation locative depuis un seul endroit.</value>
+  </data>
+  <data name="PropertyProfile_ExecutionChecklist" xml:space="preserve">
+	<value>Checklist d’exécution</value>
+  </data>
+  <data name="PropertyProfile_ChecklistItem1" xml:space="preserve">
+	<value>Vérifier que le package de bail Ontario est à jour pour les nouvelles entrées</value>
+  </data>
+  <data name="PropertyProfile_ChecklistItem2" xml:space="preserve">
+	<value>Suivre les dates de notification et les justificatifs d’audit associés</value>
+  </data>
+  <data name="PropertyProfile_ChecklistItem3" xml:space="preserve">
+	<value>Relire la documentation de rotation avant toute remise en annonce d’une unité vacante</value>
+  </data>
+  <data name="PropertyProfile_UpcomingOntarioReminders" xml:space="preserve">
+	<value>Rappels Ontario à venir</value>
+  </data>
+  <data name="PropertyProfile_NoComplianceReminders" xml:space="preserve">
+	<value>Aucun rappel de conformité n’est actuellement disponible.</value>
+  </data>
+  <data name="PropertyProfile_Performance_SetupNeeded" xml:space="preserve">
+	<value>Configuration requise</value>
+  </data>
+  <data name="PropertyProfile_Performance_Performing" xml:space="preserve">
+	<value>Performant</value>
+  </data>
+  <data name="PropertyProfile_Performance_NeedsLeasing" xml:space="preserve">
+	<value>Nécessite une mise en location</value>
+  </data>
+  <data name="PropertyProfile_Performance_Watchlist" xml:space="preserve">
+	<value>Sous surveillance</value>
+  </data>
+  <data name="PropertyProfile_ReadinessSummary_High" xml:space="preserve">
+	<value>Cette propriété est bien documentée et prête pour une exécution locative cohérente.</value>
+  </data>
+  <data name="PropertyProfile_ReadinessSummary_Mid" xml:space="preserve">
+	<value>Bonne base, mais davantage de détails de positionnement amélioreraient la cohérence locative.</value>
+  </data>
+  <data name="PropertyProfile_ReadinessSummary_Low" xml:space="preserve">
+	<value>Fort potentiel : complétez les champs du playbook pour renforcer la qualité locative et l’exécution de l’équipe.</value>
+  </data>
+  <data name="PropertyProfile_IdealRenterProfile_Student" xml:space="preserve">
+	<value>Mieux positionnée pour les étudiants et parents qui privilégient des opérations prévisibles, le transport et les commodités proches.</value>
+  </data>
+  <data name="PropertyProfile_IdealRenterProfile_Family" xml:space="preserve">
+	<value>Convient bien aux ménages de plus longue durée recherchant stabilité du quartier, rangement et praticité au quotidien.</value>
+  </data>
+  <data name="PropertyProfile_IdealRenterProfile_Default" xml:space="preserve">
+	<value>Convient surtout aux professionnels et couples qui valorisent la qualité d’emplacement, une présentation locative soignée et une entrée dans les lieux fluide.</value>
+  </data>
+  <data name="PropertyProfile_Headline_Student" xml:space="preserve">
+	<value>Habitation prête pour étudiants à {0} avec commodité pratique et accompagnement d’entrée rapide.</value>
+  </data>
+  <data name="PropertyProfile_Headline_Family" xml:space="preserve">
+	<value>Location familiale stable à {0} avec espace pratique et confort du quotidien.</value>
+  </data>
+  <data name="PropertyProfile_Headline_Premium" xml:space="preserve">
+	<value>Habitation premium {0} à {1} avec présentation soignée et fort attrait locataire.</value>
+  </data>
+  <data name="PropertyProfile_Headline_Default" xml:space="preserve">
+	<value>Location {0} bien positionnée à {1} avec attrait navetteur et opérations disciplinées.</value>
+  </data>
+  <data name="PropertyProfile_AssetStageNarrative_Setup" xml:space="preserve">
+	<value>La structure de l’actif n’est pas encore complètement cartographiée. Terminez la base avant de vous appuyer sur les insights portefeuille.</value>
+  </data>
+  <data name="PropertyProfile_AssetStageNarrative_LeaseUp" xml:space="preserve">
+	<value>Cette adresse a besoin d’une exécution vacance focalisée, d’une discipline tarifaire et d’un meilleur suivi d’annonce.</value>
+  </data>
+  <data name="PropertyProfile_AssetStageNarrative_StabilizePlaybook" xml:space="preserve">
+	<value>L’occupation est exploitable, mais le playbook commercial demande encore une documentation plus forte pour une exécution répétable de l’équipe.</value>
+  </data>
+  <data name="PropertyProfile_AssetStageNarrative_Stabilized" xml:space="preserve">
+	<value>La propriété est suffisamment documentée et stable opérationnellement pour servir d’actif de référence dans le portefeuille.</value>
+  </data>
+  <data name="PropertyProfile_PricingPosture_Vacant" xml:space="preserve">
+	<value>Protégez d’abord la reprise de revenu. Comparez à l’objectif de {0}, accélérez les visites et évitez de surtarifer les unités vacantes.</value>
+  </data>
+  <data name="PropertyProfile_PricingPosture_AboveTarget" xml:space="preserve">
+	<value>Cet actif surperforme l’objectif. Préservez la discipline tarifaire et documentez pourquoi ce positionnement résonne auprès des locataires.</value>
+  </data>
+  <data name="PropertyProfile_PricingPosture_BelowTarget" xml:space="preserve">
+	<value>Le revenu est sous l’objectif. Revoyez le mix d’unités, la stratégie de renouvellement et si l’histoire de la propriété soutient le niveau de prix visé.</value>
+  </data>
+  <data name="PropertyProfile_PricingPosture_OnTarget" xml:space="preserve">
+	<value>Le revenu est sur cible. Concentrez-vous sur des renouvellements fluides et la qualité de rotation plutôt que sur des concessions évitables.</value>
+  </data>
+  <data name="PropertyProfile_OperationsFocus_Vacant" xml:space="preserve">
+	<value>Gardez une vitesse de rotation élevée, alignez tôt les fournisseurs et réduisez les frictions entre vacance, maintenance et relais locatif.</value>
+  </data>
+  <data name="PropertyProfile_OperationsFocus_Default" xml:space="preserve">
+	<value>Ajoutez des notes opérationnelles répétables pour que le personnel sur site et les fournisseurs externes exécutent l’actif de la même manière à chaque fois.</value>
+  </data>
+  <data name="PropertyProfile_Action_AddUnitMix" xml:space="preserve">
+	<value>Ajoutez le mix d’unités pour rendre mesurables l’occupation, les loyers et la performance locative.</value>
+  </data>
+  <data name="PropertyProfile_Action_VacancyRecovery" xml:space="preserve">
+	<value>Lancez un sprint de résorption des vacances avec pricing plus affûté, visites plus rapides et suivi resserré.</value>
+  </data>
+  <data name="PropertyProfile_Action_CompletePlaybook" xml:space="preserve">
+	<value>Complétez les éléments manquants du playbook pour améliorer la cohérence des annonces, visites et renouvellements.</value>
+  </data>
+  <data name="PropertyProfile_Action_ReviewPricing" xml:space="preserve">
+	<value>Revoyez le narratif tarifaire et le positionnement face à l’objectif de revenu avant d’offrir des concessions.</value>
+  </data>
+  <data name="PropertyProfile_Action_DocumentBenchmark" xml:space="preserve">
+	<value>Documentez ce qui fonctionne ici et réutilisez cette propriété comme playbook de référence pour des actifs similaires.</value>
+  </data>
+  <data name="PropertyProfile_Action_StayAhead" xml:space="preserve">
+	<value>Anticipez renouvellements et fenêtres de maintenance pour protéger la performance actuellement stabilisée.</value>
+  </data>
+  <data name="PropertyProfile_PostalPending" xml:space="preserve">
+	<value>Code postal en attente</value>
+  </data>
+</root>

@@ -1,12 +1,13 @@
 @attribute [Authorize]
 @page "/properties/{PropertyId:guid}"
 @inject SaasDataService DataService
+@inject IStringLocalizer<SharedResource> Localizer
 
-<PageTitle>Property Profile</PageTitle>
+<PageTitle>@Localizer["PropertyProfile_PageTitle"]</PageTitle>
 
 @if (_property is null)
 {
-    <MudAlert Severity="Severity.Warning">Property not found.</MudAlert>
+    <MudAlert Severity="Severity.Warning">@Localizer["PropertyProfile_NotFound"]</MudAlert>
 }
 else
 {
@@ -31,88 +32,88 @@ else
 
             <MudStack Row="true" Spacing="2" Wrap="Wrap.Wrap">
                 <MudChip T="string" Variant="Variant.Filled" Color="@performanceColor">@performanceLabel</MudChip>
-                <MudButton Href="/properties" Variant="Variant.Outlined" Color="Color.Default" StartIcon="@Icons.Material.Filled.ArrowBack">Back to properties</MudButton>
+                <MudButton Href="/properties" Variant="Variant.Outlined" Color="Color.Default" StartIcon="@Icons.Material.Filled.ArrowBack">@Localizer["PropertyProfile_BackToProperties"]</MudButton>
             </MudStack>
         </MudStack>
 
         <MudStack Row="true" Spacing="1" Wrap="Wrap.Wrap">
-            <MudChip T="string" Variant="Variant.Filled" Color="Color.Dark">@_property.PropertyType</MudChip>
+            <MudChip T="string" Variant="Variant.Filled" Color="Color.Dark">@LocalizePropertyType(_property.PropertyType)</MudChip>
             <MudChip T="string" Variant="Variant.Outlined" Color="Color.Primary">@_property.City</MudChip>
             <MudChip T="string" Variant="Variant.Outlined" Color="Color.Info">@GetPostalCodeOrFallback(_property)</MudChip>
-            <MudChip T="string" Variant="Variant.Outlined" Color="Color.Secondary">@($"{_units.Count} unit(s)")</MudChip>
-            <MudChip T="string" Variant="Variant.Filled" Color="Color.Success">@($"{occupiedCount} occupied")</MudChip>
-            <MudChip T="string" Variant="Variant.Filled" Color="Color.Warning">@($"{vacantCount} vacant")</MudChip>
+            <MudChip T="string" Variant="Variant.Outlined" Color="Color.Secondary">@string.Format(Localizer["PropertyProfile_UnitsCount"].Value, _units.Count)</MudChip>
+            <MudChip T="string" Variant="Variant.Filled" Color="Color.Success">@string.Format(Localizer["PropertyProfile_OccupiedCount"].Value, occupiedCount)</MudChip>
+            <MudChip T="string" Variant="Variant.Filled" Color="Color.Warning">@string.Format(Localizer["PropertyProfile_VacantCount"].Value, vacantCount)</MudChip>
         </MudStack>
 
         <MudGrid Spacing="2">
-            <MudItem xs="12" md="3"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">Revenue target</MudText><MudText Typo="Typo.h6">@_property.MonthlyRevenueTarget.ToString("C")</MudText></MudPaper></MudItem>
-            <MudItem xs="12" md="3"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">Actual rent roll</MudText><MudText Typo="Typo.h6">@monthlyRent.ToString("C")</MudText></MudPaper></MudItem>
-            <MudItem xs="12" md="3"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">Occupancy</MudText><MudText Typo="Typo.h6">@GetOccupancyLabel(_units.Count, occupiedCount)</MudText></MudPaper></MudItem>
-            <MudItem xs="12" md="3"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">Leasing readiness</MudText><MudText Typo="Typo.h6">@readinessScore/100</MudText></MudPaper></MudItem>
+            <MudItem xs="12" md="3"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">@Localizer["PropertyProfile_StatRevenueTarget"]</MudText><MudText Typo="Typo.h6">@_property.MonthlyRevenueTarget.ToString("C")</MudText></MudPaper></MudItem>
+            <MudItem xs="12" md="3"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">@Localizer["PropertyProfile_StatActualRentRoll"]</MudText><MudText Typo="Typo.h6">@monthlyRent.ToString("C")</MudText></MudPaper></MudItem>
+            <MudItem xs="12" md="3"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">@Localizer["PropertyProfile_StatOccupancy"]</MudText><MudText Typo="Typo.h6">@GetOccupancyLabel(_units.Count, occupiedCount)</MudText></MudPaper></MudItem>
+            <MudItem xs="12" md="3"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">@Localizer["PropertyProfile_StatLeasingReadiness"]</MudText><MudText Typo="Typo.h6">@readinessScore/100</MudText></MudPaper></MudItem>
         </MudGrid>
 
         <MudTabs Rounded="true" PanelClass="pa-4">
-            <MudTabPanel Text="Overview">
+            <MudTabPanel Text="@Localizer["PropertyProfile_TabOverview"]">
                 <MudGrid Spacing="2">
-                    <MudItem xs="12" md="4"><MudPaper Class="pa-4 property-detail-panel h-100" Elevation="0"><MudText Typo="Typo.subtitle2">Ideal renter profile</MudText><MudText Typo="Typo.body2">@GetIdealRenterProfile(_property)</MudText></MudPaper></MudItem>
-                    <MudItem xs="12" md="4"><MudPaper Class="pa-4 property-detail-panel h-100" Elevation="0"><MudText Typo="Typo.subtitle2">Suggested listing headline</MudText><MudText Typo="Typo.body2">@GetSuggestedHeadline(_property)</MudText></MudPaper></MudItem>
-                    <MudItem xs="12" md="4"><MudPaper Class="pa-4 property-detail-panel h-100" Elevation="0"><MudText Typo="Typo.subtitle2">Asset stage</MudText><MudChip T="string" Variant="Variant.Filled" Color="@GetAssetStageColor(_units, vacantCount, readinessScore)">@GetAssetStage(_units, vacantCount, readinessScore)</MudChip><MudText Typo="Typo.body2" Class="mt-2">@GetAssetStageNarrative(_units, vacantCount, readinessScore)</MudText></MudPaper></MudItem>
-                    <MudItem xs="12"><MudPaper Class="pa-4 property-score-panel" Elevation="0"><MudText Typo="Typo.h6">Leasing readiness score</MudText><MudText Typo="Typo.body2" Class="property-note">@GetReadinessSummary(readinessScore)</MudText><MudProgressLinear Class="mt-3" Rounded="true" Size="Size.Large" Color="@GetReadinessColor(readinessScore)" Value="@readinessScore" /></MudPaper></MudItem>
+                    <MudItem xs="12" md="4"><MudPaper Class="pa-4 property-detail-panel h-100" Elevation="0"><MudText Typo="Typo.subtitle2">@Localizer["PropertyProfile_IdealRenterProfile"]</MudText><MudText Typo="Typo.body2">@GetIdealRenterProfile(_property)</MudText></MudPaper></MudItem>
+                    <MudItem xs="12" md="4"><MudPaper Class="pa-4 property-detail-panel h-100" Elevation="0"><MudText Typo="Typo.subtitle2">@Localizer["PropertyProfile_SuggestedListingHeadline"]</MudText><MudText Typo="Typo.body2">@GetSuggestedHeadline(_property)</MudText></MudPaper></MudItem>
+                    <MudItem xs="12" md="4"><MudPaper Class="pa-4 property-detail-panel h-100" Elevation="0"><MudText Typo="Typo.subtitle2">@Localizer["PropertyProfile_AssetStage"]</MudText><MudChip T="string" Variant="Variant.Filled" Color="@GetAssetStageColor(_units, vacantCount, readinessScore)">@LocalizeAssetStage(GetAssetStage(_units, vacantCount, readinessScore))</MudChip><MudText Typo="Typo.body2" Class="mt-2">@GetAssetStageNarrative(_units, vacantCount, readinessScore)</MudText></MudPaper></MudItem>
+                    <MudItem xs="12"><MudPaper Class="pa-4 property-score-panel" Elevation="0"><MudText Typo="Typo.h6">@Localizer["PropertyProfile_LeasingReadinessScore"]</MudText><MudText Typo="Typo.body2" Class="property-note">@GetReadinessSummary(readinessScore)</MudText><MudProgressLinear Class="mt-3" Rounded="true" Size="Size.Large" Color="@GetReadinessColor(readinessScore)" Value="@readinessScore" /></MudPaper></MudItem>
                 </MudGrid>
             </MudTabPanel>
-            <MudTabPanel Text="Units">
+            <MudTabPanel Text="@Localizer["Units_Title"]">
                 @if (_units.Count == 0)
                 {
-                    <MudAlert Severity="Severity.Info">No units added yet for this property.</MudAlert>
+                    <MudAlert Severity="Severity.Info">@Localizer["PropertyProfile_NoUnitsYet"]</MudAlert>
                 }
                 else
                 {
                     <MudTable Items="_units" Dense="true" Hover="true" Breakpoint="Breakpoint.Sm" Class="property-units-table">
                         <HeaderContent>
-                            <MudTh>Unit</MudTh>
-                            <MudTh>Layout</MudTh>
-                            <MudTh>Rent</MudTh>
-                            <MudTh>Status</MudTh>
+                            <MudTh>@Localizer["Units_ColumnUnit"]</MudTh>
+                            <MudTh>@Localizer["Units_ColumnLayout"]</MudTh>
+                            <MudTh>@Localizer["Units_ColumnRent"]</MudTh>
+                            <MudTh>@Localizer["Units_ColumnStatus"]</MudTh>
                         </HeaderContent>
                         <RowTemplate>
-                            <MudTd DataLabel="Unit">@context.UnitNumber</MudTd>
-                            <MudTd DataLabel="Layout">@($"{context.Bedrooms} bd / {context.Bathrooms} ba")</MudTd>
-                            <MudTd DataLabel="Rent">@context.MonthlyRent.ToString("C")</MudTd>
-                            <MudTd DataLabel="Status"><MudChip T="string" Size="Size.Small" Variant="Variant.Filled" Color="@(context.IsOccupied ? Color.Success : Color.Warning)">@(context.IsOccupied ? "Occupied" : "Vacant")</MudChip></MudTd>
+                            <MudTd DataLabel="@Localizer["Units_ColumnUnit"]">@context.UnitNumber</MudTd>
+                            <MudTd DataLabel="@Localizer["Units_ColumnLayout"]">@($"{context.Bedrooms} {Localizer["Units_BedroomAbbreviation"]} / {context.Bathrooms} {Localizer["Units_BathroomAbbreviation"]}")</MudTd>
+                            <MudTd DataLabel="@Localizer["Units_ColumnRent"]">@context.MonthlyRent.ToString("C")</MudTd>
+                            <MudTd DataLabel="@Localizer["Units_ColumnStatus"]"><MudChip T="string" Size="Size.Small" Variant="Variant.Filled" Color="@(context.IsOccupied ? Color.Success : Color.Warning)">@(context.IsOccupied ? Localizer["Units_Occupied"] : Localizer["Units_Vacant"])</MudChip></MudTd>
                         </RowTemplate>
                     </MudTable>
                 }
             </MudTabPanel>
-            <MudTabPanel Text="Leasing">
+            <MudTabPanel Text="@Localizer["Leases_Title"]">
                 <MudGrid Spacing="2">
-                    <MudItem xs="12" md="6"><MudPaper Class="pa-4 property-detail-panel h-100" Elevation="0"><MudText Typo="Typo.subtitle2">Leasing playbook</MudText><MudText Typo="Typo.body2">@GetTextOrFallback(_property.LeasingNotes, "Record who rents here best, pricing cues and showing narrative.")</MudText></MudPaper></MudItem>
-                    <MudItem xs="12" md="6"><MudPaper Class="pa-4 property-detail-panel h-100" Elevation="0"><MudText Typo="Typo.subtitle2">Pricing posture</MudText><MudText Typo="Typo.body2">@GetPricingPosture(_property, monthlyRent, vacantCount)</MudText></MudPaper></MudItem>
-                    <MudItem xs="12"><MudPaper Class="pa-4 property-detail-panel" Elevation="0"><MudText Typo="Typo.subtitle2">Recommended actions</MudText><MudList T="string" Dense="true">@foreach (var action in GetRecommendedActions(_property, _units, vacantCount, readinessScore, monthlyRent)) { <MudListItem T="string">@action</MudListItem> }</MudList></MudPaper></MudItem>
+                    <MudItem xs="12" md="6"><MudPaper Class="pa-4 property-detail-panel h-100" Elevation="0"><MudText Typo="Typo.subtitle2">@Localizer["PropertyProfile_LeasingPlaybook"]</MudText><MudText Typo="Typo.body2">@GetTextOrFallback(_property.LeasingNotes, Localizer["PropertyProfile_LeasingPlaybookFallback"].Value)</MudText></MudPaper></MudItem>
+                    <MudItem xs="12" md="6"><MudPaper Class="pa-4 property-detail-panel h-100" Elevation="0"><MudText Typo="Typo.subtitle2">@Localizer["PropertyProfile_PricingPosture"]</MudText><MudText Typo="Typo.body2">@GetPricingPosture(_property, monthlyRent, vacantCount)</MudText></MudPaper></MudItem>
+                    <MudItem xs="12"><MudPaper Class="pa-4 property-detail-panel" Elevation="0"><MudText Typo="Typo.subtitle2">@Localizer["PropertyProfile_RecommendedActions"]</MudText><MudList T="string" Dense="true">@foreach (var action in GetRecommendedActions(_property, _units, vacantCount, readinessScore, monthlyRent)) { <MudListItem T="string">@action</MudListItem> }</MudList></MudPaper></MudItem>
                     <MudItem xs="12">
                         <MudPaper Class="pa-4 property-detail-panel" Elevation="0">
-                            <MudText Typo="Typo.subtitle2">Live leases</MudText>
+                            <MudText Typo="Typo.subtitle2">@Localizer["PropertyProfile_LiveLeases"]</MudText>
                             @if (_leases.Count == 0)
                             {
-                                <MudAlert Severity="Severity.Info" Dense="true" Class="mt-2">No leases currently linked to this property.</MudAlert>
+                                <MudAlert Severity="Severity.Info" Dense="true" Class="mt-2">@Localizer["PropertyProfile_NoLeasesLinked"]</MudAlert>
                             }
                             else
                             {
                                 <MudTable Items="_leases" Dense="true" Hover="true" Breakpoint="Breakpoint.Sm" Class="mt-2">
                                     <HeaderContent>
-                                        <MudTh>Unit</MudTh>
-                                        <MudTh>Start</MudTh>
-                                        <MudTh>End</MudTh>
-                                        <MudTh>Rent</MudTh>
-                                        <MudTh>Status</MudTh>
-                                        <MudTh>Ontario lease</MudTh>
+                                        <MudTh>@Localizer["Leases_ColumnUnit"]</MudTh>
+                                        <MudTh>@Localizer["Leases_FormStartDate"]</MudTh>
+                                        <MudTh>@Localizer["Leases_FormEndDate"]</MudTh>
+                                        <MudTh>@Localizer["Leases_ColumnRent"]</MudTh>
+                                        <MudTh>@Localizer["Leases_ColumnStatus"]</MudTh>
+                                        <MudTh>@Localizer["PropertyProfile_OntarioLease"]</MudTh>
                                     </HeaderContent>
                                     <RowTemplate>
-                                        <MudTd DataLabel="Unit">@GetUnitLabel(context.UnitId)</MudTd>
-                                        <MudTd DataLabel="Start">@context.StartDate</MudTd>
-                                        <MudTd DataLabel="End">@context.EndDate</MudTd>
-                                        <MudTd DataLabel="Rent">@context.MonthlyRent.ToString("C")</MudTd>
-                                        <MudTd DataLabel="Status">@context.Status</MudTd>
-                                        <MudTd DataLabel="Ontario lease">@(context.StandardOntarioLeaseSigned ? "Signed" : "Missing")</MudTd>
+                                        <MudTd DataLabel="@Localizer["Leases_ColumnUnit"]">@GetUnitLabel(context.UnitId)</MudTd>
+                                        <MudTd DataLabel="@Localizer["Leases_FormStartDate"]">@context.StartDate</MudTd>
+                                        <MudTd DataLabel="@Localizer["Leases_FormEndDate"]">@context.EndDate</MudTd>
+                                        <MudTd DataLabel="@Localizer["Leases_ColumnRent"]">@context.MonthlyRent.ToString("C")</MudTd>
+                                        <MudTd DataLabel="@Localizer["Leases_ColumnStatus"]">@context.Status</MudTd>
+                                        <MudTd DataLabel="@Localizer["PropertyProfile_OntarioLease"]">@(context.StandardOntarioLeaseSigned ? Localizer["Leases_OntarioSigned"] : Localizer["Leases_OntarioMissing"])</MudTd>
                                     </RowTemplate>
                                 </MudTable>
                             }
@@ -120,34 +121,34 @@ else
                     </MudItem>
                 </MudGrid>
             </MudTabPanel>
-            <MudTabPanel Text="Ops">
+            <MudTabPanel Text="@Localizer["PropertyProfile_TabOps"]">
                 <MudGrid Spacing="2">
-                    <MudItem xs="12" md="6"><MudPaper Class="pa-4 property-detail-panel h-100" Elevation="0"><MudText Typo="Typo.subtitle2">Operational notes</MudText><MudText Typo="Typo.body2">@GetTextOrFallback(_property.OperationalNotes, "Store turnover, vendor and operational watchouts for the team.")</MudText></MudPaper></MudItem>
-                    <MudItem xs="12" md="6"><MudPaper Class="pa-4 property-detail-panel h-100" Elevation="0"><MudText Typo="Typo.subtitle2">Operations focus</MudText><MudText Typo="Typo.body2">@GetOperationsFocus(_property, vacantCount)</MudText></MudPaper></MudItem>
-                    <MudItem xs="12"><MudPaper Class="pa-4 property-detail-panel" Elevation="0"><MudText Typo="Typo.subtitle2">Amenities</MudText><MudText Typo="Typo.body2">@GetTextOrFallback(_property.AmenitySummary, "Capture building amenities to arm leasing and showing conversations.")</MudText></MudPaper></MudItem>
+                    <MudItem xs="12" md="6"><MudPaper Class="pa-4 property-detail-panel h-100" Elevation="0"><MudText Typo="Typo.subtitle2">@Localizer["PropertyProfile_OperationalNotes"]</MudText><MudText Typo="Typo.body2">@GetTextOrFallback(_property.OperationalNotes, Localizer["PropertyProfile_OperationalNotesFallback"].Value)</MudText></MudPaper></MudItem>
+                    <MudItem xs="12" md="6"><MudPaper Class="pa-4 property-detail-panel h-100" Elevation="0"><MudText Typo="Typo.subtitle2">@Localizer["PropertyProfile_OperationsFocus"]</MudText><MudText Typo="Typo.body2">@GetOperationsFocus(_property, vacantCount)</MudText></MudPaper></MudItem>
+                    <MudItem xs="12"><MudPaper Class="pa-4 property-detail-panel" Elevation="0"><MudText Typo="Typo.subtitle2">@Localizer["Properties_FormAmenities"]</MudText><MudText Typo="Typo.body2">@GetTextOrFallback(_property.AmenitySummary, Localizer["PropertyProfile_AmenitiesFallback"].Value)</MudText></MudPaper></MudItem>
                     <MudItem xs="12">
                         <MudPaper Class="pa-4 property-detail-panel" Elevation="0">
-                            <MudText Typo="Typo.subtitle2">Maintenance pipeline</MudText>
+                            <MudText Typo="Typo.subtitle2">@Localizer["PropertyProfile_MaintenancePipeline"]</MudText>
                             @if (_maintenance.Count == 0)
                             {
-                                <MudAlert Severity="Severity.Info" Dense="true" Class="mt-2">No maintenance items currently linked to this property.</MudAlert>
+                                <MudAlert Severity="Severity.Info" Dense="true" Class="mt-2">@Localizer["PropertyProfile_NoMaintenanceLinked"]</MudAlert>
                             }
                             else
                             {
                                 <MudTable Items="_maintenance" Dense="true" Hover="true" Breakpoint="Breakpoint.Sm" Class="mt-2">
                                     <HeaderContent>
-                                        <MudTh>Title</MudTh>
-                                        <MudTh>Priority</MudTh>
-                                        <MudTh>Status</MudTh>
-                                        <MudTh>Vendor</MudTh>
-                                        <MudTh>Requested</MudTh>
+                                        <MudTh>@Localizer["Compliance_ColumnReminder"]</MudTh>
+                                        <MudTh>@Localizer["Maintenance_ColumnPriority"]</MudTh>
+                                        <MudTh>@Localizer["Maintenance_ColumnStatus"]</MudTh>
+                                        <MudTh>@Localizer["Maintenance_ColumnVendor"]</MudTh>
+                                        <MudTh>@Localizer["Maintenance_ColumnRequested"]</MudTh>
                                     </HeaderContent>
                                     <RowTemplate>
-                                        <MudTd DataLabel="Title">@context.Title</MudTd>
-                                        <MudTd DataLabel="Priority">@context.Priority</MudTd>
-                                        <MudTd DataLabel="Status">@context.Status</MudTd>
-                                        <MudTd DataLabel="Vendor">@context.VendorName</MudTd>
-                                        <MudTd DataLabel="Requested">@context.RequestedDate</MudTd>
+                                        <MudTd DataLabel="@Localizer["Compliance_ColumnReminder"]">@context.Title</MudTd>
+                                        <MudTd DataLabel="@Localizer["Maintenance_ColumnPriority"]">@context.Priority</MudTd>
+                                        <MudTd DataLabel="@Localizer["Maintenance_ColumnStatus"]">@context.Status</MudTd>
+                                        <MudTd DataLabel="@Localizer["Maintenance_ColumnVendor"]">@context.VendorName</MudTd>
+                                        <MudTd DataLabel="@Localizer["Maintenance_ColumnRequested"]">@context.RequestedDate</MudTd>
                                     </RowTemplate>
                                 </MudTable>
                             }
@@ -155,45 +156,45 @@ else
                     </MudItem>
                 </MudGrid>
             </MudTabPanel>
-            <MudTabPanel Text="Compliance">
+            <MudTabPanel Text="@Localizer["Compliance_Title"]">
                 <MudGrid Spacing="2">
                     <MudItem xs="12" md="6">
                         <MudPaper Class="pa-4 property-detail-panel h-100" Elevation="0">
-                            <MudText Typo="Typo.subtitle2">Compliance reminder</MudText>
-                            <MudText Typo="Typo.body2">Use this property profile to coordinate Ontario notices, unit turnover documentation and leasing readiness from one place.</MudText>
+                            <MudText Typo="Typo.subtitle2">@Localizer["PropertyProfile_ComplianceReminder"]</MudText>
+                            <MudText Typo="Typo.body2">@Localizer["PropertyProfile_ComplianceReminderBody"]</MudText>
                         </MudPaper>
                     </MudItem>
                     <MudItem xs="12" md="6">
                         <MudPaper Class="pa-4 property-detail-panel h-100" Elevation="0">
-                            <MudText Typo="Typo.subtitle2">Execution checklist</MudText>
+                            <MudText Typo="Typo.subtitle2">@Localizer["PropertyProfile_ExecutionChecklist"]</MudText>
                             <MudList T="string" Dense="true">
-                                <MudListItem T="string">Verify Ontario lease package is current for new move-ins</MudListItem>
-                                <MudListItem T="string">Track notice service dates and supporting audit trail</MudListItem>
-                                <MudListItem T="string">Review turnover documentation before relisting any vacant unit</MudListItem>
+                                <MudListItem T="string">@Localizer["PropertyProfile_ChecklistItem1"]</MudListItem>
+                                <MudListItem T="string">@Localizer["PropertyProfile_ChecklistItem2"]</MudListItem>
+                                <MudListItem T="string">@Localizer["PropertyProfile_ChecklistItem3"]</MudListItem>
                             </MudList>
                         </MudPaper>
                     </MudItem>
                     <MudItem xs="12">
                         <MudPaper Class="pa-4 property-detail-panel" Elevation="0">
-                            <MudText Typo="Typo.subtitle2">Upcoming Ontario reminders</MudText>
+                            <MudText Typo="Typo.subtitle2">@Localizer["PropertyProfile_UpcomingOntarioReminders"]</MudText>
                             @if (_compliance.Count == 0)
                             {
-                                <MudAlert Severity="Severity.Info" Dense="true" Class="mt-2">No compliance reminders are currently available.</MudAlert>
+                                <MudAlert Severity="Severity.Info" Dense="true" Class="mt-2">@Localizer["PropertyProfile_NoComplianceReminders"]</MudAlert>
                             }
                             else
                             {
                                 <MudTable Items="_compliance" Dense="true" Hover="true" Breakpoint="Breakpoint.Sm" Class="mt-2">
                                     <HeaderContent>
-                                        <MudTh>Reminder</MudTh>
-                                        <MudTh>Notice</MudTh>
-                                        <MudTh>Due</MudTh>
-                                        <MudTh>Reference</MudTh>
+                                        <MudTh>@Localizer["Compliance_ColumnReminder"]</MudTh>
+                                        <MudTh>@Localizer["Compliance_ColumnNotice"]</MudTh>
+                                        <MudTh>@Localizer["Compliance_ColumnDue"]</MudTh>
+                                        <MudTh>@Localizer["Compliance_ColumnReference"]</MudTh>
                                     </HeaderContent>
                                     <RowTemplate>
-                                        <MudTd DataLabel="Reminder">@context.Title</MudTd>
-                                        <MudTd DataLabel="Notice"><MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Info">@context.NoticeType</MudChip></MudTd>
-                                        <MudTd DataLabel="Due">@context.DueDate</MudTd>
-                                        <MudTd DataLabel="Reference">@context.Reference</MudTd>
+                                        <MudTd DataLabel="@Localizer["Compliance_ColumnReminder"]">@context.Title</MudTd>
+                                        <MudTd DataLabel="@Localizer["Compliance_ColumnNotice"]"><MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Info">@context.NoticeType</MudChip></MudTd>
+                                        <MudTd DataLabel="@Localizer["Compliance_ColumnDue"]">@context.DueDate</MudTd>
+                                        <MudTd DataLabel="@Localizer["Compliance_ColumnReference"]">@context.Reference</MudTd>
                                     </RowTemplate>
                                 </MudTable>
                             }
@@ -246,8 +247,8 @@ else
         return string.Join(", ", parts);
     }
 
-    private static string GetOccupancyLabel(int totalUnits, int occupiedUnits)
-        => totalUnits == 0 ? "No units" : $"{Math.Round((decimal)occupiedUnits / totalUnits * 100, 0)}%";
+    private string GetOccupancyLabel(int totalUnits, int occupiedUnits)
+        => totalUnits == 0 ? Localizer["Properties_NoUnits"] : $"{Math.Round((decimal)occupiedUnits / totalUnits * 100, 0)}%";
 
     private static int GetMarketingReadinessScore(Property property, List<Unit> propertyUnits, int occupiedCount, decimal monthlyRent)
     {
@@ -263,12 +264,12 @@ else
         return Math.Min(score, 100);
     }
 
-    private static string GetPerformanceLabel(Property property, List<Unit> propertyUnits, int occupiedCount, decimal monthlyRent)
+    private string GetPerformanceLabel(Property property, List<Unit> propertyUnits, int occupiedCount, decimal monthlyRent)
     {
-        if (propertyUnits.Count == 0) return "Setup needed";
-        if (occupiedCount == propertyUnits.Count && monthlyRent >= property.MonthlyRevenueTarget) return "Performing";
-        if (occupiedCount == 0) return "Needs leasing";
-        return "Watchlist";
+        if (propertyUnits.Count == 0) return Localizer["PropertyProfile_Performance_SetupNeeded"];
+        if (occupiedCount == propertyUnits.Count && monthlyRent >= property.MonthlyRevenueTarget) return Localizer["PropertyProfile_Performance_Performing"];
+        if (occupiedCount == 0) return Localizer["PropertyProfile_Performance_NeedsLeasing"];
+        return Localizer["PropertyProfile_Performance_Watchlist"];
     }
 
     private static Color GetPerformanceColor(Property property, List<Unit> propertyUnits, int occupiedCount, decimal monthlyRent)
@@ -282,25 +283,25 @@ else
     private static Color GetReadinessColor(int score)
         => score >= 80 ? Color.Success : score >= 55 ? Color.Warning : Color.Error;
 
-    private static string GetReadinessSummary(int score)
-        => score >= 80 ? "This property is well documented and ready for consistent leasing execution."
-            : score >= 55 ? "Good baseline, but more positioning detail would improve leasing consistency."
-            : "High upside: complete the playbook fields to strengthen leasing quality and team execution.";
+    private string GetReadinessSummary(int score)
+        => score >= 80 ? Localizer["PropertyProfile_ReadinessSummary_High"]
+            : score >= 55 ? Localizer["PropertyProfile_ReadinessSummary_Mid"]
+            : Localizer["PropertyProfile_ReadinessSummary_Low"];
 
-    private static string GetIdealRenterProfile(Property property)
+    private string GetIdealRenterProfile(Property property)
     {
-        if (property.PropertyType.Contains("student", StringComparison.OrdinalIgnoreCase)) return "Best positioned for students and parents prioritizing predictable operations, transit and nearby amenities.";
-        if (property.PropertyType.Contains("single-family", StringComparison.OrdinalIgnoreCase) || property.PropertyType.Contains("townhome", StringComparison.OrdinalIgnoreCase)) return "Strong fit for longer-stay households looking for neighbourhood stability, storage and practical daily living.";
-        return "Best suited for professionals and couples who value location quality, polished leasing presentation and smooth move-in execution.";
+        if (property.PropertyType.Contains("student", StringComparison.OrdinalIgnoreCase)) return Localizer["PropertyProfile_IdealRenterProfile_Student"];
+        if (property.PropertyType.Contains("single-family", StringComparison.OrdinalIgnoreCase) || property.PropertyType.Contains("townhome", StringComparison.OrdinalIgnoreCase)) return Localizer["PropertyProfile_IdealRenterProfile_Family"];
+        return Localizer["PropertyProfile_IdealRenterProfile_Default"];
     }
 
-    private static string GetSuggestedHeadline(Property property)
+    private string GetSuggestedHeadline(Property property)
     {
         var city = string.IsNullOrWhiteSpace(property.City) ? "Toronto" : property.City;
-        if (property.PropertyType.Contains("student", StringComparison.OrdinalIgnoreCase)) return $"Student-ready living in {city} with practical convenience and fast move-in support.";
-        if (property.PropertyType.Contains("single-family", StringComparison.OrdinalIgnoreCase) || property.PropertyType.Contains("townhome", StringComparison.OrdinalIgnoreCase)) return $"Stable family-oriented rental in {city} with practical space and everyday convenience.";
-        if (property.PropertyType.Contains("luxury", StringComparison.OrdinalIgnoreCase) || property.PropertyType.Contains("waterfront", StringComparison.OrdinalIgnoreCase) || property.PropertyType.Contains("executive", StringComparison.OrdinalIgnoreCase)) return $"Premium {property.PropertyType.ToLowerInvariant()} living in {city} with polished presentation and strong renter appeal.";
-        return $"Well-positioned {property.PropertyType.ToLowerInvariant()} rental in {city} with commuter-friendly appeal and disciplined operations.";
+        if (property.PropertyType.Contains("student", StringComparison.OrdinalIgnoreCase)) return string.Format(Localizer["PropertyProfile_Headline_Student"].Value, city);
+        if (property.PropertyType.Contains("single-family", StringComparison.OrdinalIgnoreCase) || property.PropertyType.Contains("townhome", StringComparison.OrdinalIgnoreCase)) return string.Format(Localizer["PropertyProfile_Headline_Family"].Value, city);
+        if (property.PropertyType.Contains("luxury", StringComparison.OrdinalIgnoreCase) || property.PropertyType.Contains("waterfront", StringComparison.OrdinalIgnoreCase) || property.PropertyType.Contains("executive", StringComparison.OrdinalIgnoreCase)) return string.Format(Localizer["PropertyProfile_Headline_Premium"].Value, property.PropertyType.ToLowerInvariant(), city);
+        return string.Format(Localizer["PropertyProfile_Headline_Default"].Value, property.PropertyType.ToLowerInvariant(), city);
     }
 
     private static string GetAssetStage(List<Unit> propertyUnits, int vacantCount, int readinessScore)
@@ -323,44 +324,44 @@ else
         };
     }
 
-    private static string GetAssetStageNarrative(List<Unit> propertyUnits, int vacantCount, int readinessScore)
+    private string GetAssetStageNarrative(List<Unit> propertyUnits, int vacantCount, int readinessScore)
     {
         var stage = GetAssetStage(propertyUnits, vacantCount, readinessScore);
         return stage switch
         {
-            "Setup" => "The asset structure is not fully mapped yet. Finish the base setup before relying on portfolio insights.",
-            "Lease-up" => "This address needs focused vacancy execution, pricing discipline and sharper listing follow-through.",
-            "Stabilize playbook" => "Occupancy is workable, but the commercial playbook still needs stronger documentation for repeatable team execution.",
-            _ => "The property is documented and operationally steady enough to serve as a benchmark asset in the portfolio."
+            "Setup" => Localizer["PropertyProfile_AssetStageNarrative_Setup"],
+            "Lease-up" => Localizer["PropertyProfile_AssetStageNarrative_LeaseUp"],
+            "Stabilize playbook" => Localizer["PropertyProfile_AssetStageNarrative_StabilizePlaybook"],
+            _ => Localizer["PropertyProfile_AssetStageNarrative_Stabilized"]
         };
     }
 
-    private static string GetPricingPosture(Property property, decimal monthlyRent, int vacantCount)
+    private string GetPricingPosture(Property property, decimal monthlyRent, int vacantCount)
     {
-        if (vacantCount > 0) return $"Protect revenue recovery first. Benchmark against the target of {property.MonthlyRevenueTarget:C}, tighten showing speed and avoid overpricing vacant suites.";
-        if (monthlyRent > property.MonthlyRevenueTarget) return "This asset is outperforming target. Preserve pricing discipline and document why this positioning resonates with renters.";
-        if (monthlyRent < property.MonthlyRevenueTarget) return "Revenue sits below target. Review unit mix, renewal strategy and whether the property story supports the desired price point.";
-        return "Revenue is on target. Focus on keeping renewals smooth and protecting turnover quality rather than chasing avoidable concessions.";
+        if (vacantCount > 0) return string.Format(Localizer["PropertyProfile_PricingPosture_Vacant"].Value, property.MonthlyRevenueTarget.ToString("C"));
+        if (monthlyRent > property.MonthlyRevenueTarget) return Localizer["PropertyProfile_PricingPosture_AboveTarget"];
+        if (monthlyRent < property.MonthlyRevenueTarget) return Localizer["PropertyProfile_PricingPosture_BelowTarget"];
+        return Localizer["PropertyProfile_PricingPosture_OnTarget"];
     }
 
-    private static string GetOperationsFocus(Property property, int vacantCount)
+    private string GetOperationsFocus(Property property, int vacantCount)
     {
-        if (vacantCount > 0) return "Keep turnover speed high, align vendors early and remove friction between vacancy, maintenance and leasing handoff.";
-        if (string.IsNullOrWhiteSpace(property.OperationalNotes)) return "Add repeatable operating notes so onsite staff and external vendors execute the asset the same way every time.";
+        if (vacantCount > 0) return Localizer["PropertyProfile_OperationsFocus_Vacant"];
+        if (string.IsNullOrWhiteSpace(property.OperationalNotes)) return Localizer["PropertyProfile_OperationsFocus_Default"];
         return property.OperationalNotes;
     }
 
-    private static List<string> GetRecommendedActions(Property property, List<Unit> propertyUnits, int vacantCount, int readinessScore, decimal monthlyRent)
+    private List<string> GetRecommendedActions(Property property, List<Unit> propertyUnits, int vacantCount, int readinessScore, decimal monthlyRent)
     {
         var actions = new List<string>();
-        if (propertyUnits.Count == 0) actions.Add("Add the unit mix so occupancy, rent roll and leasing performance become measurable.");
-        if (vacantCount > 0) actions.Add("Launch a vacancy recovery sprint with sharper pricing, faster showings and tighter follow-up.");
-        if (readinessScore < 80) actions.Add("Complete the missing playbook inputs to improve consistency across listings, tours and renewals.");
-        if (monthlyRent < property.MonthlyRevenueTarget) actions.Add("Review the pricing story and positioning against the revenue target before offering concessions.");
+        if (propertyUnits.Count == 0) actions.Add(Localizer["PropertyProfile_Action_AddUnitMix"]);
+        if (vacantCount > 0) actions.Add(Localizer["PropertyProfile_Action_VacancyRecovery"]);
+        if (readinessScore < 80) actions.Add(Localizer["PropertyProfile_Action_CompletePlaybook"]);
+        if (monthlyRent < property.MonthlyRevenueTarget) actions.Add(Localizer["PropertyProfile_Action_ReviewPricing"]);
         if (actions.Count == 0)
         {
-            actions.Add("Document what is working here and reuse this property as the benchmark playbook for similar assets.");
-            actions.Add("Stay ahead of renewals and maintenance windows to protect the current stabilized performance.");
+            actions.Add(Localizer["PropertyProfile_Action_DocumentBenchmark"]);
+            actions.Add(Localizer["PropertyProfile_Action_StayAhead"]);
         }
         return actions.Take(3).ToList();
     }
@@ -368,8 +369,40 @@ else
     private string GetUnitLabel(Guid unitId)
         => _units.FirstOrDefault(x => x.Id == unitId)?.UnitNumber ?? unitId.ToString()[..8];
 
-    private static string GetPostalCodeOrFallback(Property property)
-        => string.IsNullOrWhiteSpace(property.PostalCode) ? "Postal pending" : property.PostalCode;
+    private string GetPostalCodeOrFallback(Property property)
+        => string.IsNullOrWhiteSpace(property.PostalCode) ? Localizer["PropertyProfile_PostalPending"] : property.PostalCode;
+
+    private string LocalizePropertyType(string propertyType)
+        => propertyType switch
+        {
+            "Multi-family" => Localizer["Properties_PropertyType_MultiFamily"],
+            "Urban mid-rise" => Localizer["Properties_PropertyType_UrbanMidRise"],
+            "Low-rise apartment" => Localizer["Properties_PropertyType_LowRiseApartment"],
+            "Condo building" => Localizer["Properties_PropertyType_CondoBuilding"],
+            "Purpose-built rental" => Localizer["Properties_PropertyType_PurposeBuiltRental"],
+            "Duplex / triplex" => Localizer["Properties_PropertyType_DuplexTriplex"],
+            "Townhome cluster" => Localizer["Properties_PropertyType_TownhomeCluster"],
+            "Single-family rental" => Localizer["Properties_PropertyType_SingleFamilyRental"],
+            "Student housing" => Localizer["Properties_PropertyType_StudentHousing"],
+            "Waterfront condo" => Localizer["Properties_PropertyType_WaterfrontCondo"],
+            "Mixed-use asset" => Localizer["Properties_PropertyType_MixedUseAsset"],
+            "Micro-suite building" => Localizer["Properties_PropertyType_MicroSuiteBuilding"],
+            "Luxury rental" => Localizer["Properties_PropertyType_LuxuryRental"],
+            "Suburban family asset" => Localizer["Properties_PropertyType_SuburbanFamilyAsset"],
+            "Transit-oriented rental" => Localizer["Properties_PropertyType_TransitOrientedRental"],
+            "Executive furnished rental" => Localizer["Properties_PropertyType_ExecutiveFurnishedRental"],
+            _ => propertyType
+        };
+
+    private string LocalizeAssetStage(string stage)
+        => stage switch
+        {
+            "Setup" => Localizer["Properties_AssetStage_Setup"],
+            "Lease-up" => Localizer["Properties_AssetStage_LeaseUp"],
+            "Stabilize playbook" => Localizer["Properties_AssetStage_StabilizePlaybook"],
+            "Stabilized" => Localizer["Properties_AssetStage_Stabilized"],
+            _ => stage
+        };
 
     private static string GetTextOrFallback(string value, string fallback)
         => string.IsNullOrWhiteSpace(value) ? fallback : value;

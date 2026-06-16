@@ -2,29 +2,30 @@
 @page "/tenants"
 @inject SaasDataService DataService
 @inject PropertySaaS.Application.Common.CurrentOrganization CurrentOrganization
+@inject IStringLocalizer<SharedResource> Localizer
 
-<PageTitle>Tenants</PageTitle>
+<PageTitle>@Localizer["Tenants_Title"]</PageTitle>
 
 <MudStack Spacing="3">
     <MudStack Spacing="0">
-        <MudText Typo="Typo.h4">Tenants</MudText>
-        <MudText Typo="Typo.body2">Keep resident information easy to scan here and use the lease or property pages when the team needs contract or asset context.</MudText>
+        <MudText Typo="Typo.h4">@Localizer["Tenants_Title"]</MudText>
+        <MudText Typo="Typo.body2">@Localizer["Tenants_Subtitle"]</MudText>
     </MudStack>
 
     <MudGrid Spacing="2" Class="align-center-grid">
         <MudItem xs="12" lg="4">
             <MudTextField T="string"
-                          Label="Search tenants"
+                          Label="@Localizer["Tenants_SearchLabel"]"
                           Variant="Variant.Outlined"
                           Immediate="true"
                           @bind-Value="_searchText"
                           Adornment="Adornment.Start"
                           AdornmentIcon="@Icons.Material.Filled.Search"
-                          Placeholder="Search by name, email, phone or provider" />
+                          Placeholder="@Localizer["Tenants_SearchPlaceholder"]" />
         </MudItem>
         <MudItem xs="12" sm="4" lg="2">
-            <MudSelect T="string" Label="Screening" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedProviderFilter">
-                <MudSelectItem T="string" Value="@string.Empty">All providers</MudSelectItem>
+            <MudSelect T="string" Label="@Localizer["Tenants_FilterScreening"]" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedProviderFilter">
+                <MudSelectItem T="string" Value="@string.Empty">@Localizer["Tenants_FilterAllProviders"]</MudSelectItem>
                 @foreach (var provider in ProviderOptions)
                 {
                     <MudSelectItem T="string" Value="@provider">@provider</MudSelectItem>
@@ -32,18 +33,18 @@
             </MudSelect>
         </MudItem>
         <MudItem xs="12" sm="4" lg="2">
-            <MudSelect T="string" Label="Score band" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedScoreBand">
-                <MudSelectItem T="string" Value="@string.Empty">All scores</MudSelectItem>
+            <MudSelect T="string" Label="@Localizer["Tenants_FilterScoreBand"]" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedScoreBand">
+                <MudSelectItem T="string" Value="@string.Empty">@Localizer["Tenants_FilterAllScores"]</MudSelectItem>
                 <MudSelectItem T="string" Value='@("750+")'>750+</MudSelectItem>
                 <MudSelectItem T="string" Value='@("700-749")'>700-749</MudSelectItem>
-                <MudSelectItem T="string" Value='@("Under 700")'>Under 700</MudSelectItem>
+                <MudSelectItem T="string" Value='@Localizer["Tenants_ScoreBandUnder700"].Value'>@Localizer["Tenants_ScoreBandUnder700"]</MudSelectItem>
             </MudSelect>
         </MudItem>
         <MudItem xs="12" sm="4" lg="2">
             <MudStack Row="true" Spacing="1" Class="properties-toolbar-actions">
                 @if (HasActiveFilters)
                 {
-                    <MudButton Variant="Variant.Outlined" Color="Color.Default" FullWidth="true" StartIcon="@Icons.Material.Filled.FilterAltOff" OnClick="ClearFilters">Reset</MudButton>
+                    <MudButton Variant="Variant.Outlined" Color="Color.Default" FullWidth="true" StartIcon="@Icons.Material.Filled.FilterAltOff" OnClick="ClearFilters">@Localizer["Common_Reset"]</MudButton>
                 }
             </MudStack>
         </MudItem>
@@ -51,28 +52,28 @@
             <MudStack Row="true" Spacing="1" Class="properties-toolbar-actions">
                 @if (CurrentOrganization.CanManageData)
                 {
-                    <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreatePanel">Add tenant</MudButton>
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreatePanel">@Localizer["Tenants_AddTenant"]</MudButton>
                 }
             </MudStack>
         </MudItem>
     </MudGrid>
 
     <MudGrid Spacing="2">
-        <MudItem xs="12" sm="6" lg="3"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">Tenants shown</MudText><MudText Typo="Typo.h6">@FilteredTenants.Count()</MudText></MudPaper></MudItem>
-        <MudItem xs="12" sm="6" lg="3"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">Average score</MudText><MudText Typo="Typo.h6">@GetAverageScoreLabel()</MudText></MudPaper></MudItem>
-        <MudItem xs="12" sm="6" lg="3"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">Providers used</MudText><MudText Typo="Typo.h6">@FilteredTenants.Select(x => x.ScreeningProvider).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct(StringComparer.OrdinalIgnoreCase).Count()</MudText></MudPaper></MudItem>
-        <MudItem xs="12" sm="6" lg="3"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">High-score residents</MudText><MudText Typo="Typo.h6">@FilteredTenants.Count(x => x.CreditScore >= 750)</MudText></MudPaper></MudItem>
+        <MudItem xs="12" sm="6" lg="3"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">@Localizer["Tenants_StatShown"]</MudText><MudText Typo="Typo.h6">@FilteredTenants.Count()</MudText></MudPaper></MudItem>
+        <MudItem xs="12" sm="6" lg="3"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">@Localizer["Tenants_StatAverageScore"]</MudText><MudText Typo="Typo.h6">@GetAverageScoreLabel()</MudText></MudPaper></MudItem>
+        <MudItem xs="12" sm="6" lg="3"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">@Localizer["Tenants_StatProvidersUsed"]</MudText><MudText Typo="Typo.h6">@FilteredTenants.Select(x => x.ScreeningProvider).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct(StringComparer.OrdinalIgnoreCase).Count()</MudText></MudPaper></MudItem>
+        <MudItem xs="12" sm="6" lg="3"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">@Localizer["Tenants_StatHighScoreResidents"]</MudText><MudText Typo="Typo.h6">@FilteredTenants.Count(x => x.CreditScore >= 750)</MudText></MudPaper></MudItem>
     </MudGrid>
 
     <MudExpansionPanels>
-        <MudExpansionPanel Text="Bulk import">
+        <MudExpansionPanel Text="@Localizer["Common_BulkImport"]">
             <MudPaper Class="pa-4" Elevation="0">
-                <MudText Typo="Typo.h6">Quick CSV Import</MudText>
-                <MudText Typo="Typo.body2" Class="mb-2">Paste CSV rows using format: FullName,Email,PhoneNumber,CreditScore,ScreeningProvider</MudText>
+                <MudText Typo="Typo.h6">@Localizer["Common_QuickCsvImport"]</MudText>
+                <MudText Typo="Typo.body2" Class="mb-2">@Localizer["Tenants_CsvFormatHint"]</MudText>
                 <MudTextField Lines="6" Variant="Variant.Outlined" @bind-Value="_csvInput" FullWidth="true" />
                 @if (CurrentOrganization.CanManageData)
                 {
-                    <MudButton Variant="Variant.Filled" Color="Color.Secondary" Class="mt-3" OnClick="ImportCsvAsync">Import CSV Text</MudButton>
+                    <MudButton Variant="Variant.Filled" Color="Color.Secondary" Class="mt-3" OnClick="ImportCsvAsync">@Localizer["Common_ImportCsvText"]</MudButton>
                 }
                 @if (!string.IsNullOrWhiteSpace(_importResult))
                 {
@@ -85,31 +86,31 @@
     <MudPaper Class="pa-2 table-wrap properties-table-shell">
         <MudTable Items="FilteredTenants.ToList()" Dense="true" Hover="true" Breakpoint="Breakpoint.Md" RowsPerPage="10">
             <HeaderContent>
-                <MudTh>Name</MudTh>
-                <MudTh>Email</MudTh>
-                <MudTh>Phone</MudTh>
-                <MudTh>Screening</MudTh>
-                <MudTh>Score</MudTh>
+                <MudTh>@Localizer["Tenants_ColumnName"]</MudTh>
+                <MudTh>@Localizer["Tenants_ColumnEmail"]</MudTh>
+                <MudTh>@Localizer["Tenants_ColumnPhone"]</MudTh>
+                <MudTh>@Localizer["Tenants_ColumnScreening"]</MudTh>
+                <MudTh>@Localizer["Tenants_ColumnScore"]</MudTh>
                 <MudTh></MudTh>
             </HeaderContent>
             <RowTemplate>
-                <MudTd DataLabel="Name">
+                <MudTd DataLabel="@Localizer["Tenants_ColumnName"]">
                     <MudStack Spacing="0">
                         <MudText Typo="Typo.subtitle2">@context.FullName</MudText>
                         <MudText Typo="Typo.caption" Class="property-address">@GetTenantScoreNarrative(context)</MudText>
                     </MudStack>
                 </MudTd>
-                <MudTd DataLabel="Email">@context.Email</MudTd>
-                <MudTd DataLabel="Phone">@context.PhoneNumber</MudTd>
-                <MudTd DataLabel="Screening"><MudChip T="string" Variant="Variant.Outlined" Color="Color.Info">@GetProviderLabel(context.ScreeningProvider)</MudChip></MudTd>
-                <MudTd DataLabel="Score"><MudChip T="string" Variant="Variant.Filled" Color="@GetScoreColor(context.CreditScore)">@context.CreditScore</MudChip></MudTd>
-                <MudTd DataLabel="Actions">
+                <MudTd DataLabel="@Localizer["Tenants_ColumnEmail"]">@context.Email</MudTd>
+                <MudTd DataLabel="@Localizer["Tenants_ColumnPhone"]">@context.PhoneNumber</MudTd>
+                <MudTd DataLabel="@Localizer["Tenants_ColumnScreening"]"><MudChip T="string" Variant="Variant.Outlined" Color="Color.Info">@GetProviderLabel(context.ScreeningProvider)</MudChip></MudTd>
+                <MudTd DataLabel="@Localizer["Tenants_ColumnScore"]"><MudChip T="string" Variant="Variant.Filled" Color="@GetScoreColor(context.CreditScore)">@context.CreditScore</MudChip></MudTd>
+                <MudTd DataLabel="@Localizer["Tenants_ColumnActions"]">
                     <MudStack Row="true" Spacing="1" Wrap="Wrap.Wrap">
-                        <MudButton Href="/leases" Variant="Variant.Text" Color="Color.Primary" Size="Size.Small">Open leases</MudButton>
+                        <MudButton Href="/leases" Variant="Variant.Text" Color="Color.Primary" Size="Size.Small">@Localizer["Tenants_OpenLeases"]</MudButton>
                         @if (CurrentOrganization.CanManageData)
                         {
-                            <MudButton Variant="Variant.Text" Color="Color.Secondary" Size="Size.Small" OnClick="() => OpenEditPanel(context)">Edit</MudButton>
-                            <MudButton Variant="Variant.Text" Color="Color.Error" Size="Size.Small" OnClick="() => DeleteAsync(context.Id)">Delete</MudButton>
+                            <MudButton Variant="Variant.Text" Color="Color.Secondary" Size="Size.Small" OnClick="() => OpenEditPanel(context)">@Localizer["Common_Edit"]</MudButton>
+                            <MudButton Variant="Variant.Text" Color="Color.Error" Size="Size.Small" OnClick="() => DeleteAsync(context.Id)">@Localizer["Common_Delete"]</MudButton>
                         }
                     </MudStack>
                 </MudTd>
@@ -117,11 +118,11 @@
             <NoRecordsContent>
                 <MudStack Class="pa-6 properties-empty-state" Spacing="1" AlignItems="AlignItems.Center">
                     <MudIcon Icon="@Icons.Material.Filled.People" Size="Size.Large" Color="Color.Default" />
-                    <MudText Typo="Typo.subtitle1">No tenants match the current filters.</MudText>
-                    <MudText Typo="Typo.body2">Reset the filters or add a tenant to restore resident coverage.</MudText>
+                    <MudText Typo="Typo.subtitle1">@Localizer["Tenants_NoRecordsTitle"]</MudText>
+                    <MudText Typo="Typo.body2">@Localizer["Tenants_NoRecordsSubtitle"]</MudText>
                     @if (HasActiveFilters)
                     {
-                        <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="ClearFilters">Reset filters</MudButton>
+                        <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="ClearFilters">@Localizer["Common_ResetFilters"]</MudButton>
                     }
                 </MudStack>
             </NoRecordsContent>
@@ -132,8 +133,8 @@
     </MudPaper>
 
     <MudStack Row="true" Spacing="2" Wrap="Wrap.Wrap">
-        <MudButton Href="/import-export" Variant="Variant.Outlined" Color="Color.Default">Open Import / Export</MudButton>
-        <MudButton Href="/export/tenants" Variant="Variant.Outlined" Color="Color.Primary">Export CSV</MudButton>
+        <MudButton Href="/import-export" Variant="Variant.Outlined" Color="Color.Default">@Localizer["Tenants_OpenImportExport"]</MudButton>
+        <MudButton Href="/export/tenants" Variant="Variant.Outlined" Color="Color.Primary">@Localizer["Tenants_ExportCsv"]</MudButton>
     </MudStack>
 
     @if (_isFormPanelOpen)
@@ -143,26 +144,26 @@
                 <MudStack Spacing="3">
                     <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
                         <MudStack Spacing="0">
-                            <MudText Typo="Typo.h5">@(_isCreateMode ? "Add tenant" : "Edit tenant")</MudText>
-                            <MudText Typo="Typo.body2">Capture the resident basics here. Use leases for contract timing and properties for asset-specific execution.</MudText>
+                            <MudText Typo="Typo.h5">@(_isCreateMode ? Localizer["Tenants_AddTenant"] : Localizer["Tenants_DrawerEditTitle"])</MudText>
+                            <MudText Typo="Typo.body2">@Localizer["Tenants_DrawerSubtitle"]</MudText>
                         </MudStack>
                         <MudIconButton Icon="@Icons.Material.Filled.Close" Color="Color.Default" OnClick="CloseFormPanel" />
                     </MudStack>
 
                     <EditForm Model="ActiveTenant" OnValidSubmit="SaveFormAsync">
                         <MudGrid Spacing="2">
-                            <MudItem xs="12" md="6"><MudTextField Label="Full name" Variant="Variant.Outlined" @bind-Value="ActiveTenant.FullName" /></MudItem>
-                            <MudItem xs="12" md="6"><MudTextField Label="Email" Variant="Variant.Outlined" @bind-Value="ActiveTenant.Email" /></MudItem>
-                            <MudItem xs="12" md="4"><MudTextField Label="Phone" Variant="Variant.Outlined" @bind-Value="ActiveTenant.PhoneNumber" /></MudItem>
-                            <MudItem xs="12" md="4"><MudNumericField T="int" Label="Credit score" Variant="Variant.Outlined" @bind-Value="ActiveTenant.CreditScore" /></MudItem>
-                            <MudItem xs="12" md="4"><MudTextField Label="Screening provider" Variant="Variant.Outlined" @bind-Value="ActiveTenant.ScreeningProvider" /></MudItem>
-                            <MudItem xs="12"><MudSwitch T="bool" Color="Color.Primary" Label="Screening completed" @bind-Value="ActiveTenant.ScreeningCompleted" /></MudItem>
-                            <MudItem xs="12"><MudPaper Class="pa-3 property-detail-panel" Elevation="0"><MudText Typo="Typo.subtitle2">Resident note</MudText><MudText Typo="Typo.body2">@GetFormGuidance()</MudText></MudPaper></MudItem>
+                            <MudItem xs="12" md="6"><MudTextField Label="@Localizer["Tenants_FormFullName"]" Variant="Variant.Outlined" @bind-Value="ActiveTenant.FullName" /></MudItem>
+                            <MudItem xs="12" md="6"><MudTextField Label="@Localizer["Tenants_ColumnEmail"]" Variant="Variant.Outlined" @bind-Value="ActiveTenant.Email" /></MudItem>
+                            <MudItem xs="12" md="4"><MudTextField Label="@Localizer["Tenants_ColumnPhone"]" Variant="Variant.Outlined" @bind-Value="ActiveTenant.PhoneNumber" /></MudItem>
+                            <MudItem xs="12" md="4"><MudNumericField T="int" Label="@Localizer["Tenants_FormCreditScore"]" Variant="Variant.Outlined" @bind-Value="ActiveTenant.CreditScore" /></MudItem>
+                            <MudItem xs="12" md="4"><MudTextField Label="@Localizer["Tenants_FormScreeningProvider"]" Variant="Variant.Outlined" @bind-Value="ActiveTenant.ScreeningProvider" /></MudItem>
+                            <MudItem xs="12"><MudSwitch T="bool" Color="Color.Primary" Label="@Localizer["Tenants_FormScreeningCompleted"]" @bind-Value="ActiveTenant.ScreeningCompleted" /></MudItem>
+                            <MudItem xs="12"><MudPaper Class="pa-3 property-detail-panel" Elevation="0"><MudText Typo="Typo.subtitle2">@Localizer["Tenants_FormResidentNote"]</MudText><MudText Typo="Typo.body2">@GetFormGuidance()</MudText></MudPaper></MudItem>
                         </MudGrid>
 
                         <MudStack Row="true" Spacing="2" Class="mt-4" Justify="Justify.FlexEnd">
-                            <MudButton Variant="Variant.Text" Color="Color.Default" OnClick="CloseFormPanel">Cancel</MudButton>
-                            <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary">@(_isCreateMode ? "Create tenant" : "Save changes")</MudButton>
+                            <MudButton Variant="Variant.Text" Color="Color.Default" OnClick="CloseFormPanel">@Localizer["Common_Cancel"]</MudButton>
+                            <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary">@(_isCreateMode ? Localizer["Tenants_Create"] : Localizer["Common_SaveChanges"])</MudButton>
                         </MudStack>
                     </EditForm>
                 </MudStack>
@@ -303,7 +304,7 @@
 
         _csvInput = string.Empty;
         await ReloadAsync();
-        _importResult = $"Imported {imported} row(s); skipped {skipped}.";
+        _importResult = string.Format(Localizer["Tenants_ImportResult"].Value, imported, skipped);
     }
 
     private string GetAverageScoreLabel()
@@ -312,8 +313,8 @@
         return tenants.Count == 0 ? "0" : Math.Round(tenants.Average(x => x.CreditScore), 0).ToString();
     }
 
-    private static string GetProviderLabel(string provider)
-        => string.IsNullOrWhiteSpace(provider) ? "Unspecified" : provider;
+    private string GetProviderLabel(string provider)
+        => string.IsNullOrWhiteSpace(provider) ? Localizer["Tenants_Unspecified"].Value : provider;
 
     private static Color GetScoreColor(int creditScore)
         => creditScore switch
@@ -323,32 +324,32 @@
             _ => Color.Error
         };
 
-    private static bool IsInScoreBand(int creditScore, string scoreBand)
+    private bool IsInScoreBand(int creditScore, string scoreBand)
         => scoreBand switch
         {
             "750+" => creditScore >= 750,
             "700-749" => creditScore >= 700 && creditScore < 750,
-            "Under 700" => creditScore < 700,
+            var under700 when string.Equals(under700, Localizer["Tenants_ScoreBandUnder700"].Value, StringComparison.OrdinalIgnoreCase) => creditScore < 700,
             _ => true
         };
 
-    private static string GetTenantScoreNarrative(Tenant tenant)
+    private string GetTenantScoreNarrative(Tenant tenant)
         => tenant.CreditScore switch
         {
-            >= 750 => "Strong screening profile and low-friction follow-up candidate.",
-            >= 700 => "Solid screening baseline; keep documentation organized for lease execution.",
-            _ => "Needs closer review and a tighter follow-up checklist before finalizing the resident path."
+            >= 750 => Localizer["Tenants_NarrativeStrong"].Value,
+            >= 700 => Localizer["Tenants_NarrativeSolid"].Value,
+            _ => Localizer["Tenants_NarrativeNeedsReview"].Value
         };
 
     private string GetFormGuidance()
     {
         if (!ActiveTenant.ScreeningCompleted)
         {
-            return "Screening is marked incomplete. Keep the resident in review until supporting documents and provider checks are finalized.";
+            return Localizer["Tenants_GuidanceScreeningIncomplete"].Value;
         }
 
         return ActiveTenant.CreditScore >= 750
-            ? "This resident profile looks strong. Use the leases page to keep dates and Ontario paperwork moving cleanly."
-            : "Capture the essentials here, then coordinate lease steps carefully so documentation and follow-up stay consistent.";
+            ? Localizer["Tenants_GuidanceStrongProfile"].Value
+            : Localizer["Tenants_GuidanceCoordinateLeaseSteps"].Value;
     }
 }

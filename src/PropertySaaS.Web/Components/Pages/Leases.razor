@@ -2,80 +2,81 @@
 @page "/leases"
 @inject SaasDataService DataService
 @inject PropertySaaS.Application.Common.CurrentOrganization CurrentOrganization
+@inject IStringLocalizer<SharedResource> Localizer
 @using PropertySaaS.Domain.Enums
 
-<PageTitle>Leases</PageTitle>
+<PageTitle>@Localizer["Leases_Title"]</PageTitle>
 
 <MudStack Spacing="3">
     <MudStack Spacing="0">
-        <MudText Typo="Typo.h4">Leases</MudText>
-        <MudText Typo="Typo.body2">Review lease coverage from one table, then open the matching property profile when the team needs deeper execution detail.</MudText>
+        <MudText Typo="Typo.h4">@Localizer["Leases_Title"]</MudText>
+        <MudText Typo="Typo.body2">@Localizer["Leases_Subtitle"]</MudText>
     </MudStack>
 
     <MudGrid Spacing="2" Class="align-center-grid">
         <MudItem xs="12" lg="4">
             <MudTextField T="string"
-                          Label="Search leases"
+                          Label="@Localizer["Leases_SearchLabel"]"
                           Variant="Variant.Outlined"
                           Immediate="true"
                           @bind-Value="_searchText"
                           Adornment="Adornment.Start"
                           AdornmentIcon="@Icons.Material.Filled.Search"
-                          Placeholder="Search by unit, tenant, status or Ontario workflow" />
+                          Placeholder="@Localizer["Leases_SearchPlaceholder"]" />
         </MudItem>
         <MudItem xs="12" sm="4" lg="2">
-            <MudSelect T="string" Label="Status" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedStatusFilter">
-                <MudSelectItem T="string" Value="@string.Empty">All statuses</MudSelectItem>
+            <MudSelect T="string" Label="@Localizer["Leases_FilterStatus"]" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedStatusFilter">
+                <MudSelectItem T="string" Value="@string.Empty">@Localizer["Leases_FilterAllStatuses"]</MudSelectItem>
                 @foreach (var option in StatusOptions)
                 {
-                    <MudSelectItem T="string" Value="@option">@option</MudSelectItem>
+                    <MudSelectItem T="string" Value="@option.ToString()">@GetLeaseStatusLabel(option)</MudSelectItem>
                 }
             </MudSelect>
         </MudItem>
         <MudItem xs="12" sm="4" lg="2">
-            <MudSelect T="string" Label="Ontario lease" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedOntarioFilter">
-                <MudSelectItem T="string" Value="@string.Empty">All</MudSelectItem>
-                <MudSelectItem T="string" Value='@("Signed")'>Signed</MudSelectItem>
-                <MudSelectItem T="string" Value='@("Missing")'>Missing</MudSelectItem>
+            <MudSelect T="string" Label="@Localizer["Leases_FilterJurisdictionLease"]" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedOntarioFilter">
+                <MudSelectItem T="string" Value="@string.Empty">@Localizer["Leases_FilterAll"]</MudSelectItem>
+                <MudSelectItem T="string" Value='@Localizer["Leases_OntarioSigned"].Value'>@Localizer["Leases_OntarioSigned"]</MudSelectItem>
+                <MudSelectItem T="string" Value='@Localizer["Leases_OntarioMissing"].Value'>@Localizer["Leases_OntarioMissing"]</MudSelectItem>
             </MudSelect>
         </MudItem>
         <MudItem xs="12" sm="4" lg="2">
-            <MudSelect T="string" Label="N1 workflow" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedWorkflowFilter">
-                <MudSelectItem T="string" Value="@string.Empty">All</MudSelectItem>
-                <MudSelectItem T="string" Value='@("Scheduled")'>Scheduled</MudSelectItem>
-                <MudSelectItem T="string" Value='@("Not Scheduled")'>Not Scheduled</MudSelectItem>
+            <MudSelect T="string" Label="@Localizer["Leases_FilterNoticeWorkflow"]" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedWorkflowFilter">
+                <MudSelectItem T="string" Value="@string.Empty">@Localizer["Leases_FilterAll"]</MudSelectItem>
+                <MudSelectItem T="string" Value='@Localizer["Leases_WorkflowScheduled"].Value'>@Localizer["Leases_WorkflowScheduled"]</MudSelectItem>
+                <MudSelectItem T="string" Value='@Localizer["Leases_WorkflowNotScheduled"].Value'>@Localizer["Leases_WorkflowNotScheduled"]</MudSelectItem>
             </MudSelect>
         </MudItem>
         <MudItem xs="12" lg="2">
             <MudStack Row="true" Spacing="1" Class="properties-toolbar-actions">
                 @if (HasActiveFilters)
                 {
-                    <MudButton Variant="Variant.Outlined" Color="Color.Default" FullWidth="true" StartIcon="@Icons.Material.Filled.FilterAltOff" OnClick="ClearFilters">Reset</MudButton>
+                    <MudButton Variant="Variant.Outlined" Color="Color.Default" FullWidth="true" StartIcon="@Icons.Material.Filled.FilterAltOff" OnClick="ClearFilters">@Localizer["Common_Reset"]</MudButton>
                 }
                 @if (CurrentOrganization.CanManageData)
                 {
-                    <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreatePanel">Add lease</MudButton>
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreatePanel">@Localizer["Leases_AddLease"]</MudButton>
                 }
             </MudStack>
         </MudItem>
     </MudGrid>
 
     <MudGrid Spacing="2">
-        <MudItem xs="12" sm="6" lg="3"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">Leases shown</MudText><MudText Typo="Typo.h6">@FilteredLeases.Count()</MudText></MudPaper></MudItem>
-        <MudItem xs="12" sm="6" lg="3"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">Active rent</MudText><MudText Typo="Typo.h6">@FilteredLeases.Sum(x => x.MonthlyRent).ToString("C")</MudText></MudPaper></MudItem>
-        <MudItem xs="12" sm="6" lg="3"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">Ontario missing</MudText><MudText Typo="Typo.h6">@FilteredLeases.Count(x => !x.StandardOntarioLeaseSigned)</MudText></MudPaper></MudItem>
-        <MudItem xs="12" sm="6" lg="3"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">N1 scheduled</MudText><MudText Typo="Typo.h6">@FilteredLeases.Count(x => x.N1IncreaseNoticeScheduled)</MudText></MudPaper></MudItem>
+        <MudItem xs="12" sm="6" lg="3"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">@Localizer["Leases_StatShown"]</MudText><MudText Typo="Typo.h6">@FilteredLeases.Count()</MudText></MudPaper></MudItem>
+        <MudItem xs="12" sm="6" lg="3"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">@Localizer["Leases_StatActiveRent"]</MudText><MudText Typo="Typo.h6">@FilteredLeases.Sum(x => x.MonthlyRent).ToString("C")</MudText></MudPaper></MudItem>
+        <MudItem xs="12" sm="6" lg="3"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">@Localizer["Leases_StatJurisdictionMissing"]</MudText><MudText Typo="Typo.h6">@FilteredLeases.Count(x => !x.StandardOntarioLeaseSigned)</MudText></MudPaper></MudItem>
+        <MudItem xs="12" sm="6" lg="3"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">@Localizer["Leases_StatNoticeScheduled"]</MudText><MudText Typo="Typo.h6">@FilteredLeases.Count(x => x.N1IncreaseNoticeScheduled)</MudText></MudPaper></MudItem>
     </MudGrid>
 
     <MudExpansionPanels>
-        <MudExpansionPanel Text="Bulk import">
+        <MudExpansionPanel Text="@Localizer["Common_BulkImport"]">
             <MudPaper Class="pa-4" Elevation="0">
-                <MudText Typo="Typo.h6">Quick CSV Import</MudText>
-                <MudText Typo="Typo.body2" Class="mb-2">Format: UnitNumber,TenantEmail,StartDate,EndDate,MonthlyRent</MudText>
+                <MudText Typo="Typo.h6">@Localizer["Common_QuickCsvImport"]</MudText>
+                <MudText Typo="Typo.body2" Class="mb-2">@Localizer["Leases_CsvFormatHint"]</MudText>
                 <MudTextField Lines="5" Variant="Variant.Outlined" @bind-Value="_csvInput" FullWidth="true" />
                 @if (CurrentOrganization.CanManageData)
                 {
-                    <MudButton Variant="Variant.Filled" Color="Color.Secondary" Class="mt-3" OnClick="ImportCsvAsync">Import CSV Text</MudButton>
+                    <MudButton Variant="Variant.Filled" Color="Color.Secondary" Class="mt-3" OnClick="ImportCsvAsync">@Localizer["Common_ImportCsvText"]</MudButton>
                 }
                 @if (!string.IsNullOrWhiteSpace(_importResult))
                 {
@@ -88,35 +89,35 @@
     <MudPaper Class="pa-2 table-wrap properties-table-shell">
         <MudTable Items="FilteredLeases.ToList()" Dense="true" Hover="true" Breakpoint="Breakpoint.Md" RowsPerPage="10">
             <HeaderContent>
-                <MudTh>Unit</MudTh>
-                <MudTh>Tenant</MudTh>
-                <MudTh>Term</MudTh>
-                <MudTh>Rent</MudTh>
-                <MudTh>Status</MudTh>
-                <MudTh>Ontario</MudTh>
-                <MudTh>N1</MudTh>
+                <MudTh>@Localizer["Leases_ColumnUnit"]</MudTh>
+                <MudTh>@Localizer["Leases_ColumnTenant"]</MudTh>
+                <MudTh>@Localizer["Leases_ColumnTerm"]</MudTh>
+                <MudTh>@Localizer["Leases_ColumnRent"]</MudTh>
+                <MudTh>@Localizer["Leases_ColumnStatus"]</MudTh>
+                <MudTh>@Localizer["Leases_ColumnJurisdiction"]</MudTh>
+                <MudTh>@Localizer["Leases_ColumnNotice"]</MudTh>
                 <MudTh></MudTh>
             </HeaderContent>
             <RowTemplate>
-                <MudTd DataLabel="Unit">
+                <MudTd DataLabel="@Localizer["Leases_ColumnUnit"]">
                     <MudStack Spacing="0">
                         <MudText Typo="Typo.subtitle2">@GetUnitLabel(context.UnitId)</MudText>
                         <MudText Typo="Typo.caption" Class="property-address">@GetPropertyLabelForLease(context)</MudText>
                     </MudStack>
                 </MudTd>
-                <MudTd DataLabel="Tenant">@GetTenantLabel(context.TenantId)</MudTd>
-                <MudTd DataLabel="Term">@($"{context.StartDate} ? {context.EndDate}")</MudTd>
-                <MudTd DataLabel="Rent">@context.MonthlyRent.ToString("C")</MudTd>
-                <MudTd DataLabel="Status"><MudChip T="string" Variant="Variant.Filled" Color="@GetStatusColor(context.Status)">@context.Status</MudChip></MudTd>
-                <MudTd DataLabel="Ontario"><MudChip T="string" Variant="Variant.Outlined" Color="@(context.StandardOntarioLeaseSigned ? Color.Success : Color.Warning)">@(context.StandardOntarioLeaseSigned ? "Signed" : "Missing")</MudChip></MudTd>
-                <MudTd DataLabel="N1">@(context.N1IncreaseNoticeScheduled ? "Scheduled" : "Not Scheduled")</MudTd>
-                <MudTd DataLabel="Actions">
+                <MudTd DataLabel="@Localizer["Leases_ColumnTenant"]">@GetTenantLabel(context.TenantId)</MudTd>
+                <MudTd DataLabel="@Localizer["Leases_ColumnTerm"]">@GetTermLabel(context)</MudTd>
+                <MudTd DataLabel="@Localizer["Leases_ColumnRent"]">@context.MonthlyRent.ToString("C")</MudTd>
+                <MudTd DataLabel="@Localizer["Leases_ColumnStatus"]"><MudChip T="string" Variant="Variant.Filled" Color="@GetStatusColor(context.Status)">@GetLeaseStatusLabel(context.Status)</MudChip></MudTd>
+                <MudTd DataLabel="@Localizer["Leases_ColumnJurisdiction"]"><MudChip T="string" Variant="Variant.Outlined" Color="@(context.StandardOntarioLeaseSigned ? Color.Success : Color.Warning)">@GetOntarioLabel(context)</MudChip></MudTd>
+                <MudTd DataLabel="@Localizer["Leases_ColumnNotice"]">@GetWorkflowLabel(context)</MudTd>
+                <MudTd DataLabel="@Localizer["Leases_ColumnActions"]">
                     <MudStack Row="true" Spacing="1" Wrap="Wrap.Wrap">
-                        <MudButton Href="@GetPropertyHref(context)" Variant="Variant.Text" Color="Color.Primary" Size="Size.Small">Property profile</MudButton>
+                        <MudButton Href="@GetPropertyHref(context)" Variant="Variant.Text" Color="Color.Primary" Size="Size.Small">@Localizer["Common_PropertyProfile"]</MudButton>
                         @if (CurrentOrganization.CanManageData)
                         {
-                            <MudButton Variant="Variant.Text" Color="Color.Secondary" Size="Size.Small" OnClick="() => OpenEditPanel(context)">Edit</MudButton>
-                            <MudButton Variant="Variant.Text" Color="Color.Error" Size="Size.Small" OnClick="() => DeleteAsync(context.Id)">Delete</MudButton>
+                            <MudButton Variant="Variant.Text" Color="Color.Secondary" Size="Size.Small" OnClick="() => OpenEditPanel(context)">@Localizer["Common_Edit"]</MudButton>
+                            <MudButton Variant="Variant.Text" Color="Color.Error" Size="Size.Small" OnClick="() => DeleteAsync(context.Id)">@Localizer["Common_Delete"]</MudButton>
                         }
                     </MudStack>
                 </MudTd>
@@ -124,11 +125,11 @@
             <NoRecordsContent>
                 <MudStack Class="pa-6 properties-empty-state" Spacing="1" AlignItems="AlignItems.Center">
                     <MudIcon Icon="@Icons.Material.Filled.Description" Size="Size.Large" Color="Color.Default" />
-                    <MudText Typo="Typo.subtitle1">No leases match the current filters.</MudText>
-                    <MudText Typo="Typo.body2">Reset the filters or add a lease to restore portfolio coverage.</MudText>
+                    <MudText Typo="Typo.subtitle1">@Localizer["Leases_NoRecordsTitle"]</MudText>
+                    <MudText Typo="Typo.body2">@Localizer["Leases_NoRecordsSubtitle"]</MudText>
                     @if (HasActiveFilters)
                     {
-                        <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="ClearFilters">Reset filters</MudButton>
+                        <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="ClearFilters">@Localizer["Common_ResetFilters"]</MudButton>
                     }
                 </MudStack>
             </NoRecordsContent>
@@ -145,8 +146,8 @@
                 <MudStack Spacing="3">
                     <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
                         <MudStack Spacing="0">
-                            <MudText Typo="Typo.h5">@(_isCreateMode ? "Add lease" : "Edit lease")</MudText>
-                            <MudText Typo="Typo.body2">Keep contract updates compact here and open the related property profile when operations need the full picture.</MudText>
+                            <MudText Typo="Typo.h5">@(_isCreateMode ? Localizer["Leases_AddLease"] : Localizer["Leases_DrawerEditTitle"])</MudText>
+                            <MudText Typo="Typo.body2">@Localizer["Leases_DrawerSubtitle"]</MudText>
                         </MudStack>
                         <MudIconButton Icon="@Icons.Material.Filled.Close" Color="Color.Default" OnClick="CloseFormPanel" />
                     </MudStack>
@@ -154,8 +155,8 @@
                     <EditForm Model="ActiveLease" OnValidSubmit="SaveFormAsync">
                         <MudGrid Spacing="2">
                             <MudItem xs="12" md="6">
-                                <MudSelect T="Guid?" Label="Unit" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="FormUnitId">
-                                    <MudSelectItem T="Guid?" Value="@((Guid?)null)">Select unit</MudSelectItem>
+                                <MudSelect T="Guid?" Label="@Localizer["Leases_ColumnUnit"]" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="FormUnitId">
+                                    <MudSelectItem T="Guid?" Value="@((Guid?)null)">@Localizer["Leases_FormSelectUnit"]</MudSelectItem>
                                     @foreach (var unit in _units)
                                     {
                                         <MudSelectItem T="Guid?" Value="@((Guid?)unit.Id)">@GetUnitDisplay(unit)</MudSelectItem>
@@ -163,33 +164,33 @@
                                 </MudSelect>
                             </MudItem>
                             <MudItem xs="12" md="6">
-                                <MudSelect T="Guid?" Label="Tenant" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="FormTenantId">
-                                    <MudSelectItem T="Guid?" Value="@((Guid?)null)">Select tenant</MudSelectItem>
+                                <MudSelect T="Guid?" Label="@Localizer["Leases_ColumnTenant"]" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="FormTenantId">
+                                    <MudSelectItem T="Guid?" Value="@((Guid?)null)">@Localizer["Leases_FormSelectTenant"]</MudSelectItem>
                                     @foreach (var tenant in _tenants)
                                     {
                                         <MudSelectItem T="Guid?" Value="@((Guid?)tenant.Id)">@tenant.FullName</MudSelectItem>
                                     }
                                 </MudSelect>
                             </MudItem>
-                            <MudItem xs="12" md="4"><MudDatePicker Label="Start date" Variant="Variant.Outlined" @bind-Date="_formStartDate" Editable="true" /></MudItem>
-                            <MudItem xs="12" md="4"><MudDatePicker Label="End date" Variant="Variant.Outlined" @bind-Date="_formEndDate" Editable="true" /></MudItem>
-                            <MudItem xs="12" md="4"><MudNumericField T="decimal" Label="Monthly rent" Variant="Variant.Outlined" Adornment="Adornment.Start" AdornmentText="$" @bind-Value="ActiveLease.MonthlyRent" /></MudItem>
+                            <MudItem xs="12" md="4"><MudDatePicker Label="@Localizer["Leases_FormStartDate"]" Variant="Variant.Outlined" @bind-Date="_formStartDate" Editable="true" /></MudItem>
+                            <MudItem xs="12" md="4"><MudDatePicker Label="@Localizer["Leases_FormEndDate"]" Variant="Variant.Outlined" @bind-Date="_formEndDate" Editable="true" /></MudItem>
+                            <MudItem xs="12" md="4"><MudNumericField T="decimal" Label="@Localizer["Leases_FormMonthlyRent"]" Variant="Variant.Outlined" Adornment="Adornment.Start" AdornmentText="$" @bind-Value="ActiveLease.MonthlyRent" /></MudItem>
                             <MudItem xs="12" md="6">
-                                <MudSelect T="LeaseStatus" Label="Status" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="ActiveLease.Status">
+                                <MudSelect T="LeaseStatus" Label="@Localizer["Leases_FilterStatus"]" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="ActiveLease.Status">
                                     @foreach (var status in Enum.GetValues<LeaseStatus>())
                                     {
-                                        <MudSelectItem T="LeaseStatus" Value="@status">@status</MudSelectItem>
+                                        <MudSelectItem T="LeaseStatus" Value="@status">@GetLeaseStatusLabel(status)</MudSelectItem>
                                     }
                                 </MudSelect>
                             </MudItem>
-                            <MudItem xs="12" md="3"><MudSwitch T="bool" Color="Color.Primary" Label="Ontario lease signed" @bind-Value="ActiveLease.StandardOntarioLeaseSigned" /></MudItem>
-                            <MudItem xs="12" md="3"><MudSwitch T="bool" Color="Color.Primary" Label="N1 scheduled" @bind-Value="ActiveLease.N1IncreaseNoticeScheduled" /></MudItem>
-                            <MudItem xs="12"><MudPaper Class="pa-3 property-detail-panel" Elevation="0"><MudText Typo="Typo.subtitle2">Lease execution note</MudText><MudText Typo="Typo.body2">@GetLeaseGuidance()</MudText></MudPaper></MudItem>
+                            <MudItem xs="12" md="3"><MudSwitch T="bool" Color="Color.Primary" Label="@Localizer["Leases_FormJurisdictionLeaseSigned"]" @bind-Value="ActiveLease.StandardOntarioLeaseSigned" /></MudItem>
+                            <MudItem xs="12" md="3"><MudSwitch T="bool" Color="Color.Primary" Label="@Localizer["Leases_StatNoticeScheduled"]" @bind-Value="ActiveLease.N1IncreaseNoticeScheduled" /></MudItem>
+                            <MudItem xs="12"><MudPaper Class="pa-3 property-detail-panel" Elevation="0"><MudText Typo="Typo.subtitle2">@Localizer["Leases_FormExecutionNote"]</MudText><MudText Typo="Typo.body2">@GetLeaseGuidance()</MudText></MudPaper></MudItem>
                         </MudGrid>
 
                         <MudStack Row="true" Spacing="2" Class="mt-4" Justify="Justify.FlexEnd">
-                            <MudButton Variant="Variant.Text" Color="Color.Default" OnClick="CloseFormPanel">Cancel</MudButton>
-                            <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary">@(_isCreateMode ? "Create lease" : "Save changes")</MudButton>
+                            <MudButton Variant="Variant.Text" Color="Color.Default" OnClick="CloseFormPanel">@Localizer["Common_Cancel"]</MudButton>
+                            <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary">@(_isCreateMode ? Localizer["Leases_Create"] : Localizer["Common_SaveChanges"])</MudButton>
                         </MudStack>
                     </EditForm>
                 </MudStack>
@@ -218,7 +219,7 @@
 
     private bool HasActiveFilters => !string.IsNullOrWhiteSpace(_searchText) || !string.IsNullOrWhiteSpace(_selectedStatusFilter) || !string.IsNullOrWhiteSpace(_selectedOntarioFilter) || !string.IsNullOrWhiteSpace(_selectedWorkflowFilter);
     private Lease ActiveLease => _isCreateMode ? _newLease : _editLease;
-    private IEnumerable<string> StatusOptions => Enum.GetNames<LeaseStatus>();
+    private IEnumerable<LeaseStatus> StatusOptions => Enum.GetValues<LeaseStatus>();
 
     private Guid? FormUnitId
     {
@@ -377,19 +378,19 @@
 
         _csvInput = string.Empty;
         await ReloadAsync();
-        _importResult = $"Imported {imported} row(s); skipped {skipped}.";
+        _importResult = string.Format(Localizer["Leases_ImportResult"].Value, imported, skipped);
     }
 
     private string GetUnitLabel(Guid unitId)
-        => _units.FirstOrDefault(x => x.Id == unitId)?.UnitNumber ?? "Unknown unit";
+        => _units.FirstOrDefault(x => x.Id == unitId)?.UnitNumber ?? Localizer["Leases_UnknownUnit"].Value;
 
     private string GetTenantLabel(Guid tenantId)
-        => _tenants.FirstOrDefault(x => x.Id == tenantId)?.FullName ?? "Unknown tenant";
+        => _tenants.FirstOrDefault(x => x.Id == tenantId)?.FullName ?? Localizer["Leases_UnknownTenant"].Value;
 
     private string GetPropertyLabelForLease(Lease lease)
     {
         var unit = _units.FirstOrDefault(x => x.Id == lease.UnitId);
-        return unit is null ? "Unknown property" : GetPropertyName(unit.PropertyId);
+        return unit is null ? Localizer["Leases_UnknownProperty"].Value : GetPropertyName(unit.PropertyId);
     }
 
     private string GetPropertyHref(Lease lease)
@@ -399,16 +400,29 @@
     }
 
     private string GetPropertyName(Guid propertyId)
-        => _properties.FirstOrDefault(x => x.Id == propertyId)?.Name ?? "Unknown property";
+        => _properties.FirstOrDefault(x => x.Id == propertyId)?.Name ?? Localizer["Leases_UnknownProperty"].Value;
 
     private string GetUnitDisplay(Unit unit)
         => $"{unit.UnitNumber} · {GetPropertyName(unit.PropertyId)}";
 
-    private static string GetOntarioLabel(Lease lease)
-        => lease.StandardOntarioLeaseSigned ? "Signed" : "Missing";
+    private string GetOntarioLabel(Lease lease)
+        => lease.StandardOntarioLeaseSigned ? Localizer["Leases_OntarioSigned"].Value : Localizer["Leases_OntarioMissing"].Value;
 
-    private static string GetWorkflowLabel(Lease lease)
-        => lease.N1IncreaseNoticeScheduled ? "Scheduled" : "Not Scheduled";
+    private string GetWorkflowLabel(Lease lease)
+        => lease.N1IncreaseNoticeScheduled ? Localizer["Leases_WorkflowScheduled"].Value : Localizer["Leases_WorkflowNotScheduled"].Value;
+
+    private static string GetTermLabel(Lease lease)
+        => $"{lease.StartDate} - {lease.EndDate}";
+
+    private string GetLeaseStatusLabel(LeaseStatus status)
+        => status switch
+        {
+            LeaseStatus.Active => Localizer["Leases_StatusActive"].Value,
+            LeaseStatus.EndingSoon => Localizer["Leases_StatusEndingSoon"].Value,
+            LeaseStatus.Expired => Localizer["Leases_StatusExpired"].Value,
+            LeaseStatus.Terminated => Localizer["Leases_StatusTerminated"].Value,
+            _ => status.ToString()
+        };
 
     private static Color GetStatusColor(LeaseStatus status)
         => status switch
@@ -424,16 +438,17 @@
     {
         if (ActiveLease.UnitId == Guid.Empty || ActiveLease.TenantId == Guid.Empty)
         {
-            return "Link the lease to both a unit and a tenant so the portfolio, audit and property profile views stay aligned.";
+            return Localizer["Leases_GuidanceLinkUnitAndTenant"].Value;
         }
 
         if (!ActiveLease.StandardOntarioLeaseSigned)
         {
-            return "Ontario lease is marked missing. Use the property profile and compliance workflow to close that gap before move-in activity continues.";
+            return Localizer["Leases_GuidanceMissingJurisdictionLease"].Value;
         }
 
         return ActiveLease.N1IncreaseNoticeScheduled
-            ? "N1 workflow is already scheduled. Keep dates, notice service and profile context aligned for the operating team."
-            : "Lease is connected and ready. Schedule the N1 workflow only when the timing is appropriate for this unit and resident.";
+            ? Localizer["Leases_GuidanceScheduled"].Value
+            : Localizer["Leases_GuidanceReady"].Value;
     }
 }
+

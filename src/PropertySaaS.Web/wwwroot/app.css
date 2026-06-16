@@ -12,6 +12,19 @@ body { margin:0; }
 .metric-caption { color:#5e6b80; }
 .metric-icon-wrap { border-radius:18px; background:rgba(39,104,181,.08); }
 .hero-copy { color:rgba(255,255,255,.88); }
+.hero-primary-action {
+    background:#ffffff !important;
+    color:#0f3d75 !important;
+    border:1px solid rgba(255,255,255,.9) !important;
+    box-shadow:0 10px 24px rgba(5,16,31,.18);
+    font-weight:700;
+}
+
+.hero-primary-action:hover,
+.hero-primary-action:focus-visible {
+    background:#f3f8ff !important;
+    color:#0a3260 !important;
+}
 .marketing-panel { background:rgba(255,255,255,.95); color:#10233f; border-radius:24px; }
 .marketing-card { background:linear-gradient(180deg, #ffffff 0%, #f8fbff 100%); border-radius:20px; border:1px solid rgba(15,39,71,.08); box-shadow:0 12px 26px rgba(15,39,71,.06); }
 .pricing-card { background:linear-gradient(180deg, #ffffff 0%, #f8fbff 100%); border-radius:22px; border:1px solid rgba(15,39,71,.08); box-shadow:0 14px 28px rgba(15,39,71,.06); }
@@ -44,6 +57,7 @@ body { margin:0; }
 .property-form-drawer .mud-input-control { margin-bottom:.25rem; }
 .property-form-drawer .mud-switch { margin-top:.25rem; }
 .property-form-drawer .mud-paper.property-detail-panel { border:1px solid rgba(15,39,71,.06); }
+.profile-settings-shell { background:linear-gradient(180deg, #ffffff 0%, #f8fbff 100%); border-radius:22px; border:1px solid rgba(15,39,71,.08); box-shadow:0 14px 28px rgba(15,39,71,.06); }
 @media (max-width: 959.98px) {
     .property-form-drawer { width:100%; }
     .properties-toolbar-actions { flex-direction:column; }

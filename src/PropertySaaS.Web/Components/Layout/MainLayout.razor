@@ -1,12 +1,13 @@
 @inherits LayoutComponentBase
 @inject PropertySaaS.Application.Common.CurrentOrganization CurrentOrganization
+@using PropertySaaS.Web.Localization
 
 <MudLayout>
     <MudDrawer Open="true" Elevation="1" Variant="DrawerVariant.Responsive" Class="app-drawer">
         <MudStack Spacing="3" Class="pa-4">
             <MudStack Spacing="0">
                 <MudText Typo="Typo.h5" Class="brand-title">PropertySaaS</MudText>
-                <MudText Typo="Typo.body2" Class="brand-subtitle">Ontario landlord platform</MudText>
+                <MudText Typo="Typo.body2" Class="brand-subtitle">@UiText.Format("Layout_BrandSubtitle", CurrentOrganization.Jurisdiction.ProvinceDisplayName)</MudText>
             </MudStack>
 
             <MudPaper Elevation="0" Class="tenant-context pa-4">
@@ -21,7 +22,7 @@
 
     <MudMainContent>
         <MudAppBar Elevation="0" Dense="true" Color="Color.Surface" Class="top-bar">
-            <MudText Typo="Typo.subtitle1">Portfolio operations</MudText>
+            <MudText Typo="Typo.subtitle1">@UiText.Get("Layout_PortfolioOperations")</MudText>
         </MudAppBar>
 
         <main class="content-shell">

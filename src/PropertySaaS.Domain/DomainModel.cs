@@ -31,7 +31,9 @@ namespace PropertySaaS.Domain.Entities
     {
         public string Name { get; set; } = string.Empty;
         public string Slug { get; set; } = string.Empty;
+        public string CountryCode { get; set; } = "CA";
         public string Province { get; set; } = "ON";
+        public string PreferredLanguage { get; set; } = "en-CA";
         public string TimeZone { get; set; } = "America/Toronto";
         public SubscriptionTier SubscriptionTier { get; set; } = SubscriptionTier.Trial;
         public string StripeCustomerId { get; set; } = string.Empty;
@@ -47,6 +49,7 @@ namespace PropertySaaS.Domain.Entities
         public string Email { get; set; } = string.Empty;
         public string FullName { get; set; } = string.Empty;
         public string Role { get; set; } = "Owner";
+        public string PreferredLanguage { get; set; } = "en-CA";
         public bool IsActive { get; set; } = true;
         public Organization? Organization { get; set; }
     }
@@ -130,6 +133,7 @@ namespace PropertySaaS.Domain.Entities
     {
         public string Title { get; set; } = string.Empty;
         public string NoticeType { get; set; } = string.Empty;
+        public string Province { get; set; } = "ON";
         public DateOnly DueDate { get; set; }
         public bool IsCompleted { get; set; }
         public string Reference { get; set; } = string.Empty;

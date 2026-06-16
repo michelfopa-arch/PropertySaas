@@ -2,14 +2,15 @@
 @page "/maintenance"
 @inject SaasDataService DataService
 @inject PropertySaaS.Application.Common.CurrentOrganization CurrentOrganization
+@inject IStringLocalizer<SharedResource> Localizer
 @using PropertySaaS.Domain.Enums
 
-<PageTitle>Maintenance</PageTitle>
+<PageTitle>@Localizer["Maintenance_Title"]</PageTitle>
 
 <MudStack Spacing="3">
     <MudStack Spacing="0">
-        <MudText Typo="Typo.h4">Maintenance & vendor marketplace</MudText>
-        <MudText Typo="Typo.body2">Keep operational requests visible in one table and open the property profile only when the team needs the deeper asset context.</MudText>
+        <MudText Typo="Typo.h4">@Localizer["Maintenance_Title"]</MudText>
+        <MudText Typo="Typo.body2">@Localizer["Maintenance_Subtitle"]</MudText>
     </MudStack>
 
     <MudGrid Spacing="2" Class="align-center-grid">
@@ -21,20 +22,20 @@
                           @bind-Value="_searchText"
                           Adornment="Adornment.Start"
                           AdornmentIcon="@Icons.Material.Filled.Search"
-                          Placeholder="Search by title, vendor, property or status" />
+                          Placeholder="@Localizer["Maintenance_SearchPlaceholder"]" />
         </MudItem>
         <MudItem xs="12" sm="4" lg="2">
-            <MudSelect T="string" Label="Priority" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedPriorityFilter">
-                <MudSelectItem T="string" Value="@string.Empty">All priorities</MudSelectItem>
+            <MudSelect T="string" Label="@Localizer["Maintenance_FilterPriority"]" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedPriorityFilter">
+                <MudSelectItem T="string" Value="@string.Empty">@Localizer["Maintenance_FilterAllPriorities"]</MudSelectItem>
                 @foreach (var option in PriorityOptions)
                 {
-                    <MudSelectItem T="string" Value="@option">@option</MudSelectItem>
+                    <MudSelectItem T="string" Value="@option.ToString()">@option</MudSelectItem>
                 }
             </MudSelect>
         </MudItem>
         <MudItem xs="12" sm="4" lg="2">
-            <MudSelect T="string" Label="Status" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedStatusFilter">
-                <MudSelectItem T="string" Value="@string.Empty">All statuses</MudSelectItem>
+            <MudSelect T="string" Label="@Localizer["Maintenance_FilterStatus"]" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedStatusFilter">
+                <MudSelectItem T="string" Value="@string.Empty">@Localizer["Maintenance_FilterAllStatuses"]</MudSelectItem>
                 @foreach (var option in StatusOptions)
                 {
                     <MudSelectItem T="string" Value="@option">@option</MudSelectItem>
@@ -42,8 +43,8 @@
             </MudSelect>
         </MudItem>
         <MudItem xs="12" sm="4" lg="2">
-            <MudSelect T="string" Label="Property" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedPropertyFilter">
-                <MudSelectItem T="string" Value="@string.Empty">All properties</MudSelectItem>
+            <MudSelect T="string" Label="@Localizer["Maintenance_FilterProperty"]" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedPropertyFilter">
+                <MudSelectItem T="string" Value="@string.Empty">@Localizer["Maintenance_FilterAllProperties"]</MudSelectItem>
                 @foreach (var property in _properties)
                 {
                     <MudSelectItem T="string" Value="@property.Name">@property.Name</MudSelectItem>
@@ -54,53 +55,53 @@
             <MudStack Row="true" Spacing="1" Class="properties-toolbar-actions">
                 @if (HasActiveFilters)
                 {
-                    <MudButton Variant="Variant.Outlined" Color="Color.Default" FullWidth="true" StartIcon="@Icons.Material.Filled.FilterAltOff" OnClick="ClearFilters">Reset</MudButton>
+                    <MudButton Variant="Variant.Outlined" Color="Color.Default" FullWidth="true" StartIcon="@Icons.Material.Filled.FilterAltOff" OnClick="ClearFilters">@Localizer["Common_Reset"]</MudButton>
                 }
                 @if (CurrentOrganization.CanManageData)
                 {
-                    <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreatePanel">Add request</MudButton>
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreatePanel">@Localizer["Maintenance_AddRequest"]</MudButton>
                 }
             </MudStack>
         </MudItem>
     </MudGrid>
 
     <MudGrid Spacing="2">
-        <MudItem xs="12" sm="6" lg="3"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">Requests shown</MudText><MudText Typo="Typo.h6">@FilteredRequests.Count()</MudText></MudPaper></MudItem>
-        <MudItem xs="12" sm="6" lg="3"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">Open or scheduled</MudText><MudText Typo="Typo.h6">@FilteredRequests.Count(x => !string.Equals(x.Status, "Closed", StringComparison.OrdinalIgnoreCase))</MudText></MudPaper></MudItem>
-        <MudItem xs="12" sm="6" lg="3"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">Estimated cost</MudText><MudText Typo="Typo.h6">@FilteredRequests.Sum(x => x.EstimatedCost).ToString("C")</MudText></MudPaper></MudItem>
-        <MudItem xs="12" sm="6" lg="3"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">Vendors engaged</MudText><MudText Typo="Typo.h6">@FilteredRequests.Select(x => x.VendorName).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct(StringComparer.OrdinalIgnoreCase).Count()</MudText></MudPaper></MudItem>
+        <MudItem xs="12" sm="6" lg="3"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">@Localizer["Maintenance_StatShown"]</MudText><MudText Typo="Typo.h6">@FilteredRequests.Count()</MudText></MudPaper></MudItem>
+        <MudItem xs="12" sm="6" lg="3"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">@Localizer["Maintenance_StatOpenOrScheduled"]</MudText><MudText Typo="Typo.h6">@FilteredRequests.Count(x => !string.Equals(x.Status, "Closed", StringComparison.OrdinalIgnoreCase))</MudText></MudPaper></MudItem>
+        <MudItem xs="12" sm="6" lg="3"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">@Localizer["Maintenance_StatEstimatedCost"]</MudText><MudText Typo="Typo.h6">@FilteredRequests.Sum(x => x.EstimatedCost).ToString("C")</MudText></MudPaper></MudItem>
+        <MudItem xs="12" sm="6" lg="3"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">@Localizer["Maintenance_StatVendorsEngaged"]</MudText><MudText Typo="Typo.h6">@FilteredRequests.Select(x => x.VendorName).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct(StringComparer.OrdinalIgnoreCase).Count()</MudText></MudPaper></MudItem>
     </MudGrid>
 
     <MudPaper Class="pa-2 table-wrap properties-table-shell">
         <MudTable Items="FilteredRequests.ToList()" Dense="true" Hover="true" Breakpoint="Breakpoint.Md" RowsPerPage="10">
             <HeaderContent>
-                <MudTh>Request</MudTh>
-                <MudTh>Property</MudTh>
-                <MudTh>Priority</MudTh>
-                <MudTh>Status</MudTh>
-                <MudTh>Vendor</MudTh>
-                <MudTh>Cost</MudTh>
+                <MudTh>@Localizer["Maintenance_ColumnRequest"]</MudTh>
+                <MudTh>@Localizer["Maintenance_ColumnProperty"]</MudTh>
+                <MudTh>@Localizer["Maintenance_ColumnPriority"]</MudTh>
+                <MudTh>@Localizer["Maintenance_ColumnStatus"]</MudTh>
+                <MudTh>@Localizer["Maintenance_ColumnVendor"]</MudTh>
+                <MudTh>@Localizer["Maintenance_ColumnCost"]</MudTh>
                 <MudTh></MudTh>
             </HeaderContent>
             <RowTemplate>
-                <MudTd DataLabel="Request">
+                <MudTd DataLabel="@Localizer["Maintenance_ColumnRequest"]">
                     <MudStack Spacing="0">
                         <MudText Typo="Typo.subtitle2">@context.Title</MudText>
                         <MudText Typo="Typo.caption" Class="property-address">@GetMaintenanceSummary(context)</MudText>
                     </MudStack>
                 </MudTd>
-                <MudTd DataLabel="Property"><MudButton Href="@GetPropertyHref(context.PropertyId)" Variant="Variant.Text" Color="Color.Primary" Size="Size.Small">@GetPropertyName(context.PropertyId)</MudButton></MudTd>
-                <MudTd DataLabel="Priority"><MudChip T="string" Variant="Variant.Filled" Color="@GetPriorityColor(context.Priority)">@context.Priority</MudChip></MudTd>
-                <MudTd DataLabel="Status"><MudChip T="string" Variant="Variant.Outlined" Color="@GetStatusColor(context.Status)">@context.Status</MudChip></MudTd>
-                <MudTd DataLabel="Vendor">@GetVendorLabel(context.VendorName)</MudTd>
-                <MudTd DataLabel="Cost">@context.EstimatedCost.ToString("C")</MudTd>
-                <MudTd DataLabel="Actions">
+                <MudTd DataLabel="@Localizer["Maintenance_ColumnProperty"]"><MudButton Href="@GetPropertyHref(context.PropertyId)" Variant="Variant.Text" Color="Color.Primary" Size="Size.Small">@GetPropertyName(context.PropertyId)</MudButton></MudTd>
+                <MudTd DataLabel="@Localizer["Maintenance_ColumnPriority"]"><MudChip T="string" Variant="Variant.Filled" Color="@GetPriorityColor(context.Priority)">@context.Priority</MudChip></MudTd>
+                <MudTd DataLabel="@Localizer["Maintenance_ColumnStatus"]"><MudChip T="string" Variant="Variant.Outlined" Color="@GetStatusColor(context.Status)">@context.Status</MudChip></MudTd>
+                <MudTd DataLabel="@Localizer["Maintenance_ColumnVendor"]">@GetVendorLabel(context.VendorName)</MudTd>
+                <MudTd DataLabel="@Localizer["Maintenance_ColumnCost"]">@context.EstimatedCost.ToString("C")</MudTd>
+                <MudTd DataLabel="@Localizer["Maintenance_ColumnActions"]">
                     <MudStack Row="true" Spacing="1" Wrap="Wrap.Wrap">
-                        <MudButton Href="@GetPropertyHref(context.PropertyId)" Variant="Variant.Text" Color="Color.Primary" Size="Size.Small">Property profile</MudButton>
+                        <MudButton Href="@GetPropertyHref(context.PropertyId)" Variant="Variant.Text" Color="Color.Primary" Size="Size.Small">@Localizer["Common_PropertyProfile"]</MudButton>
                         @if (CurrentOrganization.CanManageData)
                         {
-                            <MudButton Variant="Variant.Text" Color="Color.Secondary" Size="Size.Small" OnClick="() => OpenEditPanel(context)">Edit</MudButton>
-                            <MudButton Variant="Variant.Text" Color="Color.Error" Size="Size.Small" OnClick="() => DeleteAsync(context.Id)">Delete</MudButton>
+                            <MudButton Variant="Variant.Text" Color="Color.Secondary" Size="Size.Small" OnClick="() => OpenEditPanel(context)">@Localizer["Common_Edit"]</MudButton>
+                            <MudButton Variant="Variant.Text" Color="Color.Error" Size="Size.Small" OnClick="() => DeleteAsync(context.Id)">@Localizer["Common_Delete"]</MudButton>
                         }
                     </MudStack>
                 </MudTd>
@@ -108,11 +109,11 @@
             <NoRecordsContent>
                 <MudStack Class="pa-6 properties-empty-state" Spacing="1" AlignItems="AlignItems.Center">
                     <MudIcon Icon="@Icons.Material.Filled.Build" Size="Size.Large" Color="Color.Default" />
-                    <MudText Typo="Typo.subtitle1">No maintenance requests match the current filters.</MudText>
-                    <MudText Typo="Typo.body2">Reset the filters or add a request to restore operational visibility.</MudText>
+                    <MudText Typo="Typo.subtitle1">@Localizer["Maintenance_NoRecordsTitle"]</MudText>
+                    <MudText Typo="Typo.body2">@Localizer["Maintenance_NoRecordsSubtitle"]</MudText>
                     @if (HasActiveFilters)
                     {
-                        <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="ClearFilters">Reset filters</MudButton>
+                        <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="ClearFilters">@Localizer["Common_ResetFilters"]</MudButton>
                     }
                 </MudStack>
             </NoRecordsContent>
@@ -129,19 +130,19 @@
                 <MudStack Spacing="3">
                     <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
                         <MudStack Spacing="0">
-                            <MudText Typo="Typo.h5">@(_isCreateMode ? "Add request" : "Edit request")</MudText>
-                            <MudText Typo="Typo.body2">Capture the ticket here, then use the linked property profile when the team needs the broader operating timeline.</MudText>
+                            <MudText Typo="Typo.h5">@(_isCreateMode ? Localizer["Maintenance_AddRequest"] : Localizer["Maintenance_DrawerEditTitle"])</MudText>
+                            <MudText Typo="Typo.body2">@Localizer["Maintenance_DrawerSubtitle"]</MudText>
                         </MudStack>
                         <MudIconButton Icon="@Icons.Material.Filled.Close" Color="Color.Default" OnClick="CloseFormPanel" />
                     </MudStack>
 
                     <EditForm Model="ActiveRequest" OnValidSubmit="SaveFormAsync">
                         <MudGrid Spacing="2">
-                            <MudItem xs="12" md="6"><MudTextField Label="Title" Variant="Variant.Outlined" @bind-Value="ActiveRequest.Title" /></MudItem>
-                            <MudItem xs="12" md="6"><MudTextField Label="Vendor" Variant="Variant.Outlined" @bind-Value="ActiveRequest.VendorName" /></MudItem>
+                            <MudItem xs="12" md="6"><MudTextField Label="@Localizer["Maintenance_FormTitle"]" Variant="Variant.Outlined" @bind-Value="ActiveRequest.Title" /></MudItem>
+                            <MudItem xs="12" md="6"><MudTextField Label="@Localizer["Maintenance_ColumnVendor"]" Variant="Variant.Outlined" @bind-Value="ActiveRequest.VendorName" /></MudItem>
                             <MudItem xs="12" md="6">
-                                <MudSelect T="Guid?" Label="Property" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="FormPropertyId">
-                                    <MudSelectItem T="Guid?" Value="@((Guid?)null)">Select property</MudSelectItem>
+                                <MudSelect T="Guid?" Label="@Localizer["Maintenance_ColumnProperty"]" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="FormPropertyId">
+                                    <MudSelectItem T="Guid?" Value="@((Guid?)null)">@Localizer["Maintenance_FormSelectProperty"]</MudSelectItem>
                                     @foreach (var property in _properties)
                                     {
                                         <MudSelectItem T="Guid?" Value="@((Guid?)property.Id)">@property.Name</MudSelectItem>
@@ -149,8 +150,8 @@
                                 </MudSelect>
                             </MudItem>
                             <MudItem xs="12" md="6">
-                                <MudSelect T="Guid?" Label="Unit" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="FormUnitId">
-                                    <MudSelectItem T="Guid?" Value="@((Guid?)null)">Optional unit</MudSelectItem>
+                                <MudSelect T="Guid?" Label="@Localizer["Maintenance_FormUnit"]" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="FormUnitId">
+                                    <MudSelectItem T="Guid?" Value="@((Guid?)null)">@Localizer["Maintenance_FormOptionalUnit"]</MudSelectItem>
                                     @foreach (var unit in AvailableUnits)
                                     {
                                         <MudSelectItem T="Guid?" Value="@((Guid?)unit.Id)">@GetUnitDisplay(unit)</MudSelectItem>
@@ -158,23 +159,23 @@
                                 </MudSelect>
                             </MudItem>
                             <MudItem xs="12" md="4">
-                                <MudSelect T="MaintenancePriority" Label="Priority" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="ActiveRequest.Priority">
+                                <MudSelect T="MaintenancePriority" Label="@Localizer["Maintenance_ColumnPriority"]" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="ActiveRequest.Priority">
                                     @foreach (var priority in Enum.GetValues<MaintenancePriority>())
                                     {
                                         <MudSelectItem T="MaintenancePriority" Value="@priority">@priority</MudSelectItem>
                                     }
                                 </MudSelect>
                             </MudItem>
-                            <MudItem xs="12" md="4"><MudTextField Label="Status" Variant="Variant.Outlined" @bind-Value="ActiveRequest.Status" /></MudItem>
-                            <MudItem xs="12" md="4"><MudNumericField T="decimal" Label="Estimated cost" Variant="Variant.Outlined" Adornment="Adornment.Start" AdornmentText="$" @bind-Value="ActiveRequest.EstimatedCost" /></MudItem>
-                            <MudItem xs="12"><MudDatePicker Label="Requested date" Variant="Variant.Outlined" @bind-Date="_formRequestedDate" Editable="true" /></MudItem>
-                            <MudItem xs="12"><MudTextField Label="Description" Variant="Variant.Outlined" Lines="4" @bind-Value="ActiveRequest.Description" /></MudItem>
-                            <MudItem xs="12"><MudPaper Class="pa-3 property-detail-panel" Elevation="0"><MudText Typo="Typo.subtitle2">Operations note</MudText><MudText Typo="Typo.body2">@GetFormGuidance()</MudText></MudPaper></MudItem>
+                            <MudItem xs="12" md="4"><MudTextField Label="@Localizer["Maintenance_ColumnStatus"]" Variant="Variant.Outlined" @bind-Value="ActiveRequest.Status" /></MudItem>
+                            <MudItem xs="12" md="4"><MudNumericField T="decimal" Label="@Localizer["Maintenance_FormEstimatedCost"]" Variant="Variant.Outlined" Adornment="Adornment.Start" AdornmentText="$" @bind-Value="ActiveRequest.EstimatedCost" /></MudItem>
+                            <MudItem xs="12"><MudDatePicker Label="@Localizer["Maintenance_FormRequestedDate"]" Variant="Variant.Outlined" @bind-Date="_formRequestedDate" Editable="true" /></MudItem>
+                            <MudItem xs="12"><MudTextField Label="@Localizer["Maintenance_FormDescription"]" Variant="Variant.Outlined" Lines="4" @bind-Value="ActiveRequest.Description" /></MudItem>
+                            <MudItem xs="12"><MudPaper Class="pa-3 property-detail-panel" Elevation="0"><MudText Typo="Typo.subtitle2">@Localizer["Maintenance_FormOperationsNote"]</MudText><MudText Typo="Typo.body2">@GetFormGuidance()</MudText></MudPaper></MudItem>
                         </MudGrid>
 
                         <MudStack Row="true" Spacing="2" Class="mt-4" Justify="Justify.FlexEnd">
-                            <MudButton Variant="Variant.Text" Color="Color.Default" OnClick="CloseFormPanel">Cancel</MudButton>
-                            <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary">@(_isCreateMode ? "Create request" : "Save changes")</MudButton>
+                            <MudButton Variant="Variant.Text" Color="Color.Default" OnClick="CloseFormPanel">@Localizer["Common_Cancel"]</MudButton>
+                            <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary">@(_isCreateMode ? Localizer["Maintenance_Create"] : Localizer["Common_SaveChanges"])</MudButton>
                         </MudStack>
                     </EditForm>
                 </MudStack>
