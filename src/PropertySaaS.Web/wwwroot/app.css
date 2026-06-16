@@ -36,6 +36,14 @@ body { margin:0; }
 .properties-table-shell { overflow:hidden; }
 .properties-empty-state { min-height:220px; text-align:center; color:#5e6b80; }
 .properties-toolbar-actions { width:100%; }
+.properties-table-shell .mud-table-root { border-radius:18px; overflow:hidden; }
+.properties-table-shell .mud-table-container { border-radius:18px; }
+.properties-table-shell .mud-table-head .mud-table-cell { background:rgba(15,39,71,.04); color:#42546b; font-weight:700; }
+.properties-table-shell .mud-table-body .mud-table-row:hover { background:rgba(39,104,181,.04); }
+.properties-table-shell .mud-table-cell { vertical-align:middle; }
+.property-form-drawer .mud-input-control { margin-bottom:.25rem; }
+.property-form-drawer .mud-switch { margin-top:.25rem; }
+.property-form-drawer .mud-paper.property-detail-panel { border:1px solid rgba(15,39,71,.06); }
 @media (max-width: 959.98px) {
     .property-form-drawer { width:100%; }
     .properties-toolbar-actions { flex-direction:column; }
