@@ -1,0 +1,137 @@
+@attribute [Authorize]
+@page "/tenants"
+@inject SaasDataService DataService
+@inject PropertySaaS.Application.Common.CurrentOrganization CurrentOrganization
+
+<PageTitle>Tenants</PageTitle>
+
+<MudStack Spacing="3">
+    <MudText Typo="Typo.h4">Tenants</MudText>
+
+    <MudPaper Class="pa-4">
+        <EditForm Model="_newTenant" OnValidSubmit="CreateAsync">
+            <MudGrid Spacing="2">
+                <MudItem xs="12" md="3"><MudTextField Label="Full name" Variant="Variant.Outlined" @bind-Value="_newTenant.FullName" /></MudItem>
+                <MudItem xs="12" md="3"><MudTextField Label="Email" Variant="Variant.Outlined" @bind-Value="_newTenant.Email" /></MudItem>
+                <MudItem xs="12" md="2"><MudTextField Label="Phone" Variant="Variant.Outlined" @bind-Value="_newTenant.PhoneNumber" /></MudItem>
+                <MudItem xs="12" md="2"><MudNumericField T="int" Label="Credit score" Variant="Variant.Outlined" @bind-Value="_newTenant.CreditScore" /></MudItem>
+                <MudItem xs="12" md="2"><MudTextField Label="Screening provider" Variant="Variant.Outlined" @bind-Value="_newTenant.ScreeningProvider" /></MudItem>
+            </MudGrid>
+
+            <MudStack Row="true" Spacing="2" Class="mt-4" Wrap="Wrap.Wrap">
+                @if (CurrentOrganization.CanManageData)
+                {
+                    <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary">Add Tenant</MudButton>
+                }
+                <MudButton Href="/import-export" Variant="Variant.Outlined" Color="Color.Default">Open Import / Export</MudButton>
+                <MudButton Href="/export/tenants" Variant="Variant.Outlined" Color="Color.Primary">Export CSV</MudButton>
+            </MudStack>
+        </EditForm>
+    </MudPaper>
+
+    <MudPaper Class="pa-4">
+        <MudText Typo="Typo.h6">Quick CSV Import</MudText>
+        <MudText Typo="Typo.body2" Class="mb-2">Paste CSV rows using format: FullName,Email,PhoneNumber,CreditScore,ScreeningProvider</MudText>
+        <MudTextField Lines="6" Variant="Variant.Outlined" @bind-Value="_csvInput" FullWidth="true" />
+        @if (CurrentOrganization.CanManageData)
+        {
+            <MudButton Variant="Variant.Filled" Color="Color.Secondary" Class="mt-3" OnClick="ImportCsvAsync">Import CSV Text</MudButton>
+        }
+        @if (!string.IsNullOrWhiteSpace(_importResult))
+        {
+            <MudAlert Severity="Severity.Info" Dense="true" Class="mt-3 mb-0">@_importResult</MudAlert>
+        }
+    </MudPaper>
+
+    <MudPaper Class="pa-2">
+        <MudTable Items="_items" Dense="true" Hover="true" Breakpoint="Breakpoint.Sm">
+            <HeaderContent>
+                <MudTh>Name</MudTh>
+                <MudTh>Email</MudTh>
+                <MudTh>Phone</MudTh>
+                <MudTh>Screening</MudTh>
+                <MudTh>Score</MudTh>
+                <MudTh></MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Name">@context.FullName</MudTd>
+                <MudTd DataLabel="Email">@context.Email</MudTd>
+                <MudTd DataLabel="Phone">@context.PhoneNumber</MudTd>
+                <MudTd DataLabel="Screening">@context.ScreeningProvider</MudTd>
+                <MudTd DataLabel="Score">@context.CreditScore</MudTd>
+                <MudTd DataLabel="Actions">
+                    @if (CurrentOrganization.CanManageData)
+                    {
+                        <MudButton Variant="Variant.Outlined" Color="Color.Error" Size="Size.Small" OnClick="() => DeleteAsync(context.Id)">Delete</MudButton>
+                    }
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
+    </MudPaper>
+</MudStack>
+
+@code {
+    private List<Tenant> _items = new();
+    private Tenant _newTenant = new() { ScreeningCompleted = true, ScreeningProvider = "SingleKey" };
+    private string _csvInput = string.Empty;
+    private string? _importResult;
+    protected override async Task OnInitializedAsync() => await ReloadAsync();
+    private async Task ReloadAsync() => _items = await DataService.GetTenantsAsync();
+    private async Task CreateAsync()
+    {
+        await DataService.AddTenantAsync(_newTenant);
+        _newTenant = new Tenant { ScreeningCompleted = true, ScreeningProvider = "SingleKey" };
+        await ReloadAsync();
+    }
+    private async Task DeleteAsync(Guid id)
+    {
+        await DataService.DeleteTenantAsync(id);
+        await ReloadAsync();
+    }
+    private async Task ImportCsvAsync()
+    {
+        var imported = 0;
+        var skipped = 0;
+        var lines = _csvInput.Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries);
+        foreach (var line in lines)
+        {
+            var parts = line.Split(',');
+            if (parts.Length < 5)
+            {
+                skipped++;
+                continue;
+            }
+
+            var fullName = parts[0].Trim();
+            var email = parts[1].Trim();
+            var phone = parts[2].Trim();
+            var provider = parts[4].Trim();
+            if (string.IsNullOrWhiteSpace(fullName) || string.IsNullOrWhiteSpace(email) || !int.TryParse(parts[3], out var score))
+            {
+                skipped++;
+                continue;
+            }
+
+            if (_items.Any(x => string.Equals(x.Email, email, StringComparison.OrdinalIgnoreCase)))
+            {
+                skipped++;
+                continue;
+            }
+
+            await DataService.AddTenantAsync(new Tenant
+            {
+                FullName = fullName,
+                Email = email,
+                PhoneNumber = phone,
+                CreditScore = score,
+                ScreeningCompleted = true,
+                ScreeningProvider = string.IsNullOrWhiteSpace(provider) ? "SingleKey" : provider
+            });
+            imported++;
+        }
+        _csvInput = string.Empty;
+        await ReloadAsync();
+        _importResult = $"Imported {imported} row(s); skipped {skipped}.";
+    }
+}
+

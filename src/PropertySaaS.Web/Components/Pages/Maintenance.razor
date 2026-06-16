@@ -1,0 +1,72 @@
+@attribute [Authorize]
+@page "/maintenance"
+@inject SaasDataService DataService
+@inject PropertySaaS.Application.Common.CurrentOrganization CurrentOrganization
+
+<PageTitle>Maintenance</PageTitle>
+
+<MudStack Spacing="3">
+    <MudText Typo="Typo.h4">Maintenance & vendor marketplace</MudText>
+
+    <MudPaper Class="pa-4">
+        <EditForm Model="_newRequest" OnValidSubmit="CreateAsync">
+            <MudGrid Spacing="2">
+                <MudItem xs="12" md="3"><MudTextField Label="Title" Variant="Variant.Outlined" @bind-Value="_newRequest.Title" /></MudItem>
+                <MudItem xs="12" md="3"><MudTextField Label="Vendor" Variant="Variant.Outlined" @bind-Value="_newRequest.VendorName" /></MudItem>
+                <MudItem xs="12" md="3"><MudTextField Label="Status" Variant="Variant.Outlined" @bind-Value="_newRequest.Status" /></MudItem>
+                <MudItem xs="12" md="3"><MudNumericField T="decimal" Label="Estimated cost" Variant="Variant.Outlined" @bind-Value="_newRequest.EstimatedCost" /></MudItem>
+            </MudGrid>
+
+            @if (CurrentOrganization.CanManageData)
+            {
+                <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="mt-4">Add Request</MudButton>
+            }
+        </EditForm>
+    </MudPaper>
+
+    <MudPaper Class="pa-2">
+        <MudTable Items="_items" Dense="true" Hover="true" Breakpoint="Breakpoint.Sm">
+            <HeaderContent>
+                <MudTh>Title</MudTh>
+                <MudTh>Priority</MudTh>
+                <MudTh>Status</MudTh>
+                <MudTh>Vendor</MudTh>
+                <MudTh>Cost</MudTh>
+                <MudTh></MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Title">@context.Title</MudTd>
+                <MudTd DataLabel="Priority">@context.Priority</MudTd>
+                <MudTd DataLabel="Status">@context.Status</MudTd>
+                <MudTd DataLabel="Vendor">@context.VendorName</MudTd>
+                <MudTd DataLabel="Cost">@context.EstimatedCost.ToString("C")</MudTd>
+                <MudTd DataLabel="Actions">
+                    @if (CurrentOrganization.CanManageData)
+                    {
+                        <MudButton Variant="Variant.Outlined" Color="Color.Error" Size="Size.Small" OnClick="() => DeleteAsync(context.Id)">Delete</MudButton>
+                    }
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
+    </MudPaper>
+</MudStack>
+
+@code {
+    private List<MaintenanceRequest> _items = new();
+    private MaintenanceRequest _newRequest = new() { Priority = PropertySaaS.Domain.Enums.MaintenancePriority.Medium, Status = "Open" };
+    protected override async Task OnInitializedAsync() => await ReloadAsync();
+    private async Task ReloadAsync() => _items = await DataService.GetMaintenanceAsync();
+    private async Task CreateAsync()
+    {
+        await DataService.AddMaintenanceAsync(_newRequest);
+        _newRequest = new MaintenanceRequest { Priority = PropertySaaS.Domain.Enums.MaintenancePriority.Medium, Status = "Open" };
+        await ReloadAsync();
+    }
+    private async Task DeleteAsync(Guid id)
+    {
+        await DataService.DeleteMaintenanceAsync(id);
+        await ReloadAsync();
+    }
+}
+
+

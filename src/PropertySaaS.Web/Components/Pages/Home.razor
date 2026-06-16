@@ -1,0 +1,70 @@
+@page "/"
+
+<PageTitle>PropertySaaS | Ontario Landlord Platform</PageTitle>
+
+<MudStack Spacing="4">
+    <MudPaper Class="hero pa-8">
+        <MudGrid Spacing="4" Class="align-center-grid">
+            <MudItem xs="12" lg="7">
+                <MudText Typo="Typo.h3">Multi-tenant property management built for Ontario landlords</MudText>
+                <MudText Typo="Typo.h6" Class="mt-4 hero-copy">Manage properties, units, tenants, leases, maintenance, subscriptions and Ontario Residential Tenancies Act workflows in one Azure-ready Blazor platform, with leasing-ready property playbooks and commercialization scoring built in.</MudText>
+                <MudStack Row="true" Spacing="2" Class="mt-6" Wrap="Wrap.Wrap">
+                    <MudButton Href="/dashboard" Variant="Variant.Filled" Color="Color.Inherit" Size="Size.Large">Open Demo Dashboard</MudButton>
+                    <MudButton Href="/pricing" Variant="Variant.Outlined" Color="Color.Inherit" Size="Size.Large">See Pricing</MudButton>
+                    <MudButton Href="/account/login" Variant="Variant.Filled" Color="Color.Warning" Size="Size.Large">Sign In with Clerk</MudButton>
+                </MudStack>
+            </MudItem>
+
+            <MudItem xs="12" lg="5">
+                <MudPaper Class="pa-4 marketing-panel" Elevation="0">
+                    <MudText Typo="Typo.h5">Designed to compete with leading landlord tools</MudText>
+                    <MudList T="string" Dense="true" Class="mt-3">
+                        <MudListItem T="string">Leasing readiness score on every property</MudListItem>
+                        <MudListItem T="string">Ontario compliance reminders and notices</MudListItem>
+                        <MudListItem T="string">Tenant screening integration-ready workflow</MudListItem>
+                        <MudListItem T="string">Maintenance vendor marketplace concept</MudListItem>
+                        <MudListItem T="string">Stripe subscription lifecycle</MudListItem>
+                        <MudListItem T="string">Tenant-isolated architecture for Azure SQL</MudListItem>
+                    </MudList>
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+
+    <MudStack Spacing="2">
+        <MudText Typo="Typo.h4">Core product decisions</MudText>
+        <MudGrid Spacing="3">
+            <MudItem xs="12" md="4"><MudPaper Class="pa-4 marketing-card h-100" Elevation="0"><MudText Typo="Typo.h6">Leasing-ready property intelligence</MudText><MudText Typo="Typo.body1">Every property carries amenities, neighborhood context, leasing notes, operational notes and a commercialization score so teams can lease with more consistency than spreadsheet-driven competitors.</MudText></MudPaper></MudItem>
+            <MudItem xs="12" md="4"><MudPaper Class="pa-4 marketing-card h-100" Elevation="0"><MudText Typo="Typo.h6">Ontario-first compliance</MudText><MudText Typo="Typo.body1">N1/N4 workflow reminders, standard lease packaging and auditability address a local wedge against generalist competitors.</MudText></MudPaper></MudItem>
+            <MudItem xs="12" md="4"><MudPaper Class="pa-4 marketing-card h-100" Elevation="0"><MudText Typo="Typo.h6">Azure-ready SaaS foundation</MudText><MudText Typo="Typo.body1">Clean architecture, tenant scoping, SQL Server and externalized auth/billing prepare the app for App Service, Azure SQL and Key Vault.</MudText></MudPaper></MudItem>
+        </MudGrid>
+    </MudStack>
+
+    <MudStack Spacing="2">
+        <MudText Typo="Typo.h4">Why PropertySaaS wins against generic tools</MudText>
+        <MudGrid Spacing="3">
+            <MudItem xs="12" md="6">
+                <MudPaper Class="pa-4 marketing-card h-100" Elevation="0">
+                    <MudText Typo="Typo.h6">Generic landlord software</MudText>
+                    <MudList T="string" Dense="true" Class="mt-3">
+                        <MudListItem T="string">Tracks addresses, tenants and rents</MudListItem>
+                        <MudListItem T="string">Leaves leasing strategy in spreadsheets and notes</MudListItem>
+                        <MudListItem T="string">Offers weak Ontario-specific operational guidance</MudListItem>
+                        <MudListItem T="string">Makes portfolio reviews reactive instead of proactive</MudListItem>
+                    </MudList>
+                </MudPaper>
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <MudPaper Class="pa-4 marketing-card h-100" Elevation="0">
+                    <MudText Typo="Typo.h6">PropertySaaS advantage</MudText>
+                    <MudList T="string" Dense="true" Class="mt-3">
+                        <MudListItem T="string">Turns each property into a leasing playbook for the whole team</MudListItem>
+                        <MudListItem T="string">Scores commercialization readiness before vacancy becomes revenue loss</MudListItem>
+                        <MudListItem T="string">Connects Ontario compliance, leasing execution and operations in one workflow</MudListItem>
+                        <MudListItem T="string">Helps landlords present a more professional product to prospects and staff</MudListItem>
+                    </MudList>
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+    </MudStack>
+</MudStack>

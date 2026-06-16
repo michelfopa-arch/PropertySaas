@@ -1,0 +1,173 @@
+@attribute [Authorize]
+@page "/leases"
+@inject SaasDataService DataService
+@inject PropertySaaS.Application.Common.CurrentOrganization CurrentOrganization
+
+<PageTitle>Leases</PageTitle>
+
+<MudStack Spacing="3">
+    <MudText Typo="Typo.h4">Leases</MudText>
+
+    <MudPaper Class="pa-4">
+        <EditForm Model="_newLease" OnValidSubmit="CreateAsync">
+            <MudGrid Spacing="2">
+                <MudItem xs="12" md="3">
+                    <MudSelect T="Guid?" Label="Unit" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedUnitId">
+                        <MudSelectItem T="Guid?" Value="@((Guid?)null)">Select unit</MudSelectItem>
+                        @foreach (var unit in _units)
+                        {
+                            <MudSelectItem T="Guid?" Value="@((Guid?)unit.Id)">@unit.UnitNumber</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12" md="3">
+                    <MudSelect T="Guid?" Label="Tenant" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedTenantId">
+                        <MudSelectItem T="Guid?" Value="@((Guid?)null)">Select tenant</MudSelectItem>
+                        @foreach (var tenant in _tenants)
+                        {
+                            <MudSelectItem T="Guid?" Value="@((Guid?)tenant.Id)">@tenant.FullName</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12" md="2"><MudDatePicker Label="Start date" Variant="Variant.Outlined" @bind-Date="_startDate" Editable="true" /></MudItem>
+                <MudItem xs="12" md="2"><MudDatePicker Label="End date" Variant="Variant.Outlined" @bind-Date="_endDate" Editable="true" /></MudItem>
+                <MudItem xs="12" md="2"><MudNumericField T="decimal" Label="Rent" Variant="Variant.Outlined" @bind-Value="_newLease.MonthlyRent" /></MudItem>
+                <MudItem xs="12" md="4"><MudCheckBox T="bool" Label="Ontario Lease Signed" @bind-Value="_newLease.StandardOntarioLeaseSigned" Color="Color.Primary" /></MudItem>
+            </MudGrid>
+
+            @if (CurrentOrganization.CanManageData)
+            {
+                <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="mt-4">Add Lease</MudButton>
+            }
+        </EditForm>
+    </MudPaper>
+
+    <MudPaper Class="pa-4">
+        <MudText Typo="Typo.h6">Quick CSV Import</MudText>
+        <MudText Typo="Typo.body2" Class="mb-2">Format: UnitNumber,TenantEmail,StartDate,EndDate,MonthlyRent</MudText>
+        <MudTextField Lines="5" Variant="Variant.Outlined" @bind-Value="_csvInput" FullWidth="true" />
+        @if (CurrentOrganization.CanManageData)
+        {
+            <MudButton Variant="Variant.Filled" Color="Color.Secondary" Class="mt-3" OnClick="ImportCsvAsync">Import CSV Text</MudButton>
+        }
+        @if (!string.IsNullOrWhiteSpace(_importResult))
+        {
+            <MudAlert Severity="Severity.Info" Dense="true" Class="mt-3 mb-0">@_importResult</MudAlert>
+        }
+    </MudPaper>
+
+    <MudPaper Class="pa-2">
+        <MudTable Items="_items" Dense="true" Hover="true" Breakpoint="Breakpoint.Sm">
+            <HeaderContent>
+                <MudTh>Start</MudTh>
+                <MudTh>End</MudTh>
+                <MudTh>Rent</MudTh>
+                <MudTh>Status</MudTh>
+                <MudTh>Ontario Lease</MudTh>
+                <MudTh>N1 Workflow</MudTh>
+                <MudTh></MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Start">@context.StartDate</MudTd>
+                <MudTd DataLabel="End">@context.EndDate</MudTd>
+                <MudTd DataLabel="Rent">@context.MonthlyRent.ToString("C")</MudTd>
+                <MudTd DataLabel="Status">@context.Status</MudTd>
+                <MudTd DataLabel="Ontario Lease">@(context.StandardOntarioLeaseSigned ? "Signed" : "Missing")</MudTd>
+                <MudTd DataLabel="N1 Workflow">@(context.N1IncreaseNoticeScheduled ? "Scheduled" : "Not Scheduled")</MudTd>
+                <MudTd DataLabel="Actions">
+                    @if (CurrentOrganization.CanManageData)
+                    {
+                        <MudButton Variant="Variant.Outlined" Color="Color.Error" Size="Size.Small" OnClick="() => DeleteAsync(context.Id)">Delete</MudButton>
+                    }
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
+    </MudPaper>
+</MudStack>
+
+@code {
+    private List<Lease> _items = new();
+    private List<Unit> _units = new();
+    private List<Tenant> _tenants = new();
+    private Lease _newLease = new() { Status = PropertySaaS.Domain.Enums.LeaseStatus.Active };
+    private Guid? _selectedUnitId;
+    private Guid? _selectedTenantId;
+    private DateTime? _startDate = DateTime.Today;
+    private DateTime? _endDate = DateTime.Today.AddYears(1);
+    private string _csvInput = string.Empty;
+    private string? _importResult;
+    protected override async Task OnInitializedAsync() => await ReloadAsync();
+    private async Task ReloadAsync()
+    {
+        _items = await DataService.GetLeasesAsync();
+        _units = await DataService.GetUnitsAsync();
+        _tenants = await DataService.GetTenantsAsync();
+    }
+    private async Task CreateAsync()
+    {
+        if (_selectedUnitId is null || _selectedUnitId == Guid.Empty) return;
+        if (_selectedTenantId is null || _selectedTenantId == Guid.Empty) return;
+        _newLease.UnitId = _selectedUnitId.Value;
+        _newLease.TenantId = _selectedTenantId.Value;
+        _newLease.StartDate = DateOnly.FromDateTime(_startDate ?? DateTime.Today);
+        _newLease.EndDate = DateOnly.FromDateTime(_endDate ?? DateTime.Today.AddYears(1));
+        await DataService.AddLeaseAsync(_newLease);
+        _newLease = new Lease { Status = PropertySaaS.Domain.Enums.LeaseStatus.Active };
+        _selectedUnitId = null;
+        _selectedTenantId = null;
+        _startDate = DateTime.Today;
+        _endDate = DateTime.Today.AddYears(1);
+        await ReloadAsync();
+    }
+    private async Task DeleteAsync(Guid id)
+    {
+        await DataService.DeleteLeaseAsync(id);
+        await ReloadAsync();
+    }
+    private async Task ImportCsvAsync()
+    {
+        var imported = 0;
+        var skipped = 0;
+        var lines = _csvInput.Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries);
+        foreach (var line in lines)
+        {
+            var parts = line.Split(',');
+            if (parts.Length < 5)
+            {
+                skipped++;
+                continue;
+            }
+
+            var unitNumber = parts[0].Trim();
+            var tenantEmail = parts[1].Trim();
+            var unit = _units.FirstOrDefault(x => string.Equals(x.UnitNumber, unitNumber, StringComparison.OrdinalIgnoreCase));
+            var tenant = _tenants.FirstOrDefault(x => string.Equals(x.Email, tenantEmail, StringComparison.OrdinalIgnoreCase));
+            if (unit is null || tenant is null || !DateOnly.TryParse(parts[2], out var start) || !DateOnly.TryParse(parts[3], out var end) || !decimal.TryParse(parts[4], out var rent) || end < start)
+            {
+                skipped++;
+                continue;
+            }
+
+            if (_items.Any(x => x.UnitId == unit.Id && x.TenantId == tenant.Id && x.StartDate == start))
+            {
+                skipped++;
+                continue;
+            }
+
+            await DataService.AddLeaseAsync(new Lease
+            {
+                UnitId = unit.Id,
+                TenantId = tenant.Id,
+                StartDate = start,
+                EndDate = end,
+                MonthlyRent = rent,
+                Status = PropertySaaS.Domain.Enums.LeaseStatus.Active,
+                StandardOntarioLeaseSigned = true
+            });
+            imported++;
+        }
+        _csvInput = string.Empty;
+        await ReloadAsync();
+        _importResult = $"Imported {imported} row(s); skipped {skipped}.";
+    }
+}

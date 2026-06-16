@@ -1,0 +1,33 @@
+@attribute [Authorize]
+@page "/audit-logs"
+@inject SaasDataService DataService
+
+<PageTitle>Audit Logs</PageTitle>
+
+<MudStack Spacing="3">
+    <MudText Typo="Typo.h4">Audit logs</MudText>
+
+    <MudPaper Class="pa-2">
+        <MudTable Items="_items" Dense="true" Hover="true" Breakpoint="Breakpoint.Sm">
+            <HeaderContent>
+                <MudTh>When (UTC)</MudTh>
+                <MudTh>Entity</MudTh>
+                <MudTh>Action</MudTh>
+                <MudTh>By</MudTh>
+                <MudTh>Details</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="When (UTC)">@context.CreatedUtc</MudTd>
+                <MudTd DataLabel="Entity">@context.EntityName</MudTd>
+                <MudTd DataLabel="Action">@context.Action</MudTd>
+                <MudTd DataLabel="By">@context.PerformedBy</MudTd>
+                <MudTd DataLabel="Details">@context.Details</MudTd>
+            </RowTemplate>
+        </MudTable>
+    </MudPaper>
+</MudStack>
+
+@code {
+    private List<AuditLog> _items = new();
+    protected override async Task OnInitializedAsync() => _items = await DataService.GetAuditLogsAsync();
+}

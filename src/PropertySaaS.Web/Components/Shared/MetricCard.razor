@@ -1,0 +1,26 @@
+<MudPaper Elevation="0" Class="metric-card pa-4 h-100">
+    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Start" Spacing="2">
+        <MudStack Spacing="1">
+            <MudText Typo="Typo.overline" Class="metric-title">@Title</MudText>
+            <MudText Typo="Typo.h4" Class="metric-value">@Value</MudText>
+            @if (!string.IsNullOrWhiteSpace(Caption))
+            {
+                <MudText Typo="Typo.body2" Class="metric-caption">@Caption</MudText>
+            }
+        </MudStack>
+
+        @if (!string.IsNullOrWhiteSpace(Icon))
+        {
+            <MudPaper Elevation="0" Class="metric-icon-wrap pa-3">
+                <MudIcon Icon="@Icon" Color="Color.Primary" Size="Size.Large" />
+            </MudPaper>
+        }
+    </MudStack>
+</MudPaper>
+
+@code {
+    [Parameter] public string Title { get; set; } = string.Empty;
+    [Parameter] public string Value { get; set; } = string.Empty;
+    [Parameter] public string Caption { get; set; } = string.Empty;
+    [Parameter] public string Icon { get; set; } = string.Empty;
+}

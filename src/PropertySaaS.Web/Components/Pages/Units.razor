@@ -1,0 +1,147 @@
+@attribute [Authorize]
+@page "/units"
+@inject SaasDataService DataService
+@inject PropertySaaS.Application.Common.CurrentOrganization CurrentOrganization
+
+<PageTitle>Units</PageTitle>
+
+<MudStack Spacing="3">
+    <MudText Typo="Typo.h4">Units</MudText>
+
+    <MudPaper Class="pa-4">
+        <EditForm Model="_newUnit" OnValidSubmit="CreateAsync">
+            <MudGrid Spacing="2">
+                <MudItem xs="12" md="2"><MudTextField Label="Unit" Variant="Variant.Outlined" @bind-Value="_newUnit.UnitNumber" /></MudItem>
+                <MudItem xs="12" md="2"><MudNumericField T="int" Label="Bedrooms" Variant="Variant.Outlined" @bind-Value="_newUnit.Bedrooms" /></MudItem>
+                <MudItem xs="12" md="2"><MudNumericField T="int" Label="Bathrooms" Variant="Variant.Outlined" @bind-Value="_newUnit.Bathrooms" /></MudItem>
+                <MudItem xs="12" md="3"><MudNumericField T="decimal" Label="Monthly rent" Variant="Variant.Outlined" @bind-Value="_newUnit.MonthlyRent" /></MudItem>
+                <MudItem xs="12" md="3">
+                    <MudSelect T="Guid?" Label="Property" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedPropertyId">
+                        <MudSelectItem T="Guid?" Value="@((Guid?)null)">Select property</MudSelectItem>
+                        @foreach (var property in _properties)
+                        {
+                            <MudSelectItem T="Guid?" Value="@((Guid?)property.Id)">@property.Name</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+            </MudGrid>
+
+            @if (CurrentOrganization.CanManageData)
+            {
+                <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="mt-4">Add Unit</MudButton>
+            }
+        </EditForm>
+    </MudPaper>
+
+    <MudPaper Class="pa-4">
+        <MudText Typo="Typo.h6">Quick CSV Import</MudText>
+        <MudText Typo="Typo.body2" Class="mb-2">Format: PropertyName,UnitNumber,Bedrooms,Bathrooms,MonthlyRent</MudText>
+        <MudTextField Lines="5" Variant="Variant.Outlined" @bind-Value="_csvInput" FullWidth="true" />
+        @if (CurrentOrganization.CanManageData)
+        {
+            <MudButton Variant="Variant.Filled" Color="Color.Secondary" Class="mt-3" OnClick="ImportCsvAsync">Import CSV Text</MudButton>
+        }
+        @if (!string.IsNullOrWhiteSpace(_importResult))
+        {
+            <MudAlert Severity="Severity.Info" Dense="true" Class="mt-3 mb-0">@_importResult</MudAlert>
+        }
+    </MudPaper>
+
+    <MudPaper Class="pa-2">
+        <MudTable Items="_items" Dense="true" Hover="true" Breakpoint="Breakpoint.Sm">
+            <HeaderContent>
+                <MudTh>Unit</MudTh>
+                <MudTh>Bedrooms</MudTh>
+                <MudTh>Bathrooms</MudTh>
+                <MudTh>Rent</MudTh>
+                <MudTh>Status</MudTh>
+                <MudTh></MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Unit">@context.UnitNumber</MudTd>
+                <MudTd DataLabel="Bedrooms">@context.Bedrooms</MudTd>
+                <MudTd DataLabel="Bathrooms">@context.Bathrooms</MudTd>
+                <MudTd DataLabel="Rent">@context.MonthlyRent.ToString("C")</MudTd>
+                <MudTd DataLabel="Status">@(context.IsOccupied ? "Occupied" : "Vacant")</MudTd>
+                <MudTd DataLabel="Actions">
+                    @if (CurrentOrganization.CanManageData)
+                    {
+                        <MudButton Variant="Variant.Outlined" Color="Color.Error" Size="Size.Small" OnClick="() => DeleteAsync(context.Id)">Delete</MudButton>
+                    }
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
+    </MudPaper>
+</MudStack>
+
+@code {
+    private List<Unit> _items = new();
+    private List<Property> _properties = new();
+    private Unit _newUnit = new();
+    private Guid? _selectedPropertyId;
+    private string _csvInput = string.Empty;
+    private string? _importResult;
+    protected override async Task OnInitializedAsync() => await ReloadAsync();
+    private async Task ReloadAsync()
+    {
+        _items = await DataService.GetUnitsAsync();
+        _properties = await DataService.GetPropertiesAsync();
+    }
+    private async Task CreateAsync()
+    {
+        if (_selectedPropertyId is null || _selectedPropertyId == Guid.Empty) return;
+        _newUnit.PropertyId = _selectedPropertyId.Value;
+        await DataService.AddUnitAsync(_newUnit);
+        _newUnit = new Unit();
+        _selectedPropertyId = null;
+        await ReloadAsync();
+    }
+    private async Task DeleteAsync(Guid id)
+    {
+        await DataService.DeleteUnitAsync(id);
+        await ReloadAsync();
+    }
+    private async Task ImportCsvAsync()
+    {
+        var imported = 0;
+        var skipped = 0;
+        var lines = _csvInput.Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries);
+        foreach (var line in lines)
+        {
+            var parts = line.Split(',');
+            if (parts.Length < 5)
+            {
+                skipped++;
+                continue;
+            }
+
+            var propertyName = parts[0].Trim();
+            var unitNumber = parts[1].Trim();
+            var property = _properties.FirstOrDefault(x => string.Equals(x.Name, propertyName, StringComparison.OrdinalIgnoreCase));
+            if (property is null || string.IsNullOrWhiteSpace(unitNumber) || !int.TryParse(parts[2], out var beds) || !int.TryParse(parts[3], out var baths) || !decimal.TryParse(parts[4], out var rent))
+            {
+                skipped++;
+                continue;
+            }
+
+            if (_items.Any(x => x.PropertyId == property.Id && string.Equals(x.UnitNumber, unitNumber, StringComparison.OrdinalIgnoreCase)))
+            {
+                skipped++;
+                continue;
+            }
+
+            await DataService.AddUnitAsync(new Unit
+            {
+                PropertyId = property.Id,
+                UnitNumber = unitNumber,
+                Bedrooms = beds,
+                Bathrooms = baths,
+                MonthlyRent = rent
+            });
+            imported++;
+        }
+        _csvInput = string.Empty;
+        await ReloadAsync();
+        _importResult = $"Imported {imported} row(s); skipped {skipped}.";
+    }
+}

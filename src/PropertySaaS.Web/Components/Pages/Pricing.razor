@@ -1,0 +1,54 @@
+@page "/pricing"
+
+<PageTitle>Pricing</PageTitle>
+
+<MudStack Spacing="3">
+    <MudText Typo="Typo.h4">Simple landlord SaaS pricing</MudText>
+
+    <MudGrid Spacing="3">
+        <MudItem xs="12" md="4">
+            <MudPaper Class="pa-4 pricing-card h-100" Elevation="0">
+                <MudText Typo="Typo.h5">Starter</MudText>
+                <MudText Typo="Typo.h3" Class="mt-2">$49</MudText>
+                <MudText Typo="Typo.body2">/month</MudText>
+                <MudList T="string" Dense="true" Class="mt-3">
+                    <MudListItem T="string">Up to 25 units</MudListItem>
+                    <MudListItem T="string">Core CRUD modules</MudListItem>
+                    <MudListItem T="string">Property playbook fields</MudListItem>
+                    <MudListItem T="string">Ontario document templates</MudListItem>
+                </MudList>
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12" md="4">
+            <MudPaper Class="pa-4 pricing-card pricing-card-featured h-100" Elevation="0">
+                <MudChip T="string" Color="Color.Primary" Variant="Variant.Filled" Class="mb-3">Most popular</MudChip>
+                <MudText Typo="Typo.h5">Growth</MudText>
+                <MudText Typo="Typo.h3" Class="mt-2">$129</MudText>
+                <MudText Typo="Typo.body2">/month</MudText>
+                <MudList T="string" Dense="true" Class="mt-3">
+                    <MudListItem T="string">Up to 150 units</MudListItem>
+                    <MudListItem T="string">Leasing readiness scoring</MudListItem>
+                    <MudListItem T="string">Compliance reminders</MudListItem>
+                    <MudListItem T="string">Tenant screening workflows</MudListItem>
+                    <MudListItem T="string">Audit logs</MudListItem>
+                </MudList>
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12" md="4">
+            <MudPaper Class="pa-4 pricing-card h-100" Elevation="0">
+                <MudText Typo="Typo.h5">Pro</MudText>
+                <MudText Typo="Typo.h3" Class="mt-2">$249</MudText>
+                <MudText Typo="Typo.body2">/month</MudText>
+                <MudList T="string" Dense="true" Class="mt-3">
+                    <MudListItem T="string">Unlimited units</MudListItem>
+                    <MudListItem T="string">Portfolio-wide property intelligence</MudListItem>
+                    <MudListItem T="string">Vendor marketplace</MudListItem>
+                    <MudListItem T="string">Advanced exports</MudListItem>
+                    <MudListItem T="string">Priority onboarding</MudListItem>
+                </MudList>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+</MudStack>

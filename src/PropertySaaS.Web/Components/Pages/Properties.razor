@@ -1,0 +1,1100 @@
+@attribute [Authorize]
+@page "/properties"
+@inject SaasDataService DataService
+@inject PropertySaaS.Application.Common.CurrentOrganization CurrentOrganization
+
+<PageTitle>Properties</PageTitle>
+
+<MudStack Spacing="3">
+    <MudStack Spacing="0">
+        <MudText Typo="Typo.h4">Properties</MudText>
+        <MudText Typo="Typo.body2">Portfolio view first, execution detail second. Open each property profile only when the team needs the full operating context.</MudText>
+    </MudStack>
+
+    <MudGrid Spacing="2" Class="align-center-grid">
+        <MudItem xs="12" lg="4">
+            <MudTextField T="string"
+                          Label="Search properties"
+                          Variant="Variant.Outlined"
+                          Immediate="true"
+                          @bind-Value="_searchText"
+                          Adornment="Adornment.Start"
+                          AdornmentIcon="@Icons.Material.Filled.Search"
+                          Placeholder="Search by name, address, city, postal code or type" />
+        </MudItem>
+        <MudItem xs="12" sm="4" lg="2">
+            <MudSelect T="string" Label="Type" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedTypeFilter">
+                <MudSelectItem T="string" Value="@string.Empty">All types</MudSelectItem>
+                @foreach (var propertyType in _propertyTypes)
+                {
+                    <MudSelectItem T="string" Value="@propertyType">@propertyType</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12" sm="4" lg="2">
+            <MudSelect T="string" Label="City" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedCityFilter">
+                <MudSelectItem T="string" Value="@string.Empty">All cities</MudSelectItem>
+                @foreach (var city in _cities)
+                {
+                    <MudSelectItem T="string" Value="@city">@city</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12" sm="4" lg="2">
+            <MudSelect T="string" Label="Stage" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedStageFilter">
+                <MudSelectItem T="string" Value="@string.Empty">All stages</MudSelectItem>
+                @foreach (var stage in _assetStages)
+                {
+                    <MudSelectItem T="string" Value="@stage">@stage</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12" lg="2">
+            <MudStack Row="true" Spacing="1" Class="properties-toolbar-actions">
+                @if (HasActiveFilters)
+                {
+                    <MudButton Variant="Variant.Outlined" Color="Color.Default" FullWidth="true" StartIcon="@Icons.Material.Filled.FilterAltOff" OnClick="ClearFilters">Reset</MudButton>
+                }
+                @if (CurrentOrganization.CanManageData)
+                {
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreatePanel">Add property</MudButton>
+                }
+            </MudStack>
+        </MudItem>
+    </MudGrid>
+
+    <MudGrid Spacing="2">
+        <MudItem xs="12" sm="6" lg="3"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">Properties shown</MudText><MudText Typo="Typo.h6">@FilteredProperties.Count()</MudText></MudPaper></MudItem>
+        <MudItem xs="12" sm="6" lg="3"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">Vacant units</MudText><MudText Typo="Typo.h6">@GetFilteredVacantUnits()</MudText></MudPaper></MudItem>
+        <MudItem xs="12" sm="6" lg="3"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">Average readiness</MudText><MudText Typo="Typo.h6">@GetAverageReadinessLabel()</MudText></MudPaper></MudItem>
+        <MudItem xs="12" sm="6" lg="3"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">Rent roll</MudText><MudText Typo="Typo.h6">@GetFilteredRentRoll().ToString("C")</MudText></MudPaper></MudItem>
+    </MudGrid>
+
+    <MudExpansionPanels>
+        <MudExpansionPanel Text="Bulk import">
+            <MudPaper Class="pa-4" Elevation="0">
+                <MudText Typo="Typo.h6">Quick CSV Import</MudText>
+                <MudText Typo="Typo.body2" Class="mb-2">Format: Name,AddressLine1,City,MonthlyRevenueTarget</MudText>
+                <MudTextField Lines="5" Variant="Variant.Outlined" @bind-Value="_csvInput" FullWidth="true" />
+                @if (CurrentOrganization.CanManageData)
+                {
+                    <MudButton Variant="Variant.Filled" Color="Color.Secondary" Class="mt-3" OnClick="ImportCsvAsync">Import CSV Text</MudButton>
+                }
+                @if (!string.IsNullOrWhiteSpace(_importResult))
+                {
+                    <MudAlert Severity="Severity.Info" Dense="true" Class="mt-3 mb-0">@_importResult</MudAlert>
+                }
+            </MudPaper>
+        </MudExpansionPanel>
+    </MudExpansionPanels>
+
+    <MudPaper Class="pa-2 table-wrap properties-table-shell">
+        <MudTable Items="FilteredProperties.ToList()" Dense="true" Hover="true" Breakpoint="Breakpoint.Md" RowsPerPage="10">
+            <HeaderContent>
+                <MudTh>Property</MudTh>
+                <MudTh>Type</MudTh>
+                <MudTh>City</MudTh>
+                <MudTh>Units</MudTh>
+                <MudTh>Occupancy</MudTh>
+                <MudTh>Rent roll</MudTh>
+                <MudTh>Readiness</MudTh>
+                <MudTh>Stage</MudTh>
+                <MudTh></MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                @{ var propertyUnits = GetUnitsForProperty(context.Id); }
+                @{ var occupiedCount = propertyUnits.Count(x => x.IsOccupied); }
+                @{ var vacantCount = propertyUnits.Count - occupiedCount; }
+                @{ var monthlyRent = propertyUnits.Sum(x => x.MonthlyRent); }
+                @{ var readinessScore = GetMarketingReadinessScore(context, propertyUnits, occupiedCount, monthlyRent); }
+                <MudTd DataLabel="Property">
+                    <MudStack Spacing="0">
+                        <MudText Typo="Typo.subtitle2">@context.Name</MudText>
+                        <MudText Typo="Typo.caption" Class="property-address">@FormatAddress(context)</MudText>
+                    </MudStack>
+                </MudTd>
+                <MudTd DataLabel="Type">@context.PropertyType</MudTd>
+                <MudTd DataLabel="City">@context.City</MudTd>
+                <MudTd DataLabel="Units">@propertyUnits.Count</MudTd>
+                <MudTd DataLabel="Occupancy">@GetOccupancyLabel(propertyUnits.Count, occupiedCount)</MudTd>
+                <MudTd DataLabel="Rent roll">@monthlyRent.ToString("C")</MudTd>
+                <MudTd DataLabel="Readiness"><MudChip T="string" Variant="Variant.Filled" Color="@GetReadinessColor(readinessScore)">@readinessScore/100</MudChip></MudTd>
+                <MudTd DataLabel="Stage"><MudChip T="string" Variant="Variant.Outlined" Color="@GetAssetStageColor(propertyUnits, vacantCount, readinessScore)">@GetAssetStage(propertyUnits, vacantCount, readinessScore)</MudChip></MudTd>
+                <MudTd DataLabel="Actions">
+                    <MudStack Row="true" Spacing="1" Wrap="Wrap.Wrap">
+                        <MudButton Href="@($"/properties/{context.Id}")" Variant="Variant.Text" Color="Color.Primary" Size="Size.Small">View details</MudButton>
+                        @if (CurrentOrganization.CanManageData)
+                        {
+                            <MudButton Variant="Variant.Text" Color="Color.Secondary" Size="Size.Small" OnClick="() => OpenEditPanel(context)">Edit</MudButton>
+                            <MudButton Variant="Variant.Text" Color="Color.Error" Size="Size.Small" OnClick="() => DeleteAsync(context.Id)">Delete</MudButton>
+                        }
+                    </MudStack>
+                </MudTd>
+            </RowTemplate>
+            <NoRecordsContent>
+                <MudStack Class="pa-6 properties-empty-state" Spacing="1" AlignItems="AlignItems.Center">
+                    <MudIcon Icon="@Icons.Material.Filled.Apartment" Size="Size.Large" Color="Color.Default" />
+                    <MudText Typo="Typo.subtitle1">No properties match the current filters.</MudText>
+                    <MudText Typo="Typo.body2">Reset the filters or add a new address to keep growing the portfolio.</MudText>
+                    @if (HasActiveFilters)
+                    {
+                        <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="ClearFilters">Reset filters</MudButton>
+                    }
+                </MudStack>
+            </NoRecordsContent>
+            <PagerContent>
+                <MudTablePager />
+            </PagerContent>
+        </MudTable>
+    </MudPaper>
+
+    @if (_isFormPanelOpen)
+    {
+        <div class="property-form-backdrop" @onclick="CloseFormPanel">
+            <MudPaper Class="pa-5 property-form-drawer" Elevation="0" @onclick:stopPropagation="true">
+                <MudStack Spacing="3">
+                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                        <MudStack Spacing="0">
+                            <MudText Typo="Typo.h5">@(_isCreateMode ? "Add property" : "Edit property")</MudText>
+                            <MudText Typo="Typo.body2">Capture only what the team needs now. Full execution lives in the property profile.</MudText>
+                        </MudStack>
+                        <MudIconButton Icon="@Icons.Material.Filled.Close" Color="Color.Default" OnClick="CloseFormPanel" />
+                    </MudStack>
+
+                    <EditForm Model="ActiveProperty" OnValidSubmit="SaveFormAsync">
+                        <MudGrid Spacing="2">
+                            <MudItem xs="12"><MudText Typo="Typo.subtitle2">Identity and location</MudText></MudItem>
+                            <MudItem xs="12" md="6"><MudTextField Label="Property name" Variant="Variant.Outlined" @bind-Value="ActiveProperty.Name" /></MudItem>
+                            <MudItem xs="12" md="6">
+                                <MudSelect T="string" Label="Property type" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="ActiveProperty.PropertyType">
+                                    @foreach (var propertyType in _propertyTypes)
+                                    {
+                                        <MudSelectItem T="string" Value="@propertyType">@propertyType</MudSelectItem>
+                                    }
+                                </MudSelect>
+                            </MudItem>
+                            <MudItem xs="12" md="8"><MudTextField Label="Address" Variant="Variant.Outlined" @bind-Value="ActiveProperty.AddressLine1" /></MudItem>
+                            <MudItem xs="12" md="4">
+                                <MudSelect T="string" Label="City" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="ActiveProperty.City">
+                                    @foreach (var city in _cities)
+                                    {
+                                        <MudSelectItem T="string" Value="@city">@city</MudSelectItem>
+                                    }
+                                </MudSelect>
+                            </MudItem>
+                            <MudItem xs="12" md="4">
+                                <MudSelect T="string" Label="Province" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="ActiveProperty.Province">
+                                    @foreach (var province in _provinces)
+                                    {
+                                        <MudSelectItem T="string" Value="@province">@province</MudSelectItem>
+                                    }
+                                </MudSelect>
+                            </MudItem>
+                            <MudItem xs="12" md="4"><MudTextField Label="Postal code" Variant="Variant.Outlined" @bind-Value="ActiveProperty.PostalCode" /></MudItem>
+                            <MudItem xs="12" md="4"><MudNumericField T="int?" Label="Year built" Variant="Variant.Outlined" Placeholder="Optional" @bind-Value="FormYearBuiltValue" /></MudItem>
+                            <MudItem xs="12" md="4"><MudNumericField T="decimal" Label="Revenue target" Variant="Variant.Outlined" Adornment="Adornment.Start" AdornmentText="$" @bind-Value="ActiveProperty.MonthlyRevenueTarget" /></MudItem>
+                            <MudItem xs="12"><MudDivider Class="my-2" /></MudItem>
+                            <MudItem xs="12"><MudText Typo="Typo.subtitle2">Commercialization playbook</MudText></MudItem>
+                            <MudItem xs="12" md="6">
+                                <MudSelect T="string" Label="Amenity template" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="FormAmenityTemplate">
+                                    @foreach (var option in _amenityTemplates)
+                                    {
+                                        <MudSelectItem T="string" Value="@option">@option</MudSelectItem>
+                                    }
+                                </MudSelect>
+                            </MudItem>
+                            <MudItem xs="12" md="6">
+                                <MudSelect T="string" Label="Neighborhood template" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="FormNeighborhoodTemplate">
+                                    @foreach (var option in _neighborhoodTemplates)
+                                    {
+                                        <MudSelectItem T="string" Value="@option">@option</MudSelectItem>
+                                    }
+                                </MudSelect>
+                            </MudItem>
+                            <MudItem xs="12" md="6">
+                                <MudSelect T="string" Label="Leasing strategy" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="FormLeasingTemplate">
+                                    @foreach (var option in _leasingTemplates)
+                                    {
+                                        <MudSelectItem T="string" Value="@option">@option</MudSelectItem>
+                                    }
+                                </MudSelect>
+                            </MudItem>
+                            <MudItem xs="12" md="6">
+                                <MudSelect T="string" Label="Operations focus" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="FormOperationsTemplate">
+                                    @foreach (var option in _operationsTemplates)
+                                    {
+                                        <MudSelectItem T="string" Value="@option">@option</MudSelectItem>
+                                    }
+                                </MudSelect>
+                            </MudItem>
+                            <MudItem xs="12">
+                                <MudPaper Class="pa-3 property-detail-panel" Elevation="0">
+                                    <MudStack Spacing="1">
+                                        <MudText Typo="Typo.subtitle2">Recommended market pack</MudText>
+                                        <MudStack Row="true" Spacing="1" Wrap="Wrap.Wrap">
+                                            <MudChip T="string" Variant="Variant.Filled" Color="Color.Primary">@GetMarketSegment(ActiveProperty)</MudChip>
+                                            <MudChip T="string" Variant="Variant.Outlined" Color="Color.Secondary">@GetRecommendedStrategyPack(ActiveProperty)</MudChip>
+                                        </MudStack>
+                                        <MudText Typo="Typo.body2">@GetMarketNarrative(ActiveProperty)</MudText>
+                                        <MudStack Row="true" Spacing="2" Wrap="Wrap.Wrap">
+                                            <MudButton Variant="Variant.Text" Color="Color.Primary" StartIcon="@Icons.Material.Filled.AutoAwesome" OnClick="ApplyFormRecommendedPack">Use recommended pack</MudButton>
+                                            <MudButton Variant="Variant.Outlined" Color="Color.Secondary" StartIcon="@Icons.Material.Filled.AutoFixHigh" OnClick="ApplyFormPlaybookTemplates">Apply guided presets</MudButton>
+                                        </MudStack>
+                                    </MudStack>
+                                </MudPaper>
+                            </MudItem>
+                            <MudItem xs="12" md="6"><MudTextField Label="Amenities" Variant="Variant.Outlined" @bind-Value="ActiveProperty.AmenitySummary" /></MudItem>
+                            <MudItem xs="12" md="6"><MudTextField Label="Neighborhood notes" Variant="Variant.Outlined" Lines="2" @bind-Value="ActiveProperty.NeighborhoodNotes" /></MudItem>
+                            <MudItem xs="12" md="6"><MudTextField Label="Leasing notes" Variant="Variant.Outlined" Lines="3" @bind-Value="ActiveProperty.LeasingNotes" /></MudItem>
+                            <MudItem xs="12" md="6"><MudTextField Label="Operational notes" Variant="Variant.Outlined" Lines="3" @bind-Value="ActiveProperty.OperationalNotes" /></MudItem>
+                        </MudGrid>
+
+                        <MudStack Row="true" Spacing="2" Class="mt-4" Justify="Justify.FlexEnd">
+                            <MudButton Variant="Variant.Text" Color="Color.Default" OnClick="CloseFormPanel">Cancel</MudButton>
+                            <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary">@(_isCreateMode ? "Create property" : "Save changes")</MudButton>
+                        </MudStack>
+                    </EditForm>
+                </MudStack>
+            </MudPaper>
+        </div>
+    }
+
+</MudStack>
+
+@code {
+    private static readonly string[] _propertyTypes =
+    {
+        "Multi-family",
+        "Urban mid-rise",
+        "Low-rise apartment",
+        "Condo building",
+        "Purpose-built rental",
+        "Duplex / triplex",
+        "Townhome cluster",
+        "Single-family rental",
+        "Student housing",
+        "Waterfront condo",
+        "Mixed-use asset",
+        "Micro-suite building",
+        "Luxury rental",
+        "Suburban family asset",
+        "Transit-oriented rental",
+        "Executive furnished rental"
+    };
+
+    private static readonly string[] _provinces =
+    {
+        "ON",
+        "QC",
+        "BC",
+        "AB",
+        "MB",
+        "SK",
+        "NS",
+        "NB",
+        "PE",
+        "NL"
+    };
+
+    private static readonly string[] _cities =
+    {
+        "Toronto",
+        "Mississauga",
+        "Brampton",
+        "Hamilton",
+        "Ottawa",
+        "London",
+        "Kitchener",
+        "Waterloo",
+        "Cambridge",
+        "Oakville",
+        "Burlington",
+        "Milton",
+        "Vaughan",
+        "Markham",
+        "Richmond Hill",
+        "Pickering",
+        "Ajax",
+        "Whitby",
+        "Oshawa",
+        "Kingston"
+    };
+
+    private static readonly string[] _amenityTemplates =
+    {
+        "Essential urban living",
+        "Lifestyle-driven premium",
+        "Family convenience",
+        "Student practical needs",
+        "Transit convenience",
+        "Executive furnished living",
+        "Pet-friendly positioning",
+        "Renovated value story"
+    };
+
+    private static readonly string[] _neighborhoodTemplates =
+    {
+        "Transit-led urban appeal",
+        "Family-oriented neighbourhood",
+        "Student convenience corridor",
+        "Waterfront lifestyle",
+        "Value repositioning pocket",
+        "Downtown convenience hub",
+        "Suburban stability corridor",
+        "Executive relocation pocket"
+    };
+
+    private static readonly string[] _leasingTemplates =
+    {
+        "Premium professional positioning",
+        "Fast vacancy recovery",
+        "Long-stay household retention",
+        "Student turnover cadence",
+        "Renovation-led rent lift",
+        "Transit commuter positioning",
+        "Executive furnished demand",
+        "Pet-friendly demand capture"
+    };
+
+    private static readonly string[] _operationsTemplates =
+    {
+        "Turnover speed",
+        "Vendor coordination",
+        "Preventive maintenance",
+        "Resident experience",
+        "Compliance-heavy operations",
+        "Listing readiness",
+        "Concierge-style service",
+        "Seasonal turnover control"
+    };
+
+    private static readonly string[] _assetStages =
+    {
+        "Setup",
+        "Lease-up",
+        "Stabilize playbook",
+        "Stabilized"
+    };
+
+    private List<Property> _items = new();
+    private List<Unit> _units = new();
+    private Property _newProperty = new() { Province = "ON", City = "Toronto", PropertyType = "Multi-family" };
+    private Property _editProperty = new() { Province = "ON", City = "Toronto", PropertyType = "Multi-family" };
+    private string _newAmenityTemplate = string.Empty;
+    private string _newNeighborhoodTemplate = string.Empty;
+    private string _newLeasingTemplate = string.Empty;
+    private string _newOperationsTemplate = string.Empty;
+    private string _editAmenityTemplate = string.Empty;
+    private string _editNeighborhoodTemplate = string.Empty;
+    private string _editLeasingTemplate = string.Empty;
+    private string _editOperationsTemplate = string.Empty;
+    private string _csvInput = string.Empty;
+    private string? _importResult;
+    private string _searchText = string.Empty;
+    private string _selectedTypeFilter = string.Empty;
+    private string _selectedCityFilter = string.Empty;
+    private string _selectedStageFilter = string.Empty;
+    private bool _isFormPanelOpen;
+    private bool _isCreateMode = true;
+    private bool HasActiveFilters => !string.IsNullOrWhiteSpace(_searchText) || !string.IsNullOrWhiteSpace(_selectedTypeFilter) || !string.IsNullOrWhiteSpace(_selectedCityFilter) || !string.IsNullOrWhiteSpace(_selectedStageFilter);
+    private IEnumerable<Property> FilteredProperties => _items.Where(property =>
+        string.IsNullOrWhiteSpace(_searchText)
+        || property.Name.Contains(_searchText, StringComparison.OrdinalIgnoreCase)
+        || (property.AddressLine1?.Contains(_searchText, StringComparison.OrdinalIgnoreCase) ?? false)
+        || (property.City?.Contains(_searchText, StringComparison.OrdinalIgnoreCase) ?? false)
+        || (property.PostalCode?.Contains(_searchText, StringComparison.OrdinalIgnoreCase) ?? false)
+        || (property.PropertyType?.Contains(_searchText, StringComparison.OrdinalIgnoreCase) ?? false))
+        .Where(property => string.IsNullOrWhiteSpace(_selectedTypeFilter) || string.Equals(property.PropertyType, _selectedTypeFilter, StringComparison.OrdinalIgnoreCase))
+        .Where(property => string.IsNullOrWhiteSpace(_selectedCityFilter) || string.Equals(property.City, _selectedCityFilter, StringComparison.OrdinalIgnoreCase))
+        .Where(property => string.IsNullOrWhiteSpace(_selectedStageFilter) || string.Equals(GetAssetStage(GetUnitsForProperty(property.Id), GetUnitsForProperty(property.Id).Count(x => !x.IsOccupied), GetMarketingReadinessScore(property, GetUnitsForProperty(property.Id), GetUnitsForProperty(property.Id).Count(x => x.IsOccupied), GetUnitsForProperty(property.Id).Sum(x => x.MonthlyRent))), _selectedStageFilter, StringComparison.OrdinalIgnoreCase));
+
+    private Property ActiveProperty => _isCreateMode ? _newProperty : _editProperty;
+
+    private int? FormYearBuiltValue
+    {
+        get => ActiveProperty.YearBuilt == 0 ? null : ActiveProperty.YearBuilt;
+        set => ActiveProperty.YearBuilt = value ?? 0;
+    }
+
+    private string FormAmenityTemplate { get => _isCreateMode ? _newAmenityTemplate : _editAmenityTemplate; set { if (_isCreateMode) _newAmenityTemplate = value; else _editAmenityTemplate = value; } }
+    private string FormNeighborhoodTemplate { get => _isCreateMode ? _newNeighborhoodTemplate : _editNeighborhoodTemplate; set { if (_isCreateMode) _newNeighborhoodTemplate = value; else _editNeighborhoodTemplate = value; } }
+    private string FormLeasingTemplate { get => _isCreateMode ? _newLeasingTemplate : _editLeasingTemplate; set { if (_isCreateMode) _newLeasingTemplate = value; else _editLeasingTemplate = value; } }
+    private string FormOperationsTemplate { get => _isCreateMode ? _newOperationsTemplate : _editOperationsTemplate; set { if (_isCreateMode) _newOperationsTemplate = value; else _editOperationsTemplate = value; } }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await ReloadAsync();
+        ResetNewTemplates();
+        ResetEditTemplates();
+    }
+    private async Task ReloadAsync()
+    {
+        _items = await DataService.GetPropertiesAsync();
+        _units = await DataService.GetUnitsAsync();
+    }
+    private async Task CreateAsync()
+    {
+        await DataService.AddPropertyAsync(_newProperty);
+        _newProperty = new Property { Province = "ON", City = "Toronto", PropertyType = "Multi-family" };
+        ResetNewTemplates();
+        await ReloadAsync();
+    }
+
+    private async Task SaveFormAsync()
+    {
+        if (_isCreateMode)
+        {
+            await CreateAsync();
+        }
+        else
+        {
+            await SaveEditAsync();
+        }
+
+        CloseFormPanel();
+    }
+
+    private async Task DeleteAsync(Guid id)
+    {
+        await DataService.DeletePropertyAsync(id);
+        await ReloadAsync();
+    }
+
+    private void ClearFilters()
+    {
+        _searchText = string.Empty;
+        _selectedTypeFilter = string.Empty;
+        _selectedCityFilter = string.Empty;
+        _selectedStageFilter = string.Empty;
+    }
+
+    private void OpenCreatePanel()
+    {
+        _isCreateMode = true;
+        _newProperty = new Property { Province = "ON", City = "Toronto", PropertyType = "Multi-family" };
+        ResetNewTemplates();
+        _isFormPanelOpen = true;
+    }
+
+    private void OpenEditPanel(Property property)
+    {
+        _isCreateMode = false;
+        ResetEditTemplates();
+        _editProperty = new Property
+        {
+            Id = property.Id,
+            Name = property.Name,
+            PropertyType = property.PropertyType,
+            AddressLine1 = property.AddressLine1,
+            City = property.City,
+            Province = property.Province,
+            PostalCode = property.PostalCode,
+            YearBuilt = property.YearBuilt,
+            MonthlyRevenueTarget = property.MonthlyRevenueTarget,
+            AmenitySummary = property.AmenitySummary,
+            NeighborhoodNotes = property.NeighborhoodNotes,
+            LeasingNotes = property.LeasingNotes,
+            OperationalNotes = property.OperationalNotes
+        };
+        SetEditTemplateDefaults(_editProperty.PropertyType);
+        _isFormPanelOpen = true;
+    }
+
+    private void StartEdit(Property property) => OpenEditPanel(property);
+
+    private void CloseFormPanel()
+    {
+        _isFormPanelOpen = false;
+        _isCreateMode = true;
+    }
+
+    private async Task SaveEditAsync()
+    {
+        await DataService.UpdatePropertyAsync(_editProperty);
+        await ReloadAsync();
+        _editProperty = new Property { Province = "ON", City = "Toronto", PropertyType = "Multi-family" };
+        ResetEditTemplates();
+    }
+
+    private void ApplyNewPlaybookTemplates()
+        => ApplyTemplatesToProperty(_newProperty, _newAmenityTemplate, _newNeighborhoodTemplate, _newLeasingTemplate, _newOperationsTemplate);
+
+    private void ApplyEditPlaybookTemplates()
+        => ApplyTemplatesToProperty(_editProperty, _editAmenityTemplate, _editNeighborhoodTemplate, _editLeasingTemplate, _editOperationsTemplate);
+
+    private void ApplyFormPlaybookTemplates()
+    {
+        if (_isCreateMode)
+        {
+            ApplyNewPlaybookTemplates();
+            return;
+        }
+
+        ApplyEditPlaybookTemplates();
+    }
+
+    private void ApplyRecommendedNewPack()
+    {
+        SetNewTemplateDefaults(_newProperty.PropertyType);
+        ApplyNewPlaybookTemplates();
+    }
+
+    private void ApplyRecommendedEditPack()
+    {
+        SetEditTemplateDefaults(_editProperty.PropertyType);
+        ApplyEditPlaybookTemplates();
+    }
+
+    private void ApplyFormRecommendedPack()
+    {
+        if (_isCreateMode)
+        {
+            ApplyRecommendedNewPack();
+            return;
+        }
+
+        ApplyRecommendedEditPack();
+    }
+
+    private Task OnNewPropertyTypeChanged(string propertyType)
+    {
+        _newProperty.PropertyType = string.IsNullOrWhiteSpace(propertyType) ? "Multi-family" : propertyType;
+        SetNewTemplateDefaults(propertyType);
+        return Task.CompletedTask;
+    }
+
+    private Task OnEditPropertyTypeChanged(string propertyType)
+    {
+        _editProperty.PropertyType = string.IsNullOrWhiteSpace(propertyType) ? "Multi-family" : propertyType;
+        SetEditTemplateDefaults(propertyType);
+        return Task.CompletedTask;
+    }
+
+    private Task OnNewCityChanged(string city)
+    {
+        _newProperty.City = string.IsNullOrWhiteSpace(city) ? "Toronto" : city;
+        return Task.CompletedTask;
+    }
+
+    private Task OnEditCityChanged(string city)
+    {
+        _editProperty.City = string.IsNullOrWhiteSpace(city) ? "Toronto" : city;
+        return Task.CompletedTask;
+    }
+
+    private async Task ImportCsvAsync()
+    {
+        var imported = 0;
+        var skipped = 0;
+        var lines = _csvInput.Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries);
+        foreach (var line in lines)
+        {
+            var parts = line.Split(',');
+            if (parts.Length < 4)
+            {
+                skipped++;
+                continue;
+            }
+
+            var name = parts[0].Trim();
+            var address = parts[1].Trim();
+            var city = parts[2].Trim();
+            if (string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(address) || string.IsNullOrWhiteSpace(city) || !decimal.TryParse(parts[3], out var revenue))
+            {
+                skipped++;
+                continue;
+            }
+
+            if (_items.Any(x => string.Equals(x.Name, name, StringComparison.OrdinalIgnoreCase) && string.Equals(x.AddressLine1, address, StringComparison.OrdinalIgnoreCase)))
+            {
+                skipped++;
+                continue;
+            }
+
+            await DataService.AddPropertyAsync(new Property
+            {
+                Name = name,
+                AddressLine1 = address,
+                City = city,
+                Province = "ON",
+                MonthlyRevenueTarget = revenue
+            });
+            imported++;
+        }
+        _csvInput = string.Empty;
+        await ReloadAsync();
+        _importResult = $"Imported {imported} row(s); skipped {skipped}.";
+    }
+
+    private int GetFilteredVacantUnits()
+        => FilteredProperties.Sum(property => GetUnitsForProperty(property.Id).Count(x => !x.IsOccupied));
+
+    private decimal GetFilteredRentRoll()
+        => FilteredProperties.Sum(property => GetUnitsForProperty(property.Id).Sum(x => x.MonthlyRent));
+
+    private string GetAverageReadinessLabel()
+    {
+        var properties = FilteredProperties.ToList();
+        if (properties.Count == 0)
+        {
+            return "0/100";
+        }
+
+        var average = properties.Average(property =>
+        {
+            var propertyUnits = GetUnitsForProperty(property.Id);
+            return GetMarketingReadinessScore(property, propertyUnits, propertyUnits.Count(x => x.IsOccupied), propertyUnits.Sum(x => x.MonthlyRent));
+        });
+
+        return $"{Math.Round(average, 0)}/100";
+    }
+
+    private List<Unit> GetUnitsForProperty(Guid propertyId) => _units.Where(x => x.PropertyId == propertyId).OrderBy(x => x.UnitNumber).ToList();
+
+    private static string FormatAddress(Property property)
+    {
+        var parts = new[] { property.AddressLine1, property.City, property.Province, property.PostalCode }
+            .Where(x => !string.IsNullOrWhiteSpace(x));
+        return string.Join(", ", parts);
+    }
+
+    private static string GetOccupancyLabel(int totalUnits, int occupiedUnits)
+        => totalUnits == 0 ? "No units" : $"{Math.Round((decimal)occupiedUnits / totalUnits * 100, 0)}%";
+
+    private static string GetVarianceToTarget(Property property, decimal monthlyRent)
+    {
+        var variance = monthlyRent - property.MonthlyRevenueTarget;
+        return variance == 0 ? "On target" : variance > 0 ? $"+{variance:C}" : $"{variance:C}";
+    }
+
+    private static int GetMarketingReadinessScore(Property property, List<Unit> propertyUnits, int occupiedCount, decimal monthlyRent)
+    {
+        var score = 0;
+
+        if (!string.IsNullOrWhiteSpace(property.PropertyType)) score += 10;
+        if (!string.IsNullOrWhiteSpace(property.PostalCode)) score += 10;
+        if (!string.IsNullOrWhiteSpace(property.AmenitySummary)) score += 20;
+        if (!string.IsNullOrWhiteSpace(property.NeighborhoodNotes)) score += 15;
+        if (!string.IsNullOrWhiteSpace(property.LeasingNotes)) score += 20;
+        if (!string.IsNullOrWhiteSpace(property.OperationalNotes)) score += 10;
+        if (propertyUnits.Count > 0) score += 10;
+        if (occupiedCount > 0 || monthlyRent > 0) score += 5;
+
+        return Math.Min(score, 100);
+    }
+
+    private static Color GetReadinessColor(int score)
+        => score >= 80 ? Color.Success : score >= 55 ? Color.Warning : Color.Error;
+
+    private static string GetReadinessSummary(int score)
+        => score >= 80
+            ? "This property is well documented and ready for consistent leasing execution."
+            : score >= 55
+                ? "Good baseline, but more positioning detail would improve leasing consistency."
+                : "High upside: complete the playbook fields to strengthen leasing quality and team execution.";
+
+    private static string GetPerformanceLabel(Property property, List<Unit> propertyUnits, int occupiedCount, decimal monthlyRent)
+    {
+        if (propertyUnits.Count == 0)
+        {
+            return "Setup needed";
+        }
+
+        if (occupiedCount == propertyUnits.Count && monthlyRent >= property.MonthlyRevenueTarget)
+        {
+            return "Performing";
+        }
+
+        if (occupiedCount == 0)
+        {
+            return "Needs leasing";
+        }
+
+        return "Watchlist";
+    }
+
+    private static Color GetPerformanceColor(Property property, List<Unit> propertyUnits, int occupiedCount, decimal monthlyRent)
+    {
+        if (propertyUnits.Count == 0)
+        {
+            return Color.Info;
+        }
+
+        if (occupiedCount == propertyUnits.Count && monthlyRent >= property.MonthlyRevenueTarget)
+        {
+            return Color.Success;
+        }
+
+        if (occupiedCount == 0)
+        {
+            return Color.Error;
+        }
+
+        return Color.Warning;
+    }
+
+    private static string BuildPropertyNote(Property property, List<Unit> propertyUnits, int occupiedCount, int vacantCount)
+    {
+        if (propertyUnits.Count == 0)
+        {
+            return "No units configured yet. Add suites to start tracking occupancy, rent and leasing activity for this address.";
+        }
+
+        if (vacantCount > 0)
+        {
+            return $"{vacantCount} unit(s) are currently vacant. Focus next on leasing readiness, showing cadence and pricing alignment against the monthly target of {property.MonthlyRevenueTarget:C}.";
+        }
+
+        return $"This property is fully occupied across {occupiedCount} unit(s). Use it as a stable rent-roll asset and monitor renewals, maintenance timing and Ontario compliance deadlines.";
+    }
+
+    private static string GetIdealRenterProfile(Property property)
+    {
+        if (property.PropertyType.Contains("student", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Best positioned for students and parents prioritizing predictable operations, transit and nearby amenities.";
+        }
+
+        if (property.PropertyType.Contains("single-family", StringComparison.OrdinalIgnoreCase) || property.PropertyType.Contains("townhome", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Strong fit for longer-stay households looking for neighbourhood stability, storage and practical daily living.";
+        }
+
+        return "Best suited for professionals and couples who value location quality, polished leasing presentation and smooth move-in execution.";
+    }
+
+    private static string GetNextPortfolioAction(Property property, List<Unit> propertyUnits, int vacantCount, int readinessScore)
+    {
+        if (propertyUnits.Count == 0)
+        {
+            return "Add units first so occupancy, rent roll and leasing visibility become actionable inside the portfolio.";
+        }
+
+        if (vacantCount > 0)
+        {
+            return "Prioritize vacancy recovery: confirm pricing, refresh the showing story and tighten follow-up cadence on open suites.";
+        }
+
+        if (readinessScore < 80)
+        {
+            return "Complete the missing playbook fields to make renewals, turnovers and new listings more consistent for the team.";
+        }
+
+        return "Use this property as a benchmark asset and document what should be replicated across similar addresses in the portfolio.";
+    }
+
+    private static string GetOperationsFocus(Property property, int vacantCount)
+    {
+        if (vacantCount > 0)
+        {
+            return "Keep turnover speed high, align vendors early and remove friction between vacancy, maintenance and leasing handoff.";
+        }
+
+        if (string.IsNullOrWhiteSpace(property.OperationalNotes))
+        {
+            return "Add repeatable operating notes so onsite staff and external vendors execute the asset the same way every time.";
+        }
+
+        return property.OperationalNotes;
+    }
+
+    private static string GetPricingPosture(Property property, decimal monthlyRent, int vacantCount)
+    {
+        if (vacantCount > 0)
+        {
+            return $"Protect revenue recovery first. Benchmark against the target of {property.MonthlyRevenueTarget:C}, tighten showing speed and avoid overpricing vacant suites.";
+        }
+
+        if (monthlyRent > property.MonthlyRevenueTarget)
+        {
+            return "This asset is outperforming target. Preserve pricing discipline and document why this positioning resonates with renters.";
+        }
+
+        if (monthlyRent < property.MonthlyRevenueTarget)
+        {
+            return "Revenue sits below target. Review unit mix, renewal strategy and whether the property story supports the desired price point.";
+        }
+
+        return "Revenue is on target. Focus on keeping renewals smooth and protecting turnover quality rather than chasing avoidable concessions.";
+    }
+
+    private static string GetSuggestedHeadline(Property property)
+    {
+        var city = string.IsNullOrWhiteSpace(property.City) ? "Toronto" : property.City;
+
+        if (property.PropertyType.Contains("student", StringComparison.OrdinalIgnoreCase))
+        {
+            return $"Student-ready living in {city} with practical convenience and fast move-in support.";
+        }
+
+        if (property.PropertyType.Contains("single-family", StringComparison.OrdinalIgnoreCase) || property.PropertyType.Contains("townhome", StringComparison.OrdinalIgnoreCase))
+        {
+            return $"Stable family-oriented rental in {city} with practical space and everyday convenience.";
+        }
+
+        if (property.PropertyType.Contains("luxury", StringComparison.OrdinalIgnoreCase) || property.PropertyType.Contains("waterfront", StringComparison.OrdinalIgnoreCase) || property.PropertyType.Contains("executive", StringComparison.OrdinalIgnoreCase))
+        {
+            return $"Premium {property.PropertyType.ToLowerInvariant()} living in {city} with polished presentation and strong renter appeal.";
+        }
+
+        return $"Well-positioned {property.PropertyType.ToLowerInvariant()} rental in {city} with commuter-friendly appeal and disciplined operations.";
+    }
+
+    private static string GetAssetStage(List<Unit> propertyUnits, int vacantCount, int readinessScore)
+    {
+        if (propertyUnits.Count == 0) return "Setup";
+        if (vacantCount > 0) return "Lease-up";
+        if (readinessScore < 80) return "Stabilize playbook";
+        return "Stabilized";
+    }
+
+    private static Color GetAssetStageColor(List<Unit> propertyUnits, int vacantCount, int readinessScore)
+    {
+        var stage = GetAssetStage(propertyUnits, vacantCount, readinessScore);
+        return stage switch
+        {
+            "Setup" => Color.Info,
+            "Lease-up" => Color.Warning,
+            "Stabilize playbook" => Color.Secondary,
+            _ => Color.Success
+        };
+    }
+
+    private static string GetAssetStageNarrative(List<Unit> propertyUnits, int vacantCount, int readinessScore)
+    {
+        var stage = GetAssetStage(propertyUnits, vacantCount, readinessScore);
+        return stage switch
+        {
+            "Setup" => "The asset structure is not fully mapped yet. Finish the base setup before relying on portfolio insights.",
+            "Lease-up" => "This address needs focused vacancy execution, pricing discipline and sharper listing follow-through.",
+            "Stabilize playbook" => "Occupancy is workable, but the commercial playbook still needs stronger documentation for repeatable team execution.",
+            _ => "The property is documented and operationally steady enough to serve as a benchmark asset in the portfolio."
+        };
+    }
+
+    private static List<string> GetMissingPlaybookItems(Property property, List<Unit> propertyUnits)
+    {
+        var gaps = new List<string>();
+
+        if (string.IsNullOrWhiteSpace(property.AmenitySummary)) gaps.Add("Amenities summary");
+        if (string.IsNullOrWhiteSpace(property.NeighborhoodNotes)) gaps.Add("Neighborhood positioning");
+        if (string.IsNullOrWhiteSpace(property.LeasingNotes)) gaps.Add("Leasing strategy");
+        if (string.IsNullOrWhiteSpace(property.OperationalNotes)) gaps.Add("Operations notes");
+        if (propertyUnits.Count == 0) gaps.Add("Units mapping");
+
+        return gaps;
+    }
+
+    private static List<string> GetRecommendedActions(Property property, List<Unit> propertyUnits, int vacantCount, int readinessScore, decimal monthlyRent)
+    {
+        var actions = new List<string>();
+
+        if (propertyUnits.Count == 0)
+        {
+            actions.Add("Add the unit mix so occupancy, rent roll and leasing performance become measurable.");
+        }
+
+        if (vacantCount > 0)
+        {
+            actions.Add("Launch a vacancy recovery sprint with sharper pricing, faster showings and tighter follow-up.");
+        }
+
+        if (readinessScore < 80)
+        {
+            actions.Add("Complete the missing playbook inputs to improve consistency across listings, tours and renewals.");
+        }
+
+        if (monthlyRent < property.MonthlyRevenueTarget)
+        {
+            actions.Add("Review the pricing story and positioning against the revenue target before offering concessions.");
+        }
+
+        if (actions.Count == 0)
+        {
+            actions.Add("Document what is working here and reuse this property as the benchmark playbook for similar assets.");
+            actions.Add("Stay ahead of renewals and maintenance windows to protect the current stabilized performance.");
+        }
+
+        return actions.Take(3).ToList();
+    }
+
+    private static void ApplyTemplatesToProperty(Property property, string amenityTemplate, string neighborhoodTemplate, string leasingTemplate, string operationsTemplate)
+    {
+        if (!string.IsNullOrWhiteSpace(amenityTemplate))
+        {
+            property.AmenitySummary = amenityTemplate switch
+            {
+                "Essential urban living" => "Laundry access, secure entry, practical storage and daily convenience features that support reliable city living.",
+                "Lifestyle-driven premium" => "Fitness, outdoor amenity space, upgraded finishes and convenience features that justify a stronger rent story.",
+                "Family convenience" => "Parking, storage, durable layouts and practical amenities that make longer-stay household living easier.",
+                "Student practical needs" => "Transit access, shared study-friendly layouts, durable finishes and simple move-in convenience for recurring turnovers.",
+                _ => property.AmenitySummary
+            };
+        }
+
+        if (!string.IsNullOrWhiteSpace(neighborhoodTemplate))
+        {
+            property.NeighborhoodNotes = neighborhoodTemplate switch
+            {
+                "Transit-led urban appeal" => $"Strong appeal for renters seeking quick access to transit, daily retail and a smooth commute around {property.City}.",
+                "Family-oriented neighbourhood" => $"Position around stability, schools, parks and daily convenience for households evaluating longer stays in {property.City}.",
+                "Student convenience corridor" => $"Best marketed around campus access, transit simplicity and predictable day-to-day convenience for students and guarantors.",
+                "Waterfront lifestyle" => "Lead with walkability, views, recreation access and lifestyle differentiation that strengthens emotional renter interest.",
+                "Value repositioning pocket" => $"Useful for renters trading a prime core address for more space, better value and practical commuting from this {property.City} pocket.",
+                _ => property.NeighborhoodNotes
+            };
+        }
+
+        if (!string.IsNullOrWhiteSpace(leasingTemplate))
+        {
+            property.LeasingNotes = leasingTemplate switch
+            {
+                "Premium professional positioning" => "Lead with finish quality, low-friction commuting and a polished move-in experience for professionals and couples.",
+                "Fast vacancy recovery" => "Simplify the story, keep pricing sharp and run a tighter follow-up cadence to compress vacancy days without diluting quality.",
+                "Long-stay household retention" => "Emphasize stability, practical layout value and resident experience to attract lower-turnover households.",
+                "Student turnover cadence" => "Prepare for seasonal peaks, standardize showings and keep documentation and move-in workflows fast for recurring cycles.",
+                "Renovation-led rent lift" => "Use upgraded finishes and clearer before/after positioning to support pricing confidence and stronger listing conversion.",
+                _ => property.LeasingNotes
+            };
+        }
+
+        if (!string.IsNullOrWhiteSpace(operationsTemplate))
+        {
+            property.OperationalNotes = operationsTemplate switch
+            {
+                "Turnover speed" => "Pre-book vendors, standardize refresh scope and reduce idle time between notice, maintenance and marketing launch.",
+                "Vendor coordination" => "Keep vendor expectations, access steps and closeout communication tight so the team can move from issue to completion faster.",
+                "Preventive maintenance" => "Prioritize recurring checks and small interventions early to prevent avoidable resident disruption and revenue leakage.",
+                "Resident experience" => "Maintain clear communication, dependable service timing and cleaner handoffs to strengthen renewals and referrals.",
+                "Compliance-heavy operations" => "Track Ontario notice windows, safety checks and documentation discipline so compliance work stays visible and repeatable.",
+                _ => property.OperationalNotes
+            };
+        }
+    }
+
+    private void ResetNewTemplates()
+    {
+        SetNewTemplateDefaults(_newProperty.PropertyType);
+    }
+
+    private void ResetEditTemplates()
+    {
+        SetEditTemplateDefaults(_editProperty.PropertyType);
+    }
+
+    private void SetNewTemplateDefaults(string propertyType)
+    {
+        _newAmenityTemplate = GetRecommendedAmenityTemplate(propertyType);
+        _newNeighborhoodTemplate = GetRecommendedNeighborhoodTemplate(propertyType);
+        _newLeasingTemplate = GetRecommendedLeasingTemplate(propertyType);
+        _newOperationsTemplate = GetRecommendedOperationsTemplate(propertyType);
+    }
+
+    private void SetEditTemplateDefaults(string propertyType)
+    {
+        _editAmenityTemplate = GetRecommendedAmenityTemplate(propertyType);
+        _editNeighborhoodTemplate = GetRecommendedNeighborhoodTemplate(propertyType);
+        _editLeasingTemplate = GetRecommendedLeasingTemplate(propertyType);
+        _editOperationsTemplate = GetRecommendedOperationsTemplate(propertyType);
+    }
+
+    private Task<IEnumerable<string>> SearchPropertyTypesAsync(string? value, CancellationToken cancellationToken)
+        => SearchOptionsAsync(_propertyTypes, value, cancellationToken);
+
+    private Task<IEnumerable<string>> SearchCitiesAsync(string? value, CancellationToken cancellationToken)
+        => SearchOptionsAsync(_cities, value, cancellationToken);
+
+    private Task<IEnumerable<string>> SearchAmenityTemplatesAsync(string? value, CancellationToken cancellationToken)
+        => SearchOptionsAsync(_amenityTemplates, value, cancellationToken);
+
+    private Task<IEnumerable<string>> SearchNeighborhoodTemplatesAsync(string? value, CancellationToken cancellationToken)
+        => SearchOptionsAsync(_neighborhoodTemplates, value, cancellationToken);
+
+    private Task<IEnumerable<string>> SearchLeasingTemplatesAsync(string? value, CancellationToken cancellationToken)
+        => SearchOptionsAsync(_leasingTemplates, value, cancellationToken);
+
+    private Task<IEnumerable<string>> SearchOperationsTemplatesAsync(string? value, CancellationToken cancellationToken)
+        => SearchOptionsAsync(_operationsTemplates, value, cancellationToken);
+
+    private static Task<IEnumerable<string>> SearchOptionsAsync(IEnumerable<string> options, string? value, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        var results = string.IsNullOrWhiteSpace(value)
+            ? options
+            : options.Where(option => option.Contains(value, StringComparison.OrdinalIgnoreCase));
+        return Task.FromResult(results);
+    }
+
+    private static string GetMarketSegment(Property property)
+    {
+        if (property.PropertyType.Contains("student", StringComparison.OrdinalIgnoreCase)) return "Student market";
+        if (property.PropertyType.Contains("single-family", StringComparison.OrdinalIgnoreCase) || property.PropertyType.Contains("townhome", StringComparison.OrdinalIgnoreCase)) return "Family rental market";
+        if (property.PropertyType.Contains("luxury", StringComparison.OrdinalIgnoreCase) || property.PropertyType.Contains("executive", StringComparison.OrdinalIgnoreCase) || property.PropertyType.Contains("waterfront", StringComparison.OrdinalIgnoreCase)) return "Premium renter market";
+        if (property.City.Contains("Toronto", StringComparison.OrdinalIgnoreCase) || property.City.Contains("Mississauga", StringComparison.OrdinalIgnoreCase) || property.City.Contains("Markham", StringComparison.OrdinalIgnoreCase)) return "Urban commuter market";
+        return "Core rental market";
+    }
+
+    private static string GetRecommendedStrategyPack(Property property)
+        => $"{GetRecommendedLeasingTemplate(property.PropertyType)} + {GetRecommendedOperationsTemplate(property.PropertyType)}";
+
+    private static string GetMarketNarrative(Property property)
+    {
+        var city = string.IsNullOrWhiteSpace(property.City) ? "this market" : property.City;
+        var segment = GetMarketSegment(property);
+
+        if (segment == "Student market")
+        {
+            return $"In {city}, emphasize speed, predictability and recurring seasonal readiness to win in the student segment.";
+        }
+
+        if (segment == "Family rental market")
+        {
+            return $"In {city}, stability, storage, schools and resident experience should anchor the property story for family-oriented renters.";
+        }
+
+        if (segment == "Premium renter market")
+        {
+            return $"In {city}, lead with finish quality, convenience and a polished leasing journey to support stronger pricing confidence.";
+        }
+
+        return $"In {city}, combine practical amenities, commuter convenience and disciplined follow-up to strengthen leasing conversion.";
+    }
+
+    private static string GetRecommendedAmenityTemplate(string propertyType)
+    {
+        if (propertyType.Contains("student", StringComparison.OrdinalIgnoreCase)) return "Student practical needs";
+        if (propertyType.Contains("single-family", StringComparison.OrdinalIgnoreCase) || propertyType.Contains("townhome", StringComparison.OrdinalIgnoreCase)) return "Family convenience";
+        if (propertyType.Contains("waterfront", StringComparison.OrdinalIgnoreCase) || propertyType.Contains("condo", StringComparison.OrdinalIgnoreCase)) return "Lifestyle-driven premium";
+        return "Essential urban living";
+    }
+
+    private static string GetRecommendedNeighborhoodTemplate(string propertyType)
+    {
+        if (propertyType.Contains("student", StringComparison.OrdinalIgnoreCase)) return "Student convenience corridor";
+        if (propertyType.Contains("single-family", StringComparison.OrdinalIgnoreCase) || propertyType.Contains("townhome", StringComparison.OrdinalIgnoreCase)) return "Family-oriented neighbourhood";
+        if (propertyType.Contains("waterfront", StringComparison.OrdinalIgnoreCase)) return "Waterfront lifestyle";
+        return "Transit-led urban appeal";
+    }
+
+    private static string GetRecommendedLeasingTemplate(string propertyType)
+    {
+        if (propertyType.Contains("student", StringComparison.OrdinalIgnoreCase)) return "Student turnover cadence";
+        if (propertyType.Contains("single-family", StringComparison.OrdinalIgnoreCase) || propertyType.Contains("townhome", StringComparison.OrdinalIgnoreCase)) return "Long-stay household retention";
+        if (propertyType.Contains("condo", StringComparison.OrdinalIgnoreCase) || propertyType.Contains("waterfront", StringComparison.OrdinalIgnoreCase)) return "Premium professional positioning";
+        return "Fast vacancy recovery";
+    }
+
+    private static string GetRecommendedOperationsTemplate(string propertyType)
+    {
+        if (propertyType.Contains("student", StringComparison.OrdinalIgnoreCase)) return "Turnover speed";
+        if (propertyType.Contains("single-family", StringComparison.OrdinalIgnoreCase)) return "Resident experience";
+        if (propertyType.Contains("purpose-built", StringComparison.OrdinalIgnoreCase) || propertyType.Contains("multi-family", StringComparison.OrdinalIgnoreCase)) return "Preventive maintenance";
+        return "Vendor coordination";
+    }
+
+    private static string GetPostalCodeOrFallback(Property property)
+        => string.IsNullOrWhiteSpace(property.PostalCode) ? "Postal pending" : property.PostalCode;
+
+    private static string GetTextOrFallback(string value, string fallback)
+        => string.IsNullOrWhiteSpace(value) ? fallback : value;
+}

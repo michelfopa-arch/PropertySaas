@@ -1,0 +1,31 @@
+@inherits LayoutComponentBase
+@inject PropertySaaS.Application.Common.CurrentOrganization CurrentOrganization
+
+<MudLayout>
+    <MudDrawer Open="true" Elevation="1" Variant="DrawerVariant.Responsive" Class="app-drawer">
+        <MudStack Spacing="3" Class="pa-4">
+            <MudStack Spacing="0">
+                <MudText Typo="Typo.h5" Class="brand-title">PropertySaaS</MudText>
+                <MudText Typo="Typo.body2" Class="brand-subtitle">Ontario landlord platform</MudText>
+            </MudStack>
+
+            <MudPaper Elevation="0" Class="tenant-context pa-4">
+                <MudText Typo="Typo.subtitle1" Class="tenant-name">@CurrentOrganization.OrganizationName</MudText>
+                <MudText Typo="Typo.body2" Class="tenant-user">@CurrentOrganization.UserEmail</MudText>
+                <MudChip T="string" Color="Color.Warning" Variant="Variant.Outlined" Size="Size.Small" Class="mt-3">@CurrentOrganization.Role</MudChip>
+            </MudPaper>
+
+            <NavMenu />
+        </MudStack>
+    </MudDrawer>
+
+    <MudMainContent>
+        <MudAppBar Elevation="0" Dense="true" Color="Color.Surface" Class="top-bar">
+            <MudText Typo="Typo.subtitle1">Portfolio operations</MudText>
+        </MudAppBar>
+
+        <main class="content-shell">
+            @Body
+        </main>
+    </MudMainContent>
+</MudLayout>

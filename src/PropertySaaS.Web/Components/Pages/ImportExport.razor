@@ -1,0 +1,29 @@
+@attribute [Authorize]
+@page "/import-export"
+
+<PageTitle>Import Export</PageTitle>
+
+<MudStack Spacing="3">
+    <MudText Typo="Typo.h4">Import / Export</MudText>
+
+    <MudGrid Spacing="3">
+        <MudItem xs="12" md="6">
+            <MudPaper Class="pa-4 h-100">
+                <MudText Typo="Typo.h6" GutterBottom="true">Import</MudText>
+                <MudText Typo="Typo.body1">CSV onboarding for properties, units and tenants is designed as the fastest migration path from spreadsheets.</MudText>
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12" md="6">
+            <MudPaper Class="pa-4 h-100">
+                <MudText Typo="Typo.h6" GutterBottom="true">Export</MudText>
+                <MudText Typo="Typo.body1">Download live CSV exports for portfolio operations.</MudText>
+                <MudStack Row="true" Spacing="2" Wrap="Wrap.Wrap" Class="mt-3">
+                    <MudButton Href="/export/properties" Variant="Variant.Filled" Color="Color.Primary">Export Properties CSV</MudButton>
+                    <MudButton Href="/export/tenants" Variant="Variant.Filled" Color="Color.Primary">Export Tenants CSV</MudButton>
+                    <MudButton Href="/export/leases" Variant="Variant.Filled" Color="Color.Primary">Export Leases CSV</MudButton>
+                </MudStack>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+</MudStack>

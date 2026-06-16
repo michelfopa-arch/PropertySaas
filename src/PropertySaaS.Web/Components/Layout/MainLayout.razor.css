@@ -1,0 +1,11 @@
+.app-drawer { background:linear-gradient(180deg, #0f2747 0%, #143a69 100%); color:white; border-right:none; }
+.brand-title { color:#fff; font-weight:700; }
+.brand-subtitle { color:#c9daef; }
+.tenant-context { background:rgba(255,255,255,.08); color:white; border-radius:20px; }
+.tenant-name { color:white; font-weight:600; }
+.tenant-user { color:#d7e6fa; word-break:break-word; }
+.top-bar { border-bottom:1px solid rgba(15,39,71,.08); }
+.content-shell { padding:2rem; min-height:calc(100vh - 64px); }
+.material-nav-menu ::deep .mud-nav-link { border-radius:14px; margin-bottom:.35rem; color:#dbe8f8; }
+.material-nav-menu ::deep .mud-nav-link.active,
+.material-nav-menu ::deep .mud-nav-link:hover { background:rgba(255,255,255,.12); color:white; }

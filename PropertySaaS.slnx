@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/PropertySaaS.Application/PropertySaaS.Application.csproj" />
+    <Project Path="src/PropertySaaS.Domain/PropertySaaS.Domain.csproj" />
+    <Project Path="src/PropertySaaS.Infrastructure/PropertySaaS.Infrastructure.csproj" />
+    <Project Path="src/PropertySaaS.Web/PropertySaaS.Web.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/PropertySaaS.Tests/PropertySaaS.Tests.csproj" />
+  </Folder>
+</Solution>
