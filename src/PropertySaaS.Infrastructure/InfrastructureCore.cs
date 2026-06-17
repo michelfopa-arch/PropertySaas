@@ -169,6 +169,16 @@ namespace PropertySaaS.Infrastructure.Services
     using PropertySaaS.Infrastructure.Data;
     using PropertySaaS.Infrastructure.Options;
 
+    public sealed class StripePlanPriceDto
+    {
+        public string Plan { get; set; } = string.Empty;
+        public string PriceId { get; set; } = string.Empty;
+        public string Currency { get; set; } = "usd";
+        public decimal UnitAmount { get; set; }
+        public string Interval { get; set; } = "month";
+        public string DisplayPrice { get; set; } = string.Empty;
+    }
+
     public class StripeBillingService
     {
         private readonly StripeOptions _options;
@@ -215,6 +225,48 @@ namespace PropertySaaS.Infrastructure.Services
             var session = await ReadAsync<StripeCheckoutSessionResponse>(response);
 
             return string.IsNullOrWhiteSpace(session.Url) ? cancelUrl : session.Url;
+        }
+
+        public async Task<List<StripePlanPriceDto>> GetPlanPricesAsync()
+        {
+            var plans = new[]
+            {
+                new { Plan = "Starter", PriceId = _options.StarterPriceId },
+                new { Plan = "Growth", PriceId = _options.GrowthPriceId },
+                new { Plan = "Pro", PriceId = _options.ProPriceId }
+            };
+
+            var results = new List<StripePlanPriceDto>();
+
+            foreach (var plan in plans)
+            {
+                if (string.IsNullOrWhiteSpace(_options.SecretKey) || string.IsNullOrWhiteSpace(plan.PriceId))
+                {
+                    results.Add(new StripePlanPriceDto
+                    {
+                        Plan = plan.Plan,
+                        PriceId = plan.PriceId,
+                        DisplayPrice = string.Empty
+                    });
+                    continue;
+                }
+
+                using var request = CreateRequest(HttpMethod.Get, $"prices/{plan.PriceId}");
+                using var response = await _httpClient.SendAsync(request);
+                var price = await ReadAsync<StripePriceResponse>(response);
+
+                results.Add(new StripePlanPriceDto
+                {
+                    Plan = plan.Plan,
+                    PriceId = plan.PriceId,
+                    Currency = price.Currency ?? "usd",
+                    UnitAmount = (price.UnitAmount ?? 0m) / 100m,
+                    Interval = price.Recurring?.Interval ?? "month",
+                    DisplayPrice = FormatDisplayPrice(price.UnitAmount, price.Currency, price.Recurring?.Interval)
+                });
+            }
+
+            return results;
         }
 
         public async Task<string> CreateBillingPortalAsync(string customerId, string returnUrl)
@@ -340,6 +392,28 @@ namespace PropertySaaS.Infrastructure.Services
             return null;
         }
 
+        private static string FormatDisplayPrice(decimal? unitAmountMinor, string? currency, string? interval)
+        {
+            if (!unitAmountMinor.HasValue)
+            {
+                return string.Empty;
+            }
+
+            var amount = unitAmountMinor.Value / 100m;
+            var normalizedCurrency = string.IsNullOrWhiteSpace(currency) ? "USD" : currency.ToUpperInvariant();
+            var symbol = normalizedCurrency switch
+            {
+                "CAD" => "$",
+                "USD" => "$",
+                "EUR" => "€",
+                "GBP" => "£",
+                _ => normalizedCurrency + " "
+            };
+
+            var intervalLabel = string.IsNullOrWhiteSpace(interval) ? "month" : interval;
+            return $"{symbol}{amount:0.##} / {intervalLabel}";
+        }
+
         private SubscriptionTier ResolveTierFromPriceId(string? priceId)
             => priceId switch
             {
@@ -459,6 +533,24 @@ namespace PropertySaaS.Infrastructure.Services
         {
             [JsonPropertyName("id")]
             public string? Id { get; set; }
+        }
+
+        private sealed class StripePriceResponse
+        {
+            [JsonPropertyName("currency")]
+            public string? Currency { get; set; }
+
+            [JsonPropertyName("unit_amount")]
+            public decimal? UnitAmount { get; set; }
+
+            [JsonPropertyName("recurring")]
+            public StripeRecurringPrice? Recurring { get; set; }
+        }
+
+        private sealed class StripeRecurringPrice
+        {
+            [JsonPropertyName("interval")]
+            public string? Interval { get; set; }
         }
 
         private sealed class StripeInvoiceResponse

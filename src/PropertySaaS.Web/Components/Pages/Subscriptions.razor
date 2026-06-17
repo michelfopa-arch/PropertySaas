@@ -2,6 +2,7 @@
 @page "/subscriptions"
 @inject SaasDataService DataService
 @inject NavigationManager NavigationManager
+@inject PropertySaaS.Infrastructure.Services.StripeBillingService StripeBillingService
 @using PropertySaaS.Web.Localization
 
 <PageTitle>@UiText.Get("Subscriptions_PageTitle")</PageTitle>
@@ -77,6 +78,10 @@
                             }
                         </MudStack>
                         <MudText Typo="Typo.body2" Color="Color.Secondary">@UiText.Get("Subscriptions_StarterSummary")</MudText>
+                        @if (TryGetPlanPrice("Starter", out var starterPrice))
+                        {
+                            <MudText Typo="Typo.subtitle2" Color="Color.Primary">@starterPrice</MudText>
+                        }
                         <MudList T="string" Dense="true">
                             <MudListItem T="string">@UiText.Get("Pricing_Starter1")</MudListItem>
                             <MudListItem T="string">@UiText.Get("Pricing_Starter2")</MudListItem>
@@ -98,6 +103,10 @@
                             }
                         </MudStack>
                         <MudText Typo="Typo.body2" Color="Color.Secondary">@UiText.Get("Subscriptions_GrowthSummary")</MudText>
+                        @if (TryGetPlanPrice("Growth", out var growthPrice))
+                        {
+                            <MudText Typo="Typo.subtitle2" Color="Color.Primary">@growthPrice</MudText>
+                        }
                         <MudList T="string" Dense="true">
                             <MudListItem T="string">@UiText.Get("Pricing_Growth1")</MudListItem>
                             <MudListItem T="string">@UiText.Get("Pricing_Growth3")</MudListItem>
@@ -119,6 +128,10 @@
                             }
                         </MudStack>
                         <MudText Typo="Typo.body2" Color="Color.Secondary">@UiText.Get("Subscriptions_ProSummary")</MudText>
+                        @if (TryGetPlanPrice("Pro", out var proPrice))
+                        {
+                            <MudText Typo="Typo.subtitle2" Color="Color.Primary">@proPrice</MudText>
+                        }
                         <MudList T="string" Dense="true">
                             <MudListItem T="string">@UiText.Get("Pricing_Pro1")</MudListItem>
                             <MudListItem T="string">@UiText.Get("Pricing_Pro4")</MudListItem>
@@ -143,12 +156,14 @@
 
 @code {
     private SubscriptionEntitlementsDto? _entitlements;
+    private List<PropertySaaS.Infrastructure.Services.StripePlanPriceDto> _planPrices = new();
     private string? _checkoutMessage;
     private Severity _checkoutSeverity = Severity.Info;
 
     protected override async Task OnInitializedAsync()
     {
         _entitlements = await DataService.GetSubscriptionEntitlementsAsync();
+        _planPrices = await StripeBillingService.GetPlanPricesAsync();
         ResolveCheckoutMessage();
     }
 
@@ -186,5 +201,11 @@
 
     private bool IsCurrentPlan(string planName)
         => _entitlements is not null && string.Equals(_entitlements.PlanName, planName, StringComparison.OrdinalIgnoreCase);
+
+    private bool TryGetPlanPrice(string planName, out string displayPrice)
+    {
+        displayPrice = _planPrices.FirstOrDefault(x => string.Equals(x.Plan, planName, StringComparison.OrdinalIgnoreCase))?.DisplayPrice ?? string.Empty;
+        return !string.IsNullOrWhiteSpace(displayPrice);
+    }
 }
 
