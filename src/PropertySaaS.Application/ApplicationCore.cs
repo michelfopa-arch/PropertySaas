@@ -183,6 +183,8 @@ namespace PropertySaaS.Application.Common
         public bool IncludesPrioritySupport { get; set; }
         public bool IncludesAdvancedExports { get; set; }
         public string TrialBanner { get; set; } = string.Empty;
+        public DateTime? TrialEndsUtc { get; set; }
+        public int? TrialDaysRemaining { get; set; }
     }
 
     public sealed class SupportSessionDto
@@ -252,6 +254,10 @@ namespace PropertySaaS.Application.Features
         {
             var organization = await _db.Organizations.AsNoTracking().FirstOrDefaultAsync(x => x.Id == _current.OrganizationId, cancellationToken);
             var tier = organization?.SubscriptionTier ?? SubscriptionTier.Trial;
+            var trialEndsUtc = organization?.TrialEndsUtc;
+            int? trialDaysRemaining = trialEndsUtc.HasValue
+                ? Math.Max(0, (int)Math.Ceiling((trialEndsUtc.Value - DateTime.UtcNow).TotalDays))
+                : null;
 
             return tier switch
             {
@@ -264,7 +270,9 @@ namespace PropertySaaS.Application.Features
                     IncludesAuditLogs = false,
                     IncludesPrioritySupport = false,
                     IncludesAdvancedExports = false,
-                    TrialBanner = string.Empty
+                    TrialBanner = string.Empty,
+                    TrialEndsUtc = trialEndsUtc,
+                    TrialDaysRemaining = trialDaysRemaining
                 },
                 SubscriptionTier.Growth => new SubscriptionEntitlementsDto
                 {
@@ -275,7 +283,9 @@ namespace PropertySaaS.Application.Features
                     IncludesAuditLogs = true,
                     IncludesPrioritySupport = false,
                     IncludesAdvancedExports = true,
-                    TrialBanner = string.Empty
+                    TrialBanner = string.Empty,
+                    TrialEndsUtc = trialEndsUtc,
+                    TrialDaysRemaining = trialDaysRemaining
                 },
                 SubscriptionTier.Pro => new SubscriptionEntitlementsDto
                 {
@@ -286,7 +296,9 @@ namespace PropertySaaS.Application.Features
                     IncludesAuditLogs = true,
                     IncludesPrioritySupport = true,
                     IncludesAdvancedExports = true,
-                    TrialBanner = string.Empty
+                    TrialBanner = string.Empty,
+                    TrialEndsUtc = trialEndsUtc,
+                    TrialDaysRemaining = trialDaysRemaining
                 },
                 _ => new SubscriptionEntitlementsDto
                 {
@@ -297,7 +309,9 @@ namespace PropertySaaS.Application.Features
                     IncludesAuditLogs = true,
                     IncludesPrioritySupport = false,
                     IncludesAdvancedExports = false,
-                    TrialBanner = "14-day trial active"
+                    TrialBanner = "14-day trial active",
+                    TrialEndsUtc = trialEndsUtc,
+                    TrialDaysRemaining = trialDaysRemaining
                 }
             };
         }
@@ -497,6 +511,7 @@ namespace PropertySaaS.Application.Features
                 PreferredLanguage = profile.DefaultLanguage,
                 TimeZone = "America/Toronto",
                 SubscriptionTier = SubscriptionTier.Trial,
+                TrialEndsUtc = DateTime.UtcNow.AddDays(14),
                 IsActive = true,
                 CreatedUtc = DateTime.UtcNow
             };

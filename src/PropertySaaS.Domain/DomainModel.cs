@@ -38,6 +38,7 @@ namespace PropertySaaS.Domain.Entities
         public SubscriptionTier SubscriptionTier { get; set; } = SubscriptionTier.Trial;
         public string StripeCustomerId { get; set; } = string.Empty;
         public string StripeSubscriptionId { get; set; } = string.Empty;
+        public DateTime? TrialEndsUtc { get; set; }
         public bool IsActive { get; set; } = true;
         public ICollection<AppUser> Users { get; set; } = new List<AppUser>();
         public ICollection<OrganizationMembership> Memberships { get; set; } = new List<OrganizationMembership>();

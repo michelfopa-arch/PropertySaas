@@ -33,6 +33,10 @@
                     @if (!string.IsNullOrWhiteSpace(_entitlements.TrialBanner))
                     {
                         <MudAlert Severity="Severity.Info" Variant="Variant.Outlined">@UiText.Format("Dashboard_TrialBanner", _entitlements.TrialBanner, FormatUnits(_entitlements.MaxUnits), _entitlements.MaxUsers)</MudAlert>
+                        @if (_entitlements.TrialDaysRemaining.HasValue)
+                        {
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">@UiText.Format("Subscriptions_TrialDaysRemaining", _entitlements.TrialDaysRemaining.Value)</MudText>
+                        }
                     }
 
                     <MudGrid Spacing="2">

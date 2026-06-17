@@ -731,6 +731,8 @@ IF COL_LENGTH('Organizations', 'Province') IS NULL
     ALTER TABLE [Organizations] ADD [Province] nvarchar(8) NOT NULL CONSTRAINT DF_Organizations_Province DEFAULT 'ON';
 IF COL_LENGTH('Organizations', 'PreferredLanguage') IS NULL
     ALTER TABLE [Organizations] ADD [PreferredLanguage] nvarchar(16) NOT NULL CONSTRAINT DF_Organizations_PreferredLanguage DEFAULT 'en-CA';
+IF COL_LENGTH('Organizations', 'TrialEndsUtc') IS NULL
+    ALTER TABLE [Organizations] ADD [TrialEndsUtc] datetime2 NULL;
 IF COL_LENGTH('Users', 'PreferredLanguage') IS NULL
     ALTER TABLE [Users] ADD [PreferredLanguage] nvarchar(16) NOT NULL CONSTRAINT DF_Users_PreferredLanguage DEFAULT 'en-CA';
 IF COL_LENGTH('ComplianceReminders', 'Province') IS NULL
@@ -778,6 +780,9 @@ BEGIN
     INSERT INTO [OrganizationMemberships] ([Id], [CreatedUtc], [ModifiedUtc], [OrganizationId], [UserId], [Role], [Status])
     VALUES ('dddddddd-dddd-dddd-dddd-dddddddddddd', SYSUTCDATETIME(), NULL, '11111111-1111-1111-1111-111111111111', '66666666-6666-6666-6666-666666666666', 'Owner', 'Active');
 END;
+UPDATE [Organizations]
+SET [TrialEndsUtc] = DATEADD(day, 14, [CreatedUtc])
+WHERE [TrialEndsUtc] IS NULL AND [SubscriptionTier] = 0;
 """);
 }
 
