@@ -167,6 +167,14 @@ namespace PropertySaaS.Application.Common
         public DateTime ExpiresUtc { get; set; }
     }
 
+    public sealed class PendingWorkspaceInvitationDto
+    {
+        public string OrganizationName { get; set; } = string.Empty;
+        public string Role { get; set; } = string.Empty;
+        public DateTime ExpiresUtc { get; set; }
+        public string Token { get; set; } = string.Empty;
+    }
+
     public sealed class OrganizationInviteResult
     {
         public Guid InvitationId { get; set; }
@@ -579,6 +587,29 @@ namespace PropertySaaS.Application.Features
                     ExpiresUtc = x.ExpiresUtc
                 })
                 .ToListAsync();
+
+        public async Task<List<PendingWorkspaceInvitationDto>> GetPendingWorkspaceInvitationsAsync(CancellationToken cancellationToken = default)
+        {
+            if (!_current.IsAuthenticated || string.IsNullOrWhiteSpace(_current.UserEmail))
+            {
+                return new List<PendingWorkspaceInvitationDto>();
+            }
+
+            var normalizedEmail = _current.UserEmail.Trim().ToLowerInvariant();
+
+            return await _db.OrganizationInvitations
+                .AsNoTracking()
+                .Where(x => x.Email == normalizedEmail && x.Status == "Pending" && x.ExpiresUtc >= DateTime.UtcNow)
+                .OrderBy(x => x.Organization!.Name)
+                .Select(x => new PendingWorkspaceInvitationDto
+                {
+                    OrganizationName = x.Organization!.Name,
+                    Role = x.Role,
+                    ExpiresUtc = x.ExpiresUtc,
+                    Token = x.Token
+                })
+                .ToListAsync(cancellationToken);
+        }
 
         public async Task<OrganizationInviteResult> InviteUserAsync(string email, string role, string invitationBaseUrl, CancellationToken cancellationToken = default)
         {

@@ -506,6 +506,11 @@ app.MapGet("/account/post-login", ([FromServices] CurrentOrganization current) =
         return Results.LocalRedirect("/");
     }
 
+    if (current.HasOrganizationAccess)
+    {
+        return Results.LocalRedirect(current.RequiresOrganizationSelection ? "/onboarding/organization-picker" : "/dashboard");
+    }
+
     if (current.RequiresOrganizationSelection)
     {
         return Results.LocalRedirect("/onboarding/organization-picker");
@@ -516,7 +521,7 @@ app.MapGet("/account/post-login", ([FromServices] CurrentOrganization current) =
         return Results.LocalRedirect("/onboarding");
     }
 
-    return Results.LocalRedirect("/dashboard");
+    return Results.LocalRedirect("/onboarding");
 }).RequireAuthorization();
 
 app.MapGet("/culture/set", (string culture, string? redirectUri, HttpContext httpContext) =>

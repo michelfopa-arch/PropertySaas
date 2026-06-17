@@ -58,6 +58,24 @@
         <MudPaper Class="pa-4 marketing-card" Elevation="0">
             <MudText Typo="Typo.h6">@UiText.Get("Onboarding_JoinTitle")</MudText>
             <MudText Typo="Typo.body2">@UiText.Get("Onboarding_JoinHelp")</MudText>
+
+            @if (_pendingInvitations.Count > 0)
+            {
+                <MudList T="string" Dense="true" Class="mt-4">
+                    @foreach (var invitation in _pendingInvitations)
+                    {
+                        <MudListItem T="string">
+                            <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Wrap="Wrap.Wrap" Class="w-100">
+                                <div>
+                                    <MudText Typo="Typo.body1">@UiText.Format("Onboarding_PendingInviteOrganization", invitation.OrganizationName)</MudText>
+                                    <MudText Typo="Typo.body2" Color="Color.Secondary">@UiText.Format("Onboarding_PendingInviteRole", invitation.Role)</MudText>
+                                </div>
+                                <MudButton Href="@($"/invitations/accept?token={Uri.EscapeDataString(invitation.Token)}")" Variant="Variant.Filled" Color="Color.Primary">@UiText.Get("Onboarding_AcceptInvite")</MudButton>
+                            </MudStack>
+                        </MudListItem>
+                    }
+                </MudList>
+            }
         </MudPaper>
     </MudStack>
 </MudContainer>
@@ -69,17 +87,23 @@
     private bool _isLoadingDemo;
     private string? _feedback;
     private Severity _feedbackSeverity = Severity.Success;
+    private List<PendingWorkspaceInvitationDto> _pendingInvitations = new();
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
         if (CurrentOrganization.HasOrganizationAccess)
         {
             NavigationManager.NavigateTo("/dashboard");
+            return;
         }
-        else if (CurrentOrganization.RequiresOrganizationSelection)
+
+        if (CurrentOrganization.RequiresOrganizationSelection)
         {
             NavigationManager.NavigateTo("/onboarding/organization-picker");
+            return;
         }
+
+        _pendingInvitations = await DataService.GetPendingWorkspaceInvitationsAsync();
     }
 
     private async Task LoadDemoAsync()
