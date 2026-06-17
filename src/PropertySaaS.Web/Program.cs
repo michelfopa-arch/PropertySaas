@@ -366,7 +366,12 @@ app.MapGet("/account/login", async (HttpContext httpContext) =>
         return;
     }
 
-    await AuthenticationHttpContextExtensions.ChallengeAsync(httpContext, OpenIdConnectDefaults.AuthenticationScheme, new AuthenticationProperties { RedirectUri = "/account/post-login" });
+    var invitation = httpContext.Request.Query["invitation"].ToString();
+    var redirectUri = string.IsNullOrWhiteSpace(invitation)
+        ? "/account/post-login"
+        : $"/account/post-login?invitation={Uri.EscapeDataString(invitation)}";
+
+    await AuthenticationHttpContextExtensions.ChallengeAsync(httpContext, OpenIdConnectDefaults.AuthenticationScheme, new AuthenticationProperties { RedirectUri = redirectUri });
 });
 
 app.MapGet("/account/sign-up", (HttpContext httpContext, [FromServices] ClerkOptions options) =>
@@ -375,7 +380,10 @@ app.MapGet("/account/sign-up", (HttpContext httpContext, [FromServices] ClerkOpt
         ? "/sign-in"
         : options.SignInUrl;
 
-    var postLoginUrl = $"{httpContext.Request.Scheme}://{httpContext.Request.Host}/account/post-login";
+    var invitation = httpContext.Request.Query["invitation"].ToString();
+    var postLoginUrl = string.IsNullOrWhiteSpace(invitation)
+        ? $"{httpContext.Request.Scheme}://{httpContext.Request.Host}/account/post-login"
+        : $"{httpContext.Request.Scheme}://{httpContext.Request.Host}/account/post-login?invitation={Uri.EscapeDataString(invitation)}";
     var redirectTarget = $"{signInUrl}{(signInUrl.Contains('?') ? '&' : '?')}redirect_url={Uri.EscapeDataString(postLoginUrl)}";
     return Results.Redirect(redirectTarget);
 });
@@ -478,7 +486,7 @@ app.MapGet("/invitations/accept", async (string token, HttpContext httpContext, 
 {
     if (httpContext.User?.Identity?.IsAuthenticated != true)
     {
-        return Results.Redirect($"/sign-in?invitation={Uri.EscapeDataString(token)}");
+        return Results.Redirect($"/account/login?invitation={Uri.EscapeDataString(token)}");
     }
 
     var email = httpContext.User.Claims.FirstOrDefault(c => c.Type.Contains("email", StringComparison.OrdinalIgnoreCase))?.Value;
@@ -489,7 +497,7 @@ app.MapGet("/invitations/accept", async (string token, HttpContext httpContext, 
     }
 
     await dataService.AcceptInvitationAsync(token, email, clerkUserId, ResolveUserFullName(httpContext.User, email));
-    return Results.LocalRedirect("/");
+    return Results.LocalRedirect("/account/post-login");
 });
 
 app.MapGet("/account/logout", async (HttpContext httpContext) =>
@@ -499,11 +507,30 @@ app.MapGet("/account/logout", async (HttpContext httpContext) =>
     httpContext.Response.Redirect("/");
 });
 
-app.MapGet("/account/post-login", ([FromServices] CurrentOrganization current) =>
+app.MapGet("/account/post-login", async (string? invitation, HttpContext httpContext, [FromServices] CurrentOrganization current, [FromServices] SaasDataService dataService) =>
 {
     if (!current.IsAuthenticated)
     {
         return Results.LocalRedirect("/");
+    }
+
+    if (!string.IsNullOrWhiteSpace(invitation))
+    {
+        var email = httpContext.User.Claims.FirstOrDefault(c => c.Type.Contains("email", StringComparison.OrdinalIgnoreCase))?.Value;
+        var clerkUserId = httpContext.User.Claims.FirstOrDefault(c => c.Type == "sub")?.Value ?? string.Empty;
+
+        if (!string.IsNullOrWhiteSpace(email))
+        {
+            try
+            {
+                await dataService.AcceptInvitationAsync(invitation, email, clerkUserId, ResolveUserFullName(httpContext.User, email));
+                return Results.LocalRedirect("/account/post-login");
+            }
+            catch (InvalidOperationException)
+            {
+                return Results.LocalRedirect("/onboarding");
+            }
+        }
     }
 
     if (current.HasOrganizationAccess)

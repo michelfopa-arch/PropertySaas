@@ -45,6 +45,16 @@
         </MudPaper>
 
         <MudPaper Class="pa-4 marketing-card" Elevation="0">
+            <MudText Typo="Typo.h6">@UiText.Get("Onboarding_WorkflowChoicesTitle")</MudText>
+            <MudText Typo="Typo.body2" Class="mb-4">@UiText.Get("Onboarding_WorkflowChoicesHelp")</MudText>
+            <MudList T="string" Dense="true">
+                <MudListItem T="string">@UiText.Get("Onboarding_WorkflowChoiceJoin")</MudListItem>
+                <MudListItem T="string">@UiText.Get("Onboarding_WorkflowChoiceCreate")</MudListItem>
+                <MudListItem T="string">@UiText.Get("Onboarding_WorkflowChoiceDemo")</MudListItem>
+            </MudList>
+        </MudPaper>
+
+        <MudPaper Class="pa-4 marketing-card" Elevation="0">
             <MudText Typo="Typo.h6">@UiText.Get("Onboarding_TrialPlanTitle")</MudText>
             <MudText Typo="Typo.body2" Class="mb-4">@UiText.Get("Onboarding_TrialPlanHelp")</MudText>
             <MudList T="string" Dense="true">

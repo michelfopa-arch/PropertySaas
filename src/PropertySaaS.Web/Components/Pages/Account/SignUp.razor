@@ -1,4 +1,5 @@
 @page "/sign-up"
+@inject NavigationManager NavigationManager
 @using PropertySaaS.Web.Localization
 
 <PageTitle>@UiText.Get("Auth_SignUpPageTitle")</PageTitle>
@@ -9,9 +10,26 @@
             <MudText Typo="Typo.h4">@UiText.Get("Auth_SignUpTitle")</MudText>
             <MudText Typo="Typo.body1" Color="Color.Secondary">@UiText.Get("Auth_SignUpSubtitle")</MudText>
             <MudStack Spacing="2">
-                <MudButton Href="/account/sign-up" Variant="Variant.Filled" Color="Color.Primary" FullWidth="true">@UiText.Get("Auth_StartFree")</MudButton>
-                <MudButton Href="/sign-in" Variant="Variant.Outlined" Color="Color.Default" FullWidth="true">@UiText.Get("Auth_AlreadyHaveAccount")</MudButton>
+                <MudButton Href="@SignUpHref" Variant="Variant.Filled" Color="Color.Primary" FullWidth="true">@UiText.Get("Auth_StartFree")</MudButton>
+                <MudButton Href="@SignInHref" Variant="Variant.Outlined" Color="Color.Default" FullWidth="true">@UiText.Get("Auth_AlreadyHaveAccount")</MudButton>
             </MudStack>
         </MudStack>
     </MudPaper>
 </MudContainer>
+
+@code {
+    private string SignUpHref => BuildHref("/account/sign-up");
+    private string SignInHref => BuildHref("/sign-in");
+
+    private string BuildHref(string basePath)
+    {
+        var uri = new Uri(NavigationManager.Uri);
+        var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query);
+        if (!query.TryGetValue("invitation", out var invitation) || string.IsNullOrWhiteSpace(invitation))
+        {
+            return basePath;
+        }
+
+        return $"{basePath}?invitation={Uri.EscapeDataString(invitation!)}";
+    }
+}
