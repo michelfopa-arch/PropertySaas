@@ -1,0 +1,27 @@
+@page "/account"
+@inject IConfiguration Configuration
+@using PropertySaaS.Infrastructure.Options
+@using PropertySaaS.Web.Localization
+
+<PageTitle>@UiText.Get("Auth_ManageAccountPageTitle")</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Small" Class="py-8">
+    <MudPaper Class="pa-6 marketing-card" Elevation="0">
+        <MudStack Spacing="3">
+            <MudText Typo="Typo.h4">@UiText.Get("Auth_ManageAccountTitle")</MudText>
+            <MudText Typo="Typo.body1" Color="Color.Secondary">@UiText.Get("Auth_ManageAccountSubtitle")</MudText>
+            <MudButton Href="@HostedUserProfileUrl" Variant="Variant.Filled" Color="Color.Primary" FullWidth="true">@UiText.Get("Auth_OpenAccountPortal")</MudButton>
+        </MudStack>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private string HostedUserProfileUrl => GetClerkOptions().UserProfileUrl;
+
+    private ClerkOptions GetClerkOptions()
+    {
+        var options = new ClerkOptions();
+        Configuration.GetSection("Clerk").Bind(options);
+        return options;
+    }
+}

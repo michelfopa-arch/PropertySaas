@@ -196,11 +196,41 @@ app.MapGet("/account/login", async (HttpContext httpContext) =>
 {
     if (!useClerkAuthentication)
     {
-        httpContext.Response.Redirect("/dashboard");
+        httpContext.Response.Redirect("/sign-in");
         return;
     }
 
     await AuthenticationHttpContextExtensions.ChallengeAsync(httpContext, OpenIdConnectDefaults.AuthenticationScheme, new AuthenticationProperties { RedirectUri = "/dashboard" });
+});
+
+app.MapGet("/account/sign-up", (HttpContext httpContext, [FromServices] ClerkOptions options) =>
+{
+    if (!string.IsNullOrWhiteSpace(options.SignUpUrl))
+    {
+        return Results.Redirect(options.SignUpUrl);
+    }
+
+    return Results.LocalRedirect("/sign-up");
+});
+
+app.MapGet("/account/forgot-password", (HttpContext httpContext, [FromServices] ClerkOptions options) =>
+{
+    if (!string.IsNullOrWhiteSpace(options.UnauthorizedSignInUrl))
+    {
+        return Results.Redirect(options.UnauthorizedSignInUrl);
+    }
+
+    return Results.LocalRedirect("/forgot-password");
+});
+
+app.MapGet("/account/manage", (HttpContext httpContext, [FromServices] ClerkOptions options) =>
+{
+    if (!string.IsNullOrWhiteSpace(options.UserProfileUrl))
+    {
+        return Results.Redirect(options.UserProfileUrl);
+    }
+
+    return Results.LocalRedirect("/account");
 });
 
 app.MapGet("/account/logout", async (HttpContext httpContext) =>

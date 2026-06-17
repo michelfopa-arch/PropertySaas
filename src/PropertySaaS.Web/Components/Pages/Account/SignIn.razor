@@ -1,0 +1,33 @@
+@page "/sign-in"
+@inject IConfiguration Configuration
+@inject NavigationManager NavigationManager
+@using PropertySaaS.Infrastructure.Options
+@using PropertySaaS.Web.Localization
+
+<PageTitle>@UiText.Get("Auth_SignInPageTitle")</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Small" Class="py-8">
+    <MudPaper Class="pa-6 marketing-card" Elevation="0">
+        <MudStack Spacing="3">
+            <MudText Typo="Typo.h4">@UiText.Get("Auth_SignInTitle")</MudText>
+            <MudText Typo="Typo.body1" Color="Color.Secondary">@UiText.Get("Auth_SignInSubtitle")</MudText>
+            <MudStack Spacing="2">
+                <MudButton Href="@HostedSignInUrl" Variant="Variant.Filled" Color="Color.Primary" FullWidth="true">@UiText.Get("Auth_ContinueWithClerk")</MudButton>
+                <MudButton Href="/sign-up" Variant="Variant.Outlined" Color="Color.Default" FullWidth="true">@UiText.Get("Auth_CreateAccount")</MudButton>
+                <MudButton Href="@ForgotPasswordUrl" Variant="Variant.Text" Color="Color.Secondary" FullWidth="true">@UiText.Get("Auth_ForgotPassword")</MudButton>
+            </MudStack>
+        </MudStack>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private string HostedSignInUrl => GetClerkOptions().SignInUrl;
+    private string ForgotPasswordUrl => GetClerkOptions().UnauthorizedSignInUrl;
+
+    private ClerkOptions GetClerkOptions()
+    {
+        var options = new ClerkOptions();
+        Configuration.GetSection("Clerk").Bind(options);
+        return options;
+    }
+}

@@ -47,6 +47,13 @@
                             <MudText Typo="Typo.h6" GutterBottom="true">@UiText.Get("Profile_Preferences")</MudText>
                             <MudText Typo="Typo.body2" Class="mb-4" Color="Color.Secondary">@UiText.Get("Profile_PreferencesHelp")</MudText>
 
+                            <MudAlert Severity="Severity.Info" Variant="Variant.Outlined" Dense="true" Class="mb-4">
+                                <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Wrap="Wrap.Wrap">
+                                    <MudText Typo="Typo.body2">@UiText.Get("Profile_ManageAccountHelp")</MudText>
+                                    <MudButton Href="/account" Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small">@UiText.Get("Profile_ManageAccount")</MudButton>
+                                </MudStack>
+                            </MudAlert>
+
                             <MudForm>
                                 <MudGrid Spacing="2">
                                     <MudItem xs="12" sm="6">

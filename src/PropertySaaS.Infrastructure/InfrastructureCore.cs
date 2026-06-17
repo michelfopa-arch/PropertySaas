@@ -17,6 +17,10 @@ namespace PropertySaaS.Infrastructure.Options
         public string ClientSecret { get; set; } = string.Empty;
         public string PublishableKey { get; set; } = string.Empty;
         public string SecretKey { get; set; } = string.Empty;
+        public string SignInUrl { get; set; } = string.Empty;
+        public string SignUpUrl { get; set; } = string.Empty;
+        public string UnauthorizedSignInUrl { get; set; } = string.Empty;
+        public string UserProfileUrl { get; set; } = string.Empty;
     }
 
     public class StripeOptions
@@ -233,6 +237,10 @@ namespace PropertySaaS.Infrastructure.Services
         }
     }
 }
+
+
+
+
 
 
 
