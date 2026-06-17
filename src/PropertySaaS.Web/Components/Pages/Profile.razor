@@ -2,6 +2,7 @@
 @page "/profile"
 @inject SaasDataService DataService
 @inject CurrentOrganization CurrentOrganization
+@inject IHttpClientFactory HttpClientFactory
 @inject NavigationManager NavigationManager
 @using PropertySaaS.Web.Localization
 
@@ -41,42 +42,73 @@
                 </MudItem>
 
                 <MudItem xs="12" md="8">
-                    <MudPaper Class="pa-4 profile-settings-shell" Elevation="0">
-                        <MudText Typo="Typo.h6" GutterBottom="true">@UiText.Get("Profile_Preferences")</MudText>
-                        <MudText Typo="Typo.body2" Class="mb-4" Color="Color.Secondary">@UiText.Get("Profile_PreferencesHelp")</MudText>
+                    <MudStack Spacing="3">
+                        <MudPaper Class="pa-4 profile-settings-shell" Elevation="0">
+                            <MudText Typo="Typo.h6" GutterBottom="true">@UiText.Get("Profile_Preferences")</MudText>
+                            <MudText Typo="Typo.body2" Class="mb-4" Color="Color.Secondary">@UiText.Get("Profile_PreferencesHelp")</MudText>
 
-                        <MudForm>
-                            <MudGrid Spacing="2">
-                                <MudItem xs="12" sm="6">
-                                    <MudSelect T="string" Label="@UiText.Get("Profile_PreferredLanguage")" @bind-Value="_preferredLanguage" Variant="Variant.Outlined" Dense="true">
-                                        @foreach (var language in SupportedLanguages)
+                            <MudForm>
+                                <MudGrid Spacing="2">
+                                    <MudItem xs="12" sm="6">
+                                        <MudSelect T="string" Label="@UiText.Get("Profile_PreferredLanguage")" @bind-Value="_preferredLanguage" Variant="Variant.Outlined" Dense="true">
+                                            @foreach (var language in SupportedLanguages)
+                                            {
+                                                <MudSelectItem T="string" Value="@language.Code">@language.Label</MudSelectItem>
+                                            }
+                                        </MudSelect>
+                                    </MudItem>
+                                    <MudItem xs="12" sm="6">
+                                        <MudTextField T="string" Label="@UiText.Get("Profile_Jurisdiction")" Value="@CurrentOrganization.Jurisdiction.ProvinceDisplayName" Variant="Variant.Outlined" Disabled="true" />
+                                    </MudItem>
+                                </MudGrid>
+
+                                @if (!string.IsNullOrWhiteSpace(_message))
+                                {
+                                    <MudAlert Severity="@_messageSeverity" Variant="Variant.Filled" Dense="true" Class="mt-4">@_message</MudAlert>
+                                }
+
+                                <MudStack Row="true" Spacing="2" Class="mt-4" Wrap="Wrap.Wrap">
+                                    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveAsync" Disabled="_isSaving">
+                                        @if (_isSaving)
                                         {
-                                            <MudSelectItem T="string" Value="@language.Code">@language.Label</MudSelectItem>
+                                            <MudProgressCircular Size="Size.Small" Color="Color.Inherit" Indeterminate="true" Class="mr-2" />
                                         }
-                                    </MudSelect>
+                                        @UiText.Get("Profile_Save")
+                                    </MudButton>
+                                    <MudButton Variant="Variant.Outlined" Color="Color.Default" OnClick="ReloadAsync" Disabled="_isSaving">@UiText.Get("Profile_Reset")</MudButton>
+                                </MudStack>
+                            </MudForm>
+                        </MudPaper>
+
+                        <MudPaper Class="pa-4 profile-settings-shell" Elevation="0">
+                            <MudText Typo="Typo.h6" GutterBottom="true">@UiText.Get("Profile_SupportTitle")</MudText>
+                            <MudText Typo="Typo.body2" Class="mb-4" Color="Color.Secondary">@UiText.Get("Profile_SupportHelp")</MudText>
+
+                            <MudGrid Spacing="2">
+                                <MudItem xs="12">
+                                    <MudTextField T="string" Label="@UiText.Get("Profile_SupportSubject")" @bind-Value="_supportSubject" Variant="Variant.Outlined" Dense="true" />
                                 </MudItem>
-                                <MudItem xs="12" sm="6">
-                                    <MudTextField T="string" Label="@UiText.Get("Profile_Jurisdiction")" Value="@CurrentOrganization.Jurisdiction.ProvinceDisplayName" Variant="Variant.Outlined" Disabled="true" />
+                                <MudItem xs="12">
+                                    <MudTextField T="string" Label="@UiText.Get("Profile_SupportMessage")" @bind-Value="_supportMessage" Variant="Variant.Outlined" Lines="5" />
                                 </MudItem>
                             </MudGrid>
 
-                            @if (!string.IsNullOrWhiteSpace(_message))
+                            @if (!string.IsNullOrWhiteSpace(_supportFeedback))
                             {
-                                <MudAlert Severity="@_messageSeverity" Variant="Variant.Filled" Dense="true" Class="mt-4">@_message</MudAlert>
+                                <MudAlert Severity="@_supportFeedbackSeverity" Variant="Variant.Filled" Dense="true" Class="mt-4">@_supportFeedback</MudAlert>
                             }
 
                             <MudStack Row="true" Spacing="2" Class="mt-4" Wrap="Wrap.Wrap">
-                                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveAsync" Disabled="_isSaving">
-                                    @if (_isSaving)
+                                <MudButton Variant="Variant.Filled" Color="Color.Secondary" OnClick="SendSupportAlertAsync" Disabled="_isSendingSupport || string.IsNullOrWhiteSpace(_supportSubject) || string.IsNullOrWhiteSpace(_supportMessage)">
+                                    @if (_isSendingSupport)
                                     {
                                         <MudProgressCircular Size="Size.Small" Color="Color.Inherit" Indeterminate="true" Class="mr-2" />
                                     }
-                                    @UiText.Get("Profile_Save")
+                                    @UiText.Get("Profile_SupportSend")
                                 </MudButton>
-                                <MudButton Variant="Variant.Outlined" Color="Color.Default" OnClick="ReloadAsync" Disabled="_isSaving">@UiText.Get("Profile_Reset")</MudButton>
                             </MudStack>
-                        </MudForm>
-                    </MudPaper>
+                        </MudPaper>
+                    </MudStack>
                 </MudItem>
             </MudGrid>
         }
@@ -90,6 +122,11 @@
     private string _preferredLanguage = string.Empty;
     private string? _message;
     private Severity _messageSeverity = Severity.Success;
+    private bool _isSendingSupport;
+    private string _supportSubject = string.Empty;
+    private string _supportMessage = string.Empty;
+    private string? _supportFeedback;
+    private Severity _supportFeedbackSeverity = Severity.Success;
 
     private string Initials => string.Join(string.Empty, (_profile.FullName ?? string.Empty)
         .Split(' ', StringSplitOptions.RemoveEmptyEntries)
@@ -142,6 +179,46 @@
         var culture = Uri.EscapeDataString(_preferredLanguage);
         var redirect = Uri.EscapeDataString(target);
         NavigationManager.NavigateTo($"/culture/set?culture={culture}&redirectUri={redirect}", forceLoad: true);
+    }
+
+    private async Task SendSupportAlertAsync()
+    {
+        _isSendingSupport = true;
+        _supportFeedback = null;
+
+        try
+        {
+            var client = HttpClientFactory.CreateClient();
+            client.BaseAddress = new Uri(NavigationManager.BaseUri);
+
+            var response = await client.PostAsJsonAsync("notifications/support-alert", new
+            {
+                Subject = _supportSubject,
+                Message = _supportMessage
+            });
+
+            if (response.IsSuccessStatusCode)
+            {
+                _supportFeedback = UiText.Get("Profile_SupportSuccess");
+                _supportFeedbackSeverity = Severity.Success;
+                _supportSubject = string.Empty;
+                _supportMessage = string.Empty;
+            }
+            else
+            {
+                _supportFeedback = UiText.Get("Profile_SupportError");
+                _supportFeedbackSeverity = Severity.Error;
+            }
+        }
+        catch
+        {
+            _supportFeedback = UiText.Get("Profile_SupportError");
+            _supportFeedbackSeverity = Severity.Error;
+        }
+        finally
+        {
+            _isSendingSupport = false;
+        }
     }
 
     private static string GetLanguageLabel(string code) => code switch
