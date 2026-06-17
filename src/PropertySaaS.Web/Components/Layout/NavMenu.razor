@@ -15,7 +15,7 @@
         <MudNavLink Href="/onboarding" Icon="@Icons.Material.Filled.AutoAwesome">@UiText.Get("Onboarding_Title")</MudNavLink>
     }
 
-    @if (CurrentOrganization.HasOrganizationAccess)
+    @if (CurrentOrganization.HasOrganizationAccess && CurrentOrganization.CanAccessWorkspace)
     {
         <MudNavLink Href="/dashboard" Icon="@Icons.Material.Filled.Dashboard">@UiText.Get("Nav_Dashboard")</MudNavLink>
         <MudNavLink Href="/properties" Icon="@Icons.Material.Filled.Apartment">@UiText.Get("Nav_Properties")</MudNavLink>
@@ -30,6 +30,12 @@
         <MudNavLink Href="/import-export" Icon="@Icons.Material.Filled.ImportExport">@UiText.Get("Nav_ImportExport")</MudNavLink>
         <MudNavLink Href="/account" Icon="@Icons.Material.Filled.ManageAccounts">@UiText.Get("Nav_ManageAccount")</MudNavLink>
         <MudDivider Class="my-2" />
+    }
+
+    @if (CurrentOrganization.HasOrganizationAccess && !CurrentOrganization.CanAccessWorkspace)
+    {
+        <MudNavLink Href="/subscriptions/expired" Icon="@Icons.Material.Filled.WarningAmber">@UiText.Get("Nav_RenewAccess")</MudNavLink>
+        <MudNavLink Href="/subscriptions" Icon="@Icons.Material.Filled.Subscriptions">@UiText.Get("Nav_Subscriptions")</MudNavLink>
     }
 
     @if (CurrentOrganization.IsSuperAdmin)

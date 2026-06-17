@@ -1,0 +1,18 @@
+@attribute [Authorize]
+@page "/subscriptions/expired-view"
+@using PropertySaaS.Web.Localization
+
+<PageTitle>@UiText.Get("SubscriptionExpired_PageTitle")</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Small" Class="py-8">
+    <MudPaper Class="pa-6 marketing-card" Elevation="0">
+        <MudStack Spacing="3">
+            <MudText Typo="Typo.h4">@UiText.Get("SubscriptionExpired_Title")</MudText>
+            <MudText Typo="Typo.body1" Color="Color.Secondary">@UiText.Get("SubscriptionExpired_Body")</MudText>
+            <MudStack Row="true" Spacing="2" Wrap="Wrap.Wrap">
+                <MudButton Href="/subscriptions" Variant="Variant.Filled" Color="Color.Primary">@UiText.Get("SubscriptionExpired_PrimaryCta")</MudButton>
+                <MudButton Href="/billing/portal" Variant="Variant.Outlined" Color="Color.Default">@UiText.Get("SubscriptionExpired_SecondaryCta")</MudButton>
+            </MudStack>
+        </MudStack>
+    </MudPaper>
+</MudContainer>

@@ -132,8 +132,11 @@ namespace PropertySaaS.Application.Common
         public string Province { get; set; } = "ON";
         public string CountryCode { get; set; } = "CA";
         public string PreferredLanguage { get; set; } = "en-CA";
+        public bool SubscriptionIsActive { get; set; } = true;
+        public bool TrialExpired { get; set; }
         public bool IsAuthenticated => !string.IsNullOrWhiteSpace(UserEmail);
         public bool HasOrganizationAccess => OrganizationId != Guid.Empty;
+        public bool CanAccessWorkspace => HasOrganizationAccess && (SubscriptionIsActive || !TrialExpired);
         public bool RequiresOrganizationSelection => !HasOrganizationAccess && AccessibleOrganizationCount > 1;
         public bool CanManageData => Role is "Owner" or "Manager";
         public bool IsSuperAdmin => string.Equals(SystemRole, "SuperAdmin", StringComparison.OrdinalIgnoreCase);

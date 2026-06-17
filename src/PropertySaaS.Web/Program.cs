@@ -87,6 +87,11 @@ builder.Services.AddScoped<CurrentOrganization>(provider =>
         if (selectedMembership is not null)
         {
             var org = db.Organizations.AsNoTracking().FirstOrDefault(x => x.Id == selectedMembership.OrganizationId);
+            var trialExpired = org?.TrialEndsUtc.HasValue == true
+                && org.SubscriptionTier == PropertySaaS.Domain.Enums.SubscriptionTier.Trial
+                && org.TrialEndsUtc.Value < DateTime.UtcNow;
+            var subscriptionIsActive = org?.IsActive ?? true;
+
             return new CurrentOrganization
             {
                 UserId = appUser.Id,
@@ -99,7 +104,9 @@ builder.Services.AddScoped<CurrentOrganization>(provider =>
                 SystemRole = string.IsNullOrWhiteSpace(appUser.SystemRole) ? "User" : appUser.SystemRole,
                 Province = org?.Province ?? "ON",
                 CountryCode = org?.CountryCode ?? "CA",
-                PreferredLanguage = ResolvePreferredLanguage(httpContextAccessor.HttpContext, appUser.PreferredLanguage, org?.PreferredLanguage, org?.Province)
+                PreferredLanguage = ResolvePreferredLanguage(httpContextAccessor.HttpContext, appUser.PreferredLanguage, org?.PreferredLanguage, org?.Province),
+                SubscriptionIsActive = subscriptionIsActive,
+                TrialExpired = trialExpired
             };
         }
     }
@@ -349,6 +356,12 @@ app.Use(async (context, next) =>
         if (requiresOrganizationAccess && !currentOrganization.HasOrganizationAccess)
         {
             context.Response.Redirect("/");
+            return;
+        }
+
+        if (requiresOrganizationAccess && currentOrganization.HasOrganizationAccess && !currentOrganization.CanAccessWorkspace)
+        {
+            context.Response.Redirect("/subscriptions/expired");
             return;
         }
     }
@@ -608,6 +621,26 @@ app.MapPost("/billing/webhook", async (HttpContext httpContext, [FromServices] S
     await billingService.HandleWebhookAsync(json, httpContext.Request.Headers["Stripe-Signature"]);
     return Results.Ok();
 });
+
+app.MapGet("/subscriptions/expired", ([FromServices] CurrentOrganization current) =>
+{
+    if (!current.IsAuthenticated)
+    {
+        return Results.Redirect("/sign-in");
+    }
+
+    if (!current.HasOrganizationAccess)
+    {
+        return Results.Redirect("/onboarding");
+    }
+
+    if (current.CanAccessWorkspace)
+    {
+        return Results.Redirect("/dashboard");
+    }
+
+    return Results.Redirect("/subscriptions/expired-view");
+}).RequireAuthorization();
 
 app.MapPost("/support/grant", async ([FromBody] SupportGrantRequest? request, [FromServices] SaasDataService dataService) =>
 {
