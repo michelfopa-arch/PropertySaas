@@ -9,6 +9,11 @@
         <MudText Typo="Typo.body1">@UiText.Get("Pricing_Intro")</MudText>
     </MudStack>
 
+    <MudPaper Class="pa-4 marketing-card" Elevation="0">
+        <MudText Typo="Typo.h6">@UiText.Get("Pricing_TrialOfferTitle")</MudText>
+        <MudText Typo="Typo.body1">@UiText.Get("Pricing_TrialOfferBody")</MudText>
+    </MudPaper>
+
     <MudGrid Spacing="3">
         <MudItem xs="12" md="4">
             <MudPaper Class="pa-4 pricing-card h-100" Elevation="0">
@@ -23,6 +28,7 @@
                     <MudListItem T="string">@UiText.Get("Pricing_Starter4")</MudListItem>
                     <MudListItem T="string">@UiText.Get("Pricing_Starter5")</MudListItem>
                 </MudList>
+                <MudButton Href="/sign-up" Variant="Variant.Filled" Color="Color.Primary" Class="mt-4">@UiText.Get("Pricing_StartTrialCta")</MudButton>
             </MudPaper>
         </MudItem>
 
@@ -41,6 +47,7 @@
                     <MudListItem T="string">@UiText.Get("Pricing_Growth5")</MudListItem>
                     <MudListItem T="string">@UiText.Get("Pricing_Growth6")</MudListItem>
                 </MudList>
+                <MudButton Href="/sign-up" Variant="Variant.Filled" Color="Color.Primary" Class="mt-4">@UiText.Get("Pricing_StartTrialCta")</MudButton>
             </MudPaper>
         </MudItem>
 
@@ -58,6 +65,7 @@
                     <MudListItem T="string">@UiText.Get("Pricing_Pro5")</MudListItem>
                     <MudListItem T="string">@UiText.Get("Pricing_Pro6")</MudListItem>
                 </MudList>
+                <MudButton Href="/sign-up" Variant="Variant.Filled" Color="Color.Primary" Class="mt-4">@UiText.Get("Pricing_ContactSalesCta")</MudButton>
             </MudPaper>
         </MudItem>
     </MudGrid>

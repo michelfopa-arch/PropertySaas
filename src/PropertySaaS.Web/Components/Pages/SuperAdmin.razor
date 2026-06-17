@@ -1,0 +1,110 @@
+@attribute [Authorize]
+@page "/superadmin"
+@inject SaasDataService DataService
+@inject CurrentOrganization CurrentOrganization
+@inject IHttpClientFactory HttpClientFactory
+@inject NavigationManager NavigationManager
+@using PropertySaaS.Web.Localization
+
+<PageTitle>@UiText.Get("SuperAdmin_PageTitle")</PageTitle>
+
+@if (!CurrentOrganization.IsSuperAdmin)
+{
+    <MudAlert Severity="Severity.Warning" Variant="Variant.Filled">@UiText.Get("SuperAdmin_NotAuthorized")</MudAlert>
+}
+else if (_isLoading)
+{
+    <MudPaper Class="pa-6 d-flex justify-center">
+        <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+    </MudPaper>
+}
+else
+{
+    <MudStack Spacing="3">
+        <MudStack Spacing="1">
+            <MudText Typo="Typo.h4">@UiText.Get("SuperAdmin_Title")</MudText>
+            <MudText Typo="Typo.body1" Color="Color.Secondary">@UiText.Get("SuperAdmin_Subtitle")</MudText>
+        </MudStack>
+
+        @if (!string.IsNullOrWhiteSpace(_feedback))
+        {
+            <MudAlert Severity="@_feedbackSeverity" Variant="Variant.Filled">@_feedback</MudAlert>
+        }
+
+        <MudGrid Spacing="3">
+            @foreach (var organization in _organizations)
+            {
+                <MudItem xs="12" md="6">
+                    <MudPaper Class="pa-4 marketing-card h-100" Elevation="0">
+                        <MudText Typo="Typo.h6">@organization.OrganizationName</MudText>
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">@UiText.Format("SuperAdmin_OrgPlan", organization.SubscriptionTier)</MudText>
+                        <MudList T="string" Dense="true" Class="mt-3">
+                            <MudListItem T="string">@UiText.Format("SuperAdmin_OrgUnits", organization.Units)</MudListItem>
+                            <MudListItem T="string">@UiText.Format("SuperAdmin_OrgUsers", organization.Users)</MudListItem>
+                        </MudList>
+                        <MudTextField T="string" Label="@UiText.Get("SuperAdmin_SupportReason")" @bind-Value="_supportReasons[organization.OrganizationId]" Variant="Variant.Outlined" Class="mt-3" />
+                        <MudStack Row="true" Spacing="2" Class="mt-3" Wrap="Wrap.Wrap">
+                            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="() => GrantSupportAsync(organization.OrganizationId)">@UiText.Get("SuperAdmin_GrantSupport")</MudButton>
+                        </MudStack>
+                    </MudPaper>
+                </MudItem>
+            }
+        </MudGrid>
+    </MudStack>
+}
+
+@code {
+    private bool _isLoading = true;
+    private List<SuperAdminOrganizationDto> _organizations = new();
+    private readonly Dictionary<Guid, string> _supportReasons = new();
+    private string? _feedback;
+    private Severity _feedbackSeverity = Severity.Success;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!CurrentOrganization.IsSuperAdmin)
+        {
+            _isLoading = false;
+            return;
+        }
+
+        _organizations = await DataService.GetSuperAdminOrganizationsAsync();
+        foreach (var organization in _organizations)
+        {
+            _supportReasons.TryAdd(organization.OrganizationId, "Support review");
+        }
+        _isLoading = false;
+    }
+
+    private async Task GrantSupportAsync(Guid organizationId)
+    {
+        _feedback = null;
+
+        try
+        {
+            var client = HttpClientFactory.CreateClient();
+            client.BaseAddress = new Uri(NavigationManager.BaseUri);
+            var response = await client.PostAsJsonAsync("support/grant", new
+            {
+                OrganizationId = organizationId,
+                Reason = _supportReasons[organizationId]
+            });
+
+            if (response.IsSuccessStatusCode)
+            {
+                _feedback = UiText.Get("SuperAdmin_SupportGranted");
+                _feedbackSeverity = Severity.Success;
+            }
+            else
+            {
+                _feedback = UiText.Get("SuperAdmin_SupportGrantError");
+                _feedbackSeverity = Severity.Error;
+            }
+        }
+        catch
+        {
+            _feedback = UiText.Get("SuperAdmin_SupportGrantError");
+            _feedbackSeverity = Severity.Error;
+        }
+    }
+}

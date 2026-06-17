@@ -9,6 +9,8 @@ namespace PropertySaaS.Application.Abstractions
     {
         DbSet<Organization> Organizations { get; }
         DbSet<AppUser> Users { get; }
+        DbSet<OrganizationMembership> OrganizationMemberships { get; }
+        DbSet<OrganizationInvitation> OrganizationInvitations { get; }
         DbSet<Property> Properties { get; }
         DbSet<Unit> Units { get; }
         DbSet<Tenant> Tenants { get; }
@@ -119,15 +121,86 @@ namespace PropertySaaS.Application.Common
 
     public class CurrentOrganization
     {
+        public Guid UserId { get; set; }
         public Guid OrganizationId { get; set; }
+        public int AccessibleOrganizationCount { get; set; }
         public string OrganizationName { get; set; } = string.Empty;
         public string UserEmail { get; set; } = string.Empty;
+        public string UserFullName { get; set; } = string.Empty;
         public string Role { get; set; } = "Owner";
+        public string SystemRole { get; set; } = "User";
         public string Province { get; set; } = "ON";
         public string CountryCode { get; set; } = "CA";
         public string PreferredLanguage { get; set; } = "en-CA";
+        public bool IsAuthenticated => !string.IsNullOrWhiteSpace(UserEmail);
+        public bool HasOrganizationAccess => OrganizationId != Guid.Empty;
+        public bool RequiresOrganizationSelection => !HasOrganizationAccess && AccessibleOrganizationCount > 1;
         public bool CanManageData => Role is "Owner" or "Manager";
+        public bool IsSuperAdmin => string.Equals(SystemRole, "SuperAdmin", StringComparison.OrdinalIgnoreCase);
         public JurisdictionProfile Jurisdiction => JurisdictionCatalog.GetProfile(Province);
+    }
+
+    public sealed class MemberSummaryDto
+    {
+        public Guid MembershipId { get; set; }
+        public Guid UserId { get; set; }
+        public string FullName { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string Role { get; set; } = string.Empty;
+        public string Status { get; set; } = string.Empty;
+    }
+
+    public sealed class OrganizationAccessOptionDto
+    {
+        public Guid OrganizationId { get; set; }
+        public string OrganizationName { get; set; } = string.Empty;
+        public string Role { get; set; } = string.Empty;
+        public string Status { get; set; } = string.Empty;
+    }
+
+    public sealed class InvitationSummaryDto
+    {
+        public Guid InvitationId { get; set; }
+        public string Email { get; set; } = string.Empty;
+        public string Role { get; set; } = string.Empty;
+        public string Status { get; set; } = string.Empty;
+        public DateTime ExpiresUtc { get; set; }
+    }
+
+    public sealed class OrganizationInviteResult
+    {
+        public Guid InvitationId { get; set; }
+        public string InvitationUrl { get; set; } = string.Empty;
+    }
+
+    public sealed class SubscriptionEntitlementsDto
+    {
+        public string PlanName { get; set; } = string.Empty;
+        public int MaxUnits { get; set; }
+        public int MaxUsers { get; set; }
+        public bool IncludesCompliance { get; set; }
+        public bool IncludesAuditLogs { get; set; }
+        public bool IncludesPrioritySupport { get; set; }
+        public bool IncludesAdvancedExports { get; set; }
+        public string TrialBanner { get; set; } = string.Empty;
+    }
+
+    public sealed class SupportSessionDto
+    {
+        public Guid OrganizationId { get; set; }
+        public string OrganizationName { get; set; } = string.Empty;
+        public string UserEmail { get; set; } = string.Empty;
+        public string Reason { get; set; } = string.Empty;
+        public DateTime ExpiresUtc { get; set; }
+    }
+
+    public sealed class SuperAdminOrganizationDto
+    {
+        public Guid OrganizationId { get; set; }
+        public string OrganizationName { get; set; } = string.Empty;
+        public string SubscriptionTier { get; set; } = string.Empty;
+        public int Units { get; set; }
+        public int Users { get; set; }
     }
 
     public class DashboardSummaryDto
@@ -158,6 +231,7 @@ namespace PropertySaaS.Application.Features
         private readonly IApplicationDbContext _db;
         private readonly CurrentOrganization _current;
         private readonly INotificationService _notifications;
+        private const string SupportRole = "SupportViewer";
 
         public SaasDataService(IApplicationDbContext db, CurrentOrganization current, INotificationService notifications)
         {
@@ -171,6 +245,89 @@ namespace PropertySaaS.Application.Features
             if (!_current.CanManageData)
             {
                 throw new InvalidOperationException("Current role cannot modify portfolio data.");
+            }
+        }
+
+        private async Task<SubscriptionEntitlementsDto> GetEntitlementsInternalAsync(CancellationToken cancellationToken = default)
+        {
+            var organization = await _db.Organizations.AsNoTracking().FirstOrDefaultAsync(x => x.Id == _current.OrganizationId, cancellationToken);
+            var tier = organization?.SubscriptionTier ?? SubscriptionTier.Trial;
+
+            return tier switch
+            {
+                SubscriptionTier.Starter => new SubscriptionEntitlementsDto
+                {
+                    PlanName = "Starter",
+                    MaxUnits = 25,
+                    MaxUsers = 2,
+                    IncludesCompliance = true,
+                    IncludesAuditLogs = false,
+                    IncludesPrioritySupport = false,
+                    IncludesAdvancedExports = false,
+                    TrialBanner = string.Empty
+                },
+                SubscriptionTier.Growth => new SubscriptionEntitlementsDto
+                {
+                    PlanName = "Growth",
+                    MaxUnits = 150,
+                    MaxUsers = 8,
+                    IncludesCompliance = true,
+                    IncludesAuditLogs = true,
+                    IncludesPrioritySupport = false,
+                    IncludesAdvancedExports = true,
+                    TrialBanner = string.Empty
+                },
+                SubscriptionTier.Pro => new SubscriptionEntitlementsDto
+                {
+                    PlanName = "Pro",
+                    MaxUnits = int.MaxValue,
+                    MaxUsers = 25,
+                    IncludesCompliance = true,
+                    IncludesAuditLogs = true,
+                    IncludesPrioritySupport = true,
+                    IncludesAdvancedExports = true,
+                    TrialBanner = string.Empty
+                },
+                _ => new SubscriptionEntitlementsDto
+                {
+                    PlanName = "Trial",
+                    MaxUnits = 10,
+                    MaxUsers = 3,
+                    IncludesCompliance = true,
+                    IncludesAuditLogs = true,
+                    IncludesPrioritySupport = false,
+                    IncludesAdvancedExports = false,
+                    TrialBanner = "14-day trial active"
+                }
+            };
+        }
+
+        private async Task EnsureUserLimitAsync(CancellationToken cancellationToken = default)
+        {
+            var entitlements = await GetEntitlementsInternalAsync(cancellationToken);
+            var activeUsers = await _db.OrganizationMemberships.CountAsync(x => x.OrganizationId == _current.OrganizationId && x.Status == "Active", cancellationToken);
+            if (entitlements.MaxUsers != int.MaxValue && activeUsers >= entitlements.MaxUsers)
+            {
+                throw new InvalidOperationException($"The current {entitlements.PlanName} plan allows up to {entitlements.MaxUsers} active users.");
+            }
+        }
+
+        private async Task EnsureUnitLimitAsync(int additionalUnits = 1, CancellationToken cancellationToken = default)
+        {
+            var entitlements = await GetEntitlementsInternalAsync(cancellationToken);
+            var unitCount = await _db.Units.CountAsync(x => x.OrganizationId == _current.OrganizationId, cancellationToken);
+            if (entitlements.MaxUnits != int.MaxValue && unitCount + additionalUnits > entitlements.MaxUnits)
+            {
+                throw new InvalidOperationException($"The current {entitlements.PlanName} plan allows up to {entitlements.MaxUnits} units.");
+            }
+        }
+
+        private async Task EnsureFeatureEnabledAsync(Func<SubscriptionEntitlementsDto, bool> predicate, string featureName, CancellationToken cancellationToken = default)
+        {
+            var entitlements = await GetEntitlementsInternalAsync(cancellationToken);
+            if (!predicate(entitlements))
+            {
+                throw new InvalidOperationException($"{featureName} is not included in the current {entitlements.PlanName} plan.");
             }
         }
 
@@ -195,6 +352,9 @@ namespace PropertySaaS.Application.Features
                 SubscriptionTier = organization?.SubscriptionTier.ToString() ?? "Growth"
             };
         }
+
+        public async Task<SubscriptionEntitlementsDto> GetSubscriptionEntitlementsAsync()
+            => await GetEntitlementsInternalAsync();
 
         public Task<List<Property>> GetPropertiesAsync() => _db.Properties.Where(x => x.OrganizationId == _current.OrganizationId).OrderBy(x => x.Name).ToListAsync();
         public Task<List<Unit>> GetUnitsAsync() => _db.Units.Where(x => x.OrganizationId == _current.OrganizationId).OrderBy(x => x.UnitNumber).ToListAsync();
@@ -290,6 +450,281 @@ namespace PropertySaaS.Application.Features
         public async Task<AppUser?> GetCurrentUserProfileAsync()
             => await _db.Users.AsNoTracking().FirstOrDefaultAsync(x => x.OrganizationId == _current.OrganizationId && x.Email == _current.UserEmail);
 
+        public async Task<List<MemberSummaryDto>> GetMembersAsync()
+            => await _db.OrganizationMemberships
+                .AsNoTracking()
+                .Where(x => x.OrganizationId == _current.OrganizationId)
+                .OrderBy(x => x.User!.FullName)
+                .Select(x => new MemberSummaryDto
+                {
+                    MembershipId = x.Id,
+                    UserId = x.UserId,
+                    FullName = x.User != null && !string.IsNullOrWhiteSpace(x.User.FullName) ? x.User.FullName : x.User!.Email,
+                    Email = x.User!.Email,
+                    Role = x.Role,
+                    Status = x.Status
+                })
+                .ToListAsync();
+
+        public async Task<Organization?> CreateOrganizationAsync(string name, string province, CancellationToken cancellationToken = default)
+        {
+            if (!_current.IsAuthenticated || _current.UserId == Guid.Empty)
+            {
+                throw new InvalidOperationException("You must be authenticated to create an organization.");
+            }
+
+            var normalizedName = string.IsNullOrWhiteSpace(name)
+                ? throw new InvalidOperationException("Organization name is required.")
+                : name.Trim();
+
+            var slug = BuildSlug(normalizedName);
+            var existingSlugCount = await _db.Organizations.CountAsync(x => x.Slug.StartsWith(slug), cancellationToken);
+            if (existingSlugCount > 0)
+            {
+                slug = $"{slug}-{existingSlugCount + 1}";
+            }
+
+            var selectedProvince = string.IsNullOrWhiteSpace(province) ? "ON" : province.Trim().ToUpperInvariant();
+            var profile = JurisdictionCatalog.GetProfile(selectedProvince);
+
+            var organization = new Organization
+            {
+                Id = Guid.NewGuid(),
+                Name = normalizedName,
+                Slug = slug,
+                CountryCode = profile.CountryCode,
+                Province = profile.ProvinceCode,
+                PreferredLanguage = profile.DefaultLanguage,
+                TimeZone = "America/Toronto",
+                SubscriptionTier = SubscriptionTier.Trial,
+                IsActive = true,
+                CreatedUtc = DateTime.UtcNow
+            };
+
+            _db.Organizations.Add(organization);
+
+            var user = await _db.Users.FirstOrDefaultAsync(x => x.Id == _current.UserId, cancellationToken);
+            if (user is null)
+            {
+                throw new InvalidOperationException("Current user profile was not found.");
+            }
+
+            user.OrganizationId = organization.Id;
+            user.Role = "Owner";
+            user.PreferredLanguage = profile.DefaultLanguage;
+
+            _db.OrganizationMemberships.Add(new OrganizationMembership
+            {
+                Id = Guid.NewGuid(),
+                OrganizationId = organization.Id,
+                UserId = user.Id,
+                Role = "Owner",
+                Status = "Active",
+                CreatedUtc = DateTime.UtcNow
+            });
+
+            _db.AuditLogs.Add(new AuditLog
+            {
+                OrganizationId = organization.Id,
+                EntityName = nameof(Organization),
+                Action = "Create",
+                PerformedBy = _current.UserEmail,
+                Details = $"Created organization {organization.Name} from onboarding"
+            });
+
+            await _db.SaveChangesAsync(cancellationToken);
+            return organization;
+        }
+
+        public async Task<List<OrganizationAccessOptionDto>> GetAccessibleOrganizationsAsync()
+            => await _db.OrganizationMemberships
+                .AsNoTracking()
+                .Where(x => x.UserId == _current.UserId && x.Status == "Active")
+                .OrderBy(x => x.Organization!.Name)
+                .Select(x => new OrganizationAccessOptionDto
+                {
+                    OrganizationId = x.OrganizationId,
+                    OrganizationName = x.Organization!.Name,
+                    Role = x.Role,
+                    Status = x.Status
+                })
+                .ToListAsync();
+
+        public async Task<List<InvitationSummaryDto>> GetInvitationsAsync()
+            => await _db.OrganizationInvitations
+                .AsNoTracking()
+                .Where(x => x.OrganizationId == _current.OrganizationId)
+                .OrderByDescending(x => x.CreatedUtc)
+                .Select(x => new InvitationSummaryDto
+                {
+                    InvitationId = x.Id,
+                    Email = x.Email,
+                    Role = x.Role,
+                    Status = x.Status,
+                    ExpiresUtc = x.ExpiresUtc
+                })
+                .ToListAsync();
+
+        public async Task<OrganizationInviteResult> InviteUserAsync(string email, string role, string invitationBaseUrl, CancellationToken cancellationToken = default)
+        {
+            EnsureCanManageData();
+            await EnsureUserLimitAsync(cancellationToken);
+
+            var normalizedEmail = email.Trim().ToLowerInvariant();
+            var normalizedRole = NormalizeInviteRole(role);
+            var existingMembership = await _db.OrganizationMemberships
+                .AsNoTracking()
+                .Include(x => x.User)
+                .FirstOrDefaultAsync(x => x.OrganizationId == _current.OrganizationId && x.User != null && x.User.Email == normalizedEmail && x.Status == "Active", cancellationToken);
+
+            if (existingMembership is not null)
+            {
+                throw new InvalidOperationException("This user already belongs to the organization.");
+            }
+
+            var existingInvite = await _db.OrganizationInvitations
+                .FirstOrDefaultAsync(x => x.OrganizationId == _current.OrganizationId && x.Email == normalizedEmail && x.Status == "Pending", cancellationToken);
+
+            var token = Guid.NewGuid().ToString("N");
+            var invite = existingInvite ?? new OrganizationInvitation
+            {
+                Id = Guid.NewGuid(),
+                OrganizationId = _current.OrganizationId,
+                Email = normalizedEmail,
+                InvitedBy = _current.UserEmail,
+                CreatedUtc = DateTime.UtcNow
+            };
+
+            invite.Role = normalizedRole;
+            invite.Token = token;
+            invite.Status = "Pending";
+            invite.ExpiresUtc = DateTime.UtcNow.AddDays(7);
+            invite.AcceptedUtc = null;
+            invite.RevokedUtc = null;
+
+            if (existingInvite is null)
+            {
+                _db.OrganizationInvitations.Add(invite);
+            }
+
+            _db.AuditLogs.Add(new AuditLog
+            {
+                OrganizationId = _current.OrganizationId,
+                EntityName = nameof(OrganizationInvitation),
+                Action = existingInvite is null ? "Create" : "Refresh",
+                PerformedBy = _current.UserEmail,
+                Details = $"Invitation for {normalizedEmail} with role {normalizedRole}"
+            });
+
+            await _db.SaveChangesAsync(cancellationToken);
+
+            var invitationUrl = $"{invitationBaseUrl.TrimEnd('/')}/invitations/accept?token={Uri.EscapeDataString(token)}";
+            await _notifications.SendOrganizationInvitationAsync(normalizedEmail, _current.OrganizationName, _current.UserEmail, normalizedRole, invitationUrl, cancellationToken);
+
+            return new OrganizationInviteResult
+            {
+                InvitationId = invite.Id,
+                InvitationUrl = invitationUrl
+            };
+        }
+
+        public async Task AcceptInvitationAsync(string token, string email, string clerkUserId, string fullName, CancellationToken cancellationToken = default)
+        {
+            var normalizedEmail = email.Trim().ToLowerInvariant();
+            var invitation = await _db.OrganizationInvitations
+                .FirstOrDefaultAsync(x => x.Token == token && x.Email == normalizedEmail && x.Status == "Pending", cancellationToken);
+
+            if (invitation is null || invitation.ExpiresUtc < DateTime.UtcNow)
+            {
+                throw new InvalidOperationException("Invitation is invalid or expired.");
+            }
+
+            var user = await _db.Users.FirstOrDefaultAsync(x => x.Email == normalizedEmail, cancellationToken);
+            if (user is null)
+            {
+                user = new AppUser
+                {
+                    Id = Guid.NewGuid(),
+                    OrganizationId = invitation.OrganizationId,
+                    ClerkUserId = clerkUserId,
+                    Email = normalizedEmail,
+                    FullName = fullName,
+                    Role = invitation.Role,
+                    PreferredLanguage = "en-CA",
+                    IsActive = true,
+                    CreatedUtc = DateTime.UtcNow
+                };
+                _db.Users.Add(user);
+            }
+            else
+            {
+                user.ClerkUserId = string.IsNullOrWhiteSpace(user.ClerkUserId) ? clerkUserId : user.ClerkUserId;
+                user.FullName = string.IsNullOrWhiteSpace(user.FullName) ? fullName : user.FullName;
+            }
+
+            var membership = await _db.OrganizationMemberships
+                .FirstOrDefaultAsync(x => x.OrganizationId == invitation.OrganizationId && x.UserId == user.Id, cancellationToken);
+
+            if (membership is null)
+            {
+                membership = new OrganizationMembership
+                {
+                    Id = Guid.NewGuid(),
+                    OrganizationId = invitation.OrganizationId,
+                    UserId = user.Id,
+                    Role = invitation.Role,
+                    Status = "Active",
+                    CreatedUtc = DateTime.UtcNow
+                };
+                _db.OrganizationMemberships.Add(membership);
+            }
+            else
+            {
+                membership.Role = invitation.Role;
+                membership.Status = "Active";
+            }
+
+            user.OrganizationId = invitation.OrganizationId;
+            user.Role = invitation.Role;
+            invitation.Status = "Accepted";
+            invitation.AcceptedUtc = DateTime.UtcNow;
+
+            _db.AuditLogs.Add(new AuditLog
+            {
+                OrganizationId = invitation.OrganizationId,
+                EntityName = nameof(OrganizationInvitation),
+                Action = "Accept",
+                PerformedBy = normalizedEmail,
+                Details = $"Accepted invitation for {normalizedEmail}"
+            });
+
+            await _db.SaveChangesAsync(cancellationToken);
+        }
+
+        public async Task RevokeInvitationAsync(Guid invitationId, CancellationToken cancellationToken = default)
+        {
+            EnsureCanManageData();
+            var invitation = await _db.OrganizationInvitations.FirstOrDefaultAsync(x => x.Id == invitationId && x.OrganizationId == _current.OrganizationId, cancellationToken);
+            if (invitation is null)
+            {
+                return;
+            }
+
+            invitation.Status = "Revoked";
+            invitation.RevokedUtc = DateTime.UtcNow;
+
+            _db.AuditLogs.Add(new AuditLog
+            {
+                OrganizationId = _current.OrganizationId,
+                EntityName = nameof(OrganizationInvitation),
+                Action = "Revoke",
+                PerformedBy = _current.UserEmail,
+                Details = $"Revoked invitation for {invitation.Email}"
+            });
+
+            await _db.SaveChangesAsync(cancellationToken);
+        }
+
         public async Task UpdateCurrentUserPreferredLanguageAsync(string preferredLanguage)
         {
             var entity = await _db.Users.FirstOrDefaultAsync(x => x.OrganizationId == _current.OrganizationId && x.Email == _current.UserEmail);
@@ -312,6 +747,7 @@ namespace PropertySaaS.Application.Features
         public async Task AddUnitAsync(Unit unit)
         {
             EnsureCanManageData();
+            await EnsureUnitLimitAsync();
             unit.Id = Guid.NewGuid();
             unit.OrganizationId = _current.OrganizationId;
             unit.CreatedUtc = DateTime.UtcNow;
@@ -446,6 +882,7 @@ namespace PropertySaaS.Application.Features
         {
             if (!_current.CanManageData) return;
             if (await _db.Properties.AnyAsync(x => x.OrganizationId == _current.OrganizationId)) return;
+            await EnsureUnitLimitAsync();
 
             var property = new Property { OrganizationId = _current.OrganizationId, Name = "Lakeshore Residences", PropertyType = "Waterfront condo", AddressLine1 = "25 Queens Quay W", City = "Toronto", PostalCode = "M5J 2N6", YearBuilt = 2018, MonthlyRevenueTarget = 12500m, AmenitySummary = "Concierge, fitness room, parking waitlist", NeighborhoodNotes = "Strong waterfront demand with transit, trail and downtown access.", LeasingNotes = "Best suited for professionals seeking downtown access with premium views.", OperationalNotes = "Protect turnover speed during peak spring leasing cycle and keep concierge communication tight." };
             var unit = new Unit { OrganizationId = _current.OrganizationId, Property = property, UnitNumber = "1204", Bedrooms = 2, Bathrooms = 2, MonthlyRent = 3150m, IsOccupied = true };
@@ -459,6 +896,109 @@ namespace PropertySaaS.Application.Features
             _db.AuditLogs.Add(new AuditLog { OrganizationId = _current.OrganizationId, EntityName = nameof(Property), Action = "Import", PerformedBy = _current.UserEmail, Details = "Imported starter portfolio data" });
 
             await _db.SaveChangesAsync();
+        }
+
+        public async Task<List<SuperAdminOrganizationDto>> GetSuperAdminOrganizationsAsync(CancellationToken cancellationToken = default)
+        {
+            if (!_current.IsSuperAdmin)
+            {
+                throw new InvalidOperationException("Current user is not a super admin.");
+            }
+
+            return await _db.Organizations
+                .AsNoTracking()
+                .OrderBy(x => x.Name)
+                .Select(x => new SuperAdminOrganizationDto
+                {
+                    OrganizationId = x.Id,
+                    OrganizationName = x.Name,
+                    SubscriptionTier = x.SubscriptionTier.ToString(),
+                    Units = _db.Units.Count(unit => unit.OrganizationId == x.Id),
+                    Users = _db.OrganizationMemberships.Count(membership => membership.OrganizationId == x.Id && membership.Status == "Active")
+                })
+                .ToListAsync(cancellationToken);
+        }
+
+        public async Task<SupportSessionDto> GrantSupportAccessAsync(Guid organizationId, string reason, CancellationToken cancellationToken = default)
+        {
+            if (!_current.IsSuperAdmin)
+            {
+                throw new InvalidOperationException("Current user is not a super admin.");
+            }
+
+            var normalizedReason = string.IsNullOrWhiteSpace(reason) ? "Support review" : reason.Trim();
+            var organization = await _db.Organizations.AsNoTracking().FirstOrDefaultAsync(x => x.Id == organizationId, cancellationToken)
+                ?? throw new InvalidOperationException("Organization not found.");
+            var adminUser = await _db.Users.FirstOrDefaultAsync(x => x.Id == _current.UserId, cancellationToken)
+                ?? throw new InvalidOperationException("Current user profile was not found.");
+
+            var membership = await _db.OrganizationMemberships.FirstOrDefaultAsync(x => x.OrganizationId == organizationId && x.UserId == adminUser.Id, cancellationToken);
+            if (membership is null)
+            {
+                membership = new OrganizationMembership
+                {
+                    Id = Guid.NewGuid(),
+                    OrganizationId = organizationId,
+                    UserId = adminUser.Id,
+                    Role = SupportRole,
+                    Status = "Active",
+                    CreatedUtc = DateTime.UtcNow
+                };
+                _db.OrganizationMemberships.Add(membership);
+            }
+            else
+            {
+                membership.Role = SupportRole;
+                membership.Status = "Active";
+            }
+
+            adminUser.OrganizationId = organizationId;
+            adminUser.Role = SupportRole;
+
+            _db.AuditLogs.Add(new AuditLog
+            {
+                OrganizationId = organizationId,
+                EntityName = "SupportAccess",
+                Action = "Grant",
+                PerformedBy = _current.UserEmail,
+                Details = normalizedReason
+            });
+
+            await _db.SaveChangesAsync(cancellationToken);
+
+            return new SupportSessionDto
+            {
+                OrganizationId = organizationId,
+                OrganizationName = organization.Name,
+                UserEmail = _current.UserEmail,
+                Reason = normalizedReason,
+                ExpiresUtc = DateTime.UtcNow.AddHours(2)
+            };
+        }
+
+        private static string NormalizeInviteRole(string role)
+            => role?.Trim() switch
+            {
+                "Manager" => "Manager",
+                "Agent" => "Agent",
+                "Viewer" => "Viewer",
+                _ => "Viewer"
+            };
+
+        private static string BuildSlug(string value)
+        {
+            var chars = value
+                .ToLowerInvariant()
+                .Select(ch => char.IsLetterOrDigit(ch) ? ch : '-')
+                .ToArray();
+
+            var slug = new string(chars);
+            while (slug.Contains("--", StringComparison.Ordinal))
+            {
+                slug = slug.Replace("--", "-", StringComparison.Ordinal);
+            }
+
+            return slug.Trim('-');
         }
     }
 }
@@ -475,6 +1015,7 @@ namespace PropertySaaS.Application.Dashboard
             services.AddScoped<SaasDataService>();
             services.AddScoped(_ => new CurrentOrganization
             {
+                UserId = Guid.Parse("66666666-6666-6666-6666-666666666666"),
                 OrganizationId = Guid.Parse("11111111-1111-1111-1111-111111111111"),
                 OrganizationName = "Maple Leaf Property Group",
                 UserEmail = "owner@mapleleafpm.ca",

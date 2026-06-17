@@ -14,9 +14,9 @@
                     <MudButton Href="/sign-up" Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large">@UiText.Get("Home_StartFreeTrial")</MudButton>
                     <MudButton Href="/sign-in" Variant="Variant.Outlined" Color="Color.Inherit" Size="Size.Large">@UiText.Get("Home_SignInCta")</MudButton>
                     <MudButton Href="/account" Variant="Variant.Text" Color="Color.Inherit" Size="Size.Large">@UiText.Get("Home_ManageAccountCta")</MudButton>
-                    <MudButton Href="/dashboard" Variant="Variant.Filled" Color="Color.Inherit" Size="Size.Large" Class="hero-primary-action">@UiText.Get("Home_OpenDemo")</MudButton>
+                    <MudButton Href="@(CurrentOrganization.IsAuthenticated ? "/onboarding" : "/sign-up")" Variant="Variant.Filled" Color="Color.Inherit" Size="Size.Large" Class="hero-primary-action">@UiText.Get("Home_OpenDemo")</MudButton>
                     <MudButton Href="/pricing" Variant="Variant.Outlined" Color="Color.Inherit" Size="Size.Large">@UiText.Get("Home_SeePricing")</MudButton>
-                    <MudButton Href="/properties" Variant="Variant.Filled" Color="Color.Warning" Size="Size.Large">@UiText.Get("Home_SeeProductFlow")</MudButton>
+                    <MudButton Href="@(CurrentOrganization.HasOrganizationAccess ? "/properties" : "/onboarding")" Variant="Variant.Filled" Color="Color.Warning" Size="Size.Large">@UiText.Get("Home_SeeProductFlow")</MudButton>
                 </MudStack>
             </MudItem>
 

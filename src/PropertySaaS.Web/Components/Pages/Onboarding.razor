@@ -1,0 +1,126 @@
+@attribute [Authorize]
+@page "/onboarding"
+@inject SaasDataService DataService
+@inject CurrentOrganization CurrentOrganization
+@inject NavigationManager NavigationManager
+@using PropertySaaS.Web.Localization
+
+<PageTitle>@UiText.Get("Onboarding_PageTitle")</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Medium" Class="px-0">
+    <MudStack Spacing="3">
+        <MudStack Spacing="1">
+            <MudText Typo="Typo.h4">@UiText.Get("Onboarding_Title")</MudText>
+            <MudText Typo="Typo.body1" Color="Color.Secondary">@UiText.Get("Onboarding_Subtitle")</MudText>
+        </MudStack>
+
+        <MudPaper Class="pa-4 marketing-card" Elevation="0">
+            <MudText Typo="Typo.h6">@UiText.Get("Onboarding_CreateOrganizationTitle")</MudText>
+            <MudText Typo="Typo.body2" Class="mb-4">@UiText.Get("Onboarding_CreateOrganizationHelp")</MudText>
+
+            <MudGrid Spacing="2">
+                <MudItem xs="12" md="8">
+                    <MudTextField T="string" Label="@UiText.Get("Onboarding_OrganizationName")" @bind-Value="_organizationName" Variant="Variant.Outlined" />
+                </MudItem>
+                <MudItem xs="12" md="4">
+                    <MudSelect T="string" Label="@UiText.Get("Onboarding_Province")" @bind-Value="_province" Variant="Variant.Outlined">
+                        <MudSelectItem T="string" Value="@("ON")">Ontario</MudSelectItem>
+                        <MudSelectItem T="string" Value="@("QC")">Québec</MudSelectItem>
+                        <MudSelectItem T="string" Value="@("AB")">Alberta</MudSelectItem>
+                    </MudSelect>
+                </MudItem>
+            </MudGrid>
+
+            @if (!string.IsNullOrWhiteSpace(_feedback))
+            {
+                <MudAlert Severity="@_feedbackSeverity" Variant="Variant.Filled" Dense="true" Class="mt-4">@_feedback</MudAlert>
+            }
+
+            <MudStack Row="true" Spacing="2" Class="mt-4" Wrap="Wrap.Wrap">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="CreateOrganizationAsync" Disabled="_isSubmitting || string.IsNullOrWhiteSpace(_organizationName)">
+                    @UiText.Get("Onboarding_CreateOrganization")
+                </MudButton>
+                <MudButton Variant="Variant.Outlined" Color="Color.Secondary" OnClick="LoadDemoAsync" Disabled="_isSubmitting || _isLoadingDemo">@UiText.Get("Onboarding_LoadDemo")</MudButton>
+            </MudStack>
+        </MudPaper>
+
+        <MudPaper Class="pa-4 marketing-card" Elevation="0">
+            <MudText Typo="Typo.h6">@UiText.Get("Onboarding_TrialPlanTitle")</MudText>
+            <MudText Typo="Typo.body2" Class="mb-4">@UiText.Get("Onboarding_TrialPlanHelp")</MudText>
+            <MudList T="string" Dense="true">
+                <MudListItem T="string">@UiText.Get("Onboarding_TrialPlan1")</MudListItem>
+                <MudListItem T="string">@UiText.Get("Onboarding_TrialPlan2")</MudListItem>
+                <MudListItem T="string">@UiText.Get("Onboarding_TrialPlan3")</MudListItem>
+                <MudListItem T="string">@UiText.Get("Onboarding_TrialPlan4")</MudListItem>
+            </MudList>
+        </MudPaper>
+
+        <MudPaper Class="pa-4 marketing-card" Elevation="0">
+            <MudText Typo="Typo.h6">@UiText.Get("Onboarding_JoinTitle")</MudText>
+            <MudText Typo="Typo.body2">@UiText.Get("Onboarding_JoinHelp")</MudText>
+        </MudPaper>
+    </MudStack>
+</MudContainer>
+
+@code {
+    private string _organizationName = string.Empty;
+    private string _province = "ON";
+    private bool _isSubmitting;
+    private bool _isLoadingDemo;
+    private string? _feedback;
+    private Severity _feedbackSeverity = Severity.Success;
+
+    protected override void OnInitialized()
+    {
+        if (CurrentOrganization.HasOrganizationAccess)
+        {
+            NavigationManager.NavigateTo("/dashboard");
+        }
+        else if (CurrentOrganization.RequiresOrganizationSelection)
+        {
+            NavigationManager.NavigateTo("/onboarding/organization-picker");
+        }
+    }
+
+    private async Task LoadDemoAsync()
+    {
+        _isLoadingDemo = true;
+        _feedback = null;
+
+        try
+        {
+            var organization = await DataService.CreateOrganizationAsync($"{CurrentOrganization.UserFullName} Demo Workspace", _province);
+            NavigationManager.NavigateTo($"/organizations/switch/{organization!.Id}", forceLoad: true);
+        }
+        catch (Exception ex)
+        {
+            _feedback = ex.Message;
+            _feedbackSeverity = Severity.Error;
+        }
+        finally
+        {
+            _isLoadingDemo = false;
+        }
+    }
+
+    private async Task CreateOrganizationAsync()
+    {
+        _isSubmitting = true;
+        _feedback = null;
+
+        try
+        {
+            var organization = await DataService.CreateOrganizationAsync(_organizationName, _province);
+            NavigationManager.NavigateTo($"/organizations/switch/{organization!.Id}", forceLoad: true);
+        }
+        catch (Exception ex)
+        {
+            _feedback = ex.Message;
+            _feedbackSeverity = Severity.Error;
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+    }
+}

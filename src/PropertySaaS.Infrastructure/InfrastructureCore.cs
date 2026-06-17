@@ -1,3 +1,14 @@
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Net.Http.Json;
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Configuration;
@@ -6,7 +17,6 @@ using PropertySaaS.Application.Abstractions;
 using PropertySaaS.Domain.Common;
 using PropertySaaS.Domain.Entities;
 using PropertySaaS.Domain.Enums;
-using Stripe;
 
 namespace PropertySaaS.Infrastructure.Options
 {
@@ -27,6 +37,7 @@ namespace PropertySaaS.Infrastructure.Options
     {
         public string SecretKey { get; set; } = string.Empty;
         public string PublishableKey { get; set; } = string.Empty;
+        public string WebhookSecret { get; set; } = string.Empty;
         public string StarterPriceId { get; set; } = string.Empty;
         public string GrowthPriceId { get; set; } = string.Empty;
         public string ProPriceId { get; set; } = string.Empty;
@@ -40,6 +51,8 @@ namespace PropertySaaS.Infrastructure.Data
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
         public DbSet<Organization> Organizations => Set<Organization>();
         public DbSet<AppUser> Users => Set<AppUser>();
+        public DbSet<OrganizationMembership> OrganizationMemberships => Set<OrganizationMembership>();
+        public DbSet<OrganizationInvitation> OrganizationInvitations => Set<OrganizationInvitation>();
         public DbSet<Property> Properties => Set<Property>();
         public DbSet<Unit> Units => Set<Unit>();
         public DbSet<Tenant> Tenants => Set<Tenant>();
@@ -53,6 +66,11 @@ namespace PropertySaaS.Infrastructure.Data
         {
             modelBuilder.Entity<Organization>().HasIndex(x => x.Slug).IsUnique();
             modelBuilder.Entity<AppUser>().HasOne(x => x.Organization).WithMany(x => x.Users).HasForeignKey(x => x.OrganizationId).OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<OrganizationMembership>().HasIndex(x => new { x.OrganizationId, x.UserId }).IsUnique();
+            modelBuilder.Entity<OrganizationMembership>().HasOne(x => x.Organization).WithMany(x => x.Memberships).HasForeignKey(x => x.OrganizationId).OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<OrganizationMembership>().HasOne(x => x.User).WithMany(x => x.Memberships).HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<OrganizationInvitation>().HasIndex(x => x.Token).IsUnique();
+            modelBuilder.Entity<OrganizationInvitation>().HasOne(x => x.Organization).WithMany(x => x.Invitations).HasForeignKey(x => x.OrganizationId).OnDelete(DeleteBehavior.Cascade);
             modelBuilder.Entity<Property>().HasMany(x => x.Units).WithOne(x => x.Property).HasForeignKey(x => x.PropertyId);
             modelBuilder.Entity<Property>().Property(x => x.MonthlyRevenueTarget).HasPrecision(18, 2);
             modelBuilder.Entity<Unit>().Property(x => x.MonthlyRent).HasPrecision(18, 2);
@@ -87,6 +105,7 @@ namespace PropertySaaS.Infrastructure.Data
 
             modelBuilder.Entity<Organization>().HasData(new Organization { Id = orgId, Name = "Maple Leaf Property Group", Slug = "maple-leaf", CountryCode = "CA", Province = "ON", PreferredLanguage = "en-CA", TimeZone = "America/Toronto", SubscriptionTier = SubscriptionTier.Growth, StripeCustomerId = "cus_demo_mapleleaf", StripeSubscriptionId = "sub_demo_mapleleaf", IsActive = true, CreatedUtc = new DateTime(2026,1,1,0,0,0,DateTimeKind.Utc) });
             modelBuilder.Entity<AppUser>().HasData(new AppUser { Id = Guid.Parse("66666666-6666-6666-6666-666666666666"), OrganizationId = orgId, ClerkUserId = "user_demo_owner", Email = "owner@mapleleafpm.ca", FullName = "Morgan Chen", Role = "Owner", PreferredLanguage = "en-CA", IsActive = true, CreatedUtc = new DateTime(2026,1,1,0,0,0,DateTimeKind.Utc) });
+            modelBuilder.Entity<OrganizationMembership>().HasData(new OrganizationMembership { Id = Guid.Parse("dddddddd-dddd-dddd-dddd-dddddddddddd"), OrganizationId = orgId, UserId = Guid.Parse("66666666-6666-6666-6666-666666666666"), Role = "Owner", Status = "Active", CreatedUtc = new DateTime(2026,1,1,0,0,0,DateTimeKind.Utc) });
             modelBuilder.Entity<Property>().HasData(new Property { Id = propertyId, OrganizationId = orgId, Name = "King West Lofts", PropertyType = "Urban mid-rise", AddressLine1 = "18 Stafford Street", City = "Toronto", Province = "ON", PostalCode = "M6J 2R9", YearBuilt = 2017, MonthlyRevenueTarget = 14800m, AmenitySummary = "Gym access, rooftop terrace, bike storage", NeighborhoodNotes = "Walkable King West location with strong renter demand and transit access.", LeasingNotes = "Position as design-forward downtown living for professionals and couples.", OperationalNotes = "Monitor turnover windows closely and prioritize same-week suite refreshes.", CreatedUtc = new DateTime(2026,1,1,0,0,0,DateTimeKind.Utc) });
             modelBuilder.Entity<Unit>().HasData(new Unit { Id = unitId, OrganizationId = orgId, PropertyId = propertyId, UnitNumber = "508", Bedrooms = 1, Bathrooms = 1, MonthlyRent = 2895m, IsOccupied = true, CreatedUtc = new DateTime(2026,1,1,0,0,0,DateTimeKind.Utc) });
             modelBuilder.Entity<Tenant>().HasData(new Tenant { Id = tenantId, OrganizationId = orgId, FullName = "Jordan Patel", Email = "jordan.patel@example.com", PhoneNumber = "647-555-0134", CreditScore = 731, ScreeningCompleted = true, ScreeningProvider = "SingleKey", CreatedUtc = new DateTime(2026,1,1,0,0,0,DateTimeKind.Utc) });
@@ -133,14 +152,10 @@ namespace PropertySaaS.Infrastructure.Services
             services.Configure<ResendOptions>(configuration.GetSection("Resend"));
             services.AddHttpClient<IEmailService, ResendEmailService>(client => client.BaseAddress = new Uri("https://api.resend.com/"));
             services.AddScoped<INotificationService, NotificationService>();
+            services.AddHttpClient<StripeBillingService>(client => client.BaseAddress = new Uri("https://api.stripe.com/v1/"));
 
             services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(configuration.GetConnectionString("PropertyDb")));
             services.AddScoped<IApplicationDbContext>(provider => provider.GetRequiredService<ApplicationDbContext>());
-
-            if (!string.IsNullOrWhiteSpace(stripeOptions.SecretKey))
-            {
-                StripeConfiguration.ApiKey = stripeOptions.SecretKey;
-            }
 
             return services;
         }
@@ -159,9 +174,12 @@ namespace PropertySaaS.Infrastructure.Services
         private readonly StripeOptions _options;
         private readonly ILogger<StripeBillingService> _logger;
         private readonly ApplicationDbContext _db;
+        private readonly HttpClient _httpClient;
+        private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
-        public StripeBillingService(StripeOptions options, ILogger<StripeBillingService> logger, ApplicationDbContext db)
+        public StripeBillingService(HttpClient httpClient, StripeOptions options, ILogger<StripeBillingService> logger, ApplicationDbContext db)
         {
+            _httpClient = httpClient;
             _options = options;
             _logger = logger;
             _db = db;
@@ -182,19 +200,21 @@ namespace PropertySaaS.Infrastructure.Services
                 return cancelUrl;
             }
 
-            var service = new Stripe.Checkout.SessionService();
-            var session = await service.CreateAsync(new Stripe.Checkout.SessionCreateOptions
+            using var request = CreateRequest(HttpMethod.Post, "checkout/sessions");
+            request.Content = new FormUrlEncodedContent(new Dictionary<string, string>
             {
-                Mode = "subscription",
-                SuccessUrl = successUrl,
-                CancelUrl = cancelUrl,
-                LineItems = new List<Stripe.Checkout.SessionLineItemOptions>
-                {
-                    new() { Price = priceId, Quantity = 1 }
-                }
+                ["mode"] = "subscription",
+                ["success_url"] = successUrl,
+                ["cancel_url"] = cancelUrl,
+                ["customer_creation"] = "always",
+                ["line_items[0][price]"] = priceId,
+                ["line_items[0][quantity]"] = "1"
             });
 
-            return session.Url ?? cancelUrl;
+            using var response = await _httpClient.SendAsync(request);
+            var session = await ReadAsync<StripeCheckoutSessionResponse>(response);
+
+            return string.IsNullOrWhiteSpace(session.Url) ? cancelUrl : session.Url;
         }
 
         public async Task<string> CreateBillingPortalAsync(string customerId, string returnUrl)
@@ -204,12 +224,15 @@ namespace PropertySaaS.Infrastructure.Services
                 return returnUrl;
             }
 
-            var service = new Stripe.BillingPortal.SessionService();
-            var session = await service.CreateAsync(new Stripe.BillingPortal.SessionCreateOptions
+            using var request = CreateRequest(HttpMethod.Post, "billing_portal/sessions");
+            request.Content = new FormUrlEncodedContent(new Dictionary<string, string>
             {
-                Customer = customerId,
-                ReturnUrl = returnUrl
+                ["customer"] = customerId,
+                ["return_url"] = returnUrl
             });
+
+            using var response = await _httpClient.SendAsync(request);
+            var session = await ReadAsync<StripePortalSessionResponse>(response);
 
             return session.Url;
         }
@@ -218,22 +241,245 @@ namespace PropertySaaS.Infrastructure.Services
         {
             _logger.LogInformation("Received Stripe webhook. Signature present: {HasSignature}", !string.IsNullOrWhiteSpace(stripeSignature));
 
-            var organization = await _db.Organizations.FirstOrDefaultAsync(x => x.Slug == "maple-leaf");
+            if (!string.IsNullOrWhiteSpace(_options.WebhookSecret) && !string.IsNullOrWhiteSpace(stripeSignature))
+            {
+                ValidateWebhookSignature(json, stripeSignature, _options.WebhookSecret);
+            }
+
+            var stripeEvent = JsonSerializer.Deserialize<StripeWebhookEvent>(json, JsonOptions)
+                ?? throw new InvalidOperationException("Invalid Stripe webhook payload.");
+
+            var organization = await ResolveOrganizationForEventAsync(stripeEvent);
             if (organization is null)
             {
+                _logger.LogWarning("Stripe webhook {EventType} could not be matched to an organization.", stripeEvent.Type);
                 return;
+            }
+
+            switch (stripeEvent.Type)
+            {
+                case "checkout.session.completed":
+                    if (stripeEvent.Data?.Object?.Deserialize<StripeCheckoutSessionResponse>() is { } checkoutSession)
+                    {
+                        organization.StripeCustomerId = checkoutSession.Customer ?? organization.StripeCustomerId;
+                        organization.StripeSubscriptionId = checkoutSession.Subscription ?? organization.StripeSubscriptionId;
+                    }
+                    break;
+
+                case "customer.subscription.created":
+                case "customer.subscription.updated":
+                    if (stripeEvent.Data?.Object?.Deserialize<StripeSubscriptionResponse>() is { } subscription)
+                    {
+                        organization.StripeCustomerId = subscription.Customer ?? organization.StripeCustomerId;
+                        organization.StripeSubscriptionId = subscription.Id ?? organization.StripeSubscriptionId;
+                        organization.SubscriptionTier = ResolveTierFromPriceId(subscription.Items?.Data?.FirstOrDefault()?.Price?.Id);
+                        organization.IsActive = subscription.Status is "active" or "trialing" or "past_due";
+                    }
+                    break;
+
+                case "customer.subscription.deleted":
+                    organization.SubscriptionTier = SubscriptionTier.Trial;
+                    organization.StripeSubscriptionId = string.Empty;
+                    break;
+
+                case "invoice.payment_failed":
+                    organization.IsActive = true;
+                    break;
+
+                case "invoice.paid":
+                    organization.IsActive = true;
+                    break;
             }
 
             _db.AuditLogs.Add(new AuditLog
             {
                 OrganizationId = organization.Id,
                 EntityName = "StripeWebhook",
-                Action = "Received",
+                Action = stripeEvent.Type ?? "unknown",
                 PerformedBy = "stripe",
-                Details = $"PayloadLength={json.Length}; SignaturePresent={!string.IsNullOrWhiteSpace(stripeSignature)}"
+                Details = $"EventId={stripeEvent.Id}; EventType={stripeEvent.Type}"
             });
 
             await _db.SaveChangesAsync();
+        }
+
+        private async Task<Organization?> ResolveOrganizationForEventAsync(StripeWebhookEvent stripeEvent)
+        {
+            return stripeEvent.Type switch
+            {
+                "checkout.session.completed" when stripeEvent.Data?.Object?.Deserialize<StripeCheckoutSessionResponse>() is { } checkoutSession
+                    => await ResolveOrganizationAsync(checkoutSession.Customer, checkoutSession.Subscription),
+                "customer.subscription.created" or "customer.subscription.updated" or "customer.subscription.deleted" when stripeEvent.Data?.Object?.Deserialize<StripeSubscriptionResponse>() is { } subscription
+                    => await ResolveOrganizationAsync(subscription.Customer, subscription.Id),
+                "invoice.paid" or "invoice.payment_failed" when stripeEvent.Data?.Object?.Deserialize<StripeInvoiceResponse>() is { } invoice
+                    => await ResolveOrganizationAsync(invoice.Customer, invoice.Parent?.SubscriptionDetails?.Subscription),
+                _ => null
+            };
+        }
+
+        private async Task<Organization?> ResolveOrganizationAsync(string? customerId, string? subscriptionId)
+        {
+            if (!string.IsNullOrWhiteSpace(subscriptionId))
+            {
+                var bySubscription = await _db.Organizations.FirstOrDefaultAsync(x => x.StripeSubscriptionId == subscriptionId);
+                if (bySubscription is not null)
+                {
+                    return bySubscription;
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(customerId))
+            {
+                var byCustomer = await _db.Organizations.FirstOrDefaultAsync(x => x.StripeCustomerId == customerId);
+                if (byCustomer is not null)
+                {
+                    return byCustomer;
+                }
+            }
+
+            return null;
+        }
+
+        private SubscriptionTier ResolveTierFromPriceId(string? priceId)
+            => priceId switch
+            {
+                var id when string.Equals(id, _options.StarterPriceId, StringComparison.Ordinal) => SubscriptionTier.Starter,
+                var id when string.Equals(id, _options.GrowthPriceId, StringComparison.Ordinal) => SubscriptionTier.Growth,
+                var id when string.Equals(id, _options.ProPriceId, StringComparison.Ordinal) => SubscriptionTier.Pro,
+                _ => SubscriptionTier.Trial
+            };
+
+        private HttpRequestMessage CreateRequest(HttpMethod method, string path)
+        {
+            var request = new HttpRequestMessage(method, path);
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _options.SecretKey);
+            return request;
+        }
+
+        private async Task<T> ReadAsync<T>(HttpResponseMessage response)
+        {
+            var content = await response.Content.ReadAsStringAsync();
+            if (!response.IsSuccessStatusCode)
+            {
+                throw new InvalidOperationException($"Stripe API error ({(int)response.StatusCode}): {content}");
+            }
+
+            return JsonSerializer.Deserialize<T>(content, JsonOptions)
+                ?? throw new InvalidOperationException("Unable to deserialize Stripe response.");
+        }
+
+        private static void ValidateWebhookSignature(string payload, string stripeSignature, string webhookSecret)
+        {
+            var elements = stripeSignature.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Select(part => part.Split('=', 2))
+                .Where(parts => parts.Length == 2)
+                .ToDictionary(parts => parts[0], parts => parts[1], StringComparer.OrdinalIgnoreCase);
+
+            if (!elements.TryGetValue("t", out var timestamp) || !elements.TryGetValue("v1", out var signature))
+            {
+                throw new InvalidOperationException("Stripe signature header is invalid.");
+            }
+
+            var signedPayload = $"{timestamp}.{payload}";
+            using var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(webhookSecret));
+            var computed = Convert.ToHexString(hmac.ComputeHash(Encoding.UTF8.GetBytes(signedPayload))).ToLowerInvariant();
+            if (!CryptographicOperations.FixedTimeEquals(Encoding.UTF8.GetBytes(computed), Encoding.UTF8.GetBytes(signature.ToLowerInvariant())))
+            {
+                throw new InvalidOperationException("Stripe signature verification failed.");
+            }
+        }
+
+        private sealed class StripeCheckoutSessionResponse
+        {
+            [JsonPropertyName("id")]
+            public string? Id { get; set; }
+
+            [JsonPropertyName("url")]
+            public string? Url { get; set; }
+
+            [JsonPropertyName("customer")]
+            public string? Customer { get; set; }
+
+            [JsonPropertyName("subscription")]
+            public string? Subscription { get; set; }
+        }
+
+        private sealed class StripePortalSessionResponse
+        {
+            [JsonPropertyName("url")]
+            public string Url { get; set; } = string.Empty;
+        }
+
+        private sealed class StripeWebhookEvent
+        {
+            [JsonPropertyName("id")]
+            public string? Id { get; set; }
+
+            [JsonPropertyName("type")]
+            public string? Type { get; set; }
+
+            [JsonPropertyName("data")]
+            public StripeWebhookData? Data { get; set; }
+        }
+
+        private sealed class StripeWebhookData
+        {
+            [JsonPropertyName("object")]
+            public JsonElement? Object { get; set; }
+        }
+
+        private sealed class StripeSubscriptionResponse
+        {
+            [JsonPropertyName("id")]
+            public string? Id { get; set; }
+
+            [JsonPropertyName("customer")]
+            public string? Customer { get; set; }
+
+            [JsonPropertyName("status")]
+            public string? Status { get; set; }
+
+            [JsonPropertyName("items")]
+            public StripeSubscriptionItems? Items { get; set; }
+        }
+
+        private sealed class StripeSubscriptionItems
+        {
+            [JsonPropertyName("data")]
+            public List<StripeSubscriptionItem>? Data { get; set; }
+        }
+
+        private sealed class StripeSubscriptionItem
+        {
+            [JsonPropertyName("price")]
+            public StripePrice? Price { get; set; }
+        }
+
+        private sealed class StripePrice
+        {
+            [JsonPropertyName("id")]
+            public string? Id { get; set; }
+        }
+
+        private sealed class StripeInvoiceResponse
+        {
+            [JsonPropertyName("customer")]
+            public string? Customer { get; set; }
+
+            [JsonPropertyName("parent")]
+            public StripeInvoiceParent? Parent { get; set; }
+        }
+
+        private sealed class StripeInvoiceParent
+        {
+            [JsonPropertyName("subscription_details")]
+            public StripeSubscriptionDetails? SubscriptionDetails { get; set; }
+        }
+
+        private sealed class StripeSubscriptionDetails
+        {
+            [JsonPropertyName("subscription")]
+            public string? Subscription { get; set; }
         }
     }
 }

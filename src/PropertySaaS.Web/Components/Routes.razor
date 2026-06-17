@@ -1,5 +1,6 @@
 @using PropertySaaS.Web.Components.Pages
 @using PropertySaaS.Web.Localization
+@inject CurrentOrganization CurrentOrganization
 
 <Router AppAssembly="typeof(Program).Assembly">
     <Found Context="routeData">
@@ -15,6 +16,16 @@
                     </div>
                 </LayoutView>
             </NotAuthorized>
+            <Authorizing>
+                <LayoutView Layout="typeof(Layout.MainLayout)">
+                    <div class="card card-soft">
+                        <div class="card-body">
+                            <h3>@UiText.Get("Routes_AccessPendingTitle")</h3>
+                            <p>@UiText.Get("Routes_AccessPendingDescription")</p>
+                        </div>
+                    </div>
+                </LayoutView>
+            </Authorizing>
         </AuthorizeRouteView>
         <FocusOnNavigate RouteData="routeData" Selector="h1" />
     </Found>

@@ -127,7 +127,7 @@ namespace PropertySaaS.Infrastructure.Services
                 """;
             var text = $"New maintenance request created\nOrganization: {_current.OrganizationName}\nProperty: {propertyName}\nScope: {unitText}\nPriority: {request.Priority}\nStatus: {request.Status}\nRequested date: {request.RequestedDate}\nDescription: {request.Description}\nVendor: {request.VendorName}\nCreated by: {_current.UserEmail}";
 
-            return SendSafeAsync(subject, html, text, cancellationToken);
+            return SendSafeAsync(ResolveSupportEmail(), subject, html, text, cancellationToken);
         }
 
         public async Task SendComplianceDueSoonDigestAsync(CancellationToken cancellationToken = default)
@@ -154,17 +154,33 @@ namespace PropertySaaS.Infrastructure.Services
                 """;
             var text = $"Compliance due soon\nOrganization: {_current.OrganizationName}\n{itemsText}";
 
-            await SendSafeAsync(subject, html, text, cancellationToken);
+            await SendSafeAsync(ResolveSupportEmail(), subject, html, text, cancellationToken);
         }
 
         public Task SendSupportAlertAsync(string subject, string message, CancellationToken cancellationToken = default)
-            => SendSafeAsync(subject, $"<pre>{System.Net.WebUtility.HtmlEncode(message)}</pre>", message, cancellationToken);
+            => SendSafeAsync(ResolveSupportEmail(), subject, $"<pre>{System.Net.WebUtility.HtmlEncode(message)}</pre>", message, cancellationToken);
 
-        private async Task SendSafeAsync(string subject, string html, string text, CancellationToken cancellationToken)
+        public Task SendOrganizationInvitationAsync(string to, string organizationName, string invitedBy, string role, string invitationUrl, CancellationToken cancellationToken = default)
+        {
+            var subject = $"[PropertySaaS] Invitation to join {organizationName}";
+            var html = $"""
+                <h2>You're invited to join {organizationName}</h2>
+                <p><strong>Invited by:</strong> {invitedBy}</p>
+                <p><strong>Role:</strong> {role}</p>
+                <p>Use the secure link below to accept your invitation:</p>
+                <p><a href=\"{invitationUrl}\">Accept invitation</a></p>
+                <p>This link expires in 7 days.</p>
+                """;
+            var text = $"You're invited to join {organizationName}\nInvited by: {invitedBy}\nRole: {role}\nAccept invitation: {invitationUrl}\nThis link expires in 7 days.";
+
+            return SendSafeAsync(to, subject, html, text, cancellationToken);
+        }
+
+        private async Task SendSafeAsync(string recipient, string subject, string html, string text, CancellationToken cancellationToken)
         {
             try
             {
-                await _emailService.SendAsync(ResolveSupportEmail(), subject, html, text, cancellationToken);
+                await _emailService.SendAsync(recipient, subject, html, text, cancellationToken);
             }
             catch (Exception ex)
             {

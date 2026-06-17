@@ -1,22 +1,46 @@
 @using PropertySaaS.Web.Localization
+@inject CurrentOrganization CurrentOrganization
 
 <MudNavMenu Class="material-nav-menu">
     <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Campaign">@UiText.Get("Nav_Marketing")</MudNavLink>
-    <MudNavLink Href="/sign-up" Icon="@Icons.Material.Filled.PersonAdd">@UiText.Get("Nav_SignUp")</MudNavLink>
-    <MudNavLink Href="/sign-in" Icon="@Icons.Material.Filled.Login">@UiText.Get("Nav_SignIn")</MudNavLink>
+    @if (!CurrentOrganization.IsAuthenticated)
+    {
+        <MudNavLink Href="/sign-up" Icon="@Icons.Material.Filled.PersonAdd">@UiText.Get("Nav_SignUp")</MudNavLink>
+        <MudNavLink Href="/sign-in" Icon="@Icons.Material.Filled.Login">@UiText.Get("Nav_SignIn")</MudNavLink>
+    }
     <MudNavLink Href="/pricing" Icon="@Icons.Material.Filled.Payments">@UiText.Get("Nav_Pricing")</MudNavLink>
-    <MudNavLink Href="/dashboard" Icon="@Icons.Material.Filled.Dashboard">@UiText.Get("Nav_Dashboard")</MudNavLink>
-    <MudNavLink Href="/properties" Icon="@Icons.Material.Filled.Apartment">@UiText.Get("Nav_Properties")</MudNavLink>
-    <MudNavLink Href="/units" Icon="@Icons.Material.Filled.MeetingRoom">@UiText.Get("Nav_Units")</MudNavLink>
-    <MudNavLink Href="/tenants" Icon="@Icons.Material.Filled.Groups">@UiText.Get("Nav_Tenants")</MudNavLink>
-    <MudNavLink Href="/leases" Icon="@Icons.Material.Filled.Description">@UiText.Get("Nav_Leases")</MudNavLink>
-    <MudNavLink Href="/maintenance" Icon="@Icons.Material.Filled.Build">@UiText.Get("Nav_Maintenance")</MudNavLink>
-    <MudNavLink Href="/compliance" Icon="@Icons.Material.Filled.Gavel">@UiText.Get("Nav_Compliance")</MudNavLink>
-    <MudNavLink Href="/profile" Icon="@Icons.Material.Filled.Person">@UiText.Get("Nav_Profile")</MudNavLink>
-    <MudNavLink Href="/subscriptions" Icon="@Icons.Material.Filled.Subscriptions">@UiText.Get("Nav_Subscriptions")</MudNavLink>
-    <MudNavLink Href="/audit-logs" Icon="@Icons.Material.Filled.FactCheck">@UiText.Get("Nav_AuditLogs")</MudNavLink>
-    <MudNavLink Href="/import-export" Icon="@Icons.Material.Filled.ImportExport">@UiText.Get("Nav_ImportExport")</MudNavLink>
-    <MudNavLink Href="/account" Icon="@Icons.Material.Filled.ManageAccounts">@UiText.Get("Nav_ManageAccount")</MudNavLink>
-    <MudDivider Class="my-2" />
-    <MudNavLink Href="/account/logout" Icon="@Icons.Material.Filled.Logout">@UiText.Get("Nav_SignOut")</MudNavLink>
+
+    @if (CurrentOrganization.IsAuthenticated && !CurrentOrganization.HasOrganizationAccess)
+    {
+        <MudNavLink Href="/onboarding" Icon="@Icons.Material.Filled.AutoAwesome">@UiText.Get("Onboarding_Title")</MudNavLink>
+    }
+
+    @if (CurrentOrganization.HasOrganizationAccess)
+    {
+        <MudNavLink Href="/dashboard" Icon="@Icons.Material.Filled.Dashboard">@UiText.Get("Nav_Dashboard")</MudNavLink>
+        <MudNavLink Href="/properties" Icon="@Icons.Material.Filled.Apartment">@UiText.Get("Nav_Properties")</MudNavLink>
+        <MudNavLink Href="/units" Icon="@Icons.Material.Filled.MeetingRoom">@UiText.Get("Nav_Units")</MudNavLink>
+        <MudNavLink Href="/tenants" Icon="@Icons.Material.Filled.Groups">@UiText.Get("Nav_Tenants")</MudNavLink>
+        <MudNavLink Href="/leases" Icon="@Icons.Material.Filled.Description">@UiText.Get("Nav_Leases")</MudNavLink>
+        <MudNavLink Href="/maintenance" Icon="@Icons.Material.Filled.Build">@UiText.Get("Nav_Maintenance")</MudNavLink>
+        <MudNavLink Href="/compliance" Icon="@Icons.Material.Filled.Gavel">@UiText.Get("Nav_Compliance")</MudNavLink>
+        <MudNavLink Href="/profile" Icon="@Icons.Material.Filled.Person">@UiText.Get("Nav_Profile")</MudNavLink>
+        <MudNavLink Href="/subscriptions" Icon="@Icons.Material.Filled.Subscriptions">@UiText.Get("Nav_Subscriptions")</MudNavLink>
+        <MudNavLink Href="/audit-logs" Icon="@Icons.Material.Filled.FactCheck">@UiText.Get("Nav_AuditLogs")</MudNavLink>
+        <MudNavLink Href="/import-export" Icon="@Icons.Material.Filled.ImportExport">@UiText.Get("Nav_ImportExport")</MudNavLink>
+        <MudNavLink Href="/account" Icon="@Icons.Material.Filled.ManageAccounts">@UiText.Get("Nav_ManageAccount")</MudNavLink>
+        <MudDivider Class="my-2" />
+    }
+
+    @if (CurrentOrganization.IsSuperAdmin)
+    {
+        <MudNavLink Href="/superadmin" Icon="@Icons.Material.Filled.AdminPanelSettings">@UiText.Get("Nav_SuperAdmin")</MudNavLink>
+    }
+
+    @if (CurrentOrganization.IsAuthenticated)
+    {
+        <MudDivider Class="my-2" />
+        <MudNavLink Href="/account" Icon="@Icons.Material.Filled.ManageAccounts">@UiText.Get("Nav_ManageAccount")</MudNavLink>
+        <MudNavLink Href="/account/logout" Icon="@Icons.Material.Filled.Logout">@UiText.Get("Nav_SignOut")</MudNavLink>
+    }
 </MudNavMenu>

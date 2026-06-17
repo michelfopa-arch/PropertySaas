@@ -1,6 +1,4 @@
 @page "/sign-up"
-@inject IConfiguration Configuration
-@using PropertySaaS.Infrastructure.Options
 @using PropertySaaS.Web.Localization
 
 <PageTitle>@UiText.Get("Auth_SignUpPageTitle")</PageTitle>
@@ -11,20 +9,9 @@
             <MudText Typo="Typo.h4">@UiText.Get("Auth_SignUpTitle")</MudText>
             <MudText Typo="Typo.body1" Color="Color.Secondary">@UiText.Get("Auth_SignUpSubtitle")</MudText>
             <MudStack Spacing="2">
-                <MudButton Href="@HostedSignUpUrl" Variant="Variant.Filled" Color="Color.Primary" FullWidth="true">@UiText.Get("Auth_StartFree")</MudButton>
+                <MudButton Href="/account/sign-up" Variant="Variant.Filled" Color="Color.Primary" FullWidth="true">@UiText.Get("Auth_StartFree")</MudButton>
                 <MudButton Href="/sign-in" Variant="Variant.Outlined" Color="Color.Default" FullWidth="true">@UiText.Get("Auth_AlreadyHaveAccount")</MudButton>
             </MudStack>
         </MudStack>
     </MudPaper>
 </MudContainer>
-
-@code {
-    private string HostedSignUpUrl => GetClerkOptions().SignUpUrl;
-
-    private ClerkOptions GetClerkOptions()
-    {
-        var options = new ClerkOptions();
-        Configuration.GetSection("Clerk").Bind(options);
-        return options;
-    }
-}

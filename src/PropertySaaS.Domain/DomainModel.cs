@@ -40,6 +40,8 @@ namespace PropertySaaS.Domain.Entities
         public string StripeSubscriptionId { get; set; } = string.Empty;
         public bool IsActive { get; set; } = true;
         public ICollection<AppUser> Users { get; set; } = new List<AppUser>();
+        public ICollection<OrganizationMembership> Memberships { get; set; } = new List<OrganizationMembership>();
+        public ICollection<OrganizationInvitation> Invitations { get; set; } = new List<OrganizationInvitation>();
         public ICollection<Property> Properties { get; set; } = new List<Property>();
     }
 
@@ -49,8 +51,34 @@ namespace PropertySaaS.Domain.Entities
         public string Email { get; set; } = string.Empty;
         public string FullName { get; set; } = string.Empty;
         public string Role { get; set; } = "Owner";
+        public string SystemRole { get; set; } = "User";
         public string PreferredLanguage { get; set; } = "en-CA";
         public bool IsActive { get; set; } = true;
+        public Organization? Organization { get; set; }
+        public ICollection<OrganizationMembership> Memberships { get; set; } = new List<OrganizationMembership>();
+    }
+
+    public class OrganizationMembership : BaseEntity
+    {
+        public Guid OrganizationId { get; set; }
+        public Guid UserId { get; set; }
+        public string Role { get; set; } = "Viewer";
+        public string Status { get; set; } = "Active";
+        public Organization? Organization { get; set; }
+        public AppUser? User { get; set; }
+    }
+
+    public class OrganizationInvitation : BaseEntity
+    {
+        public Guid OrganizationId { get; set; }
+        public string Email { get; set; } = string.Empty;
+        public string Role { get; set; } = "Viewer";
+        public string Token { get; set; } = string.Empty;
+        public string Status { get; set; } = "Pending";
+        public string InvitedBy { get; set; } = string.Empty;
+        public DateTime ExpiresUtc { get; set; } = DateTime.UtcNow.AddDays(7);
+        public DateTime? AcceptedUtc { get; set; }
+        public DateTime? RevokedUtc { get; set; }
         public Organization? Organization { get; set; }
     }
 
