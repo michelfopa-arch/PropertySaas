@@ -123,7 +123,10 @@
 
         try
         {
-            var organization = await DataService.CreateOrganizationAsync($"{CurrentOrganization.UserFullName} Demo Workspace", _province);
+            var displayName = string.IsNullOrWhiteSpace(CurrentOrganization.UserFullName) || CurrentOrganization.UserFullName.Contains('@')
+                ? UiText.Get("Onboarding_DefaultDemoWorkspaceName")
+                : $"{CurrentOrganization.UserFullName} Demo Workspace";
+            var organization = await DataService.CreateOrganizationAsync(displayName, _province, loadDemoData: true);
             NavigationManager.NavigateTo($"/organizations/switch/{organization!.Id}", forceLoad: true);
         }
         catch (Exception ex)

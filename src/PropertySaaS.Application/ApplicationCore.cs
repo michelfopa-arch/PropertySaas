@@ -125,6 +125,8 @@ namespace PropertySaaS.Application.Common
         public Guid OrganizationId { get; set; }
         public int AccessibleOrganizationCount { get; set; }
         public string OrganizationName { get; set; } = string.Empty;
+        public bool IsDemo { get; set; }
+        public DateTime? DemoExpiresUtc { get; set; }
         public string UserEmail { get; set; } = string.Empty;
         public string UserFullName { get; set; } = string.Empty;
         public string Role { get; set; } = "Owner";
@@ -157,6 +159,7 @@ namespace PropertySaaS.Application.Common
     {
         public Guid OrganizationId { get; set; }
         public string OrganizationName { get; set; } = string.Empty;
+        public bool IsDemo { get; set; }
         public string Role { get; set; } = string.Empty;
         public string Status { get; set; } = string.Empty;
     }
@@ -473,7 +476,9 @@ namespace PropertySaaS.Application.Features
         }
 
         public async Task<AppUser?> GetCurrentUserProfileAsync()
-            => await _db.Users.AsNoTracking().FirstOrDefaultAsync(x => x.OrganizationId == _current.OrganizationId && x.Email == _current.UserEmail);
+            => _current.UserId == Guid.Empty
+                ? null
+                : await _db.Users.AsNoTracking().FirstOrDefaultAsync(x => x.Id == _current.UserId);
 
         public async Task<List<MemberSummaryDto>> GetMembersAsync()
             => await _db.OrganizationMemberships
@@ -491,11 +496,25 @@ namespace PropertySaaS.Application.Features
                 })
                 .ToListAsync();
 
-        public async Task<Organization?> CreateOrganizationAsync(string name, string province, CancellationToken cancellationToken = default)
+        public async Task<Organization?> CreateOrganizationAsync(string name, string province, bool loadDemoData = false, CancellationToken cancellationToken = default)
         {
             if (!_current.IsAuthenticated || _current.UserId == Guid.Empty)
             {
                 throw new InvalidOperationException("You must be authenticated to create an organization.");
+            }
+
+            if (loadDemoData)
+            {
+                var existingDemoOrganization = await _db.OrganizationMemberships
+                    .AsNoTracking()
+                    .Where(x => x.UserId == _current.UserId && x.Status == "Active" && x.Role == "Owner")
+                    .Select(x => x.Organization)
+                    .FirstOrDefaultAsync(x => x != null && x.IsDemo && (!x.DemoExpiresUtc.HasValue || x.DemoExpiresUtc.Value >= DateTime.UtcNow), cancellationToken);
+
+                if (existingDemoOrganization is not null)
+                {
+                    return existingDemoOrganization;
+                }
             }
 
             var normalizedName = string.IsNullOrWhiteSpace(name)
@@ -521,6 +540,9 @@ namespace PropertySaaS.Application.Features
                 Province = profile.ProvinceCode,
                 PreferredLanguage = profile.DefaultLanguage,
                 TimeZone = "America/Toronto",
+                IsDemo = loadDemoData,
+                DemoTemplate = loadDemoData ? profile.ProvinceCode : string.Empty,
+                DemoExpiresUtc = loadDemoData ? DateTime.UtcNow.AddDays(14) : null,
                 SubscriptionTier = SubscriptionTier.Trial,
                 TrialEndsUtc = DateTime.UtcNow.AddDays(14),
                 IsActive = true,
@@ -553,10 +575,17 @@ namespace PropertySaaS.Application.Features
             {
                 OrganizationId = organization.Id,
                 EntityName = nameof(Organization),
-                Action = "Create",
+                Action = loadDemoData ? "CreateDemo" : "Create",
                 PerformedBy = _current.UserEmail,
-                Details = $"Created organization {organization.Name} from onboarding"
+                Details = loadDemoData
+                    ? $"Created demo organization {organization.Name} from onboarding"
+                    : $"Created organization {organization.Name} from onboarding"
             });
+
+            if (loadDemoData)
+            {
+                SeedDemoWorkspace(organization, profile);
+            }
 
             await _db.SaveChangesAsync(cancellationToken);
             return organization;
@@ -571,6 +600,7 @@ namespace PropertySaaS.Application.Features
                 {
                     OrganizationId = x.OrganizationId,
                     OrganizationName = x.Organization!.Name,
+                    IsDemo = x.Organization!.IsDemo,
                     Role = x.Role,
                     Status = x.Status
                 })
@@ -677,7 +707,7 @@ namespace PropertySaaS.Application.Features
             };
         }
 
-        public async Task AcceptInvitationAsync(string token, string email, string clerkUserId, string fullName, CancellationToken cancellationToken = default)
+        public async Task<Guid> AcceptInvitationAsync(string token, string email, string clerkUserId, string fullName, CancellationToken cancellationToken = default)
         {
             var normalizedEmail = email.Trim().ToLowerInvariant();
             var invitation = await _db.OrganizationInvitations
@@ -748,6 +778,7 @@ namespace PropertySaaS.Application.Features
             });
 
             await _db.SaveChangesAsync(cancellationToken);
+            return invitation.OrganizationId;
         }
 
         public async Task RevokeInvitationAsync(Guid invitationId, CancellationToken cancellationToken = default)
@@ -776,7 +807,7 @@ namespace PropertySaaS.Application.Features
 
         public async Task UpdateCurrentUserPreferredLanguageAsync(string preferredLanguage)
         {
-            var entity = await _db.Users.FirstOrDefaultAsync(x => x.OrganizationId == _current.OrganizationId && x.Email == _current.UserEmail);
+            var entity = await _db.Users.FirstOrDefaultAsync(x => x.Id == _current.UserId);
             if (entity is null) return;
 
             var normalizedLanguage = string.IsNullOrWhiteSpace(preferredLanguage)
@@ -791,6 +822,40 @@ namespace PropertySaaS.Application.Features
             entity.PreferredLanguage = normalizedLanguage;
             _db.AuditLogs.Add(new AuditLog { OrganizationId = _current.OrganizationId, EntityName = nameof(AppUser), Action = "Update", PerformedBy = _current.UserEmail, Details = $"Updated preferred language to {normalizedLanguage}" });
             await _db.SaveChangesAsync();
+        }
+
+        public async Task ResetCurrentDemoWorkspaceAsync(CancellationToken cancellationToken = default)
+        {
+            EnsureCanManageData();
+
+            var organization = await _db.Organizations.FirstOrDefaultAsync(x => x.Id == _current.OrganizationId, cancellationToken);
+            if (organization is null)
+            {
+                throw new InvalidOperationException("Current organization was not found.");
+            }
+
+            if (!organization.IsDemo)
+            {
+                throw new InvalidOperationException("Only demo workspaces can be reset.");
+            }
+
+            await ClearOrganizationPortfolioAsync(organization.Id, cancellationToken);
+
+            var profile = JurisdictionCatalog.GetProfile(string.IsNullOrWhiteSpace(organization.DemoTemplate) ? organization.Province : organization.DemoTemplate);
+            organization.DemoResetAtUtc = DateTime.UtcNow;
+            organization.DemoExpiresUtc ??= DateTime.UtcNow.AddDays(14);
+            SeedDemoWorkspace(organization, profile);
+
+            _db.AuditLogs.Add(new AuditLog
+            {
+                OrganizationId = organization.Id,
+                EntityName = nameof(Organization),
+                Action = "ResetDemo",
+                PerformedBy = _current.UserEmail,
+                Details = $"Reset demo workspace {organization.Name}"
+            });
+
+            await _db.SaveChangesAsync(cancellationToken);
         }
 
         public async Task AddUnitAsync(Unit unit)
@@ -1034,6 +1099,121 @@ namespace PropertySaaS.Application.Features
                 _ => "Viewer"
             };
 
+        private void SeedDemoWorkspace(Organization organization, JurisdictionProfile profile)
+        {
+            var property = new Property
+            {
+                Id = Guid.NewGuid(),
+                OrganizationId = organization.Id,
+                Name = profile.ProvinceCode == "QC" ? "Résidences du Vieux-Port" : "Harbour View Residences",
+                PropertyType = "Mid-rise rental",
+                AddressLine1 = profile.ProvinceCode == "QC" ? "245 Rue de la Commune O" : "18 Queens Quay E",
+                City = profile.ProvinceCode == "QC" ? "Montréal" : "Toronto",
+                Province = profile.ProvinceCode,
+                PostalCode = profile.ProvinceCode == "QC" ? "H2Y 2C6" : "M5E 1B3",
+                YearBuilt = 2019,
+                MonthlyRevenueTarget = 18450m,
+                AmenitySummary = "Fitness room, rooftop lounge, bike storage",
+                NeighborhoodNotes = "Transit-friendly urban location with strong renter demand.",
+                LeasingNotes = "Use the demo workflow to show readiness, notices and turnover discipline.",
+                OperationalNotes = "Sample workspace seeded for onboarding and sales demos.",
+                CreatedUtc = DateTime.UtcNow
+            };
+
+            var unit = new Unit
+            {
+                Id = Guid.NewGuid(),
+                OrganizationId = organization.Id,
+                PropertyId = property.Id,
+                UnitNumber = "804",
+                Bedrooms = 2,
+                Bathrooms = 2,
+                MonthlyRent = 3075m,
+                IsOccupied = true,
+                CreatedUtc = DateTime.UtcNow
+            };
+
+            var tenant = new Tenant
+            {
+                Id = Guid.NewGuid(),
+                OrganizationId = organization.Id,
+                FullName = "Avery Martin",
+                Email = "avery.martin@example.com",
+                PhoneNumber = "416-555-0144",
+                CreditScore = 736,
+                ScreeningCompleted = true,
+                ScreeningProvider = "SingleKey",
+                CreatedUtc = DateTime.UtcNow
+            };
+
+            _db.Properties.Add(property);
+            _db.Units.Add(unit);
+            _db.Tenants.Add(tenant);
+            _db.Leases.Add(new Lease
+            {
+                Id = Guid.NewGuid(),
+                OrganizationId = organization.Id,
+                UnitId = unit.Id,
+                TenantId = tenant.Id,
+                StartDate = DateOnly.FromDateTime(DateTime.Today.AddMonths(-4)),
+                EndDate = DateOnly.FromDateTime(DateTime.Today.AddMonths(8)),
+                MonthlyRent = unit.MonthlyRent,
+                Status = LeaseStatus.Active,
+                StandardOntarioLeaseSigned = profile.ProvinceCode == "ON",
+                N1IncreaseNoticeScheduled = profile.ProvinceCode == "ON",
+                CreatedUtc = DateTime.UtcNow
+            });
+            _db.MaintenanceRequests.Add(new MaintenanceRequest
+            {
+                Id = Guid.NewGuid(),
+                OrganizationId = organization.Id,
+                PropertyId = property.Id,
+                UnitId = unit.Id,
+                Title = "Seasonal HVAC inspection",
+                Description = "Demo maintenance workflow showing vendor coordination and planning.",
+                Priority = MaintenancePriority.Medium,
+                Status = "Scheduled",
+                VendorName = "North Shore Mechanical",
+                EstimatedCost = 240m,
+                RequestedDate = DateOnly.FromDateTime(DateTime.Today),
+                CreatedUtc = DateTime.UtcNow
+            });
+            _db.ComplianceReminders.Add(new ComplianceReminder
+            {
+                Id = Guid.NewGuid(),
+                OrganizationId = organization.Id,
+                Title = $"{profile.ProvinceDisplayName} notice review",
+                NoticeType = profile.NoticeTypes.FirstOrDefault() ?? "General",
+                Province = profile.ProvinceCode,
+                DueDate = DateOnly.FromDateTime(DateTime.Today.AddDays(21)),
+                IsCompleted = false,
+                Reference = "Seeded demo reminder for onboarding.",
+                CreatedUtc = DateTime.UtcNow
+            });
+            _db.DocumentTemplates.Add(new DocumentTemplate
+            {
+                Id = Guid.NewGuid(),
+                OrganizationId = organization.Id,
+                Name = profile.LeasePackageLabel,
+                Category = "Lease",
+                Province = profile.ProvinceCode,
+                Description = "Seeded demo template to showcase jurisdiction-ready workflows.",
+                CreatedUtc = DateTime.UtcNow
+            });
+        }
+
+        private async Task ClearOrganizationPortfolioAsync(Guid organizationId, CancellationToken cancellationToken)
+        {
+            await _db.AuditLogs.Where(x => x.OrganizationId == organizationId).ExecuteDeleteAsync(cancellationToken);
+            await _db.ComplianceReminders.Where(x => x.OrganizationId == organizationId).ExecuteDeleteAsync(cancellationToken);
+            await _db.DocumentTemplates.Where(x => x.OrganizationId == organizationId).ExecuteDeleteAsync(cancellationToken);
+            await _db.MaintenanceRequests.Where(x => x.OrganizationId == organizationId).ExecuteDeleteAsync(cancellationToken);
+            await _db.Leases.Where(x => x.OrganizationId == organizationId).ExecuteDeleteAsync(cancellationToken);
+            await _db.Tenants.Where(x => x.OrganizationId == organizationId).ExecuteDeleteAsync(cancellationToken);
+            await _db.Units.Where(x => x.OrganizationId == organizationId).ExecuteDeleteAsync(cancellationToken);
+            await _db.Properties.Where(x => x.OrganizationId == organizationId).ExecuteDeleteAsync(cancellationToken);
+        }
+
         private static string BuildSlug(string value)
         {
             var chars = value
@@ -1061,7 +1241,7 @@ namespace PropertySaaS.Application.Dashboard
     {
         public static IServiceCollection AddApplicationServices(this IServiceCollection services)
         {
-            services.AddScoped<SaasDataService>();
+            services.AddTransient<SaasDataService>();
             services.AddScoped(_ => new CurrentOrganization
             {
                 UserId = Guid.Parse("66666666-6666-6666-6666-666666666666"),

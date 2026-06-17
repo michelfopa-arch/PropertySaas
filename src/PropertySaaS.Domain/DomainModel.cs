@@ -35,6 +35,10 @@ namespace PropertySaaS.Domain.Entities
         public string Province { get; set; } = "ON";
         public string PreferredLanguage { get; set; } = "en-CA";
         public string TimeZone { get; set; } = "America/Toronto";
+        public bool IsDemo { get; set; }
+        public string DemoTemplate { get; set; } = string.Empty;
+        public DateTime? DemoExpiresUtc { get; set; }
+        public DateTime? DemoResetAtUtc { get; set; }
         public SubscriptionTier SubscriptionTier { get; set; } = SubscriptionTier.Trial;
         public string StripeCustomerId { get; set; } = string.Empty;
         public string StripeSubscriptionId { get; set; } = string.Empty;
@@ -46,8 +50,9 @@ namespace PropertySaaS.Domain.Entities
         public ICollection<Property> Properties { get; set; } = new List<Property>();
     }
 
-    public class AppUser : TenantScopedEntity
+    public class AppUser : BaseEntity
     {
+        public Guid? OrganizationId { get; set; }
         public string ClerkUserId { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
         public string FullName { get; set; } = string.Empty;

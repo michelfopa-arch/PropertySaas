@@ -59,6 +59,7 @@ builder.Services.AddScoped<CurrentOrganization>(provider =>
             UserId = Guid.Empty,
             OrganizationId = Guid.Empty,
             OrganizationName = "Visitor",
+                IsDemo = false,
             UserEmail = string.Empty,
             UserFullName = string.Empty,
             Role = "Guest",
@@ -98,6 +99,8 @@ builder.Services.AddScoped<CurrentOrganization>(provider =>
                 OrganizationId = selectedMembership.OrganizationId,
                 AccessibleOrganizationCount = memberships.Count,
                 OrganizationName = org?.Name ?? "Maple Leaf Property Group",
+                IsDemo = org?.IsDemo ?? false,
+                DemoExpiresUtc = org?.DemoExpiresUtc,
                 UserEmail = email,
                 UserFullName = string.IsNullOrWhiteSpace(appUser.FullName) ? email : appUser.FullName,
                 Role = string.IsNullOrWhiteSpace(selectedMembership.Role) ? "Owner" : selectedMembership.Role,
@@ -119,6 +122,7 @@ builder.Services.AddScoped<CurrentOrganization>(provider =>
             OrganizationId = Guid.Empty,
             AccessibleOrganizationCount = memberships.Count,
             OrganizationName = "Pending access",
+            IsDemo = false,
             UserEmail = email,
             UserFullName = string.IsNullOrWhiteSpace(appUser.FullName) ? email : appUser.FullName,
             Role = "Pending",
@@ -135,6 +139,7 @@ builder.Services.AddScoped<CurrentOrganization>(provider =>
         OrganizationId = Guid.Empty,
         AccessibleOrganizationCount = 0,
         OrganizationName = "Pending access",
+        IsDemo = false,
         UserEmail = email,
         UserFullName = user?.Claims.FirstOrDefault(c => c.Type.Contains("name", StringComparison.OrdinalIgnoreCase))?.Value ?? email,
         Role = "Pending",
@@ -193,6 +198,7 @@ using (var scope = app.Services.CreateScope())
     var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     db.Database.EnsureCreated();
     EnsureSchemaUpgrades(db);
+    PurgeExpiredDemoOrganizations(db);
 }
 
 if (!app.Environment.IsDevelopment())
@@ -235,7 +241,7 @@ app.Use(async (context, next) =>
         {
             var db = context.RequestServices.GetRequiredService<ApplicationDbContext>();
             var normalizedEmail = email.Trim().ToLowerInvariant();
-            var existing = await db.Users.FirstOrDefaultAsync(x => x.Email == email);
+            var existing = await db.Users.FirstOrDefaultAsync(x => x.Email == normalizedEmail);
             var fullName = ResolveUserFullName(context.User, email);
             var clerkUserId = context.User.Claims.FirstOrDefault(c => c.Type == "sub")?.Value ?? string.Empty;
             var hasChanges = false;
@@ -264,7 +270,7 @@ app.Use(async (context, next) =>
                 hasChanges = true;
             }
 
-            if (!string.IsNullOrWhiteSpace(fullName) && !string.Equals(existing.FullName, fullName, StringComparison.Ordinal))
+            if (ShouldUpdateDisplayName(existing.FullName, fullName, normalizedEmail))
             {
                 existing.FullName = fullName;
                 hasChanges = true;
@@ -285,15 +291,15 @@ app.Use(async (context, next) =>
             var primaryMembership = await db.OrganizationMemberships
                 .FirstOrDefaultAsync(x => x.UserId == existing.Id && x.Status == "Active");
 
-            if (existing.OrganizationId != Guid.Empty)
+            if (existing.OrganizationId.HasValue && existing.OrganizationId.Value != Guid.Empty)
             {
-                var legacyMembership = await db.OrganizationMemberships.FirstOrDefaultAsync(x => x.UserId == existing.Id && x.OrganizationId == existing.OrganizationId);
+                var legacyMembership = await db.OrganizationMemberships.FirstOrDefaultAsync(x => x.UserId == existing.Id && x.OrganizationId == existing.OrganizationId.Value);
                 if (legacyMembership is null)
                 {
                     db.OrganizationMemberships.Add(new OrganizationMembership
                     {
                         Id = Guid.NewGuid(),
-                        OrganizationId = existing.OrganizationId,
+                        OrganizationId = existing.OrganizationId.Value,
                         UserId = existing.Id,
                         Role = NormalizeOrganizationRole(existing.Role),
                         Status = "Active",
@@ -509,8 +515,8 @@ app.MapGet("/invitations/accept", async (string token, HttpContext httpContext, 
         return Results.Redirect("/");
     }
 
-    await dataService.AcceptInvitationAsync(token, email, clerkUserId, ResolveUserFullName(httpContext.User, email));
-    return Results.LocalRedirect("/account/post-login");
+    var organizationId = await dataService.AcceptInvitationAsync(token, email, clerkUserId, ResolveUserFullName(httpContext.User, email));
+    return Results.LocalRedirect($"/organizations/switch/{organizationId}");
 });
 
 app.MapGet("/account/logout", async (HttpContext httpContext) =>
@@ -536,8 +542,8 @@ app.MapGet("/account/post-login", async (string? invitation, HttpContext httpCon
         {
             try
             {
-                await dataService.AcceptInvitationAsync(invitation, email, clerkUserId, ResolveUserFullName(httpContext.User, email));
-                return Results.LocalRedirect("/account/post-login");
+                var organizationId = await dataService.AcceptInvitationAsync(invitation, email, clerkUserId, ResolveUserFullName(httpContext.User, email));
+                return Results.LocalRedirect($"/organizations/switch/{organizationId}");
             }
             catch (InvalidOperationException)
             {
@@ -767,8 +773,18 @@ static string ResolvePreferredLanguage(HttpContext? httpContext, string? userPre
 
 static string ResolveUserFullName(ClaimsPrincipal? user, string email)
 {
-    var firstName = user?.Claims.FirstOrDefault(c => c.Type.EndsWith("given_name", StringComparison.OrdinalIgnoreCase) || c.Type.EndsWith("first_name", StringComparison.OrdinalIgnoreCase))?.Value?.Trim();
-    var lastName = user?.Claims.FirstOrDefault(c => c.Type.EndsWith("family_name", StringComparison.OrdinalIgnoreCase) || c.Type.EndsWith("last_name", StringComparison.OrdinalIgnoreCase))?.Value?.Trim();
+    var firstName = ResolveClaimValue(user,
+        ClaimTypes.GivenName,
+        "given_name",
+        "givenname",
+        "first_name",
+        "firstname");
+    var lastName = ResolveClaimValue(user,
+        ClaimTypes.Surname,
+        "family_name",
+        "surname",
+        "last_name",
+        "lastname");
 
     var combined = string.Join(" ", new[] { firstName, lastName }.Where(value => !string.IsNullOrWhiteSpace(value)));
     if (!string.IsNullOrWhiteSpace(combined))
@@ -776,10 +792,55 @@ static string ResolveUserFullName(ClaimsPrincipal? user, string email)
         return combined;
     }
 
-    var fullName = user?.Claims.FirstOrDefault(c => c.Type.Contains("name", StringComparison.OrdinalIgnoreCase))?.Value?.Trim();
-    return string.IsNullOrWhiteSpace(fullName)
-        ? email.Split('@')[0]
-        : fullName;
+    var fullName = ResolveClaimValue(user,
+        ClaimTypes.Name,
+        "name",
+        "full_name",
+        "display_name");
+
+    if (LooksGeneratedDisplayName(fullName, email))
+    {
+        return string.Empty;
+    }
+
+    return fullName;
+}
+
+static string ResolveClaimValue(ClaimsPrincipal? user, params string[] claimTypes)
+    => user?.Claims
+        .FirstOrDefault(c => claimTypes.Any(type => string.Equals(c.Type, type, StringComparison.OrdinalIgnoreCase) || c.Type.EndsWith(type, StringComparison.OrdinalIgnoreCase)))?
+        .Value?
+        .Trim()
+        ?? string.Empty;
+
+static bool ShouldUpdateDisplayName(string? currentValue, string? candidateValue, string email)
+{
+    var normalizedCandidate = candidateValue?.Trim() ?? string.Empty;
+    if (string.IsNullOrWhiteSpace(normalizedCandidate) || LooksGeneratedDisplayName(normalizedCandidate, email))
+    {
+        return false;
+    }
+
+    var normalizedCurrent = currentValue?.Trim() ?? string.Empty;
+    return string.IsNullOrWhiteSpace(normalizedCurrent)
+        || LooksGeneratedDisplayName(normalizedCurrent, email)
+        || !string.Equals(normalizedCurrent, normalizedCandidate, StringComparison.Ordinal);
+}
+
+static bool LooksGeneratedDisplayName(string? value, string email)
+{
+    if (string.IsNullOrWhiteSpace(value))
+    {
+        return true;
+    }
+
+    var normalized = value.Trim();
+    var emailLocalPart = email.Split('@')[0];
+
+    return string.Equals(normalized, email, StringComparison.OrdinalIgnoreCase)
+        || string.Equals(normalized, emailLocalPart, StringComparison.OrdinalIgnoreCase)
+        || normalized.StartsWith("user_", StringComparison.OrdinalIgnoreCase)
+        || normalized.Contains("clerk", StringComparison.OrdinalIgnoreCase);
 }
 
 static string NormalizeOrganizationRole(string? role)
@@ -798,12 +859,27 @@ IF COL_LENGTH('Organizations', 'PreferredLanguage') IS NULL
     ALTER TABLE [Organizations] ADD [PreferredLanguage] nvarchar(16) NOT NULL CONSTRAINT DF_Organizations_PreferredLanguage DEFAULT 'en-CA';
 IF COL_LENGTH('Organizations', 'TrialEndsUtc') IS NULL
     ALTER TABLE [Organizations] ADD [TrialEndsUtc] datetime2 NULL;
+IF COL_LENGTH('Organizations', 'IsDemo') IS NULL
+    ALTER TABLE [Organizations] ADD [IsDemo] bit NOT NULL CONSTRAINT DF_Organizations_IsDemo DEFAULT 0;
+IF COL_LENGTH('Organizations', 'DemoTemplate') IS NULL
+    ALTER TABLE [Organizations] ADD [DemoTemplate] nvarchar(32) NOT NULL CONSTRAINT DF_Organizations_DemoTemplate DEFAULT '';
+IF COL_LENGTH('Organizations', 'DemoExpiresUtc') IS NULL
+    ALTER TABLE [Organizations] ADD [DemoExpiresUtc] datetime2 NULL;
+IF COL_LENGTH('Organizations', 'DemoResetAtUtc') IS NULL
+    ALTER TABLE [Organizations] ADD [DemoResetAtUtc] datetime2 NULL;
 IF COL_LENGTH('Users', 'PreferredLanguage') IS NULL
     ALTER TABLE [Users] ADD [PreferredLanguage] nvarchar(16) NOT NULL CONSTRAINT DF_Users_PreferredLanguage DEFAULT 'en-CA';
 IF COL_LENGTH('ComplianceReminders', 'Province') IS NULL
     ALTER TABLE [ComplianceReminders] ADD [Province] nvarchar(8) NOT NULL CONSTRAINT DF_ComplianceReminders_Province DEFAULT 'ON';
 IF COL_LENGTH('Users', 'SystemRole') IS NULL
     ALTER TABLE [Users] ADD [SystemRole] nvarchar(32) NOT NULL CONSTRAINT DF_Users_SystemRole DEFAULT 'User';
+IF EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('Users') AND name = 'OrganizationId' AND is_nullable = 0)
+BEGIN
+    IF EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = 'FK_Users_Organizations_OrganizationId')
+        ALTER TABLE [Users] DROP CONSTRAINT [FK_Users_Organizations_OrganizationId];
+    ALTER TABLE [Users] ALTER COLUMN [OrganizationId] uniqueidentifier NULL;
+    ALTER TABLE [Users] WITH CHECK ADD CONSTRAINT [FK_Users_Organizations_OrganizationId] FOREIGN KEY([OrganizationId]) REFERENCES [Organizations]([Id]);
+END;
 IF OBJECT_ID('OrganizationMemberships', 'U') IS NULL
 BEGIN
     CREATE TABLE [OrganizationMemberships] (
@@ -845,10 +921,47 @@ BEGIN
     INSERT INTO [OrganizationMemberships] ([Id], [CreatedUtc], [ModifiedUtc], [OrganizationId], [UserId], [Role], [Status])
     VALUES ('dddddddd-dddd-dddd-dddd-dddddddddddd', SYSUTCDATETIME(), NULL, '11111111-1111-1111-1111-111111111111', '66666666-6666-6666-6666-666666666666', 'Owner', 'Active');
 END;
-UPDATE [Organizations]
-SET [TrialEndsUtc] = DATEADD(day, 14, [CreatedUtc])
-WHERE [TrialEndsUtc] IS NULL AND [SubscriptionTier] = 0;
+IF COL_LENGTH('Organizations', 'TrialEndsUtc') IS NOT NULL
+BEGIN
+    EXEC(N'UPDATE [Organizations]
+    SET [TrialEndsUtc] = DATEADD(day, 14, [CreatedUtc])
+    WHERE [TrialEndsUtc] IS NULL AND [SubscriptionTier] = 0;');
+END;
 """);
+}
+
+static void PurgeExpiredDemoOrganizations(ApplicationDbContext db)
+{
+    var expiredDemoIds = db.Organizations
+        .AsNoTracking()
+        .Where(x => x.IsDemo && x.DemoExpiresUtc.HasValue && x.DemoExpiresUtc.Value < DateTime.UtcNow)
+        .Select(x => x.Id)
+        .ToList();
+
+    if (expiredDemoIds.Count == 0)
+    {
+        return;
+    }
+
+    var usersToDetach = db.Users.Where(x => x.OrganizationId.HasValue && expiredDemoIds.Contains(x.OrganizationId.Value)).ToList();
+    foreach (var user in usersToDetach)
+    {
+        user.OrganizationId = null;
+    }
+
+    db.AuditLogs.Where(x => expiredDemoIds.Contains(x.OrganizationId)).ExecuteDelete();
+    db.ComplianceReminders.Where(x => expiredDemoIds.Contains(x.OrganizationId)).ExecuteDelete();
+    db.DocumentTemplates.Where(x => expiredDemoIds.Contains(x.OrganizationId)).ExecuteDelete();
+    db.MaintenanceRequests.Where(x => expiredDemoIds.Contains(x.OrganizationId)).ExecuteDelete();
+    db.Leases.Where(x => expiredDemoIds.Contains(x.OrganizationId)).ExecuteDelete();
+    db.Tenants.Where(x => expiredDemoIds.Contains(x.OrganizationId)).ExecuteDelete();
+    db.Units.Where(x => expiredDemoIds.Contains(x.OrganizationId)).ExecuteDelete();
+    db.Properties.Where(x => expiredDemoIds.Contains(x.OrganizationId)).ExecuteDelete();
+    db.OrganizationInvitations.Where(x => expiredDemoIds.Contains(x.OrganizationId)).ExecuteDelete();
+    db.OrganizationMemberships.Where(x => expiredDemoIds.Contains(x.OrganizationId)).ExecuteDelete();
+
+    db.SaveChanges();
+    db.Organizations.Where(x => expiredDemoIds.Contains(x.Id)).ExecuteDelete();
 }
 
 app.MapStaticAssets();

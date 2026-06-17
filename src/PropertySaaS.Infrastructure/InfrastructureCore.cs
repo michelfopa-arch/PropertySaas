@@ -65,7 +65,7 @@ namespace PropertySaaS.Infrastructure.Data
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<Organization>().HasIndex(x => x.Slug).IsUnique();
-            modelBuilder.Entity<AppUser>().HasOne(x => x.Organization).WithMany(x => x.Users).HasForeignKey(x => x.OrganizationId).OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<AppUser>().HasOne(x => x.Organization).WithMany(x => x.Users).HasForeignKey(x => x.OrganizationId).IsRequired(false).OnDelete(DeleteBehavior.Restrict);
             modelBuilder.Entity<OrganizationMembership>().HasIndex(x => new { x.OrganizationId, x.UserId }).IsUnique();
             modelBuilder.Entity<OrganizationMembership>().HasOne(x => x.Organization).WithMany(x => x.Memberships).HasForeignKey(x => x.OrganizationId).OnDelete(DeleteBehavior.Cascade);
             modelBuilder.Entity<OrganizationMembership>().HasOne(x => x.User).WithMany(x => x.Memberships).HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
@@ -103,7 +103,7 @@ namespace PropertySaaS.Infrastructure.Data
             var unitId = Guid.Parse("33333333-3333-3333-3333-333333333333");
             var tenantId = Guid.Parse("44444444-4444-4444-4444-444444444444");
 
-            modelBuilder.Entity<Organization>().HasData(new Organization { Id = orgId, Name = "Maple Leaf Property Group", Slug = "maple-leaf", CountryCode = "CA", Province = "ON", PreferredLanguage = "en-CA", TimeZone = "America/Toronto", SubscriptionTier = SubscriptionTier.Growth, TrialEndsUtc = new DateTime(2026,1,15,0,0,0,DateTimeKind.Utc), StripeCustomerId = "cus_demo_mapleleaf", StripeSubscriptionId = "sub_demo_mapleleaf", IsActive = true, CreatedUtc = new DateTime(2026,1,1,0,0,0,DateTimeKind.Utc) });
+            modelBuilder.Entity<Organization>().HasData(new Organization { Id = orgId, Name = "Maple Leaf Property Group", Slug = "maple-leaf", CountryCode = "CA", Province = "ON", PreferredLanguage = "en-CA", TimeZone = "America/Toronto", IsDemo = false, DemoTemplate = string.Empty, DemoExpiresUtc = null, DemoResetAtUtc = null, SubscriptionTier = SubscriptionTier.Growth, TrialEndsUtc = new DateTime(2026,1,15,0,0,0,DateTimeKind.Utc), StripeCustomerId = "cus_demo_mapleleaf", StripeSubscriptionId = "sub_demo_mapleleaf", IsActive = true, CreatedUtc = new DateTime(2026,1,1,0,0,0,DateTimeKind.Utc) });
             modelBuilder.Entity<AppUser>().HasData(new AppUser { Id = Guid.Parse("66666666-6666-6666-6666-666666666666"), OrganizationId = orgId, ClerkUserId = "user_demo_owner", Email = "owner@mapleleafpm.ca", FullName = "Morgan Chen", Role = "Owner", PreferredLanguage = "en-CA", IsActive = true, CreatedUtc = new DateTime(2026,1,1,0,0,0,DateTimeKind.Utc) });
             modelBuilder.Entity<OrganizationMembership>().HasData(new OrganizationMembership { Id = Guid.Parse("dddddddd-dddd-dddd-dddd-dddddddddddd"), OrganizationId = orgId, UserId = Guid.Parse("66666666-6666-6666-6666-666666666666"), Role = "Owner", Status = "Active", CreatedUtc = new DateTime(2026,1,1,0,0,0,DateTimeKind.Utc) });
             modelBuilder.Entity<Property>().HasData(new Property { Id = propertyId, OrganizationId = orgId, Name = "King West Lofts", PropertyType = "Urban mid-rise", AddressLine1 = "18 Stafford Street", City = "Toronto", Province = "ON", PostalCode = "M6J 2R9", YearBuilt = 2017, MonthlyRevenueTarget = 14800m, AmenitySummary = "Gym access, rooftop terrace, bike storage", NeighborhoodNotes = "Walkable King West location with strong renter demand and transit access.", LeasingNotes = "Position as design-forward downtown living for professionals and couples.", OperationalNotes = "Monitor turnover windows closely and prioritize same-week suite refreshes.", CreatedUtc = new DateTime(2026,1,1,0,0,0,DateTimeKind.Utc) });
@@ -154,8 +154,8 @@ namespace PropertySaaS.Infrastructure.Services
             services.AddScoped<INotificationService, NotificationService>();
             services.AddHttpClient<StripeBillingService>(client => client.BaseAddress = new Uri("https://api.stripe.com/v1/"));
 
-            services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(configuration.GetConnectionString("PropertyDb")));
-            services.AddScoped<IApplicationDbContext>(provider => provider.GetRequiredService<ApplicationDbContext>());
+            services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(configuration.GetConnectionString("PropertyDb")), ServiceLifetime.Transient, ServiceLifetime.Transient);
+            services.AddTransient<IApplicationDbContext>(provider => provider.GetRequiredService<ApplicationDbContext>());
 
             return services;
         }
@@ -216,7 +216,6 @@ namespace PropertySaaS.Infrastructure.Services
                 ["mode"] = "subscription",
                 ["success_url"] = successUrl,
                 ["cancel_url"] = cancelUrl,
-                ["customer_creation"] = "always",
                 ["line_items[0][price]"] = priceId,
                 ["line_items[0][quantity]"] = "1"
             });

@@ -87,6 +87,34 @@
                             </MudForm>
                         </MudPaper>
 
+                        @if (CurrentOrganization.IsDemo && CurrentOrganization.CanManageData)
+                        {
+                            <MudPaper Class="pa-4 profile-settings-shell" Elevation="0">
+                                <MudText Typo="Typo.h6" GutterBottom="true">@UiText.Get("Profile_DemoTitle")</MudText>
+                                <MudText Typo="Typo.body2" Class="mb-4" Color="Color.Secondary">@UiText.Get("Profile_DemoHelp")</MudText>
+
+                                @if (CurrentOrganization.DemoExpiresUtc.HasValue)
+                                {
+                                    <MudAlert Severity="Severity.Info" Variant="Variant.Outlined" Dense="true" Class="mb-4">
+                                        @UiText.Format("Profile_DemoExpires", CurrentOrganization.DemoExpiresUtc.Value.ToString("yyyy-MM-dd HH:mm", System.Globalization.CultureInfo.InvariantCulture))
+                                    </MudAlert>
+                                }
+
+                                @if (!string.IsNullOrWhiteSpace(_demoFeedback))
+                                {
+                                    <MudAlert Severity="@_demoFeedbackSeverity" Variant="Variant.Filled" Dense="true" Class="mb-4">@_demoFeedback</MudAlert>
+                                }
+
+                                <MudButton Variant="Variant.Filled" Color="Color.Warning" OnClick="ResetDemoAsync" Disabled="_isResettingDemo">
+                                    @if (_isResettingDemo)
+                                    {
+                                        <MudProgressCircular Size="Size.Small" Color="Color.Inherit" Indeterminate="true" Class="mr-2" />
+                                    }
+                                    @UiText.Get("Profile_DemoReset")
+                                </MudButton>
+                            </MudPaper>
+                        }
+
                         <MudPaper Class="pa-4 profile-settings-shell" Elevation="0">
                             <MudText Typo="Typo.h6" GutterBottom="true">@UiText.Get("Profile_SupportTitle")</MudText>
                             <MudText Typo="Typo.body2" Class="mb-4" Color="Color.Secondary">@UiText.Get("Profile_SupportHelp")</MudText>
@@ -192,10 +220,13 @@
     private string? _supportFeedback;
     private Severity _supportFeedbackSeverity = Severity.Success;
     private bool _isInviting;
+    private bool _isResettingDemo;
     private string _inviteEmail = string.Empty;
     private string _inviteRole = "Viewer";
     private string? _teamFeedback;
     private Severity _teamFeedbackSeverity = Severity.Success;
+    private string? _demoFeedback;
+    private Severity _demoFeedbackSeverity = Severity.Success;
     private List<MemberSummaryDto> _members = new();
     private List<InvitationSummaryDto> _invitations = new();
 
@@ -295,6 +326,28 @@
         finally
         {
             _isSendingSupport = false;
+        }
+    }
+
+    private async Task ResetDemoAsync()
+    {
+        _isResettingDemo = true;
+        _demoFeedback = null;
+
+        try
+        {
+            await DataService.ResetCurrentDemoWorkspaceAsync();
+            _demoFeedback = UiText.Get("Profile_DemoResetSuccess");
+            _demoFeedbackSeverity = Severity.Success;
+        }
+        catch (Exception ex)
+        {
+            _demoFeedback = ex.Message;
+            _demoFeedbackSeverity = Severity.Error;
+        }
+        finally
+        {
+            _isResettingDemo = false;
         }
     }
 
