@@ -4,11 +4,13 @@
 @inject PropertySaaS.Application.Common.CurrentOrganization CurrentOrganization
 @inject IStringLocalizer<SharedResource> Localizer
 @using PropertySaaS.Domain.Enums
+@using PropertySaaS.Web.Localization
 
 <PageTitle>@Localizer["Leases_Title"]</PageTitle>
 
 <MudStack Spacing="3">
     <MudStack Spacing="0">
+        <MudChip T="string" Color="Color.Primary" Variant="Variant.Outlined" Size="Size.Small" Class="mb-2">@UiText.Get("Leases_PremiumBadge")</MudChip>
         <MudText Typo="Typo.h4">@Localizer["Leases_Title"]</MudText>
         <MudText Typo="Typo.body2">@Localizer["Leases_Subtitle"]</MudText>
     </MudStack>

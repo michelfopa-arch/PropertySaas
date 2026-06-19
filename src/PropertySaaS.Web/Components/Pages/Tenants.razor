@@ -3,11 +3,13 @@
 @inject SaasDataService DataService
 @inject PropertySaaS.Application.Common.CurrentOrganization CurrentOrganization
 @inject IStringLocalizer<SharedResource> Localizer
+@using PropertySaaS.Web.Localization
 
 <PageTitle>@Localizer["Tenants_Title"]</PageTitle>
 
 <MudStack Spacing="3">
     <MudStack Spacing="0">
+        <MudChip T="string" Color="Color.Primary" Variant="Variant.Outlined" Size="Size.Small" Class="mb-2">@UiText.Get("Tenants_PremiumBadge")</MudChip>
         <MudText Typo="Typo.h4">@Localizer["Tenants_Title"]</MudText>
         <MudText Typo="Typo.body2">@Localizer["Tenants_Subtitle"]</MudText>
     </MudStack>
