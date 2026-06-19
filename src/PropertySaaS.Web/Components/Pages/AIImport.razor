@@ -1,0 +1,36 @@
+@attribute [Authorize]
+@page "/ai-import"
+@using PropertySaaS.Web.Localization
+
+<PageTitle>@UiText.Get("Nav_AIImport")</PageTitle>
+
+<MudStack Spacing="3">
+    <MudStack Spacing="0">
+        <MudChip T="string" Color="Color.Primary" Variant="Variant.Outlined" Size="Size.Small" Class="mb-2">@UiText.Get("AIImport_PremiumBadge")</MudChip>
+        <MudText Typo="Typo.h4">@UiText.Get("AIImport_Title")</MudText>
+        <MudText Typo="Typo.body2">@UiText.Get("AIImport_Subtitle")</MudText>
+    </MudStack>
+
+    <MudGrid Spacing="3">
+        <MudItem xs="12" md="6">
+            <MudPaper Class="pa-4 marketing-card h-100" Elevation="0">
+                <MudText Typo="Typo.h6">@UiText.Get("AIImport_SourcesTitle")</MudText>
+                <MudList T="string" Dense="true" Class="mt-3">
+                    <MudListItem T="string">@UiText.Get("AIImport_Source1")</MudListItem>
+                    <MudListItem T="string">@UiText.Get("AIImport_Source2")</MudListItem>
+                    <MudListItem T="string">@UiText.Get("AIImport_Source3")</MudListItem>
+                </MudList>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" md="6">
+            <MudPaper Class="pa-4 marketing-card h-100" Elevation="0">
+                <MudText Typo="Typo.h6">@UiText.Get("AIImport_ReviewTitle")</MudText>
+                <MudList T="string" Dense="true" Class="mt-3">
+                    <MudListItem T="string">@UiText.Get("AIImport_Review1")</MudListItem>
+                    <MudListItem T="string">@UiText.Get("AIImport_Review2")</MudListItem>
+                    <MudListItem T="string">@UiText.Get("AIImport_Review3")</MudListItem>
+                </MudList>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+</MudStack>

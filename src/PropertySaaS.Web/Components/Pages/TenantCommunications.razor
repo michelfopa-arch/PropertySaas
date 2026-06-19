@@ -1,0 +1,317 @@
+@attribute [Authorize]
+@page "/tenant-communications"
+@inject SaasDataService DataService
+@inject NavigationManager NavigationManager
+@inject PropertySaaS.Application.Common.CurrentOrganization CurrentOrganization
+@using PropertySaaS.Domain.Entities
+@using PropertySaaS.Domain.Enums
+@using PropertySaaS.Web.Localization
+
+<PageTitle>@UiText.Get("Nav_TenantCommunications")</PageTitle>
+
+<MudStack Spacing="3">
+    <MudStack Spacing="0">
+        <MudChip T="string" Color="Color.Primary" Variant="Variant.Outlined" Size="Size.Small" Class="mb-2">@UiText.Get("TenantCommunications_PremiumBadge")</MudChip>
+        <MudText Typo="Typo.h4">@UiText.Get("TenantCommunications_Title")</MudText>
+        <MudText Typo="Typo.body2">@UiText.Get("TenantCommunications_Subtitle")</MudText>
+    </MudStack>
+
+    <MudGrid Spacing="3">
+        <MudItem xs="12" md="4"><MetricCard Title="@UiText.Get("TenantCommunications_OpenConversations")" Value="@_conversations.Count.ToString()" Caption="@UiText.Get("TenantCommunications_OpenConversationsCaption")" Icon="@Icons.Material.Filled.MarkEmailUnread" /></MudItem>
+        <MudItem xs="12" md="4"><MetricCard Title="@UiText.Get("TenantCommunications_AiDrafts")" Value="@_messages.Count(x => x.IsAISuggested).ToString()" Caption="@UiText.Get("TenantCommunications_AiDraftsCaption")" Icon="@Icons.Material.Filled.AutoAwesome" /></MudItem>
+        <MudItem xs="12" md="4"><MetricCard Title="@UiText.Get("TenantCommunications_AwaitingReply")" Value="@_conversations.Count(x => string.Equals(x.Status, "Awaiting reply", StringComparison.OrdinalIgnoreCase)).ToString()" Caption="@UiText.Get("TenantCommunications_AwaitingReplyCaption")" Icon="@Icons.Material.Filled.ScheduleSend" /></MudItem>
+    </MudGrid>
+
+    <MudPaper Class="pa-4 marketing-card" Elevation="0">
+        <MudText Typo="Typo.h6">@UiText.Get("TenantCommunications_WorkflowTitle")</MudText>
+        <MudList T="string" Dense="true" Class="mt-3">
+            <MudListItem T="string">@UiText.Get("TenantCommunications_Workflow1")</MudListItem>
+            <MudListItem T="string">@UiText.Get("TenantCommunications_Workflow2")</MudListItem>
+            <MudListItem T="string">@UiText.Get("TenantCommunications_Workflow3")</MudListItem>
+        </MudList>
+    </MudPaper>
+
+    <MudPaper Class="pa-2 table-wrap properties-table-shell" Elevation="0">
+        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="pa-3">
+            <MudText Typo="Typo.h6">@UiText.Get("TenantCommunications_ConversationsTitle")</MudText>
+            @if (CurrentOrganization.CanManageData)
+            {
+                <MudButton Variant="Variant.Text" Color="Color.Primary" Size="Size.Small" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreateConversationPanel">@UiText.Get("TenantCommunications_AddConversation")</MudButton>
+            }
+        </MudStack>
+        <MudTable Items="_conversations" Dense="true" Hover="true" Breakpoint="Breakpoint.Md">
+            <HeaderContent>
+                <MudTh>@UiText.Get("TenantCommunications_Tenant")</MudTh>
+                <MudTh>@UiText.Get("TenantCommunications_Subject")</MudTh>
+                <MudTh>@UiText.Get("TenantCommunications_Channel")</MudTh>
+                <MudTh>@UiText.Get("TenantCommunications_Status")</MudTh>
+                <MudTh>@UiText.Get("TenantCommunications_LastContact")</MudTh>
+                <MudTh>@UiText.Get("TenantCommunications_LastMessage")</MudTh>
+                <MudTh></MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="@UiText.Get("TenantCommunications_Tenant")">@context.TenantName</MudTd>
+                <MudTd DataLabel="@UiText.Get("TenantCommunications_Subject")">@context.Subject</MudTd>
+                <MudTd DataLabel="@UiText.Get("TenantCommunications_Channel")">@context.Channel</MudTd>
+                <MudTd DataLabel="@UiText.Get("TenantCommunications_Status")">@context.Status</MudTd>
+                <MudTd DataLabel="@UiText.Get("TenantCommunications_LastContact")">@context.LastContactUtc?.ToLocalTime().ToString("g")</MudTd>
+                <MudTd DataLabel="@UiText.Get("TenantCommunications_LastMessage")">@context.LastMessagePreview</MudTd>
+                <MudTd>
+                    <MudButton Variant="Variant.Text" Color="Color.Primary" Size="Size.Small" OnClick="() => SelectConversation(context)">@UiText.Get("TenantCommunications_ViewThread")</MudButton>
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
+    </MudPaper>
+
+    @if (_selectedConversation is not null)
+    {
+        <MudPaper Class="pa-4 marketing-card" Elevation="0">
+            <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                <MudStack Spacing="0">
+                    <MudText Typo="Typo.h6">@_selectedConversation.Subject</MudText>
+                    <MudText Typo="Typo.body2">@_selectedConversation.TenantName · @_selectedConversation.Channel</MudText>
+                </MudStack>
+                @if (CurrentOrganization.CanManageData)
+                {
+                    <MudButton Variant="Variant.Text" Color="Color.Primary" Size="Size.Small" StartIcon="@Icons.Material.Filled.AddComment" OnClick="OpenCreateMessagePanel">@UiText.Get("TenantCommunications_AddMessage")</MudButton>
+                }
+            </MudStack>
+
+            <MudList T="string" Dense="true" Class="mt-3">
+                @foreach (var message in _messages)
+                {
+                    <MudListItem T="string">@message.SentUtc.ToLocalTime().ToString("g") - @(message.IsIncoming ? UiText.Get("TenantCommunications_Incoming") : UiText.Get("TenantCommunications_Outgoing")) - @message.Body (@FormatDeliverySummary(message))</MudListItem>
+                }
+            </MudList>
+        </MudPaper>
+    }
+
+    @if (_isConversationPanelOpen)
+    {
+        <div class="property-form-backdrop" @onclick="CloseConversationPanel">
+            <MudPaper Class="pa-5 property-form-drawer" Elevation="0" @onclick:stopPropagation="true">
+                <MudStack Spacing="3">
+                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                        <MudText Typo="Typo.h5">@UiText.Get("TenantCommunications_AddConversation")</MudText>
+                        <MudIconButton Icon="@Icons.Material.Filled.Close" Color="Color.Default" OnClick="CloseConversationPanel" />
+                    </MudStack>
+                    <EditForm Model="_newConversation" OnValidSubmit="SaveConversationAsync">
+                        <MudGrid Spacing="2">
+                            <MudItem xs="12" md="6">
+                                <MudSelect T="Guid?" Label="@UiText.Get("TenantCommunications_Tenant")" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="FormTenantId">
+                                    <MudSelectItem T="Guid?" Value="@((Guid?)null)">@UiText.Get("TenantCommunications_SelectTenant")</MudSelectItem>
+                                    @foreach (var tenant in _tenants)
+                                    {
+                                        <MudSelectItem T="Guid?" Value="@((Guid?)tenant.Id)">@tenant.FullName</MudSelectItem>
+                                    }
+                                </MudSelect>
+                            </MudItem>
+                            <MudItem xs="12" md="6">
+                                <MudSelect T="ConversationChannel" Label="@UiText.Get("TenantCommunications_Channel")" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_newConversation.Channel">
+                                    @foreach (var channel in Enum.GetValues<ConversationChannel>())
+                                    {
+                                        <MudSelectItem T="ConversationChannel" Value="@channel">@channel</MudSelectItem>
+                                    }
+                                </MudSelect>
+                            </MudItem>
+                            <MudItem xs="12"><MudTextField Label="@UiText.Get("TenantCommunications_Subject")" Variant="Variant.Outlined" @bind-Value="_newConversation.Subject" /></MudItem>
+                        </MudGrid>
+                        <MudStack Row="true" Spacing="2" Class="mt-4" Justify="Justify.FlexEnd">
+                            <MudButton Variant="Variant.Text" Color="Color.Default" OnClick="CloseConversationPanel">@UiText.Get("Common_Cancel")</MudButton>
+                            <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary">@UiText.Get("Common_Create")</MudButton>
+                        </MudStack>
+                    </EditForm>
+                </MudStack>
+            </MudPaper>
+        </div>
+    }
+
+    @if (_isMessagePanelOpen)
+    {
+        <div class="property-form-backdrop" @onclick="CloseMessagePanel">
+            <MudPaper Class="pa-5 property-form-drawer" Elevation="0" @onclick:stopPropagation="true">
+                <MudStack Spacing="3">
+                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                        <MudText Typo="Typo.h5">@UiText.Get("TenantCommunications_AddMessage")</MudText>
+                        <MudIconButton Icon="@Icons.Material.Filled.Close" Color="Color.Default" OnClick="CloseMessagePanel" />
+                    </MudStack>
+                    <EditForm Model="_newMessage" OnValidSubmit="SaveMessageAsync">
+                        <MudGrid Spacing="2">
+                            <MudItem xs="12">
+                                <MudSelect T="string" Label="@UiText.Get("TenantCommunications_Template")" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedTemplateKey">
+                                    <MudSelectItem T="string" Value="@string.Empty">@UiText.Get("TenantCommunications_TemplateNone")</MudSelectItem>
+                                    @foreach (var template in _templates)
+                                    {
+                                        <MudSelectItem T="string" Value="@template.Key">@template.Title</MudSelectItem>
+                                    }
+                                </MudSelect>
+                            </MudItem>
+                            @if (!string.IsNullOrWhiteSpace(_selectedTemplateKey))
+                            {
+                                <MudItem xs="12">
+                                    <MudButton Variant="Variant.Outlined" Color="Color.Secondary" Size="Size.Small" OnClick="ApplySelectedTemplate">@UiText.Get("TenantCommunications_ApplyTemplate")</MudButton>
+                                </MudItem>
+                            }
+                            <MudItem xs="12"><MudTextField Label="@UiText.Get("TenantCommunications_MessageBody")" Variant="Variant.Outlined" Lines="5" @bind-Value="_newMessage.Body" /></MudItem>
+                            <MudItem xs="12" md="6"><MudTextField Label="@UiText.Get("TenantCommunications_DeliveryMethod")" Variant="Variant.Outlined" @bind-Value="_newMessage.DeliveryMethod" /></MudItem>
+                            <MudItem xs="12" md="6"><MudDatePicker Label="@UiText.Get("TenantCommunications_DeliveredUtc")" Variant="Variant.Outlined" @bind-Date="_deliveryDate" Editable="true" /></MudItem>
+                            <MudItem xs="12"><MudTextField Label="@UiText.Get("TenantCommunications_DeliveryProof")" Variant="Variant.Outlined" Lines="2" @bind-Value="_newMessage.DeliveryProof" /></MudItem>
+                            <MudItem xs="12" md="6"><MudSwitch T="bool" Label="@UiText.Get("TenantCommunications_IsIncoming")" @bind-Value="_newMessage.IsIncoming" /></MudItem>
+                            <MudItem xs="12" md="6"><MudSwitch T="bool" Label="@UiText.Get("TenantCommunications_IsAiDraft")" @bind-Value="_newMessage.IsAISuggested" /></MudItem>
+                        </MudGrid>
+                        <MudStack Row="true" Spacing="2" Class="mt-4" Justify="Justify.FlexEnd">
+                            <MudButton Variant="Variant.Text" Color="Color.Default" OnClick="CloseMessagePanel">@UiText.Get("Common_Cancel")</MudButton>
+                            <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary">@UiText.Get("Common_Create")</MudButton>
+                        </MudStack>
+                    </EditForm>
+                </MudStack>
+            </MudPaper>
+        </div>
+    }
+</MudStack>
+
+@code {
+    [SupplyParameterFromQuery] public Guid? ConversationId { get; set; }
+
+    private List<TenantConversationSummaryDto> _conversations = new();
+    private List<TenantMessageSummaryDto> _messages = new();
+    private List<TenantMessageTemplateDto> _templates = new();
+    private List<Tenant> _tenants = new();
+    private TenantConversationSummaryDto? _selectedConversation;
+    private TenantConversation _newConversation = new();
+    private TenantMessage _newMessage = new();
+    private bool _isConversationPanelOpen;
+    private bool _isMessagePanelOpen;
+    private string _selectedTemplateKey = string.Empty;
+    private DateTime? _deliveryDate;
+
+    private Guid? FormTenantId
+    {
+        get => _newConversation.TenantId == Guid.Empty ? null : _newConversation.TenantId;
+        set => _newConversation.TenantId = value ?? Guid.Empty;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await ReloadAsync();
+    }
+
+    private async Task ReloadAsync()
+    {
+        _conversations = await DataService.GetTenantConversationsAsync();
+        _tenants = await DataService.GetTenantsAsync();
+        _templates = await DataService.GetTenantMessageTemplatesAsync();
+        if (ConversationId.HasValue)
+        {
+            var queryConversation = _conversations.FirstOrDefault(x => x.TenantConversationId == ConversationId.Value);
+            if (queryConversation is not null)
+            {
+                _selectedConversation = queryConversation;
+                _messages = await DataService.GetTenantMessagesAsync(queryConversation.TenantConversationId);
+                return;
+            }
+        }
+
+        if (_selectedConversation is not null)
+        {
+            _selectedConversation = _conversations.FirstOrDefault(x => x.TenantConversationId == _selectedConversation.TenantConversationId);
+            if (_selectedConversation is not null)
+            {
+                _messages = await DataService.GetTenantMessagesAsync(_selectedConversation.TenantConversationId);
+            }
+        }
+    }
+
+    private async Task SelectConversation(TenantConversationSummaryDto conversation)
+    {
+        _selectedConversation = conversation;
+        _messages = await DataService.GetTenantMessagesAsync(conversation.TenantConversationId);
+        NavigationManager.NavigateTo($"/tenant-communications?conversationId={conversation.TenantConversationId}", replace: true);
+    }
+
+    private void OpenCreateConversationPanel()
+    {
+        _newConversation = new TenantConversation { Channel = ConversationChannel.Email, Status = "Draft" };
+        _isConversationPanelOpen = true;
+    }
+
+    private void CloseConversationPanel() => _isConversationPanelOpen = false;
+
+    private async Task SaveConversationAsync()
+    {
+        if (_newConversation.TenantId == Guid.Empty || string.IsNullOrWhiteSpace(_newConversation.Subject))
+        {
+            return;
+        }
+
+        await DataService.AddTenantConversationAsync(_newConversation);
+        await ReloadAsync();
+        CloseConversationPanel();
+    }
+
+    private void OpenCreateMessagePanel()
+    {
+        if (_selectedConversation is null)
+        {
+            return;
+        }
+
+        _newMessage = new TenantMessage
+        {
+            TenantConversationId = _selectedConversation.TenantConversationId,
+            SentBy = CurrentOrganization.UserEmail,
+            SentUtc = DateTime.UtcNow,
+            IsAISuggested = true,
+            DeliveryMethod = _selectedConversation.Channel
+        };
+        _selectedTemplateKey = string.Empty;
+        _deliveryDate = DateTime.Now;
+        _isMessagePanelOpen = true;
+    }
+
+    private void CloseMessagePanel() => _isMessagePanelOpen = false;
+
+    private void ApplySelectedTemplate()
+    {
+        if (_selectedConversation is null)
+        {
+            return;
+        }
+
+        var template = _templates.FirstOrDefault(x => x.Key == _selectedTemplateKey);
+        if (template is null)
+        {
+            return;
+        }
+
+        var nextStepDate = DateOnly.FromDateTime(DateTime.Today.AddDays(3)).ToString("yyyy-MM-dd");
+        _newMessage.Body = template.BodyTemplate
+            .Replace("{{tenantName}}", _selectedConversation.TenantName, StringComparison.Ordinal)
+            .Replace("{{unitLabel}}", string.IsNullOrWhiteSpace(_selectedConversation.UnitLabel) ? UiText.Get("TenantCommunications_UnitFallback") : _selectedConversation.UnitLabel, StringComparison.Ordinal)
+            .Replace("{{subject}}", _selectedConversation.Subject, StringComparison.Ordinal)
+            .Replace("{{nextStepDate}}", nextStepDate, StringComparison.Ordinal);
+        _newMessage.IsAISuggested = true;
+    }
+
+    private async Task SaveMessageAsync()
+    {
+        if (_newMessage.TenantConversationId == Guid.Empty || string.IsNullOrWhiteSpace(_newMessage.Body))
+        {
+            return;
+        }
+
+        _newMessage.SentBy = _newMessage.IsIncoming ? UiText.Get("TenantCommunications_Tenant") : CurrentOrganization.UserEmail;
+        _newMessage.DeliveredUtc = _deliveryDate;
+        await DataService.AddTenantMessageAsync(_newMessage);
+        await ReloadAsync();
+        CloseMessagePanel();
+    }
+
+    private static string FormatDeliverySummary(TenantMessageSummaryDto message)
+    {
+        var delivered = message.DeliveredUtc.HasValue ? message.DeliveredUtc.Value.ToLocalTime().ToString("g") : "not marked delivered";
+        var method = string.IsNullOrWhiteSpace(message.DeliveryMethod) ? "logged" : message.DeliveryMethod;
+        var proof = string.IsNullOrWhiteSpace(message.DeliveryProof) ? string.Empty : $"; {message.DeliveryProof}";
+        return $"{method}, {delivered}{proof}";
+    }
+}

@@ -1,0 +1,427 @@
+@attribute [Authorize]
+@page "/documents-evidence"
+@inject SaasDataService DataService
+@inject PropertySaaS.Application.Common.CurrentOrganization CurrentOrganization
+@inject NavigationManager NavigationManager
+@using PropertySaaS.Web.Localization
+@using PropertySaaS.Domain.Entities
+@using PropertySaaS.Domain.Enums
+
+<PageTitle>@UiText.Get("Nav_DocumentsEvidence")</PageTitle>
+
+<MudStack Spacing="3">
+    <MudStack Spacing="0">
+        <MudChip T="string" Color="Color.Primary" Variant="Variant.Outlined" Size="Size.Small" Class="mb-2">@UiText.Get("DocumentsEvidence_PremiumBadge")</MudChip>
+        <MudText Typo="Typo.h4">@UiText.Get("DocumentsEvidence_Title")</MudText>
+        <MudText Typo="Typo.body2">@UiText.Get("DocumentsEvidence_Subtitle")</MudText>
+    </MudStack>
+
+    <MudGrid Spacing="3">
+        <MudItem xs="12" md="6">
+            <MudPaper Class="pa-4 marketing-card h-100" Elevation="0">
+                <MudText Typo="Typo.h6">@UiText.Get("DocumentsEvidence_MarketingAssetsTitle")</MudText>
+                <MudList T="string" Dense="true" Class="mt-3">
+                    <MudListItem T="string">@UiText.Get("DocumentsEvidence_Marketing1")</MudListItem>
+                    <MudListItem T="string">@UiText.Get("DocumentsEvidence_Marketing2")</MudListItem>
+                    <MudListItem T="string">@UiText.Get("DocumentsEvidence_Marketing3")</MudListItem>
+                </MudList>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" md="6">
+            <MudPaper Class="pa-4 marketing-card h-100" Elevation="0">
+                <MudText Typo="Typo.h6">@UiText.Get("DocumentsEvidence_EvidenceTitle")</MudText>
+                <MudList T="string" Dense="true" Class="mt-3">
+                    <MudListItem T="string">@UiText.Get("DocumentsEvidence_Evidence1")</MudListItem>
+                    <MudListItem T="string">@UiText.Get("DocumentsEvidence_Evidence2")</MudListItem>
+                    <MudListItem T="string">@UiText.Get("DocumentsEvidence_Evidence3")</MudListItem>
+                </MudList>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+
+    <MudGrid Spacing="2">
+        <MudItem xs="12" md="4">
+            <MudTextField T="string"
+                          Label="@UiText.Get("DocumentsEvidence_SearchLabel")"
+                          Variant="Variant.Outlined"
+                          Immediate="true"
+                          @bind-Value="_searchText"
+                          Adornment="Adornment.Start"
+                          AdornmentIcon="@Icons.Material.Filled.Search" />
+        </MudItem>
+        <MudItem xs="12" md="4">
+            <MudSelect T="string" Label="@UiText.Get("DocumentsEvidence_FilterCategory")" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedCategoryFilter">
+                <MudSelectItem T="string" Value="@string.Empty">@UiText.Get("DocumentsEvidence_FilterAll")</MudSelectItem>
+                @foreach (var category in CategoryOptions)
+                {
+                    <MudSelectItem T="string" Value="@category">@category</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12" md="4">
+            <MudSelect T="string" Label="@UiText.Get("DocumentsEvidence_FilterTicket")" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedTicketFilter">
+                <MudSelectItem T="string" Value="@string.Empty">@UiText.Get("DocumentsEvidence_FilterAll")</MudSelectItem>
+                @foreach (var ticket in TicketOptions)
+                {
+                    <MudSelectItem T="string" Value="@ticket">@ticket</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12" md="4">
+            <MudSelect T="string" Label="@UiText.Get("DocumentsEvidence_FilterProperty")" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedPropertyFilter">
+                <MudSelectItem T="string" Value="@string.Empty">@UiText.Get("DocumentsEvidence_FilterAll")</MudSelectItem>
+                @foreach (var property in PropertyOptions)
+                {
+                    <MudSelectItem T="string" Value="@property">@property</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12" md="4">
+            <MudSelect T="string" Label="@UiText.Get("DocumentsEvidence_FilterStatus")" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedStatusFilter">
+                <MudSelectItem T="string" Value="@string.Empty">@UiText.Get("DocumentsEvidence_FilterAll")</MudSelectItem>
+                @foreach (var status in StatusOptions)
+                {
+                    <MudSelectItem T="string" Value="@status">@status</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+    </MudGrid>
+
+    <MudGrid Spacing="3">
+        <MudItem xs="12" md="6">
+            <MudPaper Class="pa-4 marketing-card h-100" Elevation="0">
+                <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                    <MudText Typo="Typo.h6">@UiText.Get("DocumentsEvidence_MediaAssetsTitle")</MudText>
+                    @if (CurrentOrganization.CanManageData)
+                    {
+                        <MudButton Variant="Variant.Text" Color="Color.Primary" Size="Size.Small" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreateMediaPanel">@UiText.Get("Common_Add")</MudButton>
+                    }
+                </MudStack>
+                <MudList T="string" Dense="true" Class="mt-3">
+                    @foreach (var asset in FilteredMediaAssets.Take(6))
+                    {
+                        <MudListItem T="string">
+                            <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="w-100">
+                                <MudText>@asset.FileName - @asset.Category - @asset.ScopeLabel</MudText>
+                                @if (CurrentOrganization.CanManageData)
+                                {
+                                    <MudStack Row="true" Spacing="1">
+                                        <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Secondary" OnClick="() => OpenEditMediaPanel(asset)" />
+                                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="() => DeleteMediaAsync(asset.MediaAssetId)" />
+                                    </MudStack>
+                                }
+                            </MudStack>
+                        </MudListItem>
+                    }
+                </MudList>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" md="6">
+            <MudPaper Class="pa-4 marketing-card h-100" Elevation="0">
+                <MudText Typo="Typo.h6">@UiText.Get("DocumentsEvidence_AISuggestionsTitle")</MudText>
+                <MudList T="string" Dense="true" Class="mt-3">
+                    @foreach (var suggestion in _suggestions.Take(6))
+                    {
+                        <MudListItem T="string">@suggestion.SuggestionType - @suggestion.PromptSummary</MudListItem>
+                    }
+                </MudList>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+
+    <MudPaper Class="pa-4 marketing-card" Elevation="0">
+        <MudText Typo="Typo.h6">@UiText.Get("DocumentsEvidence_VendorReadinessTitle")</MudText>
+        <MudList T="string" Dense="true" Class="mt-3">
+            @foreach (var vendor in _vendors.Take(6))
+            {
+                <MudListItem T="string">@vendor.Name - @vendor.Trade - @vendor.ServiceArea</MudListItem>
+            }
+        </MudList>
+    </MudPaper>
+
+    <MudPaper Class="pa-4 marketing-card" Elevation="0">
+        <MudText Typo="Typo.h6">@UiText.Get("DocumentsEvidence_MaintenanceEvidenceTitle")</MudText>
+        <MudList T="string" Dense="true" Class="mt-3">
+            @foreach (var evidence in FilteredMaintenanceEvidence.Take(6))
+            {
+                <MudListItem T="string">
+                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="w-100">
+                        <MudText>@evidence.Title - @evidence.PropertyName @FormatUnitLabel(evidence.UnitLabel) - @UiText.Format("DocumentsEvidence_EvidenceCount", evidence.EvidenceCount)</MudText>
+                        <MudStack Row="true" Spacing="1">
+                            <MudButton Variant="Variant.Text" Color="Color.Primary" Size="Size.Small" OnClick="() => GenerateEvidencePack(evidence)">@UiText.Get("DocumentsEvidence_GenerateEvidencePack")</MudButton>
+                            <MudButton Variant="Variant.Text" Color="Color.Secondary" Size="Size.Small" OnClick="() => OpenPrintableEvidencePack(evidence.MaintenanceRequestId)">@UiText.Get("DocumentsEvidence_OpenPrintableView")</MudButton>
+                        </MudStack>
+                    </MudStack>
+                </MudListItem>
+            }
+        </MudList>
+    </MudPaper>
+
+    @if (!string.IsNullOrWhiteSpace(_generatedEvidencePack))
+    {
+        <MudPaper Class="pa-4 marketing-card" Elevation="0">
+            <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                <MudText Typo="Typo.h6">@UiText.Get("DocumentsEvidence_EvidencePackPreviewTitle")</MudText>
+                <MudStack Row="true" Spacing="1">
+                    @if (_generatedEvidencePackRequestId.HasValue)
+                    {
+                        <MudButton Variant="Variant.Text" Color="Color.Secondary" Size="Size.Small" OnClick="() => OpenPrintableEvidencePack(_generatedEvidencePackRequestId.Value)">@UiText.Get("DocumentsEvidence_OpenPrintableView")</MudButton>
+                    }
+                    <MudButton Variant="Variant.Text" Color="Color.Default" Size="Size.Small" OnClick="ClearEvidencePack">@UiText.Get("DocumentsEvidence_ClearEvidencePack")</MudButton>
+                </MudStack>
+            </MudStack>
+            <MudText Typo="Typo.body2" Class="mt-3" Style="white-space: pre-line;">@_generatedEvidencePack</MudText>
+        </MudPaper>
+    }
+
+    @if (_isMediaPanelOpen)
+    {
+        <div class="property-form-backdrop" @onclick="CloseMediaPanel">
+            <MudPaper Class="pa-5 property-form-drawer" Elevation="0" @onclick:stopPropagation="true">
+                <MudStack Spacing="3">
+                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                        <MudText Typo="Typo.h5">@(_isMediaCreateMode ? UiText.Get("DocumentsEvidence_AddMedia") : UiText.Get("DocumentsEvidence_EditMedia"))</MudText>
+                        <MudIconButton Icon="@Icons.Material.Filled.Close" Color="Color.Default" OnClick="CloseMediaPanel" />
+                    </MudStack>
+
+                    <EditForm Model="ActiveMedia" OnValidSubmit="SaveMediaAsync">
+                        <MudGrid Spacing="2">
+                            <MudItem xs="12" md="6"><MudTextField Label="@UiText.Get("DocumentsEvidence_FileName")" Variant="Variant.Outlined" @bind-Value="ActiveMedia.FileName" /></MudItem>
+                            <MudItem xs="12" md="6"><MudTextField Label="@UiText.Get("DocumentsEvidence_BlobPath")" Variant="Variant.Outlined" @bind-Value="ActiveMedia.BlobPath" /></MudItem>
+                            <MudItem xs="12"><MudTextField Label="@UiText.Get("DocumentsEvidence_Caption")" Variant="Variant.Outlined" @bind-Value="ActiveMedia.Caption" /></MudItem>
+                            <MudItem xs="12" md="4">
+                                <MudSelect T="MediaAssetCategory" Label="@UiText.Get("DocumentsEvidence_Category")" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="ActiveMedia.Category">
+                                    @foreach (var category in Enum.GetValues<MediaAssetCategory>())
+                                    {
+                                        <MudSelectItem T="MediaAssetCategory" Value="@category">@category</MudSelectItem>
+                                    }
+                                </MudSelect>
+                            </MudItem>
+                            <MudItem xs="12" md="4"><MudNumericField T="int" Label="@UiText.Get("DocumentsEvidence_SortOrder")" Variant="Variant.Outlined" @bind-Value="ActiveMedia.SortOrder" /></MudItem>
+                            <MudItem xs="12" md="4"><MudSwitch T="bool" Color="Color.Primary" Label="@UiText.Get("DocumentsEvidence_IsPrimary")" @bind-Value="ActiveMedia.IsPrimary" /></MudItem>
+                            <MudItem xs="12" md="6">
+                                <MudSelect T="Guid?" Label="@UiText.Get("DocumentsEvidence_LinkedListing")" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="FormListingId">
+                                    <MudSelectItem T="Guid?" Value="@((Guid?)null)">@UiText.Get("DocumentsEvidence_None")</MudSelectItem>
+                                    @foreach (var listing in _listings)
+                                    {
+                                        <MudSelectItem T="Guid?" Value="@((Guid?)listing.ListingId)">@listing.Title</MudSelectItem>
+                                    }
+                                </MudSelect>
+                            </MudItem>
+                            <MudItem xs="12" md="6">
+                                <MudSelect T="Guid?" Label="@UiText.Get("DocumentsEvidence_LinkedMaintenance")" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="FormMaintenanceRequestId">
+                                    <MudSelectItem T="Guid?" Value="@((Guid?)null)">@UiText.Get("DocumentsEvidence_None")</MudSelectItem>
+                                    @foreach (var request in _maintenanceRequests)
+                                    {
+                                        <MudSelectItem T="Guid?" Value="@((Guid?)request.Id)">@request.Title</MudSelectItem>
+                                    }
+                                </MudSelect>
+                            </MudItem>
+                        </MudGrid>
+
+                        <MudStack Row="true" Spacing="2" Class="mt-4" Justify="Justify.FlexEnd">
+                            <MudButton Variant="Variant.Text" Color="Color.Default" OnClick="CloseMediaPanel">@UiText.Get("Common_Cancel")</MudButton>
+                            <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary">@(_isMediaCreateMode ? UiText.Get("Common_Create") : UiText.Get("Common_SaveChanges"))</MudButton>
+                        </MudStack>
+                    </EditForm>
+                </MudStack>
+            </MudPaper>
+        </div>
+    }
+</MudStack>
+
+@code {
+    private List<MediaAssetSummaryDto> _mediaAssets = new();
+    private List<AISuggestionSummaryDto> _suggestions = new();
+    private List<VendorSummaryDto> _vendors = new();
+    private List<MaintenanceEvidenceSummaryDto> _maintenanceEvidence = new();
+    private List<ListingSummaryDto> _listings = new();
+    private List<MaintenanceRequest> _maintenanceRequests = new();
+    private MediaAsset _newMedia = new() { Category = MediaAssetCategory.PropertyPhoto };
+    private MediaAsset _editMedia = new() { Category = MediaAssetCategory.PropertyPhoto };
+    private bool _isMediaPanelOpen;
+    private bool _isMediaCreateMode = true;
+    private string? _generatedEvidencePack;
+    private Guid? _generatedEvidencePackRequestId;
+    private string _searchText = string.Empty;
+    private string _selectedCategoryFilter = string.Empty;
+    private string _selectedTicketFilter = string.Empty;
+    private string _selectedPropertyFilter = string.Empty;
+    private string _selectedStatusFilter = string.Empty;
+
+    private MediaAsset ActiveMedia => _isMediaCreateMode ? _newMedia : _editMedia;
+    private IEnumerable<string> CategoryOptions => _mediaAssets.Select(x => x.Category).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(x => x);
+    private IEnumerable<string> TicketOptions => _maintenanceEvidence.Select(x => x.Title).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(x => x);
+    private IEnumerable<string> PropertyOptions => _maintenanceEvidence.Select(x => x.PropertyName).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(x => x);
+    private IEnumerable<string> StatusOptions => _maintenanceEvidence.Select(x => x.Status).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(x => x);
+    private IEnumerable<MediaAssetSummaryDto> FilteredMediaAssets => _mediaAssets
+        .Where(asset => string.IsNullOrWhiteSpace(_searchText)
+            || asset.FileName.Contains(_searchText, StringComparison.OrdinalIgnoreCase)
+            || asset.ScopeLabel.Contains(_searchText, StringComparison.OrdinalIgnoreCase)
+            || asset.Category.Contains(_searchText, StringComparison.OrdinalIgnoreCase))
+        .Where(asset => string.IsNullOrWhiteSpace(_selectedCategoryFilter) || string.Equals(asset.Category, _selectedCategoryFilter, StringComparison.OrdinalIgnoreCase))
+        .Where(asset => string.IsNullOrWhiteSpace(_selectedTicketFilter) || string.Equals(asset.ScopeLabel, _selectedTicketFilter, StringComparison.OrdinalIgnoreCase))
+        .Where(asset => string.IsNullOrWhiteSpace(_selectedPropertyFilter) || string.Equals(ResolveAssetPropertyName(asset), _selectedPropertyFilter, StringComparison.OrdinalIgnoreCase))
+        .Where(asset => string.IsNullOrWhiteSpace(_selectedStatusFilter) || string.Equals(ResolveAssetStatus(asset), _selectedStatusFilter, StringComparison.OrdinalIgnoreCase));
+    private IEnumerable<MaintenanceEvidenceSummaryDto> FilteredMaintenanceEvidence => _maintenanceEvidence
+        .Where(evidence => string.IsNullOrWhiteSpace(_searchText)
+            || evidence.Title.Contains(_searchText, StringComparison.OrdinalIgnoreCase)
+            || evidence.PropertyName.Contains(_searchText, StringComparison.OrdinalIgnoreCase)
+            || evidence.Status.Contains(_searchText, StringComparison.OrdinalIgnoreCase))
+        .Where(evidence => string.IsNullOrWhiteSpace(_selectedTicketFilter) || string.Equals(evidence.Title, _selectedTicketFilter, StringComparison.OrdinalIgnoreCase))
+        .Where(evidence => string.IsNullOrWhiteSpace(_selectedPropertyFilter) || string.Equals(evidence.PropertyName, _selectedPropertyFilter, StringComparison.OrdinalIgnoreCase))
+        .Where(evidence => string.IsNullOrWhiteSpace(_selectedStatusFilter) || string.Equals(evidence.Status, _selectedStatusFilter, StringComparison.OrdinalIgnoreCase));
+
+    private Guid? FormListingId
+    {
+        get => ActiveMedia.ListingId;
+        set => ActiveMedia.ListingId = value;
+    }
+
+    private Guid? FormMaintenanceRequestId
+    {
+        get => ActiveMedia.MaintenanceRequestId;
+        set => ActiveMedia.MaintenanceRequestId = value;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await ReloadAsync();
+    }
+
+    private async Task ReloadAsync()
+    {
+        _mediaAssets = await DataService.GetMediaAssetsAsync();
+        _suggestions = await DataService.GetAISuggestionsAsync();
+        _vendors = await DataService.GetVendorsAsync();
+        _maintenanceEvidence = await DataService.GetMaintenanceEvidenceAsync();
+        _listings = await DataService.GetListingsAsync();
+        _maintenanceRequests = await DataService.GetMaintenanceAsync();
+    }
+
+    private void OpenCreateMediaPanel()
+    {
+        _isMediaCreateMode = true;
+        _newMedia = new MediaAsset { Category = MediaAssetCategory.PropertyPhoto };
+        _isMediaPanelOpen = true;
+    }
+
+    private void OpenEditMediaPanel(MediaAssetSummaryDto mediaAsset)
+    {
+        _isMediaCreateMode = false;
+        _editMedia = new MediaAsset
+        {
+            Id = mediaAsset.MediaAssetId,
+            PropertyId = mediaAsset.PropertyId,
+            UnitId = mediaAsset.UnitId,
+            ListingId = mediaAsset.ListingId,
+            MaintenanceRequestId = mediaAsset.MaintenanceRequestId,
+            FileName = mediaAsset.FileName,
+            BlobPath = mediaAsset.BlobPath,
+            Caption = mediaAsset.Caption,
+            IsPrimary = mediaAsset.IsPrimary,
+            Category = Enum.TryParse<MediaAssetCategory>(mediaAsset.Category, out var category) ? category : MediaAssetCategory.PropertyPhoto
+        };
+        _isMediaPanelOpen = true;
+    }
+
+    private void CloseMediaPanel()
+    {
+        _isMediaPanelOpen = false;
+        _isMediaCreateMode = true;
+    }
+
+    private async Task SaveMediaAsync()
+    {
+        if (string.IsNullOrWhiteSpace(ActiveMedia.FileName) || string.IsNullOrWhiteSpace(ActiveMedia.BlobPath))
+        {
+            return;
+        }
+
+        if (_isMediaCreateMode)
+        {
+            await DataService.AddMediaAssetAsync(_newMedia);
+        }
+        else
+        {
+            await DataService.UpdateMediaAssetAsync(_editMedia);
+        }
+
+        await ReloadAsync();
+        CloseMediaPanel();
+    }
+
+    private async Task DeleteMediaAsync(Guid id)
+    {
+        await DataService.DeleteMediaAssetAsync(id);
+        await ReloadAsync();
+    }
+
+    private static string FormatUnitLabel(string unitLabel)
+        => string.IsNullOrWhiteSpace(unitLabel) ? string.Empty : $"- Unit {unitLabel}";
+
+    private void GenerateEvidencePack(MaintenanceEvidenceSummaryDto evidence)
+    {
+        var relatedAssets = _mediaAssets
+            .Where(x => x.MaintenanceRequestId == evidence.MaintenanceRequestId)
+            .OrderBy(x => x.Category)
+            .ThenBy(x => x.FileName)
+            .Select(x => $"- {GetEvidenceCategoryLabel(x.Category)}: {x.FileName} ({x.Caption})")
+            .ToList();
+
+        var lines = new List<string>
+        {
+            UiText.Get("DocumentsEvidence_TribunalReadyHeader"),
+            $"{UiText.Get("DocumentsEvidence_TribunalReadyTicket")}: {evidence.Title}",
+            $"{UiText.Get("DocumentsEvidence_TribunalReadyProperty")}: {evidence.PropertyName} {FormatUnitLabel(evidence.UnitLabel)}",
+            $"{UiText.Get("DocumentsEvidence_TribunalReadyStatus")}: {evidence.Status}",
+            $"{UiText.Format("DocumentsEvidence_EvidenceCount", evidence.EvidenceCount)}",
+            evidence.EvidencePackSummary,
+            UiText.Get("DocumentsEvidence_TribunalReadyTimeline")
+        };
+
+        if (relatedAssets.Count == 0)
+        {
+            lines.Add(UiText.Get("DocumentsEvidence_TribunalReadyNoAssets"));
+        }
+        else
+        {
+            lines.AddRange(relatedAssets);
+        }
+
+        _generatedEvidencePack = string.Join(Environment.NewLine, lines);
+        _generatedEvidencePackRequestId = evidence.MaintenanceRequestId;
+    }
+
+    private void ClearEvidencePack()
+    {
+        _generatedEvidencePack = null;
+        _generatedEvidencePackRequestId = null;
+    }
+
+    private void OpenPrintableEvidencePack(Guid maintenanceRequestId)
+        => NavigationManager.NavigateTo($"/documents-evidence/pack/{maintenanceRequestId}");
+
+    private string ResolveAssetPropertyName(MediaAssetSummaryDto asset)
+        => asset.MaintenanceRequestId.HasValue
+            ? _maintenanceEvidence.FirstOrDefault(x => x.MaintenanceRequestId == asset.MaintenanceRequestId.Value)?.PropertyName ?? string.Empty
+            : asset.ListingId.HasValue
+                ? _listings.FirstOrDefault(x => x.ListingId == asset.ListingId.Value)?.PropertyName ?? string.Empty
+                : string.Empty;
+
+    private string ResolveAssetStatus(MediaAssetSummaryDto asset)
+        => asset.MaintenanceRequestId.HasValue
+            ? _maintenanceEvidence.FirstOrDefault(x => x.MaintenanceRequestId == asset.MaintenanceRequestId.Value)?.Status ?? string.Empty
+            : string.Empty;
+
+    private string GetEvidenceCategoryLabel(string category)
+        => category switch
+        {
+            nameof(MediaAssetCategory.MaintenanceBeforePhoto) => UiText.Get("Maintenance_EvidenceCategoryBefore"),
+            nameof(MediaAssetCategory.MaintenanceAfterPhoto) => UiText.Get("Maintenance_EvidenceCategoryAfter"),
+            nameof(MediaAssetCategory.MaintenanceEvidenceDocument) => UiText.Get("Maintenance_EvidenceCategoryProof"),
+            nameof(MediaAssetCategory.MaintenanceEvidence) => UiText.Get("Maintenance_EvidenceCategoryProof"),
+            nameof(MediaAssetCategory.Notice) => UiText.Get("Maintenance_EvidenceCategoryAfter"),
+            _ => category
+        };
+}

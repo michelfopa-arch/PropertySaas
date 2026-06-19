@@ -16,6 +16,7 @@ using PropertySaaS.Domain.Entities;
 using PropertySaaS.Infrastructure.Data;
 using PropertySaaS.Infrastructure.Options;
 using PropertySaaS.Infrastructure.Services;
+using PropertySaaS.Web;
 using PropertySaaS.Web.Components;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -79,6 +80,38 @@ builder.Services.AddScoped<CurrentOrganization>(provider =>
             .AsNoTracking()
             .Where(x => x.UserId == appUser.Id && x.Status == "Active")
             .ToList();
+    var isSuperAdmin = appUser is not null && string.Equals(appUser.SystemRole, "SuperAdmin", StringComparison.OrdinalIgnoreCase);
+
+    if (appUser is not null && isSuperAdmin && selectedOrganizationId != Guid.Empty)
+    {
+        var selectedOrganization = db.Organizations.AsNoTracking().FirstOrDefault(x => x.Id == selectedOrganizationId);
+        if (selectedOrganization is not null)
+        {
+            var trialExpired = selectedOrganization.TrialEndsUtc.HasValue
+                && selectedOrganization.SubscriptionTier == PropertySaaS.Domain.Enums.SubscriptionTier.Trial
+                && selectedOrganization.TrialEndsUtc.Value < DateTime.UtcNow;
+
+            return new CurrentOrganization
+            {
+                UserId = appUser.Id,
+                OrganizationId = selectedOrganization.Id,
+                AccessibleOrganizationCount = memberships.Count,
+                HasSuperAdminOrganizationSelection = true,
+                OrganizationName = selectedOrganization.Name,
+                IsDemo = selectedOrganization.IsDemo,
+                DemoExpiresUtc = selectedOrganization.DemoExpiresUtc,
+                UserEmail = email,
+                UserFullName = string.IsNullOrWhiteSpace(appUser.FullName) ? email : appUser.FullName,
+                Role = "SuperAdmin",
+                SystemRole = appUser.SystemRole,
+                Province = selectedOrganization.Province,
+                CountryCode = selectedOrganization.CountryCode,
+                PreferredLanguage = ResolvePreferredLanguage(httpContextAccessor.HttpContext, appUser.PreferredLanguage, selectedOrganization.PreferredLanguage, selectedOrganization.Province),
+                SubscriptionIsActive = selectedOrganization.IsActive,
+                TrialExpired = trialExpired
+            };
+        }
+    }
 
     if (appUser is not null)
     {
@@ -98,6 +131,7 @@ builder.Services.AddScoped<CurrentOrganization>(provider =>
                 UserId = appUser.Id,
                 OrganizationId = selectedMembership.OrganizationId,
                 AccessibleOrganizationCount = memberships.Count,
+                HasSuperAdminOrganizationSelection = false,
                 OrganizationName = org?.Name ?? "Maple Leaf Property Group",
                 IsDemo = org?.IsDemo ?? false,
                 DemoExpiresUtc = org?.DemoExpiresUtc,
@@ -121,6 +155,7 @@ builder.Services.AddScoped<CurrentOrganization>(provider =>
             UserId = appUser.Id,
             OrganizationId = Guid.Empty,
             AccessibleOrganizationCount = memberships.Count,
+            HasSuperAdminOrganizationSelection = false,
             OrganizationName = "Pending access",
             IsDemo = false,
             UserEmail = email,
@@ -447,7 +482,8 @@ app.MapPost("/organizations/select", async ([FromForm] Guid organizationId, Http
     }
 
     var allowed = await db.OrganizationMemberships.AsNoTracking().AnyAsync(x => x.UserId == user.Id && x.OrganizationId == organizationId && x.Status == "Active");
-    if (!allowed)
+    var isSuperAdmin = string.Equals(user.SystemRole, "SuperAdmin", StringComparison.OrdinalIgnoreCase);
+    if (!allowed && !isSuperAdmin)
     {
         return Results.Forbid();
     }
@@ -485,7 +521,8 @@ app.MapGet("/organizations/switch/{organizationId:guid}", async (Guid organizati
     }
 
     var allowed = await db.OrganizationMemberships.AsNoTracking().AnyAsync(x => x.UserId == user.Id && x.OrganizationId == organizationId && x.Status == "Active");
-    if (!allowed)
+    var isSuperAdmin = string.Equals(user.SystemRole, "SuperAdmin", StringComparison.OrdinalIgnoreCase);
+    if (!allowed && !isSuperAdmin)
     {
         return Results.Forbid();
     }
@@ -515,8 +552,15 @@ app.MapGet("/invitations/accept", async (string token, HttpContext httpContext, 
         return Results.Redirect("/");
     }
 
-    var organizationId = await dataService.AcceptInvitationAsync(token, email, clerkUserId, ResolveUserFullName(httpContext.User, email));
-    return Results.LocalRedirect($"/organizations/switch/{organizationId}");
+    try
+    {
+        var organizationId = await dataService.AcceptInvitationAsync(token, email, clerkUserId, ResolveUserFullName(httpContext.User, email));
+        return Results.LocalRedirect($"/organizations/switch/{organizationId}");
+    }
+    catch (InvalidOperationException)
+    {
+        return Results.LocalRedirect("/onboarding?invite=expired");
+    }
 });
 
 app.MapGet("/account/logout", async (HttpContext httpContext) =>
@@ -547,7 +591,7 @@ app.MapGet("/account/post-login", async (string? invitation, HttpContext httpCon
             }
             catch (InvalidOperationException)
             {
-                return Results.LocalRedirect("/onboarding");
+                return Results.LocalRedirect("/onboarding?invite=expired");
             }
         }
     }
@@ -684,6 +728,164 @@ app.MapGet("/export/leases", async ([FromServices] CurrentOrganization current, 
     csv.AppendLine("StartDate,EndDate,MonthlyRent,Status,OntarioLeaseSigned,N1Scheduled");
     foreach (var item in items) csv.AppendLine($"{item.StartDate},{item.EndDate},{item.MonthlyRent},{item.Status},{item.StandardOntarioLeaseSigned},{item.N1IncreaseNoticeScheduled}");
     return Results.File(Encoding.UTF8.GetBytes(csv.ToString()), "text/csv", "leases.csv");
+}).RequireAuthorization();
+
+app.MapGet("/export/maintenance/dispatch-journal", async ([FromServices] CurrentOrganization current, [FromServices] ApplicationDbContext db) =>
+{
+    var items = await db.MaintenanceRequests
+        .Where(x => x.OrganizationId == current.OrganizationId)
+        .OrderByDescending(x => x.RequestedDate)
+        .ThenBy(x => x.DispatchStatus)
+        .ToListAsync();
+
+    var propertyMap = await db.Properties
+        .Where(x => x.OrganizationId == current.OrganizationId)
+        .ToDictionaryAsync(x => x.Id, x => x.Name);
+
+    var unitMap = await db.Units
+        .Where(x => x.OrganizationId == current.OrganizationId)
+        .ToDictionaryAsync(x => x.Id, x => x.UnitNumber);
+
+    var vendorSlaMap = await db.Vendors
+        .Where(x => x.OrganizationId == current.OrganizationId)
+        .ToDictionaryAsync(x => x.Name, x => x.TypicalResponseHours);
+
+    var csv = new StringBuilder();
+    csv.AppendLine("Title,Property,Unit,Priority,Status,DispatchStatus,Vendor,RequestedDate,EstimatedCost,VendorResponseHours,SlaRisk");
+    foreach (var item in items)
+    {
+        propertyMap.TryGetValue(item.PropertyId, out var propertyName);
+        var unitLabel = item.UnitId.HasValue && unitMap.TryGetValue(item.UnitId.Value, out var unitNumber) ? unitNumber : string.Empty;
+        var responseHours = !string.IsNullOrWhiteSpace(item.VendorName) && vendorSlaMap.TryGetValue(item.VendorName, out var hours) ? hours : 0;
+        var slaRisk = item.Status != "Closed" && item.DispatchStatus != "Completed" && responseHours > 0 && item.RequestedDate <= DateOnly.FromDateTime(DateTime.Today.AddDays(-1)) ? "At risk" : "On track";
+        csv.AppendLine($"\"{item.Title}\",\"{propertyName ?? string.Empty}\",\"{unitLabel}\",\"{item.Priority}\",\"{item.Status}\",\"{item.DispatchStatus}\",\"{item.VendorName}\",{item.RequestedDate},{item.EstimatedCost},{responseHours},\"{slaRisk}\"");
+    }
+
+    return Results.File(Encoding.UTF8.GetBytes(csv.ToString()), "text/csv", "maintenance-dispatch-journal.csv");
+}).RequireAuthorization();
+
+app.MapGet("/export/listings/{listingId:guid}/copy", async (Guid listingId, [FromServices] SaasDataService dataService) =>
+{
+    var text = await dataService.BuildListingExportTextAsync(listingId);
+    return Results.File(Encoding.UTF8.GetBytes(text), "text/plain", $"listing-copy-{listingId}.txt");
+}).RequireAuthorization();
+
+app.MapGet("/export/evidence-pack/{maintenanceRequestId:guid}/html", async (Guid maintenanceRequestId, HttpContext httpContext, [FromServices] CurrentOrganization current, [FromServices] SaasDataService dataService) =>
+{
+    var evidence = (await dataService.GetMaintenanceEvidenceAsync()).FirstOrDefault(x => x.MaintenanceRequestId == maintenanceRequestId);
+    if (evidence is null)
+    {
+        return Results.NotFound();
+    }
+
+    var assets = (await dataService.GetMaintenanceMediaAssetsAsync())
+        .Where(x => x.MaintenanceRequestId == maintenanceRequestId)
+        .OrderBy(x => x.SortOrder)
+        .ThenBy(x => x.CreatedUtc)
+        .ToList();
+    var communications = await dataService.GetMaintenanceCommunicationMessagesAsync(maintenanceRequestId);
+
+    static string HtmlEncode(string? value)
+        => System.Net.WebUtility.HtmlEncode(value ?? string.Empty);
+
+    static string ResolveEvidenceCategory(string category)
+        => category switch
+        {
+            nameof(PropertySaaS.Domain.Enums.MediaAssetCategory.MaintenanceBeforePhoto) => "Before",
+            nameof(PropertySaaS.Domain.Enums.MediaAssetCategory.MaintenanceAfterPhoto) => "After / notice",
+            nameof(PropertySaaS.Domain.Enums.MediaAssetCategory.MaintenanceEvidenceDocument) => "Proof",
+            nameof(PropertySaaS.Domain.Enums.MediaAssetCategory.MaintenanceEvidence) => "Proof",
+            nameof(PropertySaaS.Domain.Enums.MediaAssetCategory.Notice) => "After / notice",
+            _ => category
+        };
+
+    var html = new StringBuilder();
+    html.AppendLine("<!DOCTYPE html>");
+    html.AppendLine("<html lang=\"en\"><head><meta charset=\"utf-8\" /><title>Evidence Pack</title><style>");
+    html.AppendLine("body{font-family:Inter,Segoe UI,Arial,sans-serif;background:#fff;color:#10233f;margin:24px;}h1,h2{margin-bottom:8px;}section{border:1px solid rgba(15,39,71,.12);border-radius:12px;padding:16px;margin-bottom:16px;}ul{margin:8px 0 0 20px;}li{margin-bottom:6px;} .muted{color:#5e6b80;}</style></head><body>");
+    html.AppendLine($"<h1>{HtmlEncode("Tribunal-ready evidence pack")}</h1>");
+    html.AppendLine($"<p class=\"muted\">{HtmlEncode("Use this format for a cleaner tribunal-ready review and export flow.")}</p>");
+    html.AppendLine("<section>");
+    html.AppendLine($"<h2>{HtmlEncode("Ticket")}</h2>");
+    html.AppendLine($"<p><strong>{HtmlEncode(evidence.Title)}</strong></p>");
+    html.AppendLine($"<p>{HtmlEncode("Dossier signature")}: {HtmlEncode(evidence.DossierSignature)}</p>");
+    html.AppendLine($"<p>{HtmlEncode("Property")}: {HtmlEncode(evidence.PropertyName)} {HtmlEncode(string.IsNullOrWhiteSpace(evidence.UnitLabel) ? string.Empty : $"- Unit {evidence.UnitLabel}")}</p>");
+    html.AppendLine($"<p>{HtmlEncode("Status")}: {HtmlEncode(evidence.Status)}</p>");
+    html.AppendLine($"<p>{HtmlEncode("Dispatch status")}: {HtmlEncode(evidence.DispatchStatus)}</p>");
+    html.AppendLine($"<p>{HtmlEncode("Vendor")}: {HtmlEncode(string.IsNullOrWhiteSpace(evidence.VendorName) ? "Unassigned" : evidence.VendorName)}</p>");
+    html.AppendLine($"<p>{HtmlEncode("Opened")}: {HtmlEncode(evidence.RequestedDate.ToString())}</p>");
+    html.AppendLine($"<p>{HtmlEncode($"{evidence.EvidenceCount} evidence item(s)")}</p>");
+    html.AppendLine("</section>");
+    html.AppendLine("<section><h2>LTB-ready sections</h2><ul><li>1. Issue summary and affected unit</li><li>2. Chronology of visits, photos and updates</li><li>3. Notices and resident communications</li><li>4. Attached proof, before/after items and vendor evidence</li></ul></section>");
+    html.AppendLine("<section><h2>Timeline items</h2><ul>");
+    if (assets.Count == 0)
+    {
+        html.AppendLine($"<li>{HtmlEncode("No linked evidence assets yet.")}</li>");
+    }
+    else
+    {
+        foreach (var asset in assets)
+        {
+            html.AppendLine($"<li>{HtmlEncode(asset.CreatedUtc.ToLocalTime().ToString("g"))} - {HtmlEncode(ResolveEvidenceCategory(asset.Category))} - {HtmlEncode(asset.FileName)} - {HtmlEncode(asset.Caption)}</li>");
+        }
+    }
+    html.AppendLine("</ul></section>");
+    html.AppendLine($"<section><h2>{HtmlEncode("Notice and communication summary")}</h2>");
+    if (communications.Count == 0)
+    {
+        html.AppendLine($"<p>{HtmlEncode("Use this section to summarize notice delivery, resident updates and service attempts before presenting the pack externally.")}</p>");
+    }
+    else
+    {
+        html.AppendLine("<ul>");
+        foreach (var message in communications)
+        {
+            var direction = message.IsIncoming ? "Incoming" : "Outgoing";
+            var delivered = message.DeliveredUtc.HasValue ? message.DeliveredUtc.Value.ToLocalTime().ToString("g") : "not marked delivered";
+            var method = string.IsNullOrWhiteSpace(message.DeliveryMethod) ? "logged" : message.DeliveryMethod;
+            var proof = string.IsNullOrWhiteSpace(message.DeliveryProof) ? string.Empty : $"; {message.DeliveryProof}";
+            html.AppendLine($"<li>{HtmlEncode(message.SentUtc.ToLocalTime().ToString("g"))} - {HtmlEncode(direction)} - {HtmlEncode(message.Body)} ({HtmlEncode(method)}, {HtmlEncode(delivered + proof)})</li>");
+        }
+        html.AppendLine("</ul>");
+    }
+    html.AppendLine("</section>");
+    html.AppendLine($"<section><h2>{HtmlEncode("Evidence pack preview")}</h2><p>{HtmlEncode(evidence.EvidencePackSummary)}</p></section>");
+    html.AppendLine("</body></html>");
+
+    return Results.File(Encoding.UTF8.GetBytes(html.ToString()), "text/html", $"evidence-pack-{maintenanceRequestId}.html");
+}).RequireAuthorization();
+
+app.MapGet("/export/evidence-pack/{maintenanceRequestId:guid}/pdf", async (Guid maintenanceRequestId, HttpContext httpContext, [FromServices] CurrentOrganization current, [FromServices] SaasDataService dataService) =>
+{
+    var evidence = (await dataService.GetMaintenanceEvidenceAsync()).FirstOrDefault(x => x.MaintenanceRequestId == maintenanceRequestId);
+    if (evidence is null)
+    {
+        return Results.NotFound();
+    }
+
+    var assets = (await dataService.GetMaintenanceMediaAssetsAsync())
+        .Where(x => x.MaintenanceRequestId == maintenanceRequestId)
+        .OrderBy(x => x.SortOrder)
+        .ThenBy(x => x.CreatedUtc)
+        .ToList();
+    var communications = await dataService.GetMaintenanceCommunicationMessagesAsync(maintenanceRequestId);
+
+    var organizationName = string.IsNullOrWhiteSpace(current.OrganizationName) ? "PropertySaaS" : current.OrganizationName;
+    var exportedUtc = DateTime.UtcNow;
+
+    static string ResolveEvidenceCategoryLabel(string category)
+        => category switch
+        {
+            nameof(PropertySaaS.Domain.Enums.MediaAssetCategory.MaintenanceBeforePhoto) => "Before",
+            nameof(PropertySaaS.Domain.Enums.MediaAssetCategory.MaintenanceAfterPhoto) => "After / notice",
+            nameof(PropertySaaS.Domain.Enums.MediaAssetCategory.MaintenanceEvidenceDocument) => "Proof",
+            nameof(PropertySaaS.Domain.Enums.MediaAssetCategory.MaintenanceEvidence) => "Proof",
+            nameof(PropertySaaS.Domain.Enums.MediaAssetCategory.Notice) => "After / notice",
+            _ => category
+        };
+
+    var pdf = EvidencePackPdfBuilder.Build(evidence, assets, communications, organizationName, exportedUtc, ResolveEvidenceCategoryLabel);
+    return Results.File(pdf, "application/pdf", $"evidence-pack-{maintenanceRequestId}.pdf");
 }).RequireAuthorization();
 
 app.MapGet("/docs/ontario-standard-lease", () =>
@@ -916,6 +1118,193 @@ BEGIN
     );
     CREATE UNIQUE INDEX [IX_OrganizationInvitations_Token] ON [OrganizationInvitations] ([Token]);
 END;
+IF OBJECT_ID('Vendors', 'U') IS NULL
+BEGIN
+    CREATE TABLE [Vendors] (
+        [Id] uniqueidentifier NOT NULL,
+        [CreatedUtc] datetime2 NOT NULL,
+        [ModifiedUtc] datetime2 NULL,
+        [OrganizationId] uniqueidentifier NOT NULL,
+        [Name] nvarchar(max) NOT NULL,
+        [Trade] nvarchar(max) NOT NULL,
+        [Email] nvarchar(max) NOT NULL,
+        [PhoneNumber] nvarchar(max) NOT NULL,
+        [ServiceArea] nvarchar(max) NOT NULL,
+        [IsPreferred] bit NOT NULL,
+        [IsActive] bit NOT NULL,
+        [Notes] nvarchar(max) NOT NULL,
+        CONSTRAINT [PK_Vendors] PRIMARY KEY ([Id])
+    );
+END;
+IF OBJECT_ID('Listings', 'U') IS NULL
+BEGIN
+    CREATE TABLE [Listings] (
+        [Id] uniqueidentifier NOT NULL,
+        [CreatedUtc] datetime2 NOT NULL,
+        [ModifiedUtc] datetime2 NULL,
+        [OrganizationId] uniqueidentifier NOT NULL,
+        [PropertyId] uniqueidentifier NOT NULL,
+        [UnitId] uniqueidentifier NULL,
+        [Title] nvarchar(max) NOT NULL,
+        [Description] nvarchar(max) NOT NULL,
+        [AskingRent] decimal(18,2) NOT NULL,
+        [Status] int NOT NULL,
+        [PublishTargets] nvarchar(max) NOT NULL,
+        [PublishedUtc] datetime2 NULL,
+        CONSTRAINT [PK_Listings] PRIMARY KEY ([Id])
+    );
+END;
+IF OBJECT_ID('Leads', 'U') IS NULL
+BEGIN
+    CREATE TABLE [Leads] (
+        [Id] uniqueidentifier NOT NULL,
+        [CreatedUtc] datetime2 NOT NULL,
+        [ModifiedUtc] datetime2 NULL,
+        [OrganizationId] uniqueidentifier NOT NULL,
+        [ListingId] uniqueidentifier NOT NULL,
+        [FullName] nvarchar(max) NOT NULL,
+        [Email] nvarchar(max) NOT NULL,
+        [PhoneNumber] nvarchar(max) NOT NULL,
+        [Source] nvarchar(max) NOT NULL,
+        [Status] int NOT NULL,
+        [Notes] nvarchar(max) NOT NULL,
+        CONSTRAINT [PK_Leads] PRIMARY KEY ([Id])
+    );
+END;
+IF OBJECT_ID('Showings', 'U') IS NULL
+BEGIN
+    CREATE TABLE [Showings] (
+        [Id] uniqueidentifier NOT NULL,
+        [CreatedUtc] datetime2 NOT NULL,
+        [ModifiedUtc] datetime2 NULL,
+        [OrganizationId] uniqueidentifier NOT NULL,
+        [ListingId] uniqueidentifier NOT NULL,
+        [LeadId] uniqueidentifier NULL,
+        [ScheduledUtc] datetime2 NOT NULL,
+        [Status] nvarchar(max) NOT NULL,
+        [Notes] nvarchar(max) NOT NULL,
+        CONSTRAINT [PK_Showings] PRIMARY KEY ([Id])
+    );
+END;
+IF OBJECT_ID('Invoices', 'U') IS NULL
+BEGIN
+    CREATE TABLE [Invoices] (
+        [Id] uniqueidentifier NOT NULL,
+        [CreatedUtc] datetime2 NOT NULL,
+        [ModifiedUtc] datetime2 NULL,
+        [OrganizationId] uniqueidentifier NOT NULL,
+        [LeaseId] uniqueidentifier NOT NULL,
+        [Number] nvarchar(max) NOT NULL,
+        [DueDate] date NOT NULL,
+        [Amount] decimal(18,2) NOT NULL,
+        [Balance] decimal(18,2) NOT NULL,
+        [Status] int NOT NULL,
+        [Notes] nvarchar(max) NOT NULL,
+        CONSTRAINT [PK_Invoices] PRIMARY KEY ([Id])
+    );
+END;
+IF OBJECT_ID('PaymentEntries', 'U') IS NULL
+BEGIN
+    CREATE TABLE [PaymentEntries] (
+        [Id] uniqueidentifier NOT NULL,
+        [CreatedUtc] datetime2 NOT NULL,
+        [ModifiedUtc] datetime2 NULL,
+        [OrganizationId] uniqueidentifier NOT NULL,
+        [InvoiceId] uniqueidentifier NOT NULL,
+        [ReceivedDate] date NOT NULL,
+        [Amount] decimal(18,2) NOT NULL,
+        [Method] nvarchar(max) NOT NULL,
+        [Reference] nvarchar(max) NOT NULL,
+        [Notes] nvarchar(max) NOT NULL,
+        CONSTRAINT [PK_PaymentEntries] PRIMARY KEY ([Id])
+    );
+END;
+IF OBJECT_ID('MediaAssets', 'U') IS NULL
+BEGIN
+    CREATE TABLE [MediaAssets] (
+        [Id] uniqueidentifier NOT NULL,
+        [CreatedUtc] datetime2 NOT NULL,
+        [ModifiedUtc] datetime2 NULL,
+        [OrganizationId] uniqueidentifier NOT NULL,
+        [PropertyId] uniqueidentifier NULL,
+        [UnitId] uniqueidentifier NULL,
+        [ListingId] uniqueidentifier NULL,
+        [MaintenanceRequestId] uniqueidentifier NULL,
+        [FileName] nvarchar(max) NOT NULL,
+        [BlobPath] nvarchar(max) NOT NULL,
+        [Caption] nvarchar(max) NOT NULL,
+        [SortOrder] int NOT NULL,
+        [IsPrimary] bit NOT NULL,
+        [Category] int NOT NULL,
+        CONSTRAINT [PK_MediaAssets] PRIMARY KEY ([Id])
+    );
+END;
+IF COL_LENGTH('MediaAssets', 'ListingId') IS NULL
+    ALTER TABLE [MediaAssets] ADD [ListingId] uniqueidentifier NULL;
+IF OBJECT_ID('AISuggestionLogs', 'U') IS NULL
+BEGIN
+    CREATE TABLE [AISuggestionLogs] (
+        [Id] uniqueidentifier NOT NULL,
+        [CreatedUtc] datetime2 NOT NULL,
+        [ModifiedUtc] datetime2 NULL,
+        [OrganizationId] uniqueidentifier NOT NULL,
+        [SuggestionType] int NOT NULL,
+        [SourceEntityName] nvarchar(max) NOT NULL,
+        [SourceEntityId] uniqueidentifier NULL,
+        [PromptSummary] nvarchar(max) NOT NULL,
+        [SuggestedContent] nvarchar(max) NOT NULL,
+        [ReviewedByHuman] bit NOT NULL,
+        [ReviewOutcome] nvarchar(max) NOT NULL,
+        CONSTRAINT [PK_AISuggestionLogs] PRIMARY KEY ([Id])
+    );
+END;
+IF OBJECT_ID('TenantConversations', 'U') IS NULL
+BEGIN
+    CREATE TABLE [TenantConversations] (
+        [Id] uniqueidentifier NOT NULL,
+        [CreatedUtc] datetime2 NOT NULL,
+        [ModifiedUtc] datetime2 NULL,
+        [OrganizationId] uniqueidentifier NOT NULL,
+        [TenantId] uniqueidentifier NOT NULL,
+        [LeaseId] uniqueidentifier NULL,
+        [MaintenanceRequestId] uniqueidentifier NULL,
+        [Subject] nvarchar(max) NOT NULL,
+        [Channel] int NOT NULL,
+        [Status] nvarchar(max) NOT NULL,
+        [LastContactUtc] datetime2 NULL,
+        CONSTRAINT [PK_TenantConversations] PRIMARY KEY ([Id])
+    );
+END;
+IF OBJECT_ID('TenantMessages', 'U') IS NULL
+BEGIN
+    CREATE TABLE [TenantMessages] (
+        [Id] uniqueidentifier NOT NULL,
+        [CreatedUtc] datetime2 NOT NULL,
+        [ModifiedUtc] datetime2 NULL,
+        [OrganizationId] uniqueidentifier NOT NULL,
+        [TenantConversationId] uniqueidentifier NOT NULL,
+        [IsIncoming] bit NOT NULL,
+        [Body] nvarchar(max) NOT NULL,
+        [SentBy] nvarchar(max) NOT NULL,
+        [SentUtc] datetime2 NOT NULL,
+        [IsAISuggested] bit NOT NULL,
+        CONSTRAINT [PK_TenantMessages] PRIMARY KEY ([Id])
+    );
+END;
+IF COL_LENGTH('TenantMessages', 'DeliveryMethod') IS NULL
+    ALTER TABLE [TenantMessages] ADD [DeliveryMethod] nvarchar(max) NOT NULL CONSTRAINT [DF_TenantMessages_DeliveryMethod] DEFAULT N'';
+IF COL_LENGTH('TenantMessages', 'DeliveredUtc') IS NULL
+    ALTER TABLE [TenantMessages] ADD [DeliveredUtc] datetime2 NULL;
+IF COL_LENGTH('TenantMessages', 'DeliveryProof') IS NULL
+    ALTER TABLE [TenantMessages] ADD [DeliveryProof] nvarchar(max) NOT NULL CONSTRAINT [DF_TenantMessages_DeliveryProof] DEFAULT N'';
+IF COL_LENGTH('Vendors', 'DispatchStatus') IS NULL
+    ALTER TABLE [Vendors] ADD [DispatchStatus] nvarchar(max) NOT NULL CONSTRAINT [DF_Vendors_DispatchStatus] DEFAULT N'Available';
+IF COL_LENGTH('Vendors', 'PreferredForPriority') IS NULL
+    ALTER TABLE [Vendors] ADD [PreferredForPriority] nvarchar(max) NOT NULL CONSTRAINT [DF_Vendors_PreferredForPriority] DEFAULT N'';
+IF COL_LENGTH('Vendors', 'TypicalResponseHours') IS NULL
+    ALTER TABLE [Vendors] ADD [TypicalResponseHours] int NOT NULL CONSTRAINT [DF_Vendors_TypicalResponseHours] DEFAULT 0;
+IF COL_LENGTH('MaintenanceRequests', 'DispatchStatus') IS NULL
+    ALTER TABLE [MaintenanceRequests] ADD [DispatchStatus] nvarchar(max) NOT NULL CONSTRAINT [DF_MaintenanceRequests_DispatchStatus] DEFAULT N'Unassigned';
 IF NOT EXISTS (SELECT 1 FROM [OrganizationMemberships] WHERE [OrganizationId] = '11111111-1111-1111-1111-111111111111' AND [UserId] = '66666666-6666-6666-6666-666666666666')
 BEGIN
     INSERT INTO [OrganizationMemberships] ([Id], [CreatedUtc], [ModifiedUtc], [OrganizationId], [UserId], [Role], [Status])
@@ -952,6 +1341,8 @@ static void PurgeExpiredDemoOrganizations(ApplicationDbContext db)
     db.AuditLogs.Where(x => expiredDemoIds.Contains(x.OrganizationId)).ExecuteDelete();
     db.ComplianceReminders.Where(x => expiredDemoIds.Contains(x.OrganizationId)).ExecuteDelete();
     db.DocumentTemplates.Where(x => expiredDemoIds.Contains(x.OrganizationId)).ExecuteDelete();
+    db.TenantMessages.Where(x => expiredDemoIds.Contains(x.OrganizationId)).ExecuteDelete();
+    db.TenantConversations.Where(x => expiredDemoIds.Contains(x.OrganizationId)).ExecuteDelete();
     db.MaintenanceRequests.Where(x => expiredDemoIds.Contains(x.OrganizationId)).ExecuteDelete();
     db.Leases.Where(x => expiredDemoIds.Contains(x.OrganizationId)).ExecuteDelete();
     db.Tenants.Where(x => expiredDemoIds.Contains(x.OrganizationId)).ExecuteDelete();

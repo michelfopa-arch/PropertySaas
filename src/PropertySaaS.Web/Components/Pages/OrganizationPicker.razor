@@ -1,5 +1,6 @@
 @attribute [Authorize]
 @page "/onboarding/organization-picker"
+@page "/superadmin/select-organization"
 @inject SaasDataService DataService
 @inject CurrentOrganization CurrentOrganization
 @inject NavigationManager NavigationManager
@@ -10,8 +11,8 @@
 <MudContainer MaxWidth="MaxWidth.Medium" Class="px-0">
     <MudStack Spacing="3">
         <MudStack Spacing="1">
-            <MudText Typo="Typo.h4">@UiText.Get("OrganizationPicker_Title")</MudText>
-            <MudText Typo="Typo.body1" Color="Color.Secondary">@UiText.Get("OrganizationPicker_Subtitle")</MudText>
+            <MudText Typo="Typo.h4">@(CurrentOrganization.IsSuperAdmin ? UiText.Get("SuperAdmin_SelectOrganizationTitle") : UiText.Get("OrganizationPicker_Title"))</MudText>
+            <MudText Typo="Typo.body1" Color="Color.Secondary">@(CurrentOrganization.IsSuperAdmin ? UiText.Get("SuperAdmin_SelectOrganizationHelp") : UiText.Get("OrganizationPicker_Subtitle"))</MudText>
         </MudStack>
 
         @foreach (var option in _options)
@@ -22,7 +23,7 @@
                         <MudText Typo="Typo.h6">@option.OrganizationName</MudText>
                         <MudText Typo="Typo.body2" Color="Color.Secondary">@option.Role</MudText>
                     </div>
-                    <form method="post" action="/organizations/select">
+                    <form method="get" action="/organizations/select">
                         <input type="hidden" name="organizationId" value="@option.OrganizationId" />
                         <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary">@UiText.Get("OrganizationPicker_Continue")</MudButton>
                     </form>
@@ -30,11 +31,14 @@
             </MudPaper>
         }
 
+        @if (!CurrentOrganization.IsSuperAdmin)
+        {
         <MudPaper Class="pa-4 marketing-card" Elevation="0">
             <MudText Typo="Typo.h6">@UiText.Get("OrganizationPicker_CreateNewTitle")</MudText>
             <MudText Typo="Typo.body2" Class="mb-4">@UiText.Get("OrganizationPicker_CreateNewHelp")</MudText>
             <MudButton Href="/onboarding" Variant="Variant.Outlined" Color="Color.Primary">@UiText.Get("OrganizationPicker_CreateNewCta")</MudButton>
         </MudPaper>
+        }
     </MudStack>
 </MudContainer>
 
@@ -43,15 +47,31 @@
 
     protected override async Task OnInitializedAsync()
     {
-        if (CurrentOrganization.HasOrganizationAccess)
+        if (CurrentOrganization.HasOrganizationAccess && !CurrentOrganization.IsSuperAdmin)
         {
             NavigationManager.NavigateTo("/dashboard");
             return;
         }
 
-        _options = await DataService.GetAccessibleOrganizationsAsync();
+        if (CurrentOrganization.IsSuperAdmin)
+        {
+            _options = (await DataService.GetSuperAdminOrganizationsAsync())
+                .Select(option => new OrganizationAccessOptionDto
+                {
+                    OrganizationId = option.OrganizationId,
+                    OrganizationName = option.OrganizationName,
+                    IsDemo = option.IsDemo,
+                    Role = "SuperAdmin",
+                    Status = "Active"
+                })
+                .ToList();
+        }
+        else
+        {
+            _options = await DataService.GetAccessibleOrganizationsAsync();
+        }
 
-        if (_options.Count <= 1)
+        if (_options.Count <= 1 && !CurrentOrganization.IsSuperAdmin)
         {
             NavigationManager.NavigateTo("/onboarding");
         }

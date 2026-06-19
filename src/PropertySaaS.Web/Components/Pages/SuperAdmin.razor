@@ -38,12 +38,17 @@ else
                     <MudPaper Class="pa-4 marketing-card h-100" Elevation="0">
                         <MudText Typo="Typo.h6">@organization.OrganizationName</MudText>
                         <MudText Typo="Typo.body2" Color="Color.Secondary">@UiText.Format("SuperAdmin_OrgPlan", organization.SubscriptionTier)</MudText>
+                        @if (organization.IsDemo)
+                        {
+                            <MudChip T="string" Size="Size.Small" Color="Color.Info" Variant="Variant.Filled" Class="mt-2">@UiText.Get("Layout_DemoBadge")</MudChip>
+                        }
                         <MudList T="string" Dense="true" Class="mt-3">
                             <MudListItem T="string">@UiText.Format("SuperAdmin_OrgUnits", organization.Units)</MudListItem>
                             <MudListItem T="string">@UiText.Format("SuperAdmin_OrgUsers", organization.Users)</MudListItem>
                         </MudList>
                         <MudTextField T="string" Label="@UiText.Get("SuperAdmin_SupportReason")" @bind-Value="_supportReasons[organization.OrganizationId]" Variant="Variant.Outlined" Class="mt-3" />
                         <MudStack Row="true" Spacing="2" Class="mt-3" Wrap="Wrap.Wrap">
+                            <MudButton Href="@($"/organizations/switch/{organization.OrganizationId}")" Variant="Variant.Outlined" Color="Color.Secondary">@UiText.Get("SuperAdmin_OpenOrganization")</MudButton>
                             <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="() => GrantSupportAsync(organization.OrganizationId)">@UiText.Get("SuperAdmin_GrantSupport")</MudButton>
                         </MudStack>
                     </MudPaper>

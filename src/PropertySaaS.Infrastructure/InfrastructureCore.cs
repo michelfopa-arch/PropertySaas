@@ -61,6 +61,16 @@ namespace PropertySaaS.Infrastructure.Data
         public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
         public DbSet<ComplianceReminder> ComplianceReminders => Set<ComplianceReminder>();
         public DbSet<DocumentTemplate> DocumentTemplates => Set<DocumentTemplate>();
+        public DbSet<Vendor> Vendors => Set<Vendor>();
+        public DbSet<Listing> Listings => Set<Listing>();
+        public DbSet<Lead> Leads => Set<Lead>();
+        public DbSet<Showing> Showings => Set<Showing>();
+        public DbSet<Invoice> Invoices => Set<Invoice>();
+        public DbSet<PaymentEntry> PaymentEntries => Set<PaymentEntry>();
+        public DbSet<MediaAsset> MediaAssets => Set<MediaAsset>();
+        public DbSet<AISuggestionLog> AISuggestionLogs => Set<AISuggestionLog>();
+        public DbSet<TenantConversation> TenantConversations => Set<TenantConversation>();
+        public DbSet<TenantMessage> TenantMessages => Set<TenantMessage>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -77,7 +87,31 @@ namespace PropertySaaS.Infrastructure.Data
             modelBuilder.Entity<Lease>().HasOne(x => x.Unit).WithMany(x => x.Leases).HasForeignKey(x => x.UnitId).OnDelete(DeleteBehavior.Restrict);
             modelBuilder.Entity<Lease>().HasOne(x => x.Tenant).WithMany(x => x.Leases).HasForeignKey(x => x.TenantId).OnDelete(DeleteBehavior.Restrict);
             modelBuilder.Entity<Lease>().Property(x => x.MonthlyRent).HasPrecision(18, 2);
+            modelBuilder.Entity<TenantConversation>().HasOne(x => x.Tenant).WithMany(x => x.Conversations).HasForeignKey(x => x.TenantId).OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<TenantConversation>().HasOne(x => x.Lease).WithMany().HasForeignKey(x => x.LeaseId).OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<TenantConversation>().HasOne(x => x.MaintenanceRequest).WithMany().HasForeignKey(x => x.MaintenanceRequestId).OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<TenantMessage>().HasOne(x => x.Conversation).WithMany(x => x.Messages).HasForeignKey(x => x.TenantConversationId).OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<TenantMessage>().Property(x => x.DeliveryMethod).HasDefaultValue(string.Empty);
+            modelBuilder.Entity<TenantMessage>().Property(x => x.DeliveryProof).HasDefaultValue(string.Empty);
+            modelBuilder.Entity<Vendor>().Property(x => x.DispatchStatus).HasDefaultValue("Available");
+            modelBuilder.Entity<Vendor>().Property(x => x.PreferredForPriority).HasDefaultValue(string.Empty);
+            modelBuilder.Entity<MaintenanceRequest>().Property(x => x.DispatchStatus).HasDefaultValue("Unassigned");
             modelBuilder.Entity<MaintenanceRequest>().Property(x => x.EstimatedCost).HasPrecision(18, 2);
+            modelBuilder.Entity<Listing>().Property(x => x.AskingRent).HasPrecision(18, 2);
+            modelBuilder.Entity<Invoice>().Property(x => x.Amount).HasPrecision(18, 2);
+            modelBuilder.Entity<Invoice>().Property(x => x.Balance).HasPrecision(18, 2);
+            modelBuilder.Entity<PaymentEntry>().Property(x => x.Amount).HasPrecision(18, 2);
+            modelBuilder.Entity<Listing>().HasOne(x => x.Property).WithMany(x => x.Listings).HasForeignKey(x => x.PropertyId).OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<Listing>().HasOne(x => x.Unit).WithMany(x => x.Listings).HasForeignKey(x => x.UnitId).OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<Lead>().HasOne(x => x.Listing).WithMany(x => x.Leads).HasForeignKey(x => x.ListingId).OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<Showing>().HasOne(x => x.Listing).WithMany().HasForeignKey(x => x.ListingId).OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<Showing>().HasOne(x => x.Lead).WithMany(x => x.Showings).HasForeignKey(x => x.LeadId).OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<Invoice>().HasOne(x => x.Lease).WithMany(x => x.Invoices).HasForeignKey(x => x.LeaseId).OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<PaymentEntry>().HasOne(x => x.Invoice).WithMany(x => x.Payments).HasForeignKey(x => x.InvoiceId).OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<MediaAsset>().HasOne(x => x.Property).WithMany(x => x.MediaAssets).HasForeignKey(x => x.PropertyId).OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<MediaAsset>().HasOne(x => x.Unit).WithMany(x => x.MediaAssets).HasForeignKey(x => x.UnitId).OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<MediaAsset>().HasOne(x => x.Listing).WithMany(x => x.MediaAssets).HasForeignKey(x => x.ListingId).OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<MediaAsset>().HasOne(x => x.MaintenanceRequest).WithMany().HasForeignKey(x => x.MaintenanceRequestId).OnDelete(DeleteBehavior.Restrict);
             ApplicationDbSeeder.Seed(modelBuilder);
             base.OnModelCreating(modelBuilder);
         }
@@ -110,7 +144,7 @@ namespace PropertySaaS.Infrastructure.Data
             modelBuilder.Entity<Unit>().HasData(new Unit { Id = unitId, OrganizationId = orgId, PropertyId = propertyId, UnitNumber = "508", Bedrooms = 1, Bathrooms = 1, MonthlyRent = 2895m, IsOccupied = true, CreatedUtc = new DateTime(2026,1,1,0,0,0,DateTimeKind.Utc) });
             modelBuilder.Entity<Tenant>().HasData(new Tenant { Id = tenantId, OrganizationId = orgId, FullName = "Jordan Patel", Email = "jordan.patel@example.com", PhoneNumber = "647-555-0134", CreditScore = 731, ScreeningCompleted = true, ScreeningProvider = "SingleKey", CreatedUtc = new DateTime(2026,1,1,0,0,0,DateTimeKind.Utc) });
             modelBuilder.Entity<Lease>().HasData(new Lease { Id = Guid.Parse("55555555-5555-5555-5555-555555555555"), OrganizationId = orgId, UnitId = unitId, TenantId = tenantId, StartDate = new DateOnly(2026,1,1), EndDate = new DateOnly(2026,12,31), MonthlyRent = 2895m, Status = LeaseStatus.Active, StandardOntarioLeaseSigned = true, N1IncreaseNoticeScheduled = true, CreatedUtc = new DateTime(2026,1,1,0,0,0,DateTimeKind.Utc) });
-            modelBuilder.Entity<MaintenanceRequest>().HasData(new MaintenanceRequest { Id = Guid.Parse("77777777-7777-7777-7777-777777777777"), OrganizationId = orgId, PropertyId = propertyId, UnitId = unitId, Title = "Annual smoke detector certification", Description = "Ontario compliance inspection and battery replacement.", Priority = MaintenancePriority.High, Status = "Open", VendorName = "SafeHome Fire Services", EstimatedCost = 180m, RequestedDate = new DateOnly(2026,6,15), CreatedUtc = new DateTime(2026,1,1,0,0,0,DateTimeKind.Utc) });
+            modelBuilder.Entity<MaintenanceRequest>().HasData(new MaintenanceRequest { Id = Guid.Parse("77777777-7777-7777-7777-777777777777"), OrganizationId = orgId, PropertyId = propertyId, UnitId = unitId, Title = "Annual smoke detector certification", Description = "Ontario compliance inspection and battery replacement.", Priority = MaintenancePriority.High, Status = "Open", DispatchStatus = "Assigned", VendorName = "SafeHome Fire Services", EstimatedCost = 180m, RequestedDate = new DateOnly(2026,6,15), CreatedUtc = new DateTime(2026,1,1,0,0,0,DateTimeKind.Utc) });
             modelBuilder.Entity<AuditLog>().HasData(new AuditLog { Id = Guid.Parse("88888888-8888-8888-8888-888888888888"), OrganizationId = orgId, EntityName = "Lease", Action = "Seed", PerformedBy = "system", Details = "Seeded demo Ontario lease", CreatedUtc = new DateTime(2026,1,1,0,0,0,DateTimeKind.Utc) });
             modelBuilder.Entity<ComplianceReminder>().HasData(
                 new ComplianceReminder { Id = Guid.Parse("99999999-9999-9999-9999-999999999999"), OrganizationId = orgId, Title = "N1 rent increase notice window", NoticeType = "N1", Province = "ON", DueDate = new DateOnly(2026,9,1), IsCompleted = false, Reference = "90 days notice recommended workflow", CreatedUtc = new DateTime(2026,1,1,0,0,0,DateTimeKind.Utc) },

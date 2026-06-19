@@ -62,3 +62,20 @@ body { margin:0; }
     .property-form-drawer { width:100%; }
     .properties-toolbar-actions { flex-direction:column; }
 }
+
+.evidence-pack-shell { max-width:960px; margin:0 auto; }
+.evidence-pack-toolbar { gap:1rem; }
+.evidence-pack-section { break-inside:avoid; page-break-inside:avoid; }
+
+@media print {
+    html, body { background:#ffffff !important; color:#10233f !important; }
+    .no-print, .mud-drawer, .mud-appbar, .material-nav-menu, .top-bar, nav, header, footer { display:none !important; }
+    .content-shell, .evidence-pack-shell { padding:0 !important; margin:0 !important; max-width:none !important; }
+    .marketing-card, .metric-card, .table-wrap, .property-mini-stat, .tenant-context {
+        box-shadow:none !important;
+        border:1px solid rgba(15,39,71,.12) !important;
+        background:#ffffff !important;
+    }
+    .mud-paper { box-shadow:none !important; }
+    .evidence-pack-section { margin-bottom:1rem; }
+}

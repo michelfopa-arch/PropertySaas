@@ -1,0 +1,142 @@
+@attribute [Authorize]
+@page "/documents-evidence/pack/{MaintenanceRequestId:guid}"
+@inject SaasDataService DataService
+@inject NavigationManager NavigationManager
+@using PropertySaaS.Web.Localization
+@using PropertySaaS.Domain.Enums
+
+<PageTitle>@UiText.Get("DocumentsEvidence_PrintablePageTitle")</PageTitle>
+
+<div class="evidence-pack-shell">
+@if (_evidence is null)
+{
+    <MudPaper Class="pa-6 d-flex justify-center" Elevation="0">
+        <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+    </MudPaper>
+}
+else
+{
+        <MudStack Spacing="3">
+        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="evidence-pack-toolbar no-print">
+            <MudStack Spacing="0">
+                <MudText Typo="Typo.h4">@UiText.Get("DocumentsEvidence_TribunalReadyHeader")</MudText>
+                <MudText Typo="Typo.body2">@UiText.Get("DocumentsEvidence_PrintableSubtitle")</MudText>
+            </MudStack>
+            <MudStack Row="true" Spacing="1">
+                <MudButton Variant="Variant.Outlined" Color="Color.Default" OnClick="BackToEvidence">@UiText.Get("DocumentsEvidence_BackToEvidence")</MudButton>
+                <MudButton Href="@($"/export/evidence-pack/{MaintenanceRequestId}/html")" Variant="Variant.Outlined" Color="Color.Secondary">@UiText.Get("DocumentsEvidence_DownloadHtml")</MudButton>
+                <MudButton Href="@($"/export/evidence-pack/{MaintenanceRequestId}/pdf")" Variant="Variant.Outlined" Color="Color.Secondary">@UiText.Get("DocumentsEvidence_DownloadPdf")</MudButton>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="PrintPage">@UiText.Get("DocumentsEvidence_PrintAction")</MudButton>
+            </MudStack>
+        </MudStack>
+
+        <MudPaper Class="pa-4 marketing-card evidence-pack-section" Elevation="0">
+            <MudText Typo="Typo.h6">@UiText.Get("DocumentsEvidence_TribunalReadyTicket")</MudText>
+            <MudText Typo="Typo.body1">@_evidence.Title</MudText>
+            <MudText Typo="Typo.body2">@UiText.Get("DocumentsEvidence_DossierSignature"): @_evidence.DossierSignature</MudText>
+            <MudText Typo="Typo.body2">@UiText.Get("DocumentsEvidence_TribunalReadyProperty"): @_evidence.PropertyName @FormatUnitLabel(_evidence.UnitLabel)</MudText>
+            <MudText Typo="Typo.body2">@UiText.Get("DocumentsEvidence_TribunalReadyStatus"): @_evidence.Status</MudText>
+            <MudText Typo="Typo.body2">@UiText.Get("Maintenance_DispatchStatus"): @GetDispatchDisplay(_evidence.DispatchStatus)</MudText>
+            <MudText Typo="Typo.body2">@UiText.Get("Maintenance_ColumnVendor"): @(string.IsNullOrWhiteSpace(_evidence.VendorName) ? UiText.Get("Maintenance_UnassignedVendor") : _evidence.VendorName)</MudText>
+            <MudText Typo="Typo.body2">@UiText.Get("DocumentsEvidence_TribunalReadyOpened"): @_evidence.RequestedDate</MudText>
+            <MudText Typo="Typo.body2">@UiText.Format("DocumentsEvidence_EvidenceCount", _evidence.EvidenceCount)</MudText>
+        </MudPaper>
+
+        <MudPaper Class="pa-4 marketing-card evidence-pack-section" Elevation="0">
+            <MudText Typo="Typo.h6">@UiText.Get("DocumentsEvidence_LTBReadySectionsTitle")</MudText>
+            <MudList T="string" Dense="true" Class="mt-3">
+                <MudListItem T="string">@UiText.Get("DocumentsEvidence_LTBReadySectionIssue")</MudListItem>
+                <MudListItem T="string">@UiText.Get("DocumentsEvidence_LTBReadySectionTimeline")</MudListItem>
+                <MudListItem T="string">@UiText.Get("DocumentsEvidence_LTBReadySectionNotices")</MudListItem>
+                <MudListItem T="string">@UiText.Get("DocumentsEvidence_LTBReadySectionEvidence")</MudListItem>
+            </MudList>
+        </MudPaper>
+
+        <MudPaper Class="pa-4 marketing-card evidence-pack-section" Elevation="0">
+            <MudText Typo="Typo.h6">@UiText.Get("DocumentsEvidence_TribunalReadyTimeline")</MudText>
+            <MudList T="string" Dense="true" Class="mt-3">
+                @if (_assets.Count == 0)
+                {
+                    <MudListItem T="string">@UiText.Get("DocumentsEvidence_TribunalReadyNoAssets")</MudListItem>
+                }
+                else
+                {
+                    @foreach (var asset in _assets.OrderBy(x => x.SortOrder).ThenBy(x => x.CreatedUtc))
+                    {
+                        <MudListItem T="string">@asset.CreatedUtc.ToLocalTime().ToString("g") - @GetEvidenceCategoryLabel(asset.Category) - @asset.FileName - @asset.Caption</MudListItem>
+                    }
+                }
+            </MudList>
+        </MudPaper>
+
+        <MudPaper Class="pa-4 marketing-card evidence-pack-section" Elevation="0">
+            <MudText Typo="Typo.h6">@UiText.Get("DocumentsEvidence_LTBReadyNoticeTitle")</MudText>
+            <MudText Typo="Typo.body2">@UiText.Get("DocumentsEvidence_LTBReadyNoticeBody")</MudText>
+        </MudPaper>
+
+        <MudPaper Class="pa-4 marketing-card evidence-pack-section" Elevation="0">
+            <MudText Typo="Typo.h6">@UiText.Get("DocumentsEvidence_EvidencePackPreviewTitle")</MudText>
+            <MudText Typo="Typo.body2" Style="white-space: pre-line;">@_evidence.EvidencePackSummary</MudText>
+        </MudPaper>
+    </MudStack>
+}
+</div>
+
+@code {
+    [Parameter] public Guid MaintenanceRequestId { get; set; }
+
+    private MaintenanceEvidenceSummaryDto? _evidence;
+    private List<MediaAssetSummaryDto> _assets = new();
+    private List<MaintenanceCommunicationSummaryDto> _communications = new();
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var evidence = await DataService.GetMaintenanceEvidenceAsync();
+        _evidence = evidence.FirstOrDefault(x => x.MaintenanceRequestId == MaintenanceRequestId);
+        _assets = (await DataService.GetMaintenanceMediaAssetsAsync())
+            .Where(x => x.MaintenanceRequestId == MaintenanceRequestId)
+            .ToList();
+        _communications = await DataService.GetMaintenanceCommunicationMessagesAsync(MaintenanceRequestId);
+    }
+
+    private void BackToEvidence() => NavigationManager.NavigateTo("/documents-evidence");
+
+    private async Task PrintPage()
+    {
+        await Task.Yield();
+        NavigationManager.NavigateTo($"javascript:window.print()", forceLoad: true);
+    }
+
+    private static string FormatUnitLabel(string unitLabel)
+        => string.IsNullOrWhiteSpace(unitLabel) ? string.Empty : $"- Unit {unitLabel}";
+
+    private string GetEvidenceCategoryLabel(string category)
+        => category switch
+        {
+            nameof(MediaAssetCategory.MaintenanceBeforePhoto) => UiText.Get("Maintenance_EvidenceCategoryBefore"),
+            nameof(MediaAssetCategory.MaintenanceAfterPhoto) => UiText.Get("Maintenance_EvidenceCategoryAfter"),
+            nameof(MediaAssetCategory.MaintenanceEvidenceDocument) => UiText.Get("Maintenance_EvidenceCategoryProof"),
+            nameof(MediaAssetCategory.MaintenanceEvidence) => UiText.Get("Maintenance_EvidenceCategoryProof"),
+            nameof(MediaAssetCategory.Notice) => UiText.Get("Maintenance_EvidenceCategoryAfter"),
+            _ => category
+        };
+
+    private static string FormatCommunicationDelivery(MaintenanceCommunicationSummaryDto message)
+    {
+        var delivered = message.DeliveredUtc.HasValue ? message.DeliveredUtc.Value.ToLocalTime().ToString("g") : "not marked delivered";
+        var method = string.IsNullOrWhiteSpace(message.DeliveryMethod) ? "logged" : message.DeliveryMethod;
+        var proof = string.IsNullOrWhiteSpace(message.DeliveryProof) ? string.Empty : $"; {message.DeliveryProof}";
+        return $"{method}, {delivered}{proof}";
+    }
+
+    private static string GetDispatchDisplay(string dispatchStatus)
+        => dispatchStatus switch
+        {
+            "Unassigned" => UiText.Get("Maintenance_DispatchUnassigned"),
+            "Recommended" => UiText.Get("Maintenance_DispatchRecommended"),
+            "Assigned" => UiText.Get("Maintenance_DispatchAssigned"),
+            "Acknowledged" => UiText.Get("Maintenance_DispatchAcknowledged"),
+            "Completed" => UiText.Get("Maintenance_DispatchCompleted"),
+            _ => dispatchStatus
+        };
+}

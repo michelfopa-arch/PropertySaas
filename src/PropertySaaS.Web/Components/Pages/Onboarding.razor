@@ -91,6 +91,9 @@
 </MudContainer>
 
 @code {
+    [SupplyParameterFromQuery(Name = "invite")]
+    public string? InviteStatus { get; set; }
+
     private string _organizationName = string.Empty;
     private string _province = "ON";
     private bool _isSubmitting;
@@ -111,6 +114,12 @@
         {
             NavigationManager.NavigateTo("/onboarding/organization-picker");
             return;
+        }
+
+        if (string.Equals(InviteStatus, "expired", StringComparison.OrdinalIgnoreCase))
+        {
+            _feedback = UiText.Get("Onboarding_InviteExpired");
+            _feedbackSeverity = Severity.Warning;
         }
 
         _pendingInvitations = await DataService.GetPendingWorkspaceInvitationsAsync();

@@ -17,18 +17,30 @@
 
     @if (CurrentOrganization.HasOrganizationAccess && CurrentOrganization.CanAccessWorkspace)
     {
-        <MudNavLink Href="/dashboard" Icon="@Icons.Material.Filled.Dashboard">@UiText.Get("Nav_Dashboard")</MudNavLink>
-        <MudNavLink Href="/properties" Icon="@Icons.Material.Filled.Apartment">@UiText.Get("Nav_Properties")</MudNavLink>
-        <MudNavLink Href="/units" Icon="@Icons.Material.Filled.MeetingRoom">@UiText.Get("Nav_Units")</MudNavLink>
-        <MudNavLink Href="/tenants" Icon="@Icons.Material.Filled.Groups">@UiText.Get("Nav_Tenants")</MudNavLink>
-        <MudNavLink Href="/leases" Icon="@Icons.Material.Filled.Description">@UiText.Get("Nav_Leases")</MudNavLink>
-        <MudNavLink Href="/maintenance" Icon="@Icons.Material.Filled.Build">@UiText.Get("Nav_Maintenance")</MudNavLink>
-        <MudNavLink Href="/compliance" Icon="@Icons.Material.Filled.Gavel">@UiText.Get("Nav_Compliance")</MudNavLink>
-        <MudNavLink Href="/profile" Icon="@Icons.Material.Filled.Person">@UiText.Get("Nav_Profile")</MudNavLink>
+        <MudNavLink Href="/dashboard" Icon="@Icons.Material.Filled.SpaceDashboard">@UiText.Get("Nav_Overview")</MudNavLink>
+        <MudNavLink Href="/ai-work-queue" Icon="@Icons.Material.Filled.AutoAwesome">@UiText.Get("Nav_AIWorkQueue")</MudNavLink>
+        <MudNavGroup Title="@UiText.Get("Nav_Portfolio")" Expanded="true" Icon="@Icons.Material.Filled.Domain">
+            <MudNavLink Href="/properties" Icon="@Icons.Material.Filled.Apartment">@UiText.Get("Nav_Properties")</MudNavLink>
+            <MudNavLink Href="/units" Icon="@Icons.Material.Filled.MeetingRoom">@UiText.Get("Nav_Units")</MudNavLink>
+            <MudNavLink Href="/tenants" Icon="@Icons.Material.Filled.Groups">@UiText.Get("Nav_Tenants")</MudNavLink>
+            <MudNavLink Href="/leases" Icon="@Icons.Material.Filled.Description">@UiText.Get("Nav_Leases")</MudNavLink>
+        </MudNavGroup>
+        <MudNavGroup Title="@UiText.Get("Nav_RevenueLeasing")" Expanded="true" Icon="@Icons.Material.Filled.TrendingUp">
+            <MudNavLink Href="/leasing" Icon="@Icons.Material.Filled.Campaign">@UiText.Get("Nav_Leasing")</MudNavLink>
+            <MudNavLink Href="/rent-payments" Icon="@Icons.Material.Filled.ReceiptLong">@UiText.Get("Nav_RentPayments")</MudNavLink>
+        </MudNavGroup>
+        <MudNavGroup Title="@UiText.Get("Nav_Operations")" Expanded="false" Icon="@Icons.Material.Filled.BuildCircle">
+            <MudNavLink Href="/maintenance" Icon="@Icons.Material.Filled.Build">@UiText.Get("Nav_Maintenance")</MudNavLink>
+            <MudNavLink Href="/tenant-communications" Icon="@Icons.Material.Filled.Forum">@UiText.Get("Nav_TenantCommunications")</MudNavLink>
+            <MudNavLink Href="/vendors" Icon="@Icons.Material.Filled.Handyman">@UiText.Get("Nav_Vendors")</MudNavLink>
+            <MudNavLink Href="/documents-evidence" Icon="@Icons.Material.Filled.FolderShared">@UiText.Get("Nav_DocumentsEvidence")</MudNavLink>
+        </MudNavGroup>
+        <MudNavGroup Title="@UiText.Get("Nav_ComplianceWorkspace")" Expanded="false" Icon="@Icons.Material.Filled.Gavel">
+            <MudNavLink Href="/compliance" Icon="@Icons.Material.Filled.Gavel">@UiText.Get("Nav_OntarioCompliance")</MudNavLink>
+            <MudNavLink Href="/ai-import" Icon="@Icons.Material.Filled.FileUpload">@UiText.Get("Nav_AIImport")</MudNavLink>
+            <MudNavLink Href="/profile" Icon="@Icons.Material.Filled.Group">@UiText.Get("Nav_TeamAccess")</MudNavLink>
+        </MudNavGroup>
         <MudNavLink Href="/subscriptions" Icon="@Icons.Material.Filled.Subscriptions">@UiText.Get("Nav_Subscriptions")</MudNavLink>
-        <MudNavLink Href="/audit-logs" Icon="@Icons.Material.Filled.FactCheck">@UiText.Get("Nav_AuditLogs")</MudNavLink>
-        <MudNavLink Href="/import-export" Icon="@Icons.Material.Filled.ImportExport">@UiText.Get("Nav_ImportExport")</MudNavLink>
-        <MudNavLink Href="/account" Icon="@Icons.Material.Filled.ManageAccounts">@UiText.Get("Nav_ManageAccount")</MudNavLink>
         <MudDivider Class="my-2" />
     }
 
@@ -41,6 +53,7 @@
     @if (CurrentOrganization.IsSuperAdmin)
     {
         <MudNavLink Href="/superadmin" Icon="@Icons.Material.Filled.AdminPanelSettings">@UiText.Get("Nav_SuperAdmin")</MudNavLink>
+        <MudNavLink Href="/superadmin/select-organization" Icon="@Icons.Material.Filled.Domain">@UiText.Get("Nav_SuperAdminOrganizations")</MudNavLink>
     }
 
     @if (CurrentOrganization.IsAuthenticated)

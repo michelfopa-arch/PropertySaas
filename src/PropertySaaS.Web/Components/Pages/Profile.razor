@@ -227,6 +227,7 @@
     private Severity _teamFeedbackSeverity = Severity.Success;
     private string? _demoFeedback;
     private Severity _demoFeedbackSeverity = Severity.Success;
+    private string? _latestInvitationUrl;
     private List<MemberSummaryDto> _members = new();
     private List<InvitationSummaryDto> _invitations = new();
 
@@ -367,11 +368,12 @@
 
         try
         {
-            await DataService.InviteUserAsync(_inviteEmail, _inviteRole, NavigationManager.BaseUri.TrimEnd('/'));
+            var result = await DataService.InviteUserAsync(_inviteEmail, _inviteRole, NavigationManager.BaseUri.TrimEnd('/'));
             _inviteEmail = string.Empty;
             _inviteRole = "Viewer";
             _teamFeedback = UiText.Get("Profile_InviteSuccess");
             _teamFeedbackSeverity = Severity.Success;
+            _latestInvitationUrl = result.InvitationUrl;
             _members = await DataService.GetMembersAsync();
             _invitations = await DataService.GetInvitationsAsync();
         }
@@ -393,4 +395,16 @@
         _teamFeedback = UiText.Get("Profile_RevokeSuccess");
         _teamFeedbackSeverity = Severity.Success;
     }
+
+    private async Task ResendInvitationAsync(Guid invitationId)
+    {
+        var result = await DataService.ResendInvitationAsync(invitationId, NavigationManager.BaseUri.TrimEnd('/'));
+        _latestInvitationUrl = result.InvitationUrl;
+        _invitations = await DataService.GetInvitationsAsync();
+        _teamFeedback = UiText.Get("Profile_ResendSuccess");
+        _teamFeedbackSeverity = Severity.Success;
+    }
+
+    private string BuildInvitationUrl(string token)
+        => $"{NavigationManager.BaseUri.TrimEnd('/')}/invitations/accept?token={Uri.EscapeDataString(token)}";
 }

@@ -1,14 +1,17 @@
 @attribute [Authorize]
 @page "/maintenance"
 @inject SaasDataService DataService
+@inject NavigationManager NavigationManager
 @inject PropertySaaS.Application.Common.CurrentOrganization CurrentOrganization
 @inject IStringLocalizer<SharedResource> Localizer
 @using PropertySaaS.Domain.Enums
+@using PropertySaaS.Web.Localization
 
 <PageTitle>@Localizer["Maintenance_Title"]</PageTitle>
 
 <MudStack Spacing="3">
     <MudStack Spacing="0">
+        <MudChip T="string" Color="Color.Primary" Variant="Variant.Outlined" Size="Size.Small" Class="mb-2">@UiText.Get("Maintenance_PremiumBadge")</MudChip>
         <MudText Typo="Typo.h4">@Localizer["Maintenance_Title"]</MudText>
         <MudText Typo="Typo.body2">@Localizer["Maintenance_Subtitle"]</MudText>
     </MudStack>
@@ -43,6 +46,17 @@
             </MudSelect>
         </MudItem>
         <MudItem xs="12" sm="4" lg="2">
+            <MudSelect T="string" Label="@UiText.Get("Maintenance_FilterDispatch")" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedDispatchFilter">
+                <MudSelectItem T="string" Value="@string.Empty">@UiText.Get("Maintenance_FilterAllDispatchStatuses")</MudSelectItem>
+                    <MudSelectItem T="string" Value='@("AtRisk")'>@UiText.Get("Maintenance_SlaAtRisk")</MudSelectItem>
+                    <MudSelectItem T="string" Value='@("Blocked")'>@UiText.Get("Dashboard_DispatchBlocked")</MudSelectItem>
+                @foreach (var option in DispatchStatusOptions)
+                {
+                    <MudSelectItem T="string" Value="@option">@GetDispatchLabel(option)</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12" sm="4" lg="2">
             <MudSelect T="string" Label="@Localizer["Maintenance_FilterProperty"]" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedPropertyFilter">
                 <MudSelectItem T="string" Value="@string.Empty">@Localizer["Maintenance_FilterAllProperties"]</MudSelectItem>
                 @foreach (var property in _properties)
@@ -60,6 +74,7 @@
                 @if (CurrentOrganization.CanManageData)
                 {
                     <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreatePanel">@Localizer["Maintenance_AddRequest"]</MudButton>
+                    <MudButton Variant="Variant.Outlined" Color="Color.Default" FullWidth="true" StartIcon="@Icons.Material.Filled.Download" Href="/export/maintenance/dispatch-journal">@UiText.Get("Maintenance_ExportDispatchJournal")</MudButton>
                 }
             </MudStack>
         </MudItem>
@@ -72,6 +87,68 @@
         <MudItem xs="12" sm="6" lg="3"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">@Localizer["Maintenance_StatVendorsEngaged"]</MudText><MudText Typo="Typo.h6">@FilteredRequests.Select(x => x.VendorName).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct(StringComparer.OrdinalIgnoreCase).Count()</MudText></MudPaper></MudItem>
     </MudGrid>
 
+    <MudPaper Class="pa-4 marketing-card" Elevation="0">
+        <MudText Typo="Typo.h6">@UiText.Get("Maintenance_OperationalStoryTitle")</MudText>
+        <MudText Typo="Typo.body2" Class="mt-1">@UiText.Get("Maintenance_OperationalStorySubtitle")</MudText>
+        <MudList T="string" Dense="true" Class="mt-3">
+            <MudListItem T="string">@UiText.Get("Maintenance_OperationalStoryStep1")</MudListItem>
+            <MudListItem T="string">@UiText.Get("Maintenance_OperationalStoryStep2")</MudListItem>
+            <MudListItem T="string">@UiText.Get("Maintenance_OperationalStoryStep3")</MudListItem>
+        </MudList>
+    </MudPaper>
+
+    <MudPaper Class="pa-4 marketing-card" Elevation="0">
+        <MudText Typo="Typo.h6">@UiText.Get("Maintenance_DispatchBoardTitle")</MudText>
+        <MudGrid Spacing="2" Class="mt-1">
+            <MudItem xs="12" sm="6" md="3"><MudChip T="string" Variant="Variant.Filled" Color="Color.Default">@UiText.Get("Maintenance_DispatchUnassigned"): @FilteredRequests.Count(x => string.Equals(x.DispatchStatus, "Unassigned", StringComparison.OrdinalIgnoreCase))</MudChip></MudItem>
+            <MudItem xs="12" sm="6" md="3"><MudChip T="string" Variant="Variant.Filled" Color="Color.Info">@UiText.Get("Maintenance_DispatchRecommended"): @FilteredRequests.Count(x => string.Equals(x.DispatchStatus, "Recommended", StringComparison.OrdinalIgnoreCase))</MudChip></MudItem>
+            <MudItem xs="12" sm="6" md="3"><MudChip T="string" Variant="Variant.Filled" Color="Color.Warning">@UiText.Get("Maintenance_DispatchAssigned"): @FilteredRequests.Count(x => string.Equals(x.DispatchStatus, "Assigned", StringComparison.OrdinalIgnoreCase) || string.Equals(x.DispatchStatus, "Acknowledged", StringComparison.OrdinalIgnoreCase))</MudChip></MudItem>
+            <MudItem xs="12" sm="6" md="3"><MudChip T="string" Variant="Variant.Filled" Color="Color.Success">@UiText.Get("Maintenance_DispatchCompleted"): @FilteredRequests.Count(x => string.Equals(x.DispatchStatus, "Completed", StringComparison.OrdinalIgnoreCase))</MudChip></MudItem>
+        </MudGrid>
+    </MudPaper>
+
+    <MudPaper Class="pa-4 marketing-card" Elevation="0">
+        <MudText Typo="Typo.h6">@UiText.Get("Maintenance_NextActionTitle")</MudText>
+        @if (PriorityDispatchTicket is null)
+        {
+            <MudText Typo="Typo.body2" Class="mt-2">@UiText.Get("Maintenance_NextActionEmpty")</MudText>
+        }
+        else
+        {
+            <MudText Typo="Typo.subtitle2" Class="mt-2">@PriorityDispatchTicket.Title</MudText>
+            <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-1">@UiText.Get("Maintenance_NextActionCaption")</MudText>
+            <MudStack Row="true" Spacing="1" Class="mt-2" Wrap="Wrap.Wrap">
+                <MudChip T="string" Variant="Variant.Filled" Color="@GetDispatchColor(PriorityDispatchTicket.DispatchStatus)">@GetDispatchLabel(PriorityDispatchTicket.DispatchStatus)</MudChip>
+                <MudChip T="string" Variant="Variant.Outlined" Color="@GetPriorityActionColor(PriorityDispatchTicket)">@GetPriorityActionLabel(PriorityDispatchTicket)</MudChip>
+            </MudStack>
+            <MudText Typo="Typo.body2" Class="mt-2">@GetPropertyName(PriorityDispatchTicket.PropertyId) - @GetVendorLabel(PriorityDispatchTicket.VendorName) - @GetSlaRiskLabel(PriorityDispatchTicket)</MudText>
+            <MudStack Row="true" Spacing="1" Class="mt-3" Wrap="Wrap.Wrap">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick='() => OpenFocusedTicket(PriorityDispatchTicket.Id)'>@UiText.Get("Common_OpenTicket")</MudButton>
+                @if (!string.IsNullOrWhiteSpace(PriorityDispatchTicket.VendorName))
+                {
+                    <MudButton Variant="Variant.Text" Color="Color.Secondary" OnClick='() => OpenVendorFollowUp(PriorityDispatchTicket.VendorName)'>@UiText.Get("Maintenance_NextActionOpenVendor")</MudButton>
+                }
+            </MudStack>
+        }
+    </MudPaper>
+
+    <MudPaper Class="pa-4 marketing-card" Elevation="0">
+        <MudText Typo="Typo.h6">@UiText.Get("Maintenance_TodayDispatchTitle")</MudText>
+        @if (!TodayDispatchItems.Any())
+        {
+            <MudText Typo="Typo.body2" Class="mt-2">@UiText.Get("Maintenance_TodayDispatchEmpty")</MudText>
+        }
+        else
+        {
+            <MudList T="string" Dense="true" Class="mt-3">
+                @foreach (var item in TodayDispatchItems.Take(6))
+                {
+                    <MudListItem T="string">@item.Title - @GetDispatchLabel(item.DispatchStatus) - @GetVendorLabel(item.VendorName) - @GetEstimatedEta(item.VendorName) - @GetSlaRiskLabel(item)</MudListItem>
+                }
+            </MudList>
+        }
+    </MudPaper>
+
     <MudPaper Class="pa-2 table-wrap properties-table-shell">
         <MudTable Items="FilteredRequests.ToList()" Dense="true" Hover="true" Breakpoint="Breakpoint.Md" RowsPerPage="10">
             <HeaderContent>
@@ -79,13 +156,14 @@
                 <MudTh>@Localizer["Maintenance_ColumnProperty"]</MudTh>
                 <MudTh>@Localizer["Maintenance_ColumnPriority"]</MudTh>
                 <MudTh>@Localizer["Maintenance_ColumnStatus"]</MudTh>
+                <MudTh>@UiText.Get("Maintenance_DispatchStatus")</MudTh>
                 <MudTh>@Localizer["Maintenance_ColumnVendor"]</MudTh>
                 <MudTh>@Localizer["Maintenance_ColumnCost"]</MudTh>
                 <MudTh></MudTh>
             </HeaderContent>
             <RowTemplate>
                 <MudTd DataLabel="@Localizer["Maintenance_ColumnRequest"]">
-                    <MudStack Spacing="0">
+                    <MudStack Spacing="0" id="@($"ticket-{context.Id}")" Class="@(TicketQuery.HasValue && context.Id == TicketQuery.Value ? "property-detail-panel pa-2" : string.Empty)">
                         <MudText Typo="Typo.subtitle2">@context.Title</MudText>
                         <MudText Typo="Typo.caption" Class="property-address">@GetMaintenanceSummary(context)</MudText>
                     </MudStack>
@@ -93,6 +171,7 @@
                 <MudTd DataLabel="@Localizer["Maintenance_ColumnProperty"]"><MudButton Href="@GetPropertyHref(context.PropertyId)" Variant="Variant.Text" Color="Color.Primary" Size="Size.Small">@GetPropertyName(context.PropertyId)</MudButton></MudTd>
                 <MudTd DataLabel="@Localizer["Maintenance_ColumnPriority"]"><MudChip T="string" Variant="Variant.Filled" Color="@GetPriorityColor(context.Priority)">@context.Priority</MudChip></MudTd>
                 <MudTd DataLabel="@Localizer["Maintenance_ColumnStatus"]"><MudChip T="string" Variant="Variant.Outlined" Color="@GetStatusColor(context.Status)">@context.Status</MudChip></MudTd>
+                <MudTd DataLabel="@UiText.Get("Maintenance_DispatchStatus")"><MudChip T="string" Variant="Variant.Filled" Color="@GetDispatchColor(context.DispatchStatus)">@GetDispatchVisualLabel(context)</MudChip></MudTd>
                 <MudTd DataLabel="@Localizer["Maintenance_ColumnVendor"]">@GetVendorLabel(context.VendorName)</MudTd>
                 <MudTd DataLabel="@Localizer["Maintenance_ColumnCost"]">@context.EstimatedCost.ToString("C")</MudTd>
                 <MudTd DataLabel="@Localizer["Maintenance_ColumnActions"]">
@@ -100,6 +179,16 @@
                         <MudButton Href="@GetPropertyHref(context.PropertyId)" Variant="Variant.Text" Color="Color.Primary" Size="Size.Small">@Localizer["Common_PropertyProfile"]</MudButton>
                         @if (CurrentOrganization.CanManageData)
                         {
+                            <MudButton Variant="Variant.Text" Color="Color.Primary" Size="Size.Small" OnClick="() => ShowRecommendation(context.Id)">@UiText.Get("Maintenance_RecommendationTitle")</MudButton>
+                            @if (string.Equals(context.DispatchStatus, "Assigned", StringComparison.OrdinalIgnoreCase))
+                            {
+                                <MudButton Variant="Variant.Text" Color="Color.Warning" Size="Size.Small" OnClick='() => UpdateDispatchStatusAsync(context.Id, "Acknowledged")'>@UiText.Get("Maintenance_DispatchAcknowledged")</MudButton>
+                            }
+                            @if (!string.Equals(context.DispatchStatus, "Completed", StringComparison.OrdinalIgnoreCase))
+                            {
+                                <MudButton Variant="Variant.Text" Color="Color.Success" Size="Size.Small" OnClick='() => UpdateDispatchStatusAsync(context.Id, "Completed")'>@UiText.Get("Maintenance_DispatchCompleted")</MudButton>
+                            }
+                            <MudButton Variant="Variant.Text" Color="Color.Primary" Size="Size.Small" OnClick="() => OpenTenantConversationAsync(context.Id)">@UiText.Get("TenantCommunications_OpenFromMaintenance")</MudButton>
                             <MudButton Variant="Variant.Text" Color="Color.Secondary" Size="Size.Small" OnClick="() => OpenEditPanel(context)">@Localizer["Common_Edit"]</MudButton>
                             <MudButton Variant="Variant.Text" Color="Color.Error" Size="Size.Small" OnClick="() => DeleteAsync(context.Id)">@Localizer["Common_Delete"]</MudButton>
                         }
@@ -123,6 +212,45 @@
         </MudTable>
     </MudPaper>
 
+    <MudPaper Class="pa-4 marketing-card" Elevation="0">
+        <MudText Typo="Typo.h6">@UiText.Get("Maintenance_EvidenceBoardTitle")</MudText>
+        <MudList T="string" Dense="true" Class="mt-3">
+            @foreach (var asset in _maintenanceAssets.Take(8))
+            {
+                <MudListItem T="string">@asset.ScopeLabel - @asset.FileName - @GetEvidenceCategoryLabel(asset.Category)</MudListItem>
+            }
+        </MudList>
+    </MudPaper>
+
+    <MudPaper Class="pa-4 marketing-card" Elevation="0">
+        <MudText Typo="Typo.h6">@UiText.Get("Maintenance_EvidencePackTimelineTitle")</MudText>
+        <MudList T="string" Dense="true" Class="mt-3">
+            @foreach (var summary in _maintenanceEvidence.Take(6))
+            {
+                <MudListItem T="string">@summary.EvidencePackSummary</MudListItem>
+            }
+        </MudList>
+    </MudPaper>
+
+    <MudPaper Class="pa-4 marketing-card" Elevation="0">
+        <MudText Typo="Typo.h6">@UiText.Get("Maintenance_RecommendationTitle")</MudText>
+        @if (_selectedRecommendation is null)
+        {
+            <MudText Typo="Typo.body2" Class="mt-2">@UiText.Get("Maintenance_RecommendationNone")</MudText>
+        }
+        else
+        {
+            <MudText Typo="Typo.subtitle2" Class="mt-2">@_selectedRecommendation.VendorName</MudText>
+            <MudText Typo="Typo.body2">@UiText.Get("Vendors_DispatchStatus"): @_selectedRecommendation.DispatchStatus</MudText>
+            <MudText Typo="Typo.body2">@UiText.Get("Vendors_ResponseHours"): @_selectedRecommendation.TypicalResponseHours h</MudText>
+            <MudText Typo="Typo.body2">@UiText.Get("Maintenance_RecommendationReason"): @_selectedRecommendation.RecommendationReason</MudText>
+            @if (CurrentOrganization.CanManageData)
+            {
+                <MudButton Class="mt-3" Variant="Variant.Filled" Color="Color.Primary" OnClick="AssignSelectedRecommendationAsync">@UiText.Get("Maintenance_AssignRecommendedVendor")</MudButton>
+            }
+        }
+    </MudPaper>
+
     @if (_isFormPanelOpen)
     {
         <div class="property-form-backdrop" @onclick="CloseFormPanel">
@@ -139,7 +267,15 @@
                     <EditForm Model="ActiveRequest" OnValidSubmit="SaveFormAsync">
                         <MudGrid Spacing="2">
                             <MudItem xs="12" md="6"><MudTextField Label="@Localizer["Maintenance_FormTitle"]" Variant="Variant.Outlined" @bind-Value="ActiveRequest.Title" /></MudItem>
-                            <MudItem xs="12" md="6"><MudTextField Label="@Localizer["Maintenance_ColumnVendor"]" Variant="Variant.Outlined" @bind-Value="ActiveRequest.VendorName" /></MudItem>
+                            <MudItem xs="12" md="6">
+                                <MudSelect T="string" Label="@Localizer["Maintenance_ColumnVendor"]" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="ActiveRequest.VendorName">
+                                    <MudSelectItem T="string" Value="@string.Empty">@UiText.Get("Maintenance_UnassignedVendor")</MudSelectItem>
+                                    @foreach (var vendor in _vendors)
+                                    {
+                                        <MudSelectItem T="string" Value="@vendor.Name">@vendor.Name (@vendor.Trade)</MudSelectItem>
+                                    }
+                                </MudSelect>
+                            </MudItem>
                             <MudItem xs="12" md="6">
                                 <MudSelect T="Guid?" Label="@Localizer["Maintenance_ColumnProperty"]" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="FormPropertyId">
                                     <MudSelectItem T="Guid?" Value="@((Guid?)null)">@Localizer["Maintenance_FormSelectProperty"]</MudSelectItem>
@@ -167,6 +303,14 @@
                                 </MudSelect>
                             </MudItem>
                             <MudItem xs="12" md="4"><MudTextField Label="@Localizer["Maintenance_ColumnStatus"]" Variant="Variant.Outlined" @bind-Value="ActiveRequest.Status" /></MudItem>
+                            <MudItem xs="12" md="4">
+                                <MudSelect T="string" Label="@UiText.Get("Maintenance_DispatchStatus")" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="ActiveRequest.DispatchStatus">
+                                    @foreach (var dispatchStatus in DispatchStatusOptions)
+                                    {
+                                        <MudSelectItem T="string" Value="@dispatchStatus">@GetDispatchLabel(dispatchStatus)</MudSelectItem>
+                                    }
+                                </MudSelect>
+                            </MudItem>
                             <MudItem xs="12" md="4"><MudNumericField T="decimal" Label="@Localizer["Maintenance_FormEstimatedCost"]" Variant="Variant.Outlined" Adornment="Adornment.Start" AdornmentText="$" @bind-Value="ActiveRequest.EstimatedCost" /></MudItem>
                             <MudItem xs="12"><MudDatePicker Label="@Localizer["Maintenance_FormRequestedDate"]" Variant="Variant.Outlined" @bind-Date="_formRequestedDate" Editable="true" /></MudItem>
                             <MudItem xs="12"><MudTextField Label="@Localizer["Maintenance_FormDescription"]" Variant="Variant.Outlined" Lines="4" @bind-Value="ActiveRequest.Description" /></MudItem>
@@ -185,24 +329,52 @@
 </MudStack>
 
 @code {
+    [SupplyParameterFromQuery(Name = "dispatch")]
+    public string? DispatchQuery { get; set; }
+
+    [SupplyParameterFromQuery(Name = "vendor")]
+    public string? VendorQuery { get; set; }
+
+    [SupplyParameterFromQuery(Name = "ticket")]
+    public Guid? TicketQuery { get; set; }
+
     private List<MaintenanceRequest> _items = new();
     private List<Property> _properties = new();
     private List<Unit> _units = new();
-    private MaintenanceRequest _newRequest = new() { Priority = MaintenancePriority.Medium, Status = "Open" };
-    private MaintenanceRequest _editRequest = new() { Priority = MaintenancePriority.Medium, Status = "Open" };
+    private List<VendorSummaryDto> _vendors = new();
+    private List<MediaAssetSummaryDto> _maintenanceAssets = new();
+    private List<MaintenanceEvidenceSummaryDto> _maintenanceEvidence = new();
+    private MaintenanceRequest _newRequest = new() { Priority = MaintenancePriority.Medium, Status = "Open", DispatchStatus = "Unassigned" };
+    private MaintenanceRequest _editRequest = new() { Priority = MaintenancePriority.Medium, Status = "Open", DispatchStatus = "Unassigned" };
     private DateTime? _formRequestedDate = DateTime.Today;
     private string _searchText = string.Empty;
     private string _selectedPriorityFilter = string.Empty;
     private string _selectedStatusFilter = string.Empty;
+    private string _selectedDispatchFilter = string.Empty;
+    private string _selectedVendorFilter = string.Empty;
     private string _selectedPropertyFilter = string.Empty;
     private bool _isFormPanelOpen;
     private bool _isCreateMode = true;
+    private VendorRecommendationDto? _selectedRecommendation;
+    private Guid? _selectedRecommendationMaintenanceId;
 
-    private bool HasActiveFilters => !string.IsNullOrWhiteSpace(_searchText) || !string.IsNullOrWhiteSpace(_selectedPriorityFilter) || !string.IsNullOrWhiteSpace(_selectedStatusFilter) || !string.IsNullOrWhiteSpace(_selectedPropertyFilter);
+    private bool HasActiveFilters => !string.IsNullOrWhiteSpace(_searchText) || !string.IsNullOrWhiteSpace(_selectedPriorityFilter) || !string.IsNullOrWhiteSpace(_selectedStatusFilter) || !string.IsNullOrWhiteSpace(_selectedDispatchFilter) || !string.IsNullOrWhiteSpace(_selectedVendorFilter) || !string.IsNullOrWhiteSpace(_selectedPropertyFilter) || TicketQuery.HasValue;
     private MaintenanceRequest ActiveRequest => _isCreateMode ? _newRequest : _editRequest;
     private IEnumerable<string> PriorityOptions => Enum.GetNames<MaintenancePriority>();
+    private IEnumerable<string> DispatchStatusOptions => new[] { "Unassigned", "Recommended", "Assigned", "Acknowledged", "Completed" };
     private IEnumerable<string> StatusOptions => _items.Select(x => x.Status).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(x => x);
+    private IEnumerable<string> VendorOptions => _vendors.Select(x => x.Name).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(x => x);
     private IEnumerable<Unit> AvailableUnits => FormPropertyId is null || FormPropertyId == Guid.Empty ? _units : _units.Where(x => x.PropertyId == FormPropertyId.Value);
+    private IEnumerable<MaintenanceRequest> TodayDispatchItems => FilteredRequests
+        .Where(x => !string.Equals(x.DispatchStatus, "Completed", StringComparison.OrdinalIgnoreCase) && !string.Equals(x.Status, "Closed", StringComparison.OrdinalIgnoreCase))
+        .OrderByDescending(x => x.Priority)
+        .ThenBy(x => GetVendorResponseHours(x.VendorName) == int.MaxValue ? int.MaxValue : GetVendorResponseHours(x.VendorName))
+        .ThenBy(x => x.RequestedDate);
+    private MaintenanceRequest? PriorityDispatchTicket => TodayDispatchItems
+        .FirstOrDefault(x => string.Equals(GetSlaRiskLabel(x), UiText.Get("Maintenance_SlaAtRisk"), StringComparison.OrdinalIgnoreCase))
+        ?? TodayDispatchItems.FirstOrDefault(x => string.IsNullOrWhiteSpace(x.VendorName) || string.Equals(x.DispatchStatus, "Unassigned", StringComparison.OrdinalIgnoreCase))
+        ?? TodayDispatchItems.FirstOrDefault(x => string.Equals(x.DispatchStatus, "Assigned", StringComparison.OrdinalIgnoreCase))
+        ?? TodayDispatchItems.FirstOrDefault(x => string.Equals(x.DispatchStatus, "Acknowledged", StringComparison.OrdinalIgnoreCase));
 
     private Guid? FormPropertyId
     {
@@ -231,21 +403,40 @@
             || GetPropertyName(request.PropertyId).Contains(_searchText, StringComparison.OrdinalIgnoreCase))
         .Where(request => string.IsNullOrWhiteSpace(_selectedPriorityFilter) || string.Equals(request.Priority.ToString(), _selectedPriorityFilter, StringComparison.OrdinalIgnoreCase))
         .Where(request => string.IsNullOrWhiteSpace(_selectedStatusFilter) || string.Equals(request.Status, _selectedStatusFilter, StringComparison.OrdinalIgnoreCase))
+        .Where(request => MatchesDispatchFilter(request))
         .Where(request => string.IsNullOrWhiteSpace(_selectedPropertyFilter) || string.Equals(GetPropertyName(request.PropertyId), _selectedPropertyFilter, StringComparison.OrdinalIgnoreCase));
 
     protected override async Task OnInitializedAsync() => await ReloadAsync();
+
+    protected override Task OnParametersSetAsync()
+    {
+        if (!string.IsNullOrWhiteSpace(DispatchQuery) && (DispatchStatusOptions.Contains(DispatchQuery, StringComparer.OrdinalIgnoreCase) || string.Equals(DispatchQuery, "AtRisk", StringComparison.OrdinalIgnoreCase) || string.Equals(DispatchQuery, "Blocked", StringComparison.OrdinalIgnoreCase)))
+        {
+            _selectedDispatchFilter = DispatchQuery;
+        }
+
+        if (!string.IsNullOrWhiteSpace(VendorQuery))
+        {
+            _selectedVendorFilter = VendorQuery;
+        }
+
+        return Task.CompletedTask;
+    }
 
     private async Task ReloadAsync()
     {
         _items = await DataService.GetMaintenanceAsync();
         _properties = await DataService.GetPropertiesAsync();
         _units = await DataService.GetUnitsAsync();
+        _vendors = await DataService.GetVendorsAsync();
+        _maintenanceAssets = await DataService.GetMaintenanceMediaAssetsAsync();
+        _maintenanceEvidence = await DataService.GetMaintenanceEvidenceAsync();
     }
 
     private void OpenCreatePanel()
     {
         _isCreateMode = true;
-        _newRequest = new MaintenanceRequest { Priority = MaintenancePriority.Medium, Status = "Open" };
+        _newRequest = new MaintenanceRequest { Priority = MaintenancePriority.Medium, Status = "Open", DispatchStatus = "Unassigned" };
         _formRequestedDate = DateTime.Today;
         _isFormPanelOpen = true;
     }
@@ -262,6 +453,7 @@
             Description = request.Description,
             Priority = request.Priority,
             Status = request.Status,
+            DispatchStatus = request.DispatchStatus,
             VendorName = request.VendorName,
             EstimatedCost = request.EstimatedCost,
             RequestedDate = request.RequestedDate
@@ -288,12 +480,12 @@
         if (_isCreateMode)
         {
             await DataService.AddMaintenanceAsync(_newRequest);
-            _newRequest = new MaintenanceRequest { Priority = MaintenancePriority.Medium, Status = "Open" };
+            _newRequest = new MaintenanceRequest { Priority = MaintenancePriority.Medium, Status = "Open", DispatchStatus = "Unassigned" };
         }
         else
         {
             await DataService.UpdateMaintenanceAsync(_editRequest);
-            _editRequest = new MaintenanceRequest { Priority = MaintenancePriority.Medium, Status = "Open" };
+            _editRequest = new MaintenanceRequest { Priority = MaintenancePriority.Medium, Status = "Open", DispatchStatus = "Unassigned" };
         }
 
         await ReloadAsync();
@@ -306,12 +498,68 @@
         await ReloadAsync();
     }
 
+    private async Task OpenTenantConversationAsync(Guid maintenanceRequestId)
+    {
+        var conversationId = await DataService.EnsureMaintenanceConversationAsync(maintenanceRequestId);
+        NavigationManager.NavigateTo(conversationId.HasValue
+            ? $"/tenant-communications?conversationId={conversationId.Value}"
+            : "/tenant-communications");
+    }
+
+    private async Task ShowRecommendation(Guid maintenanceRequestId)
+    {
+        _selectedRecommendationMaintenanceId = maintenanceRequestId;
+        _selectedRecommendation = await DataService.RecommendVendorForMaintenanceAsync(maintenanceRequestId);
+        await DataService.UpdateMaintenanceDispatchStatusAsync(maintenanceRequestId, "Recommended");
+        await ReloadAsync();
+    }
+
+    private async Task AssignSelectedRecommendationAsync()
+    {
+        if (!_selectedRecommendationMaintenanceId.HasValue)
+        {
+            return;
+        }
+
+        var assigned = await DataService.AssignRecommendedVendorAsync(_selectedRecommendationMaintenanceId.Value);
+        if (!assigned)
+        {
+            return;
+        }
+
+        await ReloadAsync();
+        _selectedRecommendation = await DataService.RecommendVendorForMaintenanceAsync(_selectedRecommendationMaintenanceId.Value);
+    }
+
+    private async Task UpdateDispatchStatusAsync(Guid maintenanceRequestId, string dispatchStatus)
+    {
+        var updated = await DataService.UpdateMaintenanceDispatchStatusAsync(maintenanceRequestId, dispatchStatus);
+        if (!updated)
+        {
+            return;
+        }
+
+        await ReloadAsync();
+    }
+
+    private void OpenFocusedTicket(Guid maintenanceRequestId)
+        => NavigationManager.NavigateTo($"/maintenance?ticket={maintenanceRequestId}#ticket-{maintenanceRequestId}");
+
+    private void OpenVendorFollowUp(string vendorName)
+        => NavigationManager.NavigateTo($"/vendors?vendor={Uri.EscapeDataString(vendorName)}");
+
     private void ClearFilters()
     {
         _searchText = string.Empty;
         _selectedPriorityFilter = string.Empty;
         _selectedStatusFilter = string.Empty;
+        _selectedDispatchFilter = string.Empty;
+        _selectedVendorFilter = string.Empty;
         _selectedPropertyFilter = string.Empty;
+        DispatchQuery = null;
+        VendorQuery = null;
+        TicketQuery = null;
+        NavigationManager.NavigateTo("/maintenance");
     }
 
     private string GetPropertyName(Guid propertyId)
@@ -335,6 +583,88 @@
     private string GetUnitLabel(Guid unitId)
         => _units.FirstOrDefault(x => x.Id == unitId)?.UnitNumber ?? "Unknown unit";
 
+    private int GetVendorResponseHours(string vendorName)
+        => _vendors.FirstOrDefault(x => string.Equals(x.Name, vendorName, StringComparison.OrdinalIgnoreCase))?.TypicalResponseHours ?? int.MaxValue;
+
+    private string GetEstimatedEta(string vendorName)
+    {
+        var hours = GetVendorResponseHours(vendorName);
+        return hours == int.MaxValue
+            ? UiText.Get("Maintenance_TodayDispatchNoEta")
+            : $"{UiText.Get("Maintenance_TodayDispatchEta")}: {hours} h";
+    }
+
+    private string GetSlaRiskLabel(MaintenanceRequest request)
+    {
+        var responseHours = GetVendorResponseHours(request.VendorName);
+        if (responseHours != int.MaxValue && responseHours > 0 && request.RequestedDate <= DateOnly.FromDateTime(DateTime.Today.AddDays(-1)) && !string.Equals(request.DispatchStatus, "Completed", StringComparison.OrdinalIgnoreCase))
+        {
+            return UiText.Get("Maintenance_SlaAtRisk");
+        }
+
+        return UiText.Get("Maintenance_SlaOnTrack");
+    }
+
+    private string GetPriorityActionLabel(MaintenanceRequest request)
+    {
+        if (string.Equals(GetSlaRiskLabel(request), UiText.Get("Maintenance_SlaAtRisk"), StringComparison.OrdinalIgnoreCase))
+        {
+            return UiText.Get("Vendors_ActionNeedsFollowUp");
+        }
+
+        if (string.IsNullOrWhiteSpace(request.VendorName) || string.Equals(request.DispatchStatus, "Unassigned", StringComparison.OrdinalIgnoreCase))
+        {
+            return UiText.Get("Maintenance_ActionNeedsAssignment");
+        }
+
+        if (string.Equals(request.DispatchStatus, "Assigned", StringComparison.OrdinalIgnoreCase))
+        {
+            return UiText.Get("Maintenance_ActionNeedsAcknowledgement");
+        }
+
+        return UiText.Get("Maintenance_ActionNeedsClosure");
+    }
+
+    private Color GetPriorityActionColor(MaintenanceRequest request)
+    {
+        if (string.Equals(GetSlaRiskLabel(request), UiText.Get("Maintenance_SlaAtRisk"), StringComparison.OrdinalIgnoreCase))
+        {
+            return Color.Error;
+        }
+
+        if (string.IsNullOrWhiteSpace(request.VendorName) || string.Equals(request.DispatchStatus, "Unassigned", StringComparison.OrdinalIgnoreCase))
+        {
+            return Color.Warning;
+        }
+
+        if (string.Equals(request.DispatchStatus, "Assigned", StringComparison.OrdinalIgnoreCase))
+        {
+            return Color.Info;
+        }
+
+        return Color.Success;
+    }
+
+    private bool MatchesDispatchFilter(MaintenanceRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(_selectedDispatchFilter))
+        {
+            return true;
+        }
+
+        if (string.Equals(_selectedDispatchFilter, "AtRisk", StringComparison.OrdinalIgnoreCase))
+        {
+            return string.Equals(GetSlaRiskLabel(request), UiText.Get("Maintenance_SlaAtRisk"), StringComparison.OrdinalIgnoreCase);
+        }
+
+        if (string.Equals(_selectedDispatchFilter, "Blocked", StringComparison.OrdinalIgnoreCase))
+        {
+            return string.IsNullOrWhiteSpace(request.VendorName) || string.Equals(request.DispatchStatus, "Unassigned", StringComparison.OrdinalIgnoreCase);
+        }
+
+        return string.Equals(request.DispatchStatus, _selectedDispatchFilter, StringComparison.OrdinalIgnoreCase);
+    }
+
     private static Color GetPriorityColor(MaintenancePriority priority)
         => priority switch
         {
@@ -353,6 +683,42 @@
             _ => Color.Default
         };
 
+    private static Color GetDispatchColor(string dispatchStatus)
+        => dispatchStatus switch
+        {
+            "Completed" => Color.Success,
+            "Acknowledged" => Color.Info,
+            "Assigned" => Color.Warning,
+            "Recommended" => Color.Secondary,
+            _ => Color.Default
+        };
+
+    private static string GetDispatchLabel(string dispatchStatus)
+        => dispatchStatus switch
+        {
+            "Unassigned" => UiText.Get("Maintenance_DispatchUnassigned"),
+            "Recommended" => UiText.Get("Maintenance_DispatchRecommended"),
+            "Assigned" => UiText.Get("Maintenance_DispatchAssigned"),
+            "Acknowledged" => UiText.Get("Maintenance_DispatchAcknowledged"),
+            "Completed" => UiText.Get("Maintenance_DispatchCompleted"),
+            _ => dispatchStatus
+        };
+
+    private string GetDispatchVisualLabel(MaintenanceRequest request)
+    {
+        if (MatchesDispatchFilter(request) && string.Equals(GetSlaRiskLabel(request), UiText.Get("Maintenance_SlaAtRisk"), StringComparison.OrdinalIgnoreCase))
+        {
+            return $"{GetDispatchLabel(request.DispatchStatus)} - {UiText.Get("Maintenance_SlaAtRisk")}";
+        }
+
+        if (string.IsNullOrWhiteSpace(request.VendorName) || string.Equals(request.DispatchStatus, "Unassigned", StringComparison.OrdinalIgnoreCase))
+        {
+            return $"{GetDispatchLabel(request.DispatchStatus)} - {UiText.Get("Dashboard_DispatchBlocked")}";
+        }
+
+        return GetDispatchLabel(request.DispatchStatus);
+    }
+
     private string GetFormGuidance()
     {
         if (ActiveRequest.PropertyId == Guid.Empty)
@@ -364,4 +730,15 @@
             ? "Emergency ticket: keep vendor handoff, timeline and resident communication tight from the first update."
             : "Use this form for the essentials, then rely on the property profile to coordinate broader operational follow-up.";
     }
+
+    private string GetEvidenceCategoryLabel(string category)
+        => category switch
+        {
+            nameof(MediaAssetCategory.MaintenanceBeforePhoto) => UiText.Get("Maintenance_EvidenceCategoryBefore"),
+            nameof(MediaAssetCategory.MaintenanceAfterPhoto) => UiText.Get("Maintenance_EvidenceCategoryAfter"),
+            nameof(MediaAssetCategory.MaintenanceEvidenceDocument) => UiText.Get("Maintenance_EvidenceCategoryProof"),
+            nameof(MediaAssetCategory.MaintenanceEvidence) => UiText.Get("Maintenance_EvidenceCategoryProof"),
+            nameof(MediaAssetCategory.Notice) => UiText.Get("Maintenance_EvidenceCategoryAfter"),
+            _ => UiText.Get("Maintenance_EvidenceCategoryBefore")
+        };
 }

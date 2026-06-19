@@ -160,18 +160,21 @@ namespace PropertySaaS.Infrastructure.Services
         public Task SendSupportAlertAsync(string subject, string message, CancellationToken cancellationToken = default)
             => SendSafeAsync(ResolveSupportEmail(), subject, $"<pre>{System.Net.WebUtility.HtmlEncode(message)}</pre>", message, cancellationToken);
 
-        public Task SendOrganizationInvitationAsync(string to, string organizationName, string invitedBy, string role, string invitationUrl, CancellationToken cancellationToken = default)
+        public Task SendOrganizationInvitationAsync(string to, string organizationName, string invitedBy, string role, string invitationUrl, DateTime expiresUtc, CancellationToken cancellationToken = default)
         {
             var subject = $"[PropertySaaS] Invitation to join {organizationName}";
+            var expirationText = expiresUtc.ToString("yyyy-MM-dd HH:mm 'UTC'");
             var html = $"""
                 <h2>You're invited to join {organizationName}</h2>
                 <p><strong>Invited by:</strong> {invitedBy}</p>
                 <p><strong>Role:</strong> {role}</p>
                 <p>Use the secure link below to accept your invitation:</p>
-                <p><a href=\"{invitationUrl}\">Accept invitation</a></p>
-                <p>This link expires in 7 days.</p>
+                <p><a href=\"{invitationUrl}\" style=\"display:inline-block;padding:12px 18px;background:#2563eb;color:#ffffff;text-decoration:none;border-radius:6px;\">Accept invitation</a></p>
+                <p>If the button does not open, copy and paste this URL into your browser:</p>
+                <p><a href=\"{invitationUrl}\">{invitationUrl}</a></p>
+                <p><strong>Expires:</strong> {expirationText}</p>
                 """;
-            var text = $"You're invited to join {organizationName}\nInvited by: {invitedBy}\nRole: {role}\nAccept invitation: {invitationUrl}\nThis link expires in 7 days.";
+            var text = $"You're invited to join {organizationName}\nInvited by: {invitedBy}\nRole: {role}\nAccept invitation: {invitationUrl}\nExpires: {expirationText}";
 
             return SendSafeAsync(to, subject, html, text, cancellationToken);
         }

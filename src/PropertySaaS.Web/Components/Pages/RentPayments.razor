@@ -1,0 +1,238 @@
+@attribute [Authorize]
+@page "/rent-payments"
+@inject SaasDataService DataService
+@inject NavigationManager NavigationManager
+@inject PropertySaaS.Application.Common.CurrentOrganization CurrentOrganization
+@using PropertySaaS.Web.Localization
+@using PropertySaaS.Domain.Entities
+
+<PageTitle>@UiText.Get("Nav_RentPayments")</PageTitle>
+
+<MudStack Spacing="3">
+    <MudStack Spacing="0">
+        <MudChip T="string" Color="Color.Primary" Variant="Variant.Outlined" Size="Size.Small" Class="mb-2">@UiText.Get("RentPayments_PremiumBadge")</MudChip>
+        <MudText Typo="Typo.h4">@UiText.Get("RentPayments_Title")</MudText>
+        <MudText Typo="Typo.body2">@UiText.Get("RentPayments_Subtitle")</MudText>
+    </MudStack>
+
+    @if (_invoices.Count == 0)
+    {
+        <MudPaper Class="pa-6 properties-empty-state" Elevation="0">
+            <MudText Typo="Typo.subtitle1">@UiText.Get("RentPayments_NoInvoicesTitle")</MudText>
+            <MudText Typo="Typo.body2">@UiText.Get("RentPayments_NoInvoicesSubtitle")</MudText>
+        </MudPaper>
+    }
+    else
+    {
+        <MudGrid Spacing="3">
+            <MudItem xs="12" md="4"><MetricCard Title="@UiText.Get("RentPayments_ExpectedRent")" Value="@_invoices.Sum(x => x.Amount).ToString("C")" Caption="@UiText.Get("RentPayments_ExpectedRentCaption")" Icon="@Icons.Material.Filled.Payments" /></MudItem>
+            <MudItem xs="12" md="4"><MetricCard Title="@UiText.Get("RentPayments_ActiveLeases")" Value="@_invoices.Count.ToString()" Caption="@UiText.Get("RentPayments_ActiveLeasesCaption")" Icon="@Icons.Material.Filled.Description" /></MudItem>
+            <MudItem xs="12" md="4"><MetricCard Title="@UiText.Get("RentPayments_CollectionsTitle")" Value="@UiText.Get("RentPayments_CollectionsValue")" Caption="@UiText.Get("RentPayments_CollectionsCaption")" Icon="@Icons.Material.Filled.ReceiptLong" /></MudItem>
+        </MudGrid>
+
+        <MudPaper Class="pa-2 table-wrap properties-table-shell" Elevation="0">
+            <MudTable Items="_invoices" Dense="true" Hover="true" Breakpoint="Breakpoint.Md">
+                <HeaderContent>
+                    <MudTh>@UiText.Get("RentPayments_InvoiceNumber")</MudTh>
+                    <MudTh>@UiText.Get("RentPayments_Tenant")</MudTh>
+                    <MudTh>@UiText.Get("RentPayments_Unit")</MudTh>
+                    <MudTh>@UiText.Get("RentPayments_DueDate")</MudTh>
+                    <MudTh>@UiText.Get("RentPayments_Status")</MudTh>
+                    <MudTh>@UiText.Get("RentPayments_Balance")</MudTh>
+                    <MudTh></MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="@UiText.Get("RentPayments_InvoiceNumber")">@context.Number</MudTd>
+                    <MudTd DataLabel="@UiText.Get("RentPayments_Tenant")">@context.TenantName</MudTd>
+                    <MudTd DataLabel="@UiText.Get("RentPayments_Unit")">@context.UnitLabel</MudTd>
+                    <MudTd DataLabel="@UiText.Get("RentPayments_DueDate")">@context.DueDate</MudTd>
+                    <MudTd DataLabel="@UiText.Get("RentPayments_Status")">@context.Status</MudTd>
+                    <MudTd DataLabel="@UiText.Get("RentPayments_Balance")">@context.Balance.ToString("C")</MudTd>
+                    <MudTd>
+                        @if (CurrentOrganization.CanManageData)
+                        {
+                            <MudButton Variant="Variant.Text" Color="Color.Primary" Size="Size.Small" OnClick="() => OpenInvoiceConversationAsync(context.InvoiceId)">@UiText.Get("TenantCommunications_OpenFromRent")</MudButton>
+                        }
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+        </MudPaper>
+
+        <MudPaper Class="pa-4 marketing-card" Elevation="0">
+            <MudText Typo="Typo.h6">@UiText.Get("RentPayments_WorkflowTitle")</MudText>
+            <MudList T="string" Dense="true" Class="mt-3">
+                <MudListItem T="string">@UiText.Get("RentPayments_Workflow1")</MudListItem>
+                <MudListItem T="string">@UiText.Get("RentPayments_Workflow2")</MudListItem>
+                <MudListItem T="string">@UiText.Get("RentPayments_Workflow3")</MudListItem>
+                <MudListItem T="string">@UiText.Get("RentPayments_Workflow4")</MudListItem>
+            </MudList>
+        </MudPaper>
+
+        <MudPaper Class="pa-2 table-wrap properties-table-shell" Elevation="0">
+            <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="pa-3">
+                <MudText Typo="Typo.h6">@UiText.Get("RentPayments_PaymentsReceivedTitle")</MudText>
+                @if (CurrentOrganization.CanManageData)
+                {
+                    <MudButton Variant="Variant.Text" Color="Color.Primary" Size="Size.Small" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreatePaymentPanel">@UiText.Get("Common_Add")</MudButton>
+                }
+            </MudStack>
+            <MudTable Items="_payments" Dense="true" Hover="true" Breakpoint="Breakpoint.Md">
+                <HeaderContent>
+                    <MudTh>@UiText.Get("RentPayments_InvoiceNumber")</MudTh>
+                    <MudTh>@UiText.Get("RentPayments_ReceivedDate")</MudTh>
+                    <MudTh>@UiText.Get("RentPayments_Method")</MudTh>
+                    <MudTh>@UiText.Get("RentPayments_Reference")</MudTh>
+                    <MudTh>@UiText.Get("RentPayments_Amount")</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="@UiText.Get("RentPayments_InvoiceNumber")">@context.InvoiceNumber</MudTd>
+                    <MudTd DataLabel="@UiText.Get("RentPayments_ReceivedDate")">@context.ReceivedDate</MudTd>
+                    <MudTd DataLabel="@UiText.Get("RentPayments_Method")">@context.Method</MudTd>
+                    <MudTd DataLabel="@UiText.Get("RentPayments_Reference")">@context.Reference</MudTd>
+                    <MudTd DataLabel="@UiText.Get("RentPayments_Amount")">@context.Amount.ToString("C")</MudTd>
+                    @if (CurrentOrganization.CanManageData)
+                    {
+                        <MudTd>
+                            <MudStack Row="true" Spacing="1">
+                                <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Secondary" OnClick="() => OpenEditPaymentPanel(context)" />
+                                <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="() => DeletePaymentAsync(context.PaymentEntryId)" />
+                            </MudStack>
+                        </MudTd>
+                    }
+                </RowTemplate>
+            </MudTable>
+        </MudPaper>
+
+        @if (_isPaymentPanelOpen)
+        {
+            <div class="property-form-backdrop" @onclick="ClosePaymentPanel">
+                <MudPaper Class="pa-5 property-form-drawer" Elevation="0" @onclick:stopPropagation="true">
+                    <MudStack Spacing="3">
+                        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                            <MudText Typo="Typo.h5">@(_isPaymentCreateMode ? UiText.Get("RentPayments_AddPayment") : UiText.Get("RentPayments_EditPayment"))</MudText>
+                            <MudIconButton Icon="@Icons.Material.Filled.Close" Color="Color.Default" OnClick="ClosePaymentPanel" />
+                        </MudStack>
+
+                        <EditForm Model="ActivePayment" OnValidSubmit="SavePaymentAsync">
+                            <MudGrid Spacing="2">
+                                <MudItem xs="12" md="6">
+                                    <MudSelect T="Guid?" Label="@UiText.Get("RentPayments_InvoiceNumber")" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="FormInvoiceId">
+                                        <MudSelectItem T="Guid?" Value="@((Guid?)null)">@UiText.Get("RentPayments_SelectInvoice")</MudSelectItem>
+                                        @foreach (var invoice in _invoices)
+                                        {
+                                            <MudSelectItem T="Guid?" Value="@((Guid?)invoice.InvoiceId)">@invoice.Number</MudSelectItem>
+                                        }
+                                    </MudSelect>
+                                </MudItem>
+                                <MudItem xs="12" md="6"><MudDatePicker Label="@UiText.Get("RentPayments_ReceivedDate")" Variant="Variant.Outlined" @bind-Date="_paymentReceivedDate" Editable="true" /></MudItem>
+                                <MudItem xs="12" md="4"><MudNumericField T="decimal" Label="@UiText.Get("RentPayments_Amount")" Variant="Variant.Outlined" Adornment="Adornment.Start" AdornmentText="$" @bind-Value="ActivePayment.Amount" /></MudItem>
+                                <MudItem xs="12" md="4"><MudTextField Label="@UiText.Get("RentPayments_Method")" Variant="Variant.Outlined" @bind-Value="ActivePayment.Method" /></MudItem>
+                                <MudItem xs="12" md="4"><MudTextField Label="@UiText.Get("RentPayments_Reference")" Variant="Variant.Outlined" @bind-Value="ActivePayment.Reference" /></MudItem>
+                            </MudGrid>
+
+                            <MudStack Row="true" Spacing="2" Class="mt-4" Justify="Justify.FlexEnd">
+                                <MudButton Variant="Variant.Text" Color="Color.Default" OnClick="ClosePaymentPanel">@UiText.Get("Common_Cancel")</MudButton>
+                                <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary">@(_isPaymentCreateMode ? UiText.Get("Common_Create") : UiText.Get("Common_SaveChanges"))</MudButton>
+                            </MudStack>
+                        </EditForm>
+                    </MudStack>
+                </MudPaper>
+            </div>
+        }
+    }
+</MudStack>
+
+@code {
+    private List<InvoiceSummaryDto> _invoices = new();
+    private List<PaymentEntrySummaryDto> _payments = new();
+    private PaymentEntry _newPayment = new();
+    private PaymentEntry _editPayment = new();
+    private bool _isPaymentPanelOpen;
+    private bool _isPaymentCreateMode = true;
+    private DateTime? _paymentReceivedDate = DateTime.Today;
+
+    private PaymentEntry ActivePayment => _isPaymentCreateMode ? _newPayment : _editPayment;
+
+    private Guid? FormInvoiceId
+    {
+        get => ActivePayment.InvoiceId == Guid.Empty ? null : ActivePayment.InvoiceId;
+        set => ActivePayment.InvoiceId = value ?? Guid.Empty;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await ReloadAsync();
+    }
+
+    private async Task ReloadAsync()
+    {
+        _invoices = await DataService.GetInvoicesAsync();
+        _payments = await DataService.GetPaymentEntriesAsync();
+    }
+
+    private void OpenCreatePaymentPanel()
+    {
+        _isPaymentCreateMode = true;
+        _newPayment = new PaymentEntry();
+        _paymentReceivedDate = DateTime.Today;
+        _isPaymentPanelOpen = true;
+    }
+
+    private void OpenEditPaymentPanel(PaymentEntrySummaryDto payment)
+    {
+        _isPaymentCreateMode = false;
+        _editPayment = new PaymentEntry
+        {
+            Id = payment.PaymentEntryId,
+            InvoiceId = payment.InvoiceId,
+            ReceivedDate = payment.ReceivedDate,
+            Amount = payment.Amount,
+            Method = payment.Method,
+            Reference = payment.Reference
+        };
+        _paymentReceivedDate = payment.ReceivedDate.ToDateTime(TimeOnly.MinValue);
+        _isPaymentPanelOpen = true;
+    }
+
+    private void ClosePaymentPanel()
+    {
+        _isPaymentPanelOpen = false;
+        _isPaymentCreateMode = true;
+    }
+
+    private async Task SavePaymentAsync()
+    {
+        if (ActivePayment.InvoiceId == Guid.Empty || ActivePayment.Amount <= 0)
+        {
+            return;
+        }
+
+        ActivePayment.ReceivedDate = DateOnly.FromDateTime(_paymentReceivedDate ?? DateTime.Today);
+
+        if (_isPaymentCreateMode)
+        {
+            await DataService.AddPaymentEntryAsync(_newPayment);
+        }
+        else
+        {
+            await DataService.UpdatePaymentEntryAsync(_editPayment);
+        }
+
+        await ReloadAsync();
+        ClosePaymentPanel();
+    }
+
+    private async Task DeletePaymentAsync(Guid id)
+    {
+        await DataService.DeletePaymentEntryAsync(id);
+        await ReloadAsync();
+    }
+
+    private async Task OpenInvoiceConversationAsync(Guid invoiceId)
+    {
+        var conversationId = await DataService.EnsureInvoiceConversationAsync(invoiceId);
+        NavigationManager.NavigateTo(conversationId.HasValue
+            ? $"/tenant-communications?conversationId={conversationId.Value}"
+            : "/tenant-communications");
+    }
+}

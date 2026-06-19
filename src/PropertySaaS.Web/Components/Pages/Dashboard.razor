@@ -1,6 +1,7 @@
 @attribute [Authorize]
 @page "/dashboard"
 @inject SaasDataService DataService
+@inject NavigationManager NavigationManager
 @inject PropertySaaS.Application.Common.CurrentOrganization CurrentOrganization
 @using PropertySaaS.Web.Localization
 
@@ -26,9 +27,22 @@ else
         }
 
         <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-4" Wrap="Wrap.Wrap">
+            <MudStack Spacing="1">
+                <MudChip T="string" Color="Color.Primary" Variant="Variant.Outlined" Size="Size.Small">@UiText.Get("Dashboard_PremiumBadge")</MudChip>
                 <MudText Typo="Typo.h4">@UiText.Get("Dashboard_Title")</MudText>
+            </MudStack>
             <MudChip T="string" Color="Color.Primary" Variant="Variant.Filled">@OccupancyCaption</MudChip>
         </MudStack>
+
+        <MudPaper Class="pa-4 marketing-card mb-4" Elevation="0">
+            <MudText Typo="Typo.h6">@UiText.Get("Dashboard_OperationalStoryTitle")</MudText>
+            <MudText Typo="Typo.body2" Class="mt-1">@UiText.Get("Dashboard_OperationalStorySubtitle")</MudText>
+            <MudList T="string" Dense="true" Class="mt-3">
+                <MudListItem T="string">@UiText.Get("Dashboard_OperationalStoryStep1")</MudListItem>
+                <MudListItem T="string">@UiText.Get("Dashboard_OperationalStoryStep2")</MudListItem>
+                <MudListItem T="string">@UiText.Get("Dashboard_OperationalStoryStep3")</MudListItem>
+            </MudList>
+        </MudPaper>
 
         <MudGrid Spacing="3">
             <MudItem xs="12" sm="6" md="3"><MetricCard Title="@UiText.Get("Nav_Properties")" Value="@_summary.Properties.ToString()" Caption="@UiText.Get("Dashboard_ManagedBuildings")" Icon="@Icons.Material.Filled.Apartment" /></MudItem>
@@ -39,6 +53,38 @@ else
             <MudItem xs="12" sm="6" md="4"><MetricCard Title="@UiText.Get("Dashboard_OpenMaintenance")" Value="@_summary.OpenMaintenance.ToString()" Caption="@UiText.Get("Dashboard_VendorCoordinationQueue")" Icon="@Icons.Material.Filled.BuildCircle" /></MudItem>
             <MudItem xs="12" sm="6" md="4"><MetricCard Title="@UiText.Get("Dashboard_ComplianceDueSoon")" Value="@_summary.ComplianceDueSoon.ToString()" Caption="@UiText.Format("Dashboard_WorkflowQueue", CurrentOrganization.Jurisdiction.ProvinceDisplayName)" Icon="@Icons.Material.Filled.EventNote" /></MudItem>
             <MudItem xs="12" sm="6" md="4"><MetricCard Title="@UiText.Get("Dashboard_Tenants")" Value="@_summary.Tenants.ToString()" Caption="@UiText.Get("Dashboard_ScreeningReadyContacts")" Icon="@Icons.Material.Filled.Groups2" /></MudItem>
+
+            <MudItem xs="12" sm="6" md="4">
+                <MudPaper Class="pa-4 marketing-card h-100" Elevation="0">
+                    <MudText Typo="Typo.overline">@UiText.Get("Dashboard_DispatchAtRisk")</MudText>
+                    <MudText Typo="Typo.h4">@_summary.DispatchAtRisk</MudText>
+                    <MudText Typo="Typo.body2">@UiText.Get("Dashboard_DispatchAtRiskCaption")</MudText>
+                    <MudButton Class="mt-3" Variant="Variant.Text" Color="Color.Warning" OnClick='() => OpenMaintenanceDispatch("AtRisk")'>@UiText.Get("Dashboard_OpenAtRiskDispatch")</MudButton>
+                </MudPaper>
+            </MudItem>
+            <MudItem xs="12" sm="6" md="4">
+                <MudPaper Class="pa-4 marketing-card h-100" Elevation="0">
+                    <MudText Typo="Typo.overline">@UiText.Get("Dashboard_DispatchBlocked")</MudText>
+                    <MudText Typo="Typo.h4">@_summary.DispatchBlocked</MudText>
+                    <MudText Typo="Typo.body2">@UiText.Get("Dashboard_DispatchBlockedCaption")</MudText>
+                    <MudButton Class="mt-3" Variant="Variant.Text" Color="Color.Default" OnClick='() => OpenMaintenanceDispatch("Blocked")'>@UiText.Get("Dashboard_OpenBlockedDispatch")</MudButton>
+                </MudPaper>
+            </MudItem>
+            <MudItem xs="12" sm="6" md="4">
+                <MudPaper Class="pa-4 marketing-card h-100" Elevation="0">
+                    <MudText Typo="Typo.overline">@UiText.Get("Dashboard_VendorFollowUpTitle")</MudText>
+                    @if (PriorityVendorSignal is null)
+                    {
+                        <MudText Typo="Typo.body2" Class="mt-2">@UiText.Get("Dashboard_VendorFollowUpEmpty")</MudText>
+                    }
+                    else
+                    {
+                        <MudText Typo="Typo.h6" Class="mt-1">@PriorityVendorSignal.VendorName</MudText>
+                        <MudText Typo="Typo.body2">@UiText.Format("Dashboard_VendorFollowUpSummary", PriorityVendorSignal.Title, PriorityVendorSignal.DispatchStatus, GetSignalRiskLabel(PriorityVendorSignal))</MudText>
+                        <MudButton Class="mt-3" Variant="Variant.Text" Color="Color.Primary" OnClick='() => OpenVendorFollowUp(PriorityVendorSignal.VendorName)'>@UiText.Get("Dashboard_OpenVendorFollowUp")</MudButton>
+                    }
+                </MudPaper>
+            </MudItem>
 
             <MudItem xs="12" sm="6" md="4"><MetricCard Title="@UiText.Get("Dashboard_SubscriptionTier")" Value="@_summary.SubscriptionTier" Caption="@UiText.Get("Dashboard_StripeReadyPlanSnapshot")" Icon="@Icons.Material.Filled.Subscriptions" /></MudItem>
             <MudItem xs="12" sm="6" md="4"><MetricCard Title="@UiText.Format("Dashboard_NoticesTitle", CurrentOrganization.Jurisdiction.ProvinceDisplayName)" Value="@_summary.JurisdictionNoticesInWorkflow.ToString()" Caption="@UiText.Format("Dashboard_NoticesCaption", string.Join("/", CurrentOrganization.Jurisdiction.NoticeTypes))" Icon="@Icons.Material.Filled.Gavel" /></MudItem>
@@ -75,19 +121,56 @@ else
                 </MudItem>
             </MudGrid>
         }
+
+        <MudPaper Class="pa-4 marketing-card h-100 mt-4" Elevation="0">
+            <MudText Typo="Typo.h6">@UiText.Get("Dashboard_DispatchPriorityTitle")</MudText>
+            @if (PriorityDispatchTicket is null)
+            {
+                <MudText Typo="Typo.body2" Class="mt-2">@UiText.Get("Dashboard_DispatchNoPriority")</MudText>
+            }
+            else
+            {
+                <MudText Typo="Typo.subtitle2" Class="mt-2">@PriorityDispatchTicket.Title</MudText>
+                <MudText Typo="Typo.body2">@PriorityDispatchTicket.PropertyName - @PriorityDispatchTicket.DispatchStatus</MudText>
+                <MudText Typo="Typo.body2">@(PriorityDispatchTicket.IsAtRisk ? UiText.Get("Maintenance_SlaAtRisk") : UiText.Get("Dashboard_DispatchBlocked"))</MudText>
+                <MudButton Class="mt-3" Variant="Variant.Filled" Color="Color.Primary" OnClick='() => OpenMaintenanceTicket(PriorityDispatchTicket.MaintenanceRequestId)'>@UiText.Get("Common_OpenTicket")</MudButton>
+            }
+        </MudPaper>
     </MudContainer>
 }
 
 @code {
     private DashboardSummaryDto? _summary;
     private SubscriptionEntitlementsDto? _entitlements;
+    private List<DispatchSignalDto> _dispatchSignals = new();
     private string OccupancyCaption => _summary is null ? string.Empty : UiText.Format("Dashboard_OccupancyCaption", _summary.OccupancyRate);
     private string RentRollValue => _summary is null ? string.Empty : _summary.MonthlyRentRoll.ToString("C");
+    private DispatchSignalDto? PriorityDispatchTicket => _dispatchSignals.FirstOrDefault(x => x.IsAtRisk) ?? _dispatchSignals.FirstOrDefault(x => x.IsBlocked);
+    private DispatchSignalDto? PriorityVendorSignal => _dispatchSignals.FirstOrDefault(x => !string.IsNullOrWhiteSpace(x.VendorName) && x.IsAtRisk)
+        ?? _dispatchSignals.FirstOrDefault(x => !string.IsNullOrWhiteSpace(x.VendorName) && string.Equals(x.DispatchStatus, "Assigned", StringComparison.OrdinalIgnoreCase))
+        ?? _dispatchSignals.FirstOrDefault(x => !string.IsNullOrWhiteSpace(x.VendorName));
 
     protected override async Task OnInitializedAsync()
     {
         await DataService.ImportSamplePortfolioAsync();
         _summary = await DataService.GetDashboardAsync();
         _entitlements = await DataService.GetSubscriptionEntitlementsAsync();
+        _dispatchSignals = await DataService.GetDispatchSignalsAsync();
     }
+
+    private void OpenMaintenanceDispatch(string filter)
+        => NavigationManager.NavigateTo($"/maintenance?dispatch={Uri.EscapeDataString(filter)}");
+
+    private void OpenMaintenanceTicket(Guid maintenanceRequestId)
+        => NavigationManager.NavigateTo($"/maintenance?ticket={maintenanceRequestId}#ticket-{maintenanceRequestId}");
+
+    private void OpenVendorFollowUp(string vendorName)
+        => NavigationManager.NavigateTo($"/vendors?vendor={Uri.EscapeDataString(vendorName)}");
+
+    private string GetSignalRiskLabel(DispatchSignalDto signal)
+        => signal.IsAtRisk
+            ? UiText.Get("Maintenance_SlaAtRisk")
+            : signal.IsBlocked
+                ? UiText.Get("Dashboard_DispatchBlocked")
+                : UiText.Get("Maintenance_SlaOnTrack");
 }

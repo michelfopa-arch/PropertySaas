@@ -14,6 +14,6 @@ internal sealed class NullNotificationService : INotificationService
     public Task SendSupportAlertAsync(string subject, string message, CancellationToken cancellationToken = default)
         => Task.CompletedTask;
 
-    public Task SendOrganizationInvitationAsync(string to, string organizationName, string invitedBy, string role, string invitationUrl, CancellationToken cancellationToken = default)
+    public Task SendOrganizationInvitationAsync(string to, string organizationName, string invitedBy, string role, string invitationUrl, DateTime expiresUtc, CancellationToken cancellationToken = default)
         => Task.CompletedTask;
 }

@@ -12,6 +12,6 @@ namespace PropertySaaS.Application.Abstractions
         Task SendMaintenanceRequestCreatedAsync(MaintenanceRequest request, string propertyName, string? unitNumber, CancellationToken cancellationToken = default);
         Task SendComplianceDueSoonDigestAsync(CancellationToken cancellationToken = default);
         Task SendSupportAlertAsync(string subject, string message, CancellationToken cancellationToken = default);
-        Task SendOrganizationInvitationAsync(string to, string organizationName, string invitedBy, string role, string invitationUrl, CancellationToken cancellationToken = default);
+        Task SendOrganizationInvitationAsync(string to, string organizationName, string invitedBy, string role, string invitationUrl, DateTime expiresUtc, CancellationToken cancellationToken = default);
     }
 }
