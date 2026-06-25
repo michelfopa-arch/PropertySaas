@@ -1,8 +1,10 @@
 @attribute [Authorize]
 @page "/properties"
 @inject SaasDataService DataService
+@inject NavigationManager NavigationManager
 @inject PropertySaaS.Application.Common.CurrentOrganization CurrentOrganization
 @inject IStringLocalizer<SharedResource> Localizer
+@using PropertySaaS.Web.Localization
 
 <PageTitle>@Localizer["Properties_Title"]</PageTitle>
 
@@ -13,7 +15,11 @@
         <MudText Typo="Typo.body2">@Localizer["Properties_Subtitle"]</MudText>
     </MudStack>
 
-    <MudGrid Spacing="2" Class="align-center-grid">
+    <DemoJourneyBanner CurrentStepKey="properties" UsePortfolioJourney="true" PropertiesRoute="@PropertiesRoute" PropertyProfileRoute="@PropertyProfileRoute" />
+
+    @if (!IsDemoCleanView)
+    {
+        <MudGrid Spacing="2" Class="align-center-grid">
         <MudItem xs="12" lg="4">
             <MudTextField T="string"
                           Label="@Localizer["Properties_SearchLabel"]"
@@ -63,7 +69,8 @@
                 }
             </MudStack>
         </MudItem>
-    </MudGrid>
+        </MudGrid>
+    }
 
     <MudGrid Spacing="2">
         <MudItem xs="12" sm="6" lg="3"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">@Localizer["Properties_StatShown"]</MudText><MudText Typo="Typo.h6">@FilteredProperties.Count()</MudText></MudPaper></MudItem>
@@ -72,23 +79,51 @@
         <MudItem xs="12" sm="6" lg="3"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">@Localizer["Properties_StatRentRoll"]</MudText><MudText Typo="Typo.h6">@GetFilteredRentRoll().ToString("C")</MudText></MudPaper></MudItem>
     </MudGrid>
 
-    <MudExpansionPanels>
-        <MudExpansionPanel Text="@Localizer["Common_BulkImport"]">
-            <MudPaper Class="pa-4" Elevation="0">
-                <MudText Typo="Typo.h6">@Localizer["Common_QuickCsvImport"]</MudText>
-                <MudText Typo="Typo.body2" Class="mb-2">@Localizer["Properties_CsvFormatHint"]</MudText>
-                <MudTextField Lines="5" Variant="Variant.Outlined" @bind-Value="_csvInput" FullWidth="true" />
-                @if (CurrentOrganization.CanManageData)
-                {
-                    <MudButton Variant="Variant.Filled" Color="Color.Secondary" Class="mt-3" OnClick="ImportCsvAsync">@Localizer["Common_ImportCsvText"]</MudButton>
-                }
-                @if (!string.IsNullOrWhiteSpace(_importResult))
-                {
-                    <MudAlert Severity="Severity.Info" Dense="true" Class="mt-3 mb-0">@_importResult</MudAlert>
-                }
-            </MudPaper>
-        </MudExpansionPanel>
-    </MudExpansionPanels>
+    <MudPaper Class="pa-4 property-detail-panel" Elevation="0">
+        <MudText Typo="Typo.h6">@UiText.Get("Properties_InsightTitle")</MudText>
+        <MudGrid Spacing="2" Class="mt-2">
+            <MudItem xs="12" md="4">
+                <MudPaper Class="pa-3 property-mini-stat" Elevation="0">
+                    <MudText Typo="Typo.overline">@UiText.Get("Properties_InsightUrgency")</MudText>
+                    <MudChip T="string" Variant="Variant.Outlined" Color="@PortfolioInsightColor" Class="mt-2">@PortfolioInsightUrgencyLabel</MudChip>
+                </MudPaper>
+            </MudItem>
+            <MudItem xs="12" md="4">
+                <MudPaper Class="pa-3 property-mini-stat" Elevation="0">
+                    <MudText Typo="Typo.overline">@UiText.Get("Properties_InsightFocus")</MudText>
+                    <MudChip T="string" Variant="Variant.Outlined" Color="@PortfolioInsightColor" Class="mt-2">@PortfolioInsightFocusLabel</MudChip>
+                </MudPaper>
+            </MudItem>
+            <MudItem xs="12" md="4">
+                <MudPaper Class="pa-3 property-mini-stat" Elevation="0">
+                    <MudText Typo="Typo.overline">@UiText.Get("Properties_InsightNextAction")</MudText>
+                    <MudButton Class="mt-2" Variant="Variant.Text" Color="@PortfolioInsightColor" OnClick="OpenPortfolioInsightNextActionAsync">@PortfolioInsightActionLabel</MudButton>
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+        <MudText Typo="Typo.body2" Class="mt-3">@PortfolioInsightMessage</MudText>
+    </MudPaper>
+
+    @if (!IsDemoCleanView)
+    {
+        <MudExpansionPanels>
+            <MudExpansionPanel Text="@Localizer["Common_BulkImport"]">
+                <MudPaper Class="pa-4" Elevation="0">
+                    <MudText Typo="Typo.h6">@Localizer["Common_QuickCsvImport"]</MudText>
+                    <MudText Typo="Typo.body2" Class="mb-2">@Localizer["Properties_CsvFormatHint"]</MudText>
+                    <MudTextField Lines="5" Variant="Variant.Outlined" @bind-Value="_csvInput" FullWidth="true" />
+                    @if (CurrentOrganization.CanManageData)
+                    {
+                        <MudButton Variant="Variant.Filled" Color="Color.Secondary" Class="mt-3" OnClick="ImportCsvAsync">@Localizer["Common_ImportCsvText"]</MudButton>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(_importResult))
+                    {
+                        <MudAlert Severity="Severity.Info" Dense="true" Class="mt-3 mb-0">@_importResult</MudAlert>
+                    }
+                </MudPaper>
+            </MudExpansionPanel>
+        </MudExpansionPanels>
+    }
 
     <MudPaper Class="pa-2 table-wrap properties-table-shell">
         <MudTable Items="FilteredProperties.ToList()" Dense="true" Hover="true" Breakpoint="Breakpoint.Md" RowsPerPage="10">
@@ -101,6 +136,7 @@
                 <MudTh>@Localizer["Properties_ColumnRentRoll"]</MudTh>
                 <MudTh>@Localizer["Properties_ColumnReadiness"]</MudTh>
                 <MudTh>@Localizer["Properties_ColumnStage"]</MudTh>
+                <MudTh>@UiText.Get("Properties_ColumnNextAction")</MudTh>
                 <MudTh></MudTh>
             </HeaderContent>
             <RowTemplate>
@@ -122,9 +158,10 @@
                 <MudTd DataLabel="@Localizer["Properties_ColumnRentRoll"]">@monthlyRent.ToString("C")</MudTd>
                 <MudTd DataLabel="@Localizer["Properties_ColumnReadiness"]"><MudChip T="string" Variant="Variant.Filled" Color="@GetReadinessColor(readinessScore)">@readinessScore/100</MudChip></MudTd>
                 <MudTd DataLabel="@Localizer["Properties_ColumnStage"]"><MudChip T="string" Variant="Variant.Outlined" Color="@GetAssetStageColor(propertyUnits, vacantCount, readinessScore)">@LocalizeAssetStage(GetAssetStage(propertyUnits, vacantCount, readinessScore))</MudChip></MudTd>
+                <MudTd DataLabel="@UiText.Get("Properties_ColumnNextAction")"><MudChip T="string" Variant="Variant.Outlined" Color="@GetPortfolioActionColor(context)">@GetPortfolioActionLabel(context)</MudChip></MudTd>
                 <MudTd DataLabel="@Localizer["Properties_ColumnActions"]">
                     <MudStack Row="true" Spacing="1" Wrap="Wrap.Wrap">
-                        <MudButton Href="@($"/properties/{context.Id}")" Variant="Variant.Text" Color="Color.Primary" Size="Size.Small">@Localizer["Properties_ViewDetails"]</MudButton>
+                        <MudButton Href="@GetPropertyProfileHref(context.Id)" Variant="Variant.Text" Color="Color.Primary" Size="Size.Small">@Localizer["Properties_ViewDetails"]</MudButton>
                         @if (CurrentOrganization.CanManageData)
                         {
                             <MudButton Variant="Variant.Text" Color="Color.Secondary" Size="Size.Small" OnClick="() => OpenEditPanel(context)">@Localizer["Common_Edit"]</MudButton>
@@ -264,6 +301,9 @@
 </MudStack>
 
 @code {
+    [SupplyParameterFromQuery(Name = "demo")]
+    public string? DemoMode { get; set; }
+
     private static readonly string[] _propertyTypes =
     {
         "Multi-family",
@@ -398,6 +438,12 @@
     private string _selectedStageFilter = string.Empty;
     private bool _isFormPanelOpen;
     private bool _isCreateMode = true;
+    private bool IsDemoCleanView => string.Equals(DemoMode, "clean", StringComparison.OrdinalIgnoreCase);
+    private string DemoModeQuery => IsDemoCleanView ? "demo=clean" : string.Empty;
+    private Property? PriorityPortfolioProperty => FilteredProperties
+        .OrderByDescending(property => GetUnitsForProperty(property.Id).Count(x => !x.IsOccupied) > 0)
+        .ThenBy(property => GetMarketingReadinessScore(property, GetUnitsForProperty(property.Id), GetUnitsForProperty(property.Id).Count(x => x.IsOccupied), GetUnitsForProperty(property.Id).Sum(x => x.MonthlyRent)))
+        .FirstOrDefault();
     private bool HasActiveFilters => !string.IsNullOrWhiteSpace(_searchText) || !string.IsNullOrWhiteSpace(_selectedTypeFilter) || !string.IsNullOrWhiteSpace(_selectedCityFilter) || !string.IsNullOrWhiteSpace(_selectedStageFilter);
     private IEnumerable<Property> FilteredProperties => _items.Where(property =>
         string.IsNullOrWhiteSpace(_searchText)
@@ -411,6 +457,41 @@
         .Where(property => string.IsNullOrWhiteSpace(_selectedStageFilter) || string.Equals(GetAssetStage(GetUnitsForProperty(property.Id), GetUnitsForProperty(property.Id).Count(x => !x.IsOccupied), GetMarketingReadinessScore(property, GetUnitsForProperty(property.Id), GetUnitsForProperty(property.Id).Count(x => x.IsOccupied), GetUnitsForProperty(property.Id).Sum(x => x.MonthlyRent))), _selectedStageFilter, StringComparison.OrdinalIgnoreCase));
 
     private Property ActiveProperty => _isCreateMode ? _newProperty : _editProperty;
+    private string PropertiesRoute => WithDemoMode("/properties");
+    private string PortfolioInsightUrgencyLabel
+        => PriorityPortfolioProperty is not null && GetUnitsForProperty(PriorityPortfolioProperty.Id).Count(x => !x.IsOccupied) > 0
+            ? UiText.Get("Properties_InsightUrgencyHigh")
+            : FilteredProperties.Any(property => GetMarketingReadinessScore(property, GetUnitsForProperty(property.Id), GetUnitsForProperty(property.Id).Count(x => x.IsOccupied), GetUnitsForProperty(property.Id).Sum(x => x.MonthlyRent)) < 80)
+                ? UiText.Get("Properties_InsightUrgencyMedium")
+                : UiText.Get("Properties_InsightUrgencyStable");
+
+    private string PortfolioInsightFocusLabel
+        => PriorityPortfolioProperty is not null && GetUnitsForProperty(PriorityPortfolioProperty.Id).Count(x => !x.IsOccupied) > 0
+            ? UiText.Get("Properties_InsightFocusLeaseUp")
+            : FilteredProperties.Any(property => GetMarketingReadinessScore(property, GetUnitsForProperty(property.Id), GetUnitsForProperty(property.Id).Count(x => x.IsOccupied), GetUnitsForProperty(property.Id).Sum(x => x.MonthlyRent)) < 80)
+                ? UiText.Get("Properties_InsightFocusPlaybook")
+                : UiText.Get("Properties_InsightFocusStable");
+
+    private string PortfolioInsightMessage
+        => PriorityPortfolioProperty is not null && GetUnitsForProperty(PriorityPortfolioProperty.Id).Count(x => !x.IsOccupied) > 0
+            ? UiText.Get("Properties_InsightMessageLeaseUp")
+            : FilteredProperties.Any(property => GetMarketingReadinessScore(property, GetUnitsForProperty(property.Id), GetUnitsForProperty(property.Id).Count(x => x.IsOccupied), GetUnitsForProperty(property.Id).Sum(x => x.MonthlyRent)) < 80)
+                ? UiText.Get("Properties_InsightMessagePlaybook")
+                : UiText.Get("Properties_InsightMessageStable");
+
+    private string PortfolioInsightActionLabel
+        => PriorityPortfolioProperty is not null && GetUnitsForProperty(PriorityPortfolioProperty.Id).Count(x => !x.IsOccupied) > 0
+            ? UiText.Get("Properties_InsightOpenLeaseUp")
+            : FilteredProperties.Any(property => GetMarketingReadinessScore(property, GetUnitsForProperty(property.Id), GetUnitsForProperty(property.Id).Count(x => x.IsOccupied), GetUnitsForProperty(property.Id).Sum(x => x.MonthlyRent)) < 80)
+                ? UiText.Get("Properties_InsightOpenStabilize")
+                : UiText.Get("Properties_InsightOpenStable");
+
+    private Color PortfolioInsightColor
+        => PriorityPortfolioProperty is not null && GetUnitsForProperty(PriorityPortfolioProperty.Id).Count(x => !x.IsOccupied) > 0
+            ? Color.Warning
+            : FilteredProperties.Any(property => GetMarketingReadinessScore(property, GetUnitsForProperty(property.Id), GetUnitsForProperty(property.Id).Count(x => x.IsOccupied), GetUnitsForProperty(property.Id).Sum(x => x.MonthlyRent)) < 80)
+                ? Color.Info
+                : Color.Success;
 
     private int? FormYearBuiltValue
     {
@@ -462,12 +543,38 @@
         await ReloadAsync();
     }
 
+    private string WithDemoMode(string route)
+    {
+        if (!IsDemoCleanView || string.IsNullOrWhiteSpace(route) || route.Contains("demo=", StringComparison.OrdinalIgnoreCase))
+        {
+            return route;
+        }
+
+        var anchorIndex = route.IndexOf('#');
+        var anchor = anchorIndex >= 0 ? route[anchorIndex..] : string.Empty;
+        var baseRoute = anchorIndex >= 0 ? route[..anchorIndex] : route;
+        var separator = baseRoute.Contains('?') ? "&" : "?";
+        return $"{baseRoute}{separator}{DemoModeQuery}{anchor}";
+    }
+
     private void ClearFilters()
     {
         _searchText = string.Empty;
         _selectedTypeFilter = string.Empty;
         _selectedCityFilter = string.Empty;
         _selectedStageFilter = string.Empty;
+    }
+
+    private Task OpenPortfolioInsightNextActionAsync()
+    {
+        if (PriorityPortfolioProperty is not null)
+        {
+            NavigationManager.NavigateTo(WithDemoMode($"/properties/{PriorityPortfolioProperty.Id}"));
+            return Task.CompletedTask;
+        }
+
+        NavigationManager.NavigateTo(WithDemoMode("/properties"));
+        return Task.CompletedTask;
     }
 
     private void OpenCreatePanel()
@@ -652,6 +759,49 @@
     }
 
     private List<Unit> GetUnitsForProperty(Guid propertyId) => _units.Where(x => x.PropertyId == propertyId).OrderBy(x => x.UnitNumber).ToList();
+
+    private string PropertyProfileRoute => PriorityPortfolioProperty is not null ? WithDemoMode($"/properties/{PriorityPortfolioProperty.Id}") : WithDemoMode("/properties");
+
+    private string GetPropertyProfileHref(Guid propertyId)
+        => WithDemoMode($"/properties/{propertyId}");
+
+    private string GetPortfolioActionLabel(Property property)
+    {
+        var propertyUnits = GetUnitsForProperty(property.Id);
+        var vacantCount = propertyUnits.Count(x => !x.IsOccupied);
+        var readinessScore = GetMarketingReadinessScore(property, propertyUnits, propertyUnits.Count(x => x.IsOccupied), propertyUnits.Sum(x => x.MonthlyRent));
+
+        if (vacantCount > 0)
+        {
+            return UiText.Get("Properties_ActionLeaseUp");
+        }
+
+        if (readinessScore < 80)
+        {
+            return UiText.Get("Properties_ActionStabilize");
+        }
+
+        return UiText.Get("Properties_ActionReview");
+    }
+
+    private Color GetPortfolioActionColor(Property property)
+    {
+        var propertyUnits = GetUnitsForProperty(property.Id);
+        var vacantCount = propertyUnits.Count(x => !x.IsOccupied);
+        var readinessScore = GetMarketingReadinessScore(property, propertyUnits, propertyUnits.Count(x => x.IsOccupied), propertyUnits.Sum(x => x.MonthlyRent));
+
+        if (vacantCount > 0)
+        {
+            return Color.Warning;
+        }
+
+        if (readinessScore < 80)
+        {
+            return Color.Info;
+        }
+
+        return Color.Success;
+    }
 
     private static string FormatAddress(Property property)
     {

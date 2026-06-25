@@ -21,7 +21,7 @@ namespace PropertySaaS.Domain.Enums
     public enum LeaseStatus { Draft, Active, EndingSoon, Expired, Terminated }
     public enum MaintenancePriority { Low, Medium, High, Emergency }
     public enum ListingStatus { Draft, ReadyToPublish, Published, Archived }
-    public enum LeadStatus { New, Contacted, Qualified, ShowingScheduled, Applied, Won, Lost }
+    public enum LeadStatus { New, Contacted, Qualified, ShowingScheduled, Applied, AwaitingDocuments, UnderReview, Approved, Declined, Won, Lost }
     public enum PaymentStatus { Draft, Sent, Paid, PartiallyPaid, Overdue, Cancelled }
     public enum MediaAssetCategory { PropertyPhoto, UnitPhoto, MaintenanceEvidence, LeaseDocument, Notice, ListingAttachment, MaintenanceBeforePhoto, MaintenanceAfterPhoto, MaintenanceEvidenceDocument }
     public enum AISuggestionType { WorkQueue, ListingDescription, TenantMessage, ImportMapping, ComplianceRecommendation }
@@ -149,9 +149,14 @@ namespace PropertySaaS.Domain.Entities
         public LeaseStatus Status { get; set; }
         public bool StandardOntarioLeaseSigned { get; set; }
         public bool N1IncreaseNoticeScheduled { get; set; }
+        public bool DepositReceived { get; set; }
+        public bool InsuranceProofReceived { get; set; }
+        public bool MoveInChecklistCompleted { get; set; }
+        public string MoveInNotes { get; set; } = string.Empty;
         public Unit? Unit { get; set; }
         public Tenant? Tenant { get; set; }
         public ICollection<Invoice> Invoices { get; set; } = new List<Invoice>();
+        public ICollection<MediaAsset> MediaAssets { get; set; } = new List<MediaAsset>();
     }
 
     public class MaintenanceRequest : TenantScopedEntity
@@ -233,6 +238,12 @@ namespace PropertySaaS.Domain.Entities
         public string PhoneNumber { get; set; } = string.Empty;
         public string Source { get; set; } = string.Empty;
         public LeadStatus Status { get; set; } = LeadStatus.New;
+        public decimal MonthlyIncome { get; set; }
+        public DateOnly? DesiredMoveInDate { get; set; }
+        public int OccupantCount { get; set; }
+        public bool HasPets { get; set; }
+        public int CreditScore { get; set; }
+        public bool ConsentToScreening { get; set; }
         public string Notes { get; set; } = string.Empty;
         public Listing? Listing { get; set; }
         public ICollection<Showing> Showings { get; set; } = new List<Showing>();
@@ -278,16 +289,19 @@ namespace PropertySaaS.Domain.Entities
         public Guid? PropertyId { get; set; }
         public Guid? UnitId { get; set; }
         public Guid? ListingId { get; set; }
+        public Guid? LeaseId { get; set; }
         public Guid? MaintenanceRequestId { get; set; }
         public string FileName { get; set; } = string.Empty;
         public string BlobPath { get; set; } = string.Empty;
         public string Caption { get; set; } = string.Empty;
+        public string DocumentType { get; set; } = string.Empty;
         public int SortOrder { get; set; }
         public bool IsPrimary { get; set; }
         public MediaAssetCategory Category { get; set; } = MediaAssetCategory.PropertyPhoto;
         public Property? Property { get; set; }
         public Unit? Unit { get; set; }
         public Listing? Listing { get; set; }
+        public Lease? Lease { get; set; }
         public MaintenanceRequest? MaintenanceRequest { get; set; }
     }
 

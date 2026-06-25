@@ -84,6 +84,11 @@
         get
         {
             var path = NavigationManager.ToBaseRelativePath(NavigationManager.Uri).ToLowerInvariant();
+            if (path.StartsWith("resident-360"))
+            {
+                return UiText.Get("Layout_TopBarDemo");
+            }
+
             if (path.StartsWith("properties") || path.StartsWith("units") || path.StartsWith("tenants") || path.StartsWith("leases"))
             {
                 return UiText.Get("Layout_TopBarPortfolio");

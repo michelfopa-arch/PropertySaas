@@ -16,30 +16,111 @@
         <MudText Typo="Typo.body2">@UiText.Get("TenantCommunications_Subtitle")</MudText>
     </MudStack>
 
-    <MudGrid Spacing="3">
-        <MudItem xs="12" md="4"><MetricCard Title="@UiText.Get("TenantCommunications_OpenConversations")" Value="@_conversations.Count.ToString()" Caption="@UiText.Get("TenantCommunications_OpenConversationsCaption")" Icon="@Icons.Material.Filled.MarkEmailUnread" /></MudItem>
-        <MudItem xs="12" md="4"><MetricCard Title="@UiText.Get("TenantCommunications_AiDrafts")" Value="@_messages.Count(x => x.IsAISuggested).ToString()" Caption="@UiText.Get("TenantCommunications_AiDraftsCaption")" Icon="@Icons.Material.Filled.AutoAwesome" /></MudItem>
-        <MudItem xs="12" md="4"><MetricCard Title="@UiText.Get("TenantCommunications_AwaitingReply")" Value="@_conversations.Count(x => string.Equals(x.Status, "Awaiting reply", StringComparison.OrdinalIgnoreCase)).ToString()" Caption="@UiText.Get("TenantCommunications_AwaitingReplyCaption")" Icon="@Icons.Material.Filled.ScheduleSend" /></MudItem>
-    </MudGrid>
+    <DemoJourneyBanner CurrentStepKey="resident" ResidentRoute="@Resident360Route" />
+
+    <MudPaper Class="pa-3 marketing-card" Elevation="0">
+        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Wrap="Wrap.Wrap">
+            <MudText Typo="Typo.subtitle2">@UiText.Get("Common_RecommendedNextStop")</MudText>
+            <MudButton Variant="Variant.Text" Color="@RecommendedNextStopColor" OnClick="OpenRecommendedNextStopAsync">@RecommendedNextStopLabel</MudButton>
+        </MudStack>
+    </MudPaper>
+
+    @if (!IsDemoCleanView)
+    {
+        <MudGrid Spacing="3">
+            <MudItem xs="12" md="4"><MetricCard Title="@UiText.Get("TenantCommunications_OpenConversations")" Value="@_conversations.Count.ToString()" Caption="@UiText.Get("TenantCommunications_OpenConversationsCaption")" Icon="@Icons.Material.Filled.MarkEmailUnread" /></MudItem>
+            <MudItem xs="12" md="4"><MetricCard Title="@UiText.Get("TenantCommunications_AiDrafts")" Value="@_messages.Count(x => x.IsAISuggested).ToString()" Caption="@UiText.Get("TenantCommunications_AiDraftsCaption")" Icon="@Icons.Material.Filled.AutoAwesome" /></MudItem>
+            <MudItem xs="12" md="4"><MetricCard Title="@UiText.Get("TenantCommunications_AwaitingReply")" Value="@_conversations.Count(x => string.Equals(x.Status, "Awaiting reply", StringComparison.OrdinalIgnoreCase)).ToString()" Caption="@UiText.Get("TenantCommunications_AwaitingReplyCaption")" Icon="@Icons.Material.Filled.ScheduleSend" /></MudItem>
+        </MudGrid>
+    }
+
+    <MudPaper Class="pa-4 property-detail-panel" Elevation="0">
+        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Wrap="Wrap.Wrap">
+            <MudText Typo="Typo.subtitle2">@UiText.Get("TenantCommunications_QueueSummaryTitle")</MudText>
+            <MudChip T="string" Variant="@(string.Equals(_selectedConversationFilter, "all", StringComparison.OrdinalIgnoreCase) ? Variant.Filled : Variant.Outlined)" Color="Color.Default" OnClick='() => SetConversationFilter("all")'>@UiText.Get("TenantCommunications_FilterAll")</MudChip>
+        </MudStack>
+        <MudGrid Spacing="2" Class="mt-2">
+            <MudItem xs="12" sm="6" md="3">
+                <MudPaper Class="pa-3 property-mini-stat" Elevation="0">
+                    <MudText Typo="Typo.overline">@UiText.Get("TenantCommunications_QueueAwaitingReply")</MudText>
+                    <MudChip T="string" Variant="@(string.Equals(_selectedConversationFilter, "awaiting-reply", StringComparison.OrdinalIgnoreCase) ? Variant.Filled : Variant.Outlined)" Color="Color.Warning" Class="mt-2" OnClick='() => SetConversationFilter("awaiting-reply")'>@AwaitingReplyCount</MudChip>
+                </MudPaper>
+            </MudItem>
+            <MudItem xs="12" sm="6" md="3">
+                <MudPaper Class="pa-3 property-mini-stat" Elevation="0">
+                    <MudText Typo="Typo.overline">@UiText.Get("TenantCommunications_QueueRentAtRisk")</MudText>
+                    <MudChip T="string" Variant="@(string.Equals(_selectedConversationFilter, "rent", StringComparison.OrdinalIgnoreCase) ? Variant.Filled : Variant.Outlined)" Color="Color.Secondary" Class="mt-2" OnClick='() => SetConversationFilter("rent")'>@RentAtRiskCount</MudChip>
+                </MudPaper>
+            </MudItem>
+            <MudItem xs="12" sm="6" md="3">
+                <MudPaper Class="pa-3 property-mini-stat" Elevation="0">
+                    <MudText Typo="Typo.overline">@UiText.Get("TenantCommunications_QueueMoveInBlocked")</MudText>
+                    <MudChip T="string" Variant="@(string.Equals(_selectedConversationFilter, "move-in", StringComparison.OrdinalIgnoreCase) ? Variant.Filled : Variant.Outlined)" Color="Color.Info" Class="mt-2" OnClick='() => SetConversationFilter("move-in")'>@MoveInBlockedCount</MudChip>
+                </MudPaper>
+            </MudItem>
+            <MudItem xs="12" sm="6" md="3">
+                <MudPaper Class="pa-3 property-mini-stat" Elevation="0">
+                    <MudText Typo="Typo.overline">@UiText.Get("TenantCommunications_QueueMaintenanceActive")</MudText>
+                    <MudChip T="string" Variant="@(string.Equals(_selectedConversationFilter, "maintenance", StringComparison.OrdinalIgnoreCase) ? Variant.Filled : Variant.Outlined)" Color="Color.Error" Class="mt-2" OnClick='() => SetConversationFilter("maintenance")'>@MaintenanceActiveCount</MudChip>
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+
+    @if (!IsDemoCleanView)
+    {
+        <MudPaper Class="pa-4 marketing-card" Elevation="0">
+            <MudText Typo="Typo.h6">@UiText.Get("TenantCommunications_WorkflowTitle")</MudText>
+            <MudList T="string" Dense="true" Class="mt-3">
+                <MudListItem T="string">@UiText.Get("TenantCommunications_Workflow1")</MudListItem>
+                <MudListItem T="string">@UiText.Get("TenantCommunications_Workflow2")</MudListItem>
+                <MudListItem T="string">@UiText.Get("TenantCommunications_Workflow3")</MudListItem>
+            </MudList>
+        </MudPaper>
+    }
 
     <MudPaper Class="pa-4 marketing-card" Elevation="0">
-        <MudText Typo="Typo.h6">@UiText.Get("TenantCommunications_WorkflowTitle")</MudText>
+        <MudText Typo="Typo.h6">@UiText.Get("TenantCommunications_DemoStoryTitle")</MudText>
+        <MudText Typo="Typo.body2" Class="mt-1">@UiText.Get("TenantCommunications_DemoStoryBody")</MudText>
         <MudList T="string" Dense="true" Class="mt-3">
-            <MudListItem T="string">@UiText.Get("TenantCommunications_Workflow1")</MudListItem>
-            <MudListItem T="string">@UiText.Get("TenantCommunications_Workflow2")</MudListItem>
-            <MudListItem T="string">@UiText.Get("TenantCommunications_Workflow3")</MudListItem>
+            <MudListItem T="string">@UiText.Get("TenantCommunications_DemoStoryStep1")</MudListItem>
+            <MudListItem T="string">@UiText.Get("TenantCommunications_DemoStoryStep2")</MudListItem>
+            <MudListItem T="string">@UiText.Get("TenantCommunications_DemoStoryStep3")</MudListItem>
         </MudList>
+        <MudStack Row="true" Spacing="1" Class="mt-3" Wrap="Wrap.Wrap">
+            <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="OpenResident360Async">@UiText.Get("TenantCommunications_OpenResident360")</MudButton>
+            <MudButton Variant="Variant.Text" Color="Color.Secondary" OnClick="OpenRentFollowUpAsync">@UiText.Get("TenantCommunications_OpenCollections")</MudButton>
+            <MudButton Variant="Variant.Text" Color="Color.Warning" OnClick="OpenMaintenanceWorkspaceAsync">@UiText.Get("TenantCommunications_OpenMaintenance")</MudButton>
+        </MudStack>
     </MudPaper>
 
     <MudPaper Class="pa-2 table-wrap properties-table-shell" Elevation="0">
         <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="pa-3">
-            <MudText Typo="Typo.h6">@UiText.Get("TenantCommunications_ConversationsTitle")</MudText>
-            @if (CurrentOrganization.CanManageData)
-            {
-                <MudButton Variant="Variant.Text" Color="Color.Primary" Size="Size.Small" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreateConversationPanel">@UiText.Get("TenantCommunications_AddConversation")</MudButton>
-            }
+            <MudStack Spacing="1" Class="w-100">
+                <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Wrap="Wrap.Wrap">
+                    <MudText Typo="Typo.h6">@UiText.Get("TenantCommunications_ConversationsTitle")</MudText>
+                    @if (CurrentOrganization.CanManageData)
+                    {
+                        <MudButton Variant="Variant.Text" Color="Color.Primary" Size="Size.Small" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreateConversationPanel">@UiText.Get("TenantCommunications_AddConversation")</MudButton>
+                    }
+                </MudStack>
+                @if (!IsDemoCleanView)
+                {
+                    <MudStack Row="true" Spacing="1" Wrap="Wrap.Wrap">
+                        @foreach (var filter in ConversationFilters)
+                        {
+                            <MudChip T="string"
+                                     Variant="@(string.Equals(_selectedConversationFilter, filter.Key, StringComparison.OrdinalIgnoreCase) ? Variant.Filled : Variant.Outlined)"
+                                     Color="@filter.Color"
+                                     OnClick="() => SetConversationFilter(filter.Key)">
+                                @filter.Label (@CountConversations(filter.Key))
+                            </MudChip>
+                        }
+                    </MudStack>
+                }
+            </MudStack>
         </MudStack>
-        <MudTable Items="_conversations" Dense="true" Hover="true" Breakpoint="Breakpoint.Md">
+        <MudTable Items="FilteredConversations" Dense="true" Hover="true" Breakpoint="Breakpoint.Md">
             <HeaderContent>
                 <MudTh>@UiText.Get("TenantCommunications_Tenant")</MudTh>
                 <MudTh>@UiText.Get("TenantCommunications_Subject")</MudTh>
@@ -47,6 +128,7 @@
                 <MudTh>@UiText.Get("TenantCommunications_Status")</MudTh>
                 <MudTh>@UiText.Get("TenantCommunications_LastContact")</MudTh>
                 <MudTh>@UiText.Get("TenantCommunications_LastMessage")</MudTh>
+                <MudTh>@UiText.Get("TenantCommunications_Priority")</MudTh>
                 <MudTh></MudTh>
             </HeaderContent>
             <RowTemplate>
@@ -56,6 +138,9 @@
                 <MudTd DataLabel="@UiText.Get("TenantCommunications_Status")">@context.Status</MudTd>
                 <MudTd DataLabel="@UiText.Get("TenantCommunications_LastContact")">@context.LastContactUtc?.ToLocalTime().ToString("g")</MudTd>
                 <MudTd DataLabel="@UiText.Get("TenantCommunications_LastMessage")">@context.LastMessagePreview</MudTd>
+                <MudTd DataLabel="@UiText.Get("TenantCommunications_Priority")">
+                    <MudChip T="string" Variant="Variant.Outlined" Color="@GetPriorityLaneColor(context)">@GetPriorityLaneLabel(context)</MudChip>
+                </MudTd>
                 <MudTd>
                     <MudButton Variant="Variant.Text" Color="Color.Primary" Size="Size.Small" OnClick="() => SelectConversation(context)">@UiText.Get("TenantCommunications_ViewThread")</MudButton>
                 </MudTd>
@@ -77,12 +162,116 @@
                 }
             </MudStack>
 
+            <MudPaper Class="pa-3 property-detail-panel mt-3" Elevation="0">
+                <MudText Typo="Typo.subtitle2">@UiText.Get("TenantCommunications_NextActionTitle")</MudText>
+                <MudGrid Spacing="2" Class="mt-2">
+                    <MudItem xs="12" md="4">
+                        <MudPaper Class="pa-3 property-mini-stat" Elevation="0">
+                            <MudText Typo="Typo.overline">@UiText.Get("TenantCommunications_NextActionThreadStatus")</MudText>
+                            <MudChip T="string" Variant="Variant.Outlined" Color="@ThreadStatusColor" Class="mt-2">@_selectedConversation.Status</MudChip>
+                        </MudPaper>
+                    </MudItem>
+                    <MudItem xs="12" md="4">
+                        <MudPaper Class="pa-3 property-mini-stat" Elevation="0">
+                            <MudText Typo="Typo.overline">@UiText.Get("TenantCommunications_NextActionWorkflow")</MudText>
+                            <MudChip T="string" Variant="Variant.Outlined" Color="@WorkflowStatusColor" Class="mt-2">@WorkflowStatusLabel</MudChip>
+                        </MudPaper>
+                    </MudItem>
+                    <MudItem xs="12" md="4">
+                        <MudPaper Class="pa-3 property-mini-stat" Elevation="0">
+                            <MudText Typo="Typo.overline">@UiText.Get("TenantCommunications_NextActionCta")</MudText>
+                            <MudButton Class="mt-2" Variant="Variant.Text" Color="@NextActionColor" OnClick="NextThreadAction">@NextActionLabel</MudButton>
+                        </MudPaper>
+                    </MudItem>
+                </MudGrid>
+                <MudText Typo="Typo.body2" Class="mt-3">@NextActionMessage</MudText>
+            </MudPaper>
+
+            @if (_selectedConversation.HasMoveInWorkflow)
+            {
+                <MudPaper Class="pa-3 property-detail-panel mt-3" Elevation="0">
+                    <MudText Typo="Typo.subtitle2">@UiText.Get("TenantCommunications_MoveInTitle")</MudText>
+                    @if (_selectedConversation.MoveInMissingItemCount == 0)
+                    {
+                        <MudText Typo="Typo.body2" Class="mt-2">@UiText.Get("TenantCommunications_MoveInReady")</MudText>
+                        @if (_selectedConversation.LeaseId.HasValue && _selectedConversation.CanCompleteOnboardingHandoff && CurrentOrganization.CanManageData)
+                        {
+                            <MudButton Class="mt-2" Variant="Variant.Filled" Size="Size.Small" Color="Color.Success" OnClick='() => CompleteOnboardingHandoffAsync(_selectedConversation.LeaseId.Value)'>@UiText.Get("TenantCommunications_MoveInCompleteHandoff")</MudButton>
+                        }
+                        @if (_selectedConversation.HasActiveTenancy)
+                        {
+                            <MudStack Row="true" Spacing="1" Class="mt-2" Wrap="Wrap.Wrap">
+                                <MudButton Variant="Variant.Text" Size="Size.Small" Color="Color.Primary" OnClick="OpenRentFollowUp">@UiText.Get("TenantCommunications_MoveInOpenRent")</MudButton>
+                                <MudButton Variant="Variant.Text" Size="Size.Small" Color="Color.Secondary" OnClick="OpenTenantProfile">@UiText.Get("TenantCommunications_MoveInOpenTenantProfile")</MudButton>
+                                <MudButton Variant="Variant.Text" Size="Size.Small" Color="Color.Tertiary" OnClick="OpenResident360">@UiText.Get("Nav_Resident360")</MudButton>
+                                <MudButton Variant="Variant.Text" Size="Size.Small" Color="Color.Info" OnClick="OpenLeaseProfile">@UiText.Get("TenantCommunications_MoveInOpenLease")</MudButton>
+                                @if (CurrentOrganization.CanManageData)
+                                {
+                                    <MudButton Variant="Variant.Text" Size="Size.Small" Color="Color.Default" OnClick="PreparePostMoveInMessageAsync">@UiText.Get("TenantCommunications_MoveInPostMoveInDraft")</MudButton>
+                                }
+                            </MudStack>
+                        }
+                    }
+                    else
+                    {
+                        <MudText Typo="Typo.body2" Class="mt-2">@UiText.Get("TenantCommunications_MoveInMissing")</MudText>
+                        <MudList T="string" Dense="true" Class="mt-2">
+                            @foreach (var item in _selectedConversation.MoveInMissingItems)
+                            {
+                                <MudListItem T="string">
+                                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="w-100" Wrap="Wrap.Wrap">
+                                        <MudText Typo="Typo.body2">@item</MudText>
+                                        <MudStack Row="true" Spacing="1" Wrap="Wrap.Wrap">
+                                            @if (_selectedConversation.LeaseId.HasValue && _selectedConversation.MoveInActionableItems.Contains(item) && CurrentOrganization.CanManageData)
+                                            {
+                                                <MudButton Variant="Variant.Text" Size="Size.Small" Color="Color.Success" OnClick='() => CompleteMoveInActionAsync(_selectedConversation.LeaseId.Value, item)'>@UiText.Get("TenantCommunications_MoveInMarkReceived")</MudButton>
+                                            }
+                                            @if (_selectedConversation.LeaseId.HasValue && _selectedConversation.MoveInDocumentActions.TryGetValue(item, out var documentType))
+                                            {
+                                                @if (CurrentOrganization.CanManageData)
+                                                {
+                                                    <MudButton Variant="Variant.Text" Size="Size.Small" Color="Color.Secondary" OnClick='() => AddMoveInDocumentAsync(_selectedConversation.LeaseId.Value, documentType)'>@UiText.Get("TenantCommunications_MoveInAddDocument")</MudButton>
+                                                }
+                                                @if (IsInternalTemplateDocument(documentType))
+                                                {
+                                                    <MudButton Href="@GetInternalTemplateUrl(_selectedConversation.LeaseId.Value, documentType)" Target="_blank" Variant="Variant.Text" Size="Size.Small" Color="Color.Default">@UiText.Get("TenantCommunications_MoveInOpenTemplate")</MudButton>
+                                                }
+                                                @if (!string.IsNullOrWhiteSpace(GetOfficialDocumentUrl(documentType)))
+                                                {
+                                                    <MudButton Href="@GetOfficialDocumentUrl(documentType)" Target="_blank" Variant="Variant.Text" Size="Size.Small" Color="Color.Primary">@UiText.Get("TenantCommunications_MoveInOpenOfficial")</MudButton>
+                                                }
+                                            }
+                                        </MudStack>
+                                    </MudStack>
+                                </MudListItem>
+                            }
+                        </MudList>
+                    }
+                </MudPaper>
+            }
+
             <MudList T="string" Dense="true" Class="mt-3">
                 @foreach (var message in _messages)
                 {
                     <MudListItem T="string">@message.SentUtc.ToLocalTime().ToString("g") - @(message.IsIncoming ? UiText.Get("TenantCommunications_Incoming") : UiText.Get("TenantCommunications_Outgoing")) - @message.Body (@FormatDeliverySummary(message))</MudListItem>
                 }
             </MudList>
+
+            @if (!IsDemoCleanView && !string.IsNullOrWhiteSpace(_selectedConversation.MoveInNextDraftBody))
+            {
+                <MudAlert Severity="Severity.Info" Dense="true" Class="mt-3 mb-0">
+                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Wrap="Wrap.Wrap">
+                        <MudStack Spacing="0">
+                            <MudText Typo="Typo.subtitle2">@(_selectedConversation.MoveInMissingItemCount == 0 ? UiText.Get("TenantCommunications_MoveInReadyToSend") : UiText.Get("TenantCommunications_MoveInUseRecommendedDraft"))</MudText>
+                            <MudText Typo="Typo.body2">@_selectedConversation.MoveInNextDraftBody</MudText>
+                        </MudStack>
+                        @if (CurrentOrganization.CanManageData)
+                        {
+                            <MudButton Variant="Variant.Text" Size="Size.Small" Color="Color.Primary" OnClick="UseRecommendedMoveInDraftAsync">@UiText.Get("TenantCommunications_MoveInUseRecommendedDraft")</MudButton>
+                        }
+                    </MudStack>
+                </MudAlert>
+            }
         </MudPaper>
     }
 
@@ -137,6 +326,15 @@
                     </MudStack>
                     <EditForm Model="_newMessage" OnValidSubmit="SaveMessageAsync">
                         <MudGrid Spacing="2">
+                            @if (_selectedConversation is not null)
+                            {
+                                <MudItem xs="12">
+                                    <MudTextField Label="@UiText.Get("TenantCommunications_Subject")" Variant="Variant.Outlined" Value="@_selectedConversation.Subject" ReadOnly="true" />
+                                </MudItem>
+                            }
+                            <MudItem xs="12">
+                                <MudChip T="string" Variant="Variant.Outlined" Color="Color.Info">@UiText.Get("TenantCommunications_DraftLanguage"): @DraftLanguageLabel</MudChip>
+                            </MudItem>
                             <MudItem xs="12">
                                 <MudSelect T="string" Label="@UiText.Get("TenantCommunications_Template")" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedTemplateKey">
                                     <MudSelectItem T="string" Value="@string.Empty">@UiText.Get("TenantCommunications_TemplateNone")</MudSelectItem>
@@ -172,6 +370,11 @@
 
 @code {
     [SupplyParameterFromQuery] public Guid? ConversationId { get; set; }
+    [SupplyParameterFromQuery] public Guid? TenantId { get; set; }
+    [SupplyParameterFromQuery] public string? Compose { get; set; }
+    [SupplyParameterFromQuery] public Guid? InvoiceId { get; set; }
+    [SupplyParameterFromQuery] public string? Filter { get; set; }
+    [SupplyParameterFromQuery(Name = "demo")] public string? DemoMode { get; set; }
 
     private List<TenantConversationSummaryDto> _conversations = new();
     private List<TenantMessageSummaryDto> _messages = new();
@@ -184,6 +387,185 @@
     private bool _isMessagePanelOpen;
     private string _selectedTemplateKey = string.Empty;
     private DateTime? _deliveryDate;
+    private LeaseMoveInContextDto? _selectedMoveInContext;
+    private bool _composeHandled;
+    private InvoiceSummaryDto? _selectedInvoiceForCompose;
+    private string _selectedConversationFilter = "all";
+    private Guid? EffectiveTenantId => _selectedConversation?.TenantId ?? TenantId;
+    private string Resident360Route => EffectiveTenantId.HasValue ? $"/resident-360?tenantId={EffectiveTenantId.Value}" : "/resident-360";
+    private bool IsDemoCleanView => string.Equals(DemoMode, "clean", StringComparison.OrdinalIgnoreCase);
+    private string DemoModeQuery => IsDemoCleanView ? "demo=clean" : string.Empty;
+
+    private string WithDemoMode(string route)
+    {
+        if (!IsDemoCleanView || string.IsNullOrWhiteSpace(route) || route.Contains("demo=", StringComparison.OrdinalIgnoreCase))
+        {
+            return route;
+        }
+
+        var anchorIndex = route.IndexOf('#');
+        var anchor = anchorIndex >= 0 ? route[anchorIndex..] : string.Empty;
+        var baseRoute = anchorIndex >= 0 ? route[..anchorIndex] : route;
+        var separator = baseRoute.Contains('?') ? "&" : "?";
+        return $"{baseRoute}{separator}{DemoModeQuery}{anchor}";
+    }
+
+    private sealed record ConversationFilterOption(string Key, string Label, Color Color);
+
+    private IReadOnlyList<ConversationFilterOption> ConversationFilters =>
+    [
+        new("all", UiText.Get("TenantCommunications_FilterAll"), Color.Default),
+        new("move-in", UiText.Get("TenantCommunications_FilterMoveIn"), Color.Success),
+        new("rent", UiText.Get("TenantCommunications_FilterRent"), Color.Secondary),
+        new("maintenance", UiText.Get("TenantCommunications_FilterMaintenance"), Color.Warning),
+        new("notices", UiText.Get("TenantCommunications_FilterNotices"), Color.Info),
+        new("awaiting-reply", UiText.Get("TenantCommunications_FilterAwaitingReply"), Color.Primary)
+    ];
+
+    private IEnumerable<TenantConversationSummaryDto> FilteredConversations
+        => _conversations
+            .Where(MatchesSelectedConversationFilter)
+            .OrderByDescending(GetPriorityScore)
+            .ThenByDescending(x => x.LastContactUtc ?? DateTime.MinValue);
+
+    private int AwaitingReplyCount
+        => _conversations.Count(x => string.Equals(x.Status, "Awaiting reply", StringComparison.OrdinalIgnoreCase));
+
+    private int RentAtRiskCount
+        => _conversations.Count(x => MatchesConversationFilter(x, "rent"));
+
+    private int MoveInBlockedCount
+        => _conversations.Count(x => x.HasMoveInWorkflow && x.MoveInMissingItemCount > 0);
+
+    private int MaintenanceActiveCount
+        => _conversations.Count(x => MatchesConversationFilter(x, "maintenance"));
+
+    private bool IsFrenchDraftLanguage
+        => string.Equals(CurrentOrganization.PreferredLanguage, "fr-CA", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(CurrentOrganization.PreferredLanguage, "fr", StringComparison.OrdinalIgnoreCase);
+
+    private Color ThreadStatusColor
+        => _selectedConversation is null
+            ? Color.Default
+            : string.Equals(_selectedConversation.Status, "Awaiting reply", StringComparison.OrdinalIgnoreCase)
+                ? Color.Warning
+                : string.Equals(_selectedConversation.Status, "Draft", StringComparison.OrdinalIgnoreCase)
+                    ? Color.Info
+                    : Color.Success;
+
+    private string WorkflowStatusLabel
+    {
+        get
+        {
+            if (_selectedConversation is null)
+            {
+                return string.Empty;
+            }
+
+            if (_selectedConversation.HasMoveInWorkflow && _selectedConversation.MoveInMissingItemCount > 0)
+            {
+                return UiText.Get("TenantCommunications_NextActionWorkflowMoveInPending");
+            }
+
+            if (_selectedConversation.HasMoveInWorkflow && _selectedConversation.CanCompleteOnboardingHandoff)
+            {
+                return UiText.Get("TenantCommunications_NextActionWorkflowReadyHandoff");
+            }
+
+            if (_selectedConversation.HasActiveTenancy)
+            {
+                return UiText.Get("TenantCommunications_NextActionWorkflowActiveTenancy");
+            }
+
+            return UiText.Get("TenantCommunications_NextActionWorkflowFollowUp");
+        }
+    }
+
+    private Color WorkflowStatusColor
+        => _selectedConversation is null
+            ? Color.Default
+            : _selectedConversation.HasMoveInWorkflow && _selectedConversation.MoveInMissingItemCount > 0
+                ? Color.Warning
+                : _selectedConversation.HasMoveInWorkflow && _selectedConversation.CanCompleteOnboardingHandoff
+                    ? Color.Success
+                    : _selectedConversation.HasActiveTenancy
+                        ? Color.Primary
+                        : Color.Info;
+
+    private Func<Task> NextThreadAction
+        => _selectedConversation is not null && _selectedConversation.HasMoveInWorkflow && _selectedConversation.MoveInMissingItemCount > 0 && !string.IsNullOrWhiteSpace(_selectedConversation.MoveInNextDraftBody)
+            ? UseRecommendedMoveInDraftAsync
+            : _selectedConversation is not null && _selectedConversation.HasMoveInWorkflow && _selectedConversation.CanCompleteOnboardingHandoff && _selectedConversation.LeaseId.HasValue
+                ? () => CompleteOnboardingHandoffAsync(_selectedConversation.LeaseId.Value)
+                : _selectedConversation is not null && _selectedConversation.Subject.Contains("maintenance", StringComparison.OrdinalIgnoreCase)
+                    ? OpenMaintenanceEntryDraftAsync
+                    : _selectedConversation is not null && (_selectedConversation.Subject.Contains("rent", StringComparison.OrdinalIgnoreCase) || _selectedConversation.Subject.Contains("invoice", StringComparison.OrdinalIgnoreCase))
+                        ? OpenRentReminderDraftAsync
+                        : _selectedConversation is not null && _selectedConversation.HasActiveTenancy
+                            ? OpenResident360Async
+                            : OpenCreateMessagePanelAsync;
+
+    private string NextActionLabel
+        => _selectedConversation is not null && _selectedConversation.HasMoveInWorkflow && _selectedConversation.MoveInMissingItemCount > 0 && !string.IsNullOrWhiteSpace(_selectedConversation.MoveInNextDraftBody)
+            ? UiText.Get("TenantCommunications_MoveInUseRecommendedDraft")
+            : _selectedConversation is not null && _selectedConversation.HasMoveInWorkflow && _selectedConversation.CanCompleteOnboardingHandoff
+                ? UiText.Get("TenantCommunications_MoveInCompleteHandoff")
+                : _selectedConversation is not null && _selectedConversation.Subject.Contains("maintenance", StringComparison.OrdinalIgnoreCase)
+                    ? UiText.Get("Resident360_OpenPriorityMaintenance")
+                    : _selectedConversation is not null && (_selectedConversation.Subject.Contains("rent", StringComparison.OrdinalIgnoreCase) || _selectedConversation.Subject.Contains("invoice", StringComparison.OrdinalIgnoreCase))
+                        ? UiText.Get("Resident360_PrepareRentReminder")
+                        : _selectedConversation is not null && _selectedConversation.HasActiveTenancy
+                            ? UiText.Get("Nav_Resident360")
+                            : UiText.Get("TenantCommunications_AddMessage");
+
+    private string NextActionMessage
+        => _selectedConversation is not null && _selectedConversation.HasMoveInWorkflow && _selectedConversation.MoveInMissingItemCount > 0 && !string.IsNullOrWhiteSpace(_selectedConversation.MoveInNextDraftBody)
+            ? UiText.Get("TenantCommunications_NextActionMessageMoveInDraft")
+            : _selectedConversation is not null && _selectedConversation.HasMoveInWorkflow && _selectedConversation.CanCompleteOnboardingHandoff
+                ? UiText.Get("TenantCommunications_NextActionMessageMoveInHandoff")
+                : _selectedConversation is not null && _selectedConversation.Subject.Contains("maintenance", StringComparison.OrdinalIgnoreCase)
+                    ? UiText.Get("TenantCommunications_NextActionMessageMaintenance")
+                    : _selectedConversation is not null && (_selectedConversation.Subject.Contains("rent", StringComparison.OrdinalIgnoreCase) || _selectedConversation.Subject.Contains("invoice", StringComparison.OrdinalIgnoreCase))
+                        ? UiText.Get("TenantCommunications_NextActionMessageRent")
+                        : _selectedConversation is not null && _selectedConversation.HasActiveTenancy
+                            ? UiText.Get("TenantCommunications_NextActionMessageResident360")
+                            : UiText.Get("TenantCommunications_NextActionMessageReply");
+
+    private Color NextActionColor
+        => _selectedConversation is not null && _selectedConversation.HasMoveInWorkflow && _selectedConversation.MoveInMissingItemCount > 0 && !string.IsNullOrWhiteSpace(_selectedConversation.MoveInNextDraftBody)
+            ? Color.Primary
+            : _selectedConversation is not null && _selectedConversation.HasMoveInWorkflow && _selectedConversation.CanCompleteOnboardingHandoff
+                ? Color.Success
+                : _selectedConversation is not null && _selectedConversation.Subject.Contains("maintenance", StringComparison.OrdinalIgnoreCase)
+                    ? Color.Warning
+                    : _selectedConversation is not null && (_selectedConversation.Subject.Contains("rent", StringComparison.OrdinalIgnoreCase) || _selectedConversation.Subject.Contains("invoice", StringComparison.OrdinalIgnoreCase))
+                        ? Color.Secondary
+                        : _selectedConversation is not null && _selectedConversation.HasActiveTenancy
+                            ? Color.Info
+                            : Color.Default;
+
+    private string DraftLanguageLabel
+        => UiText.Get(IsFrenchDraftLanguage
+            ? "TenantCommunications_DraftLanguageFrench"
+            : "TenantCommunications_DraftLanguageEnglish");
+
+    private string RecommendedNextStopLabel
+        => _selectedConversation is not null && _selectedConversation.HasActiveTenancy
+            ? UiText.Get("Nav_Resident360")
+            : _selectedConversation is not null && MatchesConversationFilter(_selectedConversation, "maintenance")
+                ? UiText.Get("Nav_Maintenance")
+                : _selectedConversation is not null && MatchesConversationFilter(_selectedConversation, "rent")
+                    ? UiText.Get("Nav_RentPayments")
+                    : UiText.Get("Nav_Resident360");
+
+    private Color RecommendedNextStopColor
+        => _selectedConversation is not null && _selectedConversation.HasActiveTenancy
+            ? Color.Info
+            : _selectedConversation is not null && MatchesConversationFilter(_selectedConversation, "maintenance")
+                ? Color.Warning
+                : _selectedConversation is not null && MatchesConversationFilter(_selectedConversation, "rent")
+                    ? Color.Secondary
+                    : Color.Primary;
 
     private Guid? FormTenantId
     {
@@ -193,7 +575,135 @@
 
     protected override async Task OnInitializedAsync()
     {
+        if (!string.IsNullOrWhiteSpace(Filter))
+        {
+            _selectedConversationFilter = Filter;
+        }
+
         await ReloadAsync();
+    }
+
+    private async Task CompleteOnboardingHandoffAsync(Guid leaseId)
+    {
+        var completed = await DataService.CompleteLeaseOnboardingHandoffAsync(leaseId);
+        if (!completed)
+        {
+            return;
+        }
+
+        await ReloadAsync();
+    }
+
+    private void OpenRentFollowUp()
+    {
+        if (_selectedConversation?.TenantId is null)
+        {
+            return;
+        }
+
+        NavigationManager.NavigateTo(WithDemoMode($"/rent-payments?tenantId={_selectedConversation.TenantId}"));
+    }
+
+    private Task OpenRentFollowUpAsync()
+    {
+        OpenRentFollowUp();
+        return Task.CompletedTask;
+    }
+
+    private void OpenTenantProfile()
+    {
+        if (_selectedConversation?.TenantId is null)
+        {
+            return;
+        }
+
+        NavigationManager.NavigateTo(WithDemoMode($"/tenants?tenantId={_selectedConversation.TenantId}"));
+    }
+
+    private void OpenResident360()
+    {
+        if (_selectedConversation?.TenantId is null)
+        {
+            return;
+        }
+
+        NavigationManager.NavigateTo(WithDemoMode($"/resident-360?tenantId={_selectedConversation.TenantId}"));
+    }
+
+    private Task OpenResident360Async()
+    {
+        OpenResident360();
+        return Task.CompletedTask;
+    }
+
+    private Task OpenMaintenanceWorkspaceAsync()
+    {
+        if (_selectedConversation?.MaintenanceRequestId is Guid maintenanceRequestId)
+        {
+            NavigationManager.NavigateTo(WithDemoMode($"/maintenance?ticket={maintenanceRequestId}#ticket-{maintenanceRequestId}"));
+            return Task.CompletedTask;
+        }
+
+        NavigationManager.NavigateTo(WithDemoMode("/maintenance"));
+        return Task.CompletedTask;
+    }
+
+    private void OpenLeaseProfile()
+    {
+        if (_selectedConversation?.TenantId is null)
+        {
+            return;
+        }
+
+        NavigationManager.NavigateTo(WithDemoMode($"/leases?tenantId={_selectedConversation.TenantId}"));
+    }
+
+    private Task PreparePostMoveInMessageAsync()
+    {
+        if (_selectedConversation is null)
+        {
+            return Task.CompletedTask;
+        }
+
+        OpenCreateMessagePanel();
+        var unitLabel = string.IsNullOrWhiteSpace(_selectedConversation.UnitLabel)
+            ? UiText.Get("TenantCommunications_UnitFallback")
+            : _selectedConversation.UnitLabel;
+        _newMessage.Body = string.Equals(CurrentOrganization.PreferredLanguage, "fr-CA", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(CurrentOrganization.PreferredLanguage, "fr", StringComparison.OrdinalIgnoreCase)
+            ? $"Bonjour {_selectedConversation.TenantName}, bienvenue à {unitLabel}. Nous espérons que votre entrée s’est bien passée. Répondez à ce message si vous avez besoin d’aide, des questions de maintenance ou d’un accompagnement pour vos premières étapes de loyer et de compte."
+            : $"Hello {_selectedConversation.TenantName}, welcome to {unitLabel}. We hope your move-in went smoothly. Please reply if you need anything, have maintenance questions, or would like help with your first rent and account setup steps.";
+        _newMessage.IsAISuggested = true;
+        return Task.CompletedTask;
+    }
+
+    private Task OpenCreateMessagePanelAsync()
+    {
+        OpenCreateMessagePanel();
+        return Task.CompletedTask;
+    }
+
+    private Task OpenRecommendedNextStopAsync()
+        => _selectedConversation is not null && _selectedConversation.HasActiveTenancy
+            ? OpenResident360Async()
+            : _selectedConversation is not null && MatchesConversationFilter(_selectedConversation, "maintenance")
+                ? OpenMaintenanceWorkspaceAsync()
+                : _selectedConversation is not null && MatchesConversationFilter(_selectedConversation, "rent")
+                    ? OpenRentFollowUpAsync()
+                    : OpenResident360Async();
+
+    private Task OpenMaintenanceEntryDraftAsync()
+    {
+        Compose = "maintenance-entry";
+        _composeHandled = false;
+        return ApplyQueryComposerAsync();
+    }
+
+    private Task OpenRentReminderDraftAsync()
+    {
+        Compose = "rent-reminder";
+        _composeHandled = false;
+        return ApplyQueryComposerAsync();
     }
 
     private async Task ReloadAsync()
@@ -201,6 +711,9 @@
         _conversations = await DataService.GetTenantConversationsAsync();
         _tenants = await DataService.GetTenantsAsync();
         _templates = await DataService.GetTenantMessageTemplatesAsync();
+        _selectedInvoiceForCompose = InvoiceId.HasValue
+            ? (await DataService.GetInvoicesAsync()).FirstOrDefault(x => x.InvoiceId == InvoiceId.Value)
+            : null;
         if (ConversationId.HasValue)
         {
             var queryConversation = _conversations.FirstOrDefault(x => x.TenantConversationId == ConversationId.Value);
@@ -208,6 +721,28 @@
             {
                 _selectedConversation = queryConversation;
                 _messages = await DataService.GetTenantMessagesAsync(queryConversation.TenantConversationId);
+                _selectedMoveInContext = queryConversation.LeaseId.HasValue
+                    ? await DataService.GetLeaseMoveInContextAsync(queryConversation.LeaseId.Value)
+                    : null;
+                await ApplyQueryComposerAsync();
+                return;
+            }
+        }
+
+        if (TenantId.HasValue)
+        {
+            var tenantConversation = _conversations
+                .Where(x => x.TenantId == TenantId.Value)
+                .OrderByDescending(x => x.LastContactUtc ?? DateTime.MinValue)
+                .FirstOrDefault();
+            if (tenantConversation is not null)
+            {
+                _selectedConversation = tenantConversation;
+                _messages = await DataService.GetTenantMessagesAsync(tenantConversation.TenantConversationId);
+                _selectedMoveInContext = tenantConversation.LeaseId.HasValue
+                    ? await DataService.GetLeaseMoveInContextAsync(tenantConversation.LeaseId.Value)
+                    : null;
+                await ApplyQueryComposerAsync();
                 return;
             }
         }
@@ -218,14 +753,106 @@
             if (_selectedConversation is not null)
             {
                 _messages = await DataService.GetTenantMessagesAsync(_selectedConversation.TenantConversationId);
+                _selectedMoveInContext = _selectedConversation.LeaseId.HasValue
+                    ? await DataService.GetLeaseMoveInContextAsync(_selectedConversation.LeaseId.Value)
+                    : null;
+            }
+            else
+            {
+                _selectedMoveInContext = null;
             }
         }
+
+        await ApplyQueryComposerAsync();
+    }
+
+    private void SetConversationFilter(string filterKey)
+        => _selectedConversationFilter = filterKey;
+
+    private int CountConversations(string filterKey)
+        => _conversations.Count(x => MatchesConversationFilter(x, filterKey));
+
+    private int GetPriorityScore(TenantConversationSummaryDto conversation)
+    {
+        var subject = conversation.Subject ?? string.Empty;
+        var status = conversation.Status ?? string.Empty;
+
+        if (string.Equals(status, "Awaiting reply", StringComparison.OrdinalIgnoreCase))
+        {
+            return 5;
+        }
+
+        if (subject.Contains("rent", StringComparison.OrdinalIgnoreCase) || subject.Contains("invoice", StringComparison.OrdinalIgnoreCase) || subject.Contains("n4", StringComparison.OrdinalIgnoreCase))
+        {
+            return 4;
+        }
+
+        if (conversation.HasMoveInWorkflow && conversation.MoveInMissingItemCount > 0)
+        {
+            return 3;
+        }
+
+        if (subject.Contains("maintenance", StringComparison.OrdinalIgnoreCase) || subject.Contains("repair", StringComparison.OrdinalIgnoreCase))
+        {
+            return 2;
+        }
+
+        if (conversation.HasActiveTenancy)
+        {
+            return 1;
+        }
+
+        return 0;
+    }
+
+    private string GetPriorityLaneLabel(TenantConversationSummaryDto conversation)
+        => GetPriorityScore(conversation) switch
+        {
+            5 => UiText.Get("TenantCommunications_PriorityAwaitingReply"),
+            4 => UiText.Get("TenantCommunications_PriorityRent"),
+            3 => UiText.Get("TenantCommunications_PriorityMoveIn"),
+            2 => UiText.Get("TenantCommunications_PriorityMaintenance"),
+            1 => UiText.Get("TenantCommunications_PriorityActive"),
+            _ => UiText.Get("TenantCommunications_PriorityStandard")
+        };
+
+    private Color GetPriorityLaneColor(TenantConversationSummaryDto conversation)
+        => GetPriorityScore(conversation) switch
+        {
+            5 => Color.Warning,
+            4 => Color.Secondary,
+            3 => Color.Info,
+            2 => Color.Error,
+            1 => Color.Success,
+            _ => Color.Default
+        };
+
+    private bool MatchesSelectedConversationFilter(TenantConversationSummaryDto conversation)
+        => MatchesConversationFilter(conversation, _selectedConversationFilter);
+
+    private static bool MatchesConversationFilter(TenantConversationSummaryDto conversation, string filterKey)
+    {
+        var subject = conversation.Subject ?? string.Empty;
+        var status = conversation.Status ?? string.Empty;
+
+        return filterKey switch
+        {
+            "move-in" => conversation.HasMoveInWorkflow,
+            "rent" => subject.Contains("rent", StringComparison.OrdinalIgnoreCase) || subject.Contains("invoice", StringComparison.OrdinalIgnoreCase),
+            "maintenance" => subject.Contains("maintenance", StringComparison.OrdinalIgnoreCase) || subject.Contains("repair", StringComparison.OrdinalIgnoreCase),
+            "notices" => subject.Contains("notice", StringComparison.OrdinalIgnoreCase) || subject.Contains("n4", StringComparison.OrdinalIgnoreCase) || subject.Contains("n1", StringComparison.OrdinalIgnoreCase),
+            "awaiting-reply" => string.Equals(status, "Awaiting reply", StringComparison.OrdinalIgnoreCase),
+            _ => true
+        };
     }
 
     private async Task SelectConversation(TenantConversationSummaryDto conversation)
     {
         _selectedConversation = conversation;
         _messages = await DataService.GetTenantMessagesAsync(conversation.TenantConversationId);
+        _selectedMoveInContext = conversation.LeaseId.HasValue
+            ? await DataService.GetLeaseMoveInContextAsync(conversation.LeaseId.Value)
+            : null;
         NavigationManager.NavigateTo($"/tenant-communications?conversationId={conversation.TenantConversationId}", replace: true);
     }
 
@@ -264,9 +891,122 @@
             IsAISuggested = true,
             DeliveryMethod = _selectedConversation.Channel
         };
+        ApplyMoveInComposerDefaults();
         _selectedTemplateKey = string.Empty;
         _deliveryDate = DateTime.Now;
         _isMessagePanelOpen = true;
+    }
+
+    private Task UseRecommendedMoveInDraftAsync()
+    {
+        if (_selectedConversation is null || string.IsNullOrWhiteSpace(_selectedConversation.MoveInNextDraftBody))
+        {
+            return Task.CompletedTask;
+        }
+
+        OpenCreateMessagePanel();
+        _newMessage.Body = _selectedConversation.MoveInNextDraftBody;
+        _newMessage.IsAISuggested = true;
+        return Task.CompletedTask;
+    }
+
+    private Task ApplyQueryComposerAsync()
+    {
+        if (_composeHandled || _selectedConversation is null || string.IsNullOrWhiteSpace(Compose))
+        {
+            return Task.CompletedTask;
+        }
+
+        if (string.Equals(Compose, "rent-reminder", StringComparison.OrdinalIgnoreCase))
+        {
+            OpenCreateMessagePanel();
+            var unitLabel = string.IsNullOrWhiteSpace(_selectedConversation.UnitLabel)
+                ? UiText.Get("TenantCommunications_UnitFallback")
+                : _selectedConversation.UnitLabel;
+            var invoiceSummary = _selectedInvoiceForCompose is null
+                ? string.Empty
+                : string.Equals(CurrentOrganization.PreferredLanguage, "fr-CA", StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(CurrentOrganization.PreferredLanguage, "fr", StringComparison.OrdinalIgnoreCase)
+                        ? $" La facture {_selectedInvoiceForCompose.Number} de {_selectedInvoiceForCompose.Balance:C} arrive à échéance le {_selectedInvoiceForCompose.DueDate}."
+                        : $" Invoice {_selectedInvoiceForCompose.Number} for {_selectedInvoiceForCompose.Balance:C} is due on {_selectedInvoiceForCompose.DueDate}.";
+            _newMessage.Body = string.Equals(CurrentOrganization.PreferredLanguage, "fr-CA", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(CurrentOrganization.PreferredLanguage, "fr", StringComparison.OrdinalIgnoreCase)
+                ? $"Bonjour {_selectedConversation.TenantName}, ceci est un rappel amical concernant le solde de loyer actuel pour {unitLabel}.{invoiceSummary} Merci de confirmer votre date prévue de paiement et de nous indiquer si vous souhaitez discuter des prochaines étapes."
+                : $"Hello {_selectedConversation.TenantName}, this is a friendly reminder regarding the current rent balance for {unitLabel}.{invoiceSummary} Please confirm your expected payment date and let us know if you need to discuss the next steps.";
+            _newMessage.IsAISuggested = true;
+            _selectedTemplateKey = "rent-reminder";
+            _composeHandled = true;
+        }
+        else if (string.Equals(Compose, "maintenance-entry", StringComparison.OrdinalIgnoreCase))
+        {
+            OpenCreateMessagePanel();
+            var unitLabel = string.IsNullOrWhiteSpace(_selectedConversation.UnitLabel)
+                ? UiText.Get("TenantCommunications_UnitFallback")
+                : _selectedConversation.UnitLabel;
+            _newMessage.Body = IsFrenchDraftLanguage
+                ? $"Bonjour {_selectedConversation.TenantName}, nous coordonnons actuellement l’accès à {unitLabel} concernant « {_selectedConversation.Subject} ». Merci de confirmer vos disponibilités et toute instruction utile pour finaliser l’intervention."
+                : $"Hello {_selectedConversation.TenantName}, we are currently coordinating access to {unitLabel} regarding '{_selectedConversation.Subject}'. Please confirm your availability and any helpful access instructions so we can finalize the service visit.";
+            _newMessage.IsAISuggested = true;
+            _selectedTemplateKey = "maintenance-entry";
+            _composeHandled = true;
+        }
+        else if (string.Equals(Compose, "notice-delivery", StringComparison.OrdinalIgnoreCase))
+        {
+            OpenCreateMessagePanel();
+            var unitLabel = string.IsNullOrWhiteSpace(_selectedConversation.UnitLabel)
+                ? UiText.Get("TenantCommunications_UnitFallback")
+                : _selectedConversation.UnitLabel;
+            _newMessage.Body = IsFrenchDraftLanguage
+                ? $"Bonjour {_selectedConversation.TenantName}, ce message confirme la remise de l’avis lié à {unitLabel}. Merci de répondre pour confirmer la réception et de conserver ce fil pour vos dossiers."
+                : $"Hello {_selectedConversation.TenantName}, this message confirms delivery of the related notice for {unitLabel}. Please reply to confirm receipt and keep this thread for your records.";
+            _newMessage.IsAISuggested = true;
+            _selectedTemplateKey = "notice-delivery";
+            _composeHandled = true;
+        }
+        else if (string.Equals(Compose, "n4-prep", StringComparison.OrdinalIgnoreCase))
+        {
+            OpenCreateMessagePanel();
+            var unitLabel = string.IsNullOrWhiteSpace(_selectedConversation.UnitLabel)
+                ? UiText.Get("TenantCommunications_UnitFallback")
+                : _selectedConversation.UnitLabel;
+            var invoiceSummary = _selectedInvoiceForCompose is null
+                ? string.Empty
+                : IsFrenchDraftLanguage
+                    ? $" Le solde actuel lié à la facture {_selectedInvoiceForCompose.Number} est de {_selectedInvoiceForCompose.Balance:C} et l’échéance était le {_selectedInvoiceForCompose.DueDate}."
+                    : $" The current balance tied to invoice {_selectedInvoiceForCompose.Number} is {_selectedInvoiceForCompose.Balance:C} and the due date was {_selectedInvoiceForCompose.DueDate}.";
+            _newMessage.Body = IsFrenchDraftLanguage
+                ? $"Bonjour {_selectedConversation.TenantName}, nous faisons un suivi du loyer impayé pour {unitLabel}.{invoiceSummary} Merci de nous répondre rapidement afin de confirmer votre calendrier de paiement avant toute étape formelle de type N4."
+                : $"Hello {_selectedConversation.TenantName}, we are following up on the outstanding rent for {unitLabel}.{invoiceSummary} Please reply promptly to confirm your payment timing before any formal N4 notice steps are reviewed.";
+            _newMessage.IsAISuggested = true;
+            _selectedTemplateKey = "n4-prep";
+            _composeHandled = true;
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private void ApplyMoveInComposerDefaults()
+    {
+        if (_selectedConversation is null || !_selectedConversation.HasMoveInWorkflow)
+        {
+            return;
+        }
+
+        _newMessage.DeliveryProof = BuildMoveInDeliveryProof();
+    }
+
+    private string BuildMoveInDeliveryProof()
+    {
+        if (_selectedConversation is null)
+        {
+            return string.Empty;
+        }
+
+        var unitLabel = string.IsNullOrWhiteSpace(_selectedConversation.UnitLabel)
+            ? UiText.Get("TenantCommunications_UnitFallback")
+            : _selectedConversation.UnitLabel;
+
+        return $"Move-in follow-up prepared for {_selectedConversation.TenantName} regarding {unitLabel} in thread '{_selectedConversation.Subject}'.";
     }
 
     private void CloseMessagePanel() => _isMessagePanelOpen = false;
@@ -306,6 +1046,66 @@
         await ReloadAsync();
         CloseMessagePanel();
     }
+
+    private async Task CompleteMoveInActionAsync(Guid leaseId, string actionKey)
+    {
+        var updated = await DataService.CompleteLeaseMoveInActionAsync(leaseId, actionKey);
+        if (!updated)
+        {
+            return;
+        }
+
+        await ReloadAsync();
+    }
+
+    private async Task AddMoveInDocumentAsync(Guid leaseId, string documentType)
+    {
+        var added = await DataService.AddLeaseMoveInDocumentAsync(
+            leaseId,
+            documentType,
+            $"{GetMoveInDocumentTypeLabel(documentType)} - {_selectedConversation?.TenantName}.pdf",
+            $"Added from tenant communications thread for {_selectedConversation?.Subject}.");
+        if (!added)
+        {
+            return;
+        }
+
+        await ReloadAsync();
+    }
+
+    private string GetMoveInDocumentTypeLabel(string documentType)
+        => documentType switch
+        {
+            "SignedLease" => UiText.Get("Leases_MoveInDocumentTypeSignedLease"),
+            "InsuranceProof" => UiText.Get("Leases_MoveInDocumentTypeInsuranceProof"),
+            "GovernmentId" => UiText.Get("Leases_MoveInDocumentTypeGovernmentId"),
+            "IncomeProof" => UiText.Get("Leases_MoveInDocumentTypeIncomeProof"),
+            "DepositReceipt" => UiText.Get("Leases_MoveInDocumentTypeDepositReceipt"),
+            _ => documentType
+        };
+
+    private static bool IsInternalTemplateDocument(string documentType)
+        => documentType is "DepositReceipt" or "IncomeProof" or "GovernmentId";
+
+    private string GetInternalTemplateUrl(Guid leaseId, string documentType)
+    {
+        var propertyName = Uri.EscapeDataString(_selectedMoveInContext?.PropertyName ?? string.Empty);
+        var unitLabel = Uri.EscapeDataString(_selectedMoveInContext?.UnitLabel ?? string.Empty);
+        var tenantName = Uri.EscapeDataString(_selectedMoveInContext?.TenantName ?? string.Empty);
+        return $"/docs/move-in/{documentType}?propertyName={propertyName}&unitLabel={unitLabel}&tenantName={tenantName}";
+    }
+
+    private string GetOfficialDocumentUrl(string documentType)
+        => documentType switch
+        {
+            "SignedLease" when string.Equals(CurrentOrganization.Province, "ON", StringComparison.OrdinalIgnoreCase)
+                => string.Equals(CurrentOrganization.PreferredLanguage, "fr-CA", StringComparison.OrdinalIgnoreCase)
+                    ? "/docs/ontario-standard-lease"
+                    : "/docs/ontario-standard-lease",
+            "InsuranceProof" when string.Equals(CurrentOrganization.Province, "ON", StringComparison.OrdinalIgnoreCase)
+                => "https://www.fsrao.ca/consumers/property-and-casualty-insurance",
+            _ => string.Empty
+        };
 
     private static string FormatDeliverySummary(TenantMessageSummaryDto message)
     {

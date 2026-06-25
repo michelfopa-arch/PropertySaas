@@ -890,25 +890,30 @@ app.MapGet("/export/evidence-pack/{maintenanceRequestId:guid}/pdf", async (Guid 
 
 app.MapGet("/docs/ontario-standard-lease", () =>
 {
-    var text = "Ontario Standard Lease Package\n\n- Landlord Information\n- Tenant Information\n- Rent and Services\n- Mandatory Ontario disclosures\n- Signature checklist";
-    return Results.File(Encoding.UTF8.GetBytes(text), "text/plain", "ontario-standard-lease.txt");
+    return Results.Redirect("https://forms.mgcs.gov.on.ca/dataset/edff7620-980b-455f-9666-643196d8312f/resource/05677ea2-3173-4c0e-9a14-7a06cbcb41b9/download/2229e_standard-lease_static.pdf");
 });
 
 app.MapGet("/docs/n4-template", () =>
 {
-    var text = "N4 Notice Template\n\nUse for non-payment workflow review. Verify legal advice and service rules before issuance.";
-    return Results.File(Encoding.UTF8.GetBytes(text), "text/plain", "n4-template.txt");
+    return Results.Redirect("https://tribunalsontario.ca/documents/ltb/Notices%20of%20Termination%20%26%20Instructions/N4.pdf");
 });
 
 app.MapGet("/docs/n1-template", () =>
 {
-    var text = "N1 Rent Increase Notice Template\n\nTrack notice windows, guideline limits and service dates.";
-    return Results.File(Encoding.UTF8.GetBytes(text), "text/plain", "n1-template.txt");
+    return Results.Redirect("https://tribunalsontario.ca/documents/ltb/Notices%20of%20Rent%20Increase%20%26%20Instructions/N1.pdf");
 });
 
 app.MapGet("/docs/jurisdiction/lease-package", ([FromServices] CurrentOrganization current) =>
 {
     var profile = current.Jurisdiction;
+    if (profile.OfficialDocumentUrls.TryGetValue("lease-package", out var officialUrl))
+    {
+        return Results.Redirect(string.Equals(current.PreferredLanguage, "fr-CA", StringComparison.OrdinalIgnoreCase)
+            && profile.OfficialDocumentUrls.TryGetValue("lease-package-fr", out var officialFrenchUrl)
+                ? officialFrenchUrl
+                : officialUrl);
+    }
+
     var text = $"{profile.LeasePackageLabel}\n\nProvince: {profile.ProvinceDisplayName}\nLanguage: {current.PreferredLanguage}\n\n- Prepare jurisdiction-specific lease wording\n- Confirm required disclosures\n- Track signature and delivery audit trail";
     return Results.File(Encoding.UTF8.GetBytes(text), "text/plain", $"{profile.ProvinceCode.ToLowerInvariant()}-lease-package.txt");
 });
@@ -921,8 +926,73 @@ app.MapGet("/docs/jurisdiction/{documentKey}", (string documentKey, [FromService
         return Results.NotFound();
     }
 
+    if (profile.OfficialDocumentUrls.TryGetValue(documentKey, out var officialDocumentUrl))
+    {
+        return Results.Redirect(officialDocumentUrl);
+    }
+
     var text = $"{label}\n\nProvince: {profile.ProvinceDisplayName}\nLanguage: {current.PreferredLanguage}\nDocument key: {documentKey}\n\n- Use the jurisdiction-specific workflow\n- Confirm current legal wording before issue\n- Retain audit trail for delivery and acknowledgment";
     return Results.File(Encoding.UTF8.GetBytes(text), "text/plain", $"{profile.ProvinceCode.ToLowerInvariant()}-{documentKey}.txt");
+});
+
+app.MapGet("/docs/move-in/{documentType}", (string documentType, [FromQuery] string? propertyName, [FromQuery] string? unitLabel, [FromQuery] string? tenantName, [FromServices] CurrentOrganization current) =>
+{
+    static (string Title, string Subtitle, IReadOnlyList<string> BulletPoints) ResolveTemplate(string type)
+        => type switch
+        {
+            "DepositReceipt" => (
+                "Move-in deposit receipt",
+                "Internal receipt template for onboarding and audit trail.",
+                new[]
+                {
+                    "Confirm amount received and payment method.",
+                    "Reference the related lease and unit.",
+                    "Capture who accepted the funds and when.",
+                    "Provide a copy to the resident for records."
+                }),
+            "IncomeProof" => (
+                "Income verification checklist",
+                "Internal review sheet for application-to-lease conversion.",
+                new[]
+                {
+                    "Attach pay stubs, employment letter or bank statements.",
+                    "Verify affordability against monthly rent target.",
+                    "Log any manual exceptions or guarantor notes.",
+                    "Keep approval evidence in the lease package."
+                }),
+            "GovernmentId" => (
+                "Government ID verification sheet",
+                "Internal identity verification template for move-in readiness.",
+                new[]
+                {
+                    "Review one primary government-issued photo ID.",
+                    "Confirm name matches the lease package.",
+                    "Record review date and reviewer initials.",
+                    "Do not expose sensitive ID values in exported notes."
+                }),
+            _ => (
+                "Move-in document template",
+                "Internal onboarding template.",
+                new[]
+                {
+                    "Collect the required onboarding evidence.",
+                    "Review the package before activation.",
+                    "Log the audit trail in the tenant thread."
+                })
+        };
+
+    var template = ResolveTemplate(documentType);
+    var pdf = MoveInDocumentPdfBuilder.Build(
+        string.IsNullOrWhiteSpace(current.OrganizationName) ? "PropertySaaS" : current.OrganizationName,
+        string.IsNullOrWhiteSpace(propertyName) ? "Property" : propertyName,
+        string.IsNullOrWhiteSpace(unitLabel) ? "Unit" : unitLabel,
+        string.IsNullOrWhiteSpace(tenantName) ? "Tenant" : tenantName,
+        template.Title,
+        template.Subtitle,
+        template.BulletPoints,
+        DateTime.UtcNow);
+
+    return Results.File(pdf, "application/pdf", $"{documentType.ToLowerInvariant()}-template.pdf");
 });
 
 app.MapPost("/notifications/compliance/digest", async ([FromServices] CurrentOrganization current, [FromServices] INotificationService notifications) =>
@@ -1171,6 +1241,18 @@ BEGIN
         CONSTRAINT [PK_Leads] PRIMARY KEY ([Id])
     );
 END;
+IF COL_LENGTH('Leads', 'MonthlyIncome') IS NULL
+    ALTER TABLE [Leads] ADD [MonthlyIncome] decimal(18,2) NOT NULL CONSTRAINT [DF_Leads_MonthlyIncome] DEFAULT 0;
+IF COL_LENGTH('Leads', 'DesiredMoveInDate') IS NULL
+    ALTER TABLE [Leads] ADD [DesiredMoveInDate] date NULL;
+IF COL_LENGTH('Leads', 'OccupantCount') IS NULL
+    ALTER TABLE [Leads] ADD [OccupantCount] int NOT NULL CONSTRAINT [DF_Leads_OccupantCount] DEFAULT 0;
+IF COL_LENGTH('Leads', 'HasPets') IS NULL
+    ALTER TABLE [Leads] ADD [HasPets] bit NOT NULL CONSTRAINT [DF_Leads_HasPets] DEFAULT 0;
+IF COL_LENGTH('Leads', 'CreditScore') IS NULL
+    ALTER TABLE [Leads] ADD [CreditScore] int NOT NULL CONSTRAINT [DF_Leads_CreditScore] DEFAULT 0;
+IF COL_LENGTH('Leads', 'ConsentToScreening') IS NULL
+    ALTER TABLE [Leads] ADD [ConsentToScreening] bit NOT NULL CONSTRAINT [DF_Leads_ConsentToScreening] DEFAULT 0;
 IF OBJECT_ID('Showings', 'U') IS NULL
 BEGIN
     CREATE TABLE [Showings] (
@@ -1203,6 +1285,14 @@ BEGIN
         CONSTRAINT [PK_Invoices] PRIMARY KEY ([Id])
     );
 END;
+IF COL_LENGTH('Leases', 'DepositReceived') IS NULL
+    ALTER TABLE [Leases] ADD [DepositReceived] bit NOT NULL CONSTRAINT [DF_Leases_DepositReceived] DEFAULT 0;
+IF COL_LENGTH('Leases', 'InsuranceProofReceived') IS NULL
+    ALTER TABLE [Leases] ADD [InsuranceProofReceived] bit NOT NULL CONSTRAINT [DF_Leases_InsuranceProofReceived] DEFAULT 0;
+IF COL_LENGTH('Leases', 'MoveInChecklistCompleted') IS NULL
+    ALTER TABLE [Leases] ADD [MoveInChecklistCompleted] bit NOT NULL CONSTRAINT [DF_Leases_MoveInChecklistCompleted] DEFAULT 0;
+IF COL_LENGTH('Leases', 'MoveInNotes') IS NULL
+    ALTER TABLE [Leases] ADD [MoveInNotes] nvarchar(max) NOT NULL CONSTRAINT [DF_Leases_MoveInNotes] DEFAULT N'';
 IF OBJECT_ID('PaymentEntries', 'U') IS NULL
 BEGIN
     CREATE TABLE [PaymentEntries] (
@@ -1241,6 +1331,10 @@ BEGIN
 END;
 IF COL_LENGTH('MediaAssets', 'ListingId') IS NULL
     ALTER TABLE [MediaAssets] ADD [ListingId] uniqueidentifier NULL;
+IF COL_LENGTH('MediaAssets', 'LeaseId') IS NULL
+    ALTER TABLE [MediaAssets] ADD [LeaseId] uniqueidentifier NULL;
+IF COL_LENGTH('MediaAssets', 'DocumentType') IS NULL
+    ALTER TABLE [MediaAssets] ADD [DocumentType] nvarchar(max) NOT NULL CONSTRAINT [DF_MediaAssets_DocumentType] DEFAULT N'';
 IF OBJECT_ID('AISuggestionLogs', 'U') IS NULL
 BEGIN
     CREATE TABLE [AISuggestionLogs] (

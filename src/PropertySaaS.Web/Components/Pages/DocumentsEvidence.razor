@@ -16,29 +16,68 @@
         <MudText Typo="Typo.body2">@UiText.Get("DocumentsEvidence_Subtitle")</MudText>
     </MudStack>
 
-    <MudGrid Spacing="3">
-        <MudItem xs="12" md="6">
-            <MudPaper Class="pa-4 marketing-card h-100" Elevation="0">
-                <MudText Typo="Typo.h6">@UiText.Get("DocumentsEvidence_MarketingAssetsTitle")</MudText>
-                <MudList T="string" Dense="true" Class="mt-3">
-                    <MudListItem T="string">@UiText.Get("DocumentsEvidence_Marketing1")</MudListItem>
-                    <MudListItem T="string">@UiText.Get("DocumentsEvidence_Marketing2")</MudListItem>
-                    <MudListItem T="string">@UiText.Get("DocumentsEvidence_Marketing3")</MudListItem>
-                </MudList>
-            </MudPaper>
-        </MudItem>
-        <MudItem xs="12" md="6">
-            <MudPaper Class="pa-4 marketing-card h-100" Elevation="0">
-                <MudText Typo="Typo.h6">@UiText.Get("DocumentsEvidence_EvidenceTitle")</MudText>
-                <MudList T="string" Dense="true" Class="mt-3">
-                    <MudListItem T="string">@UiText.Get("DocumentsEvidence_Evidence1")</MudListItem>
-                    <MudListItem T="string">@UiText.Get("DocumentsEvidence_Evidence2")</MudListItem>
-                    <MudListItem T="string">@UiText.Get("DocumentsEvidence_Evidence3")</MudListItem>
-                </MudList>
-            </MudPaper>
-        </MudItem>
-    </MudGrid>
+    <DemoJourneyBanner CurrentStepKey="evidence" ResidentRoute="@Resident360Route" />
 
+    <MudPaper Class="pa-3 marketing-card" Elevation="0">
+        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Wrap="Wrap.Wrap">
+            <MudText Typo="Typo.subtitle2">@UiText.Get("Common_RecommendedNextStop")</MudText>
+            <MudButton Variant="Variant.Text" Color="@RecommendedNextStopColor" OnClick="OpenRecommendedNextStopAsync">@RecommendedNextStopLabel</MudButton>
+        </MudStack>
+    </MudPaper>
+
+    @if (!IsDemoCleanView)
+    {
+        <MudGrid Spacing="3">
+            <MudItem xs="12" md="6">
+                <MudPaper Class="pa-4 marketing-card h-100" Elevation="0">
+                    <MudText Typo="Typo.h6">@UiText.Get("DocumentsEvidence_MarketingAssetsTitle")</MudText>
+                    <MudList T="string" Dense="true" Class="mt-3">
+                        <MudListItem T="string">@UiText.Get("DocumentsEvidence_Marketing1")</MudListItem>
+                        <MudListItem T="string">@UiText.Get("DocumentsEvidence_Marketing2")</MudListItem>
+                        <MudListItem T="string">@UiText.Get("DocumentsEvidence_Marketing3")</MudListItem>
+                    </MudList>
+                </MudPaper>
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <MudPaper Class="pa-4 marketing-card h-100" Elevation="0">
+                    <MudText Typo="Typo.h6">@UiText.Get("DocumentsEvidence_EvidenceTitle")</MudText>
+                    <MudList T="string" Dense="true" Class="mt-3">
+                        <MudListItem T="string">@UiText.Get("DocumentsEvidence_Evidence1")</MudListItem>
+                        <MudListItem T="string">@UiText.Get("DocumentsEvidence_Evidence2")</MudListItem>
+                        <MudListItem T="string">@UiText.Get("DocumentsEvidence_Evidence3")</MudListItem>
+                    </MudList>
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+    }
+
+    <MudPaper Class="pa-4 property-detail-panel" Elevation="0">
+        <MudText Typo="Typo.h6">@UiText.Get("DocumentsEvidence_InsightTitle")</MudText>
+        <MudGrid Spacing="2" Class="mt-2">
+            <MudItem xs="12" md="4"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">@UiText.Get("DocumentsEvidence_InsightUrgency")</MudText><MudChip T="string" Variant="Variant.Outlined" Color="@InsightColor" Class="mt-2">@InsightUrgencyLabel</MudChip></MudPaper></MudItem>
+            <MudItem xs="12" md="4"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">@UiText.Get("DocumentsEvidence_InsightFocus")</MudText><MudChip T="string" Variant="Variant.Outlined" Color="@InsightColor" Class="mt-2">@InsightFocusLabel</MudChip></MudPaper></MudItem>
+            <MudItem xs="12" md="4"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">@UiText.Get("DocumentsEvidence_InsightNextAction")</MudText><MudButton Class="mt-2" Variant="Variant.Text" Color="@InsightColor" OnClick="OpenInsightNextActionAsync">@InsightActionLabel</MudButton></MudPaper></MudItem>
+        </MudGrid>
+        <MudText Typo="Typo.body2" Class="mt-3">@InsightMessage</MudText>
+    </MudPaper>
+
+    <MudPaper Class="pa-4 marketing-card" Elevation="0">
+        <MudText Typo="Typo.h6">@UiText.Get("DocumentsEvidence_DemoStoryTitle")</MudText>
+        <MudText Typo="Typo.body2" Class="mt-1">@UiText.Get("DocumentsEvidence_DemoStoryBody")</MudText>
+        <MudList T="string" Dense="true" Class="mt-3">
+            <MudListItem T="string">@UiText.Get("DocumentsEvidence_DemoStoryStep1")</MudListItem>
+            <MudListItem T="string">@UiText.Get("DocumentsEvidence_DemoStoryStep2")</MudListItem>
+            <MudListItem T="string">@UiText.Get("DocumentsEvidence_DemoStoryStep3")</MudListItem>
+        </MudList>
+        <MudStack Row="true" Spacing="1" Class="mt-3" Wrap="Wrap.Wrap">
+            <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="OpenInsightNextActionAsync">@InsightActionLabel</MudButton>
+            <MudButton Variant="Variant.Text" Color="Color.Secondary" OnClick="OpenPriorityMaintenanceAsync">@UiText.Get("DocumentsEvidence_OpenMaintenance")</MudButton>
+            <MudButton Variant="Variant.Text" Color="Color.Warning" OnClick="OpenPriorityConversationAsync">@UiText.Get("DocumentsEvidence_OpenResidentThread")</MudButton>
+        </MudStack>
+    </MudPaper>
+
+    @if (!IsDemoCleanView)
+    {
     <MudGrid Spacing="2">
         <MudItem xs="12" md="4">
             <MudTextField T="string"
@@ -86,6 +125,7 @@
             </MudSelect>
         </MudItem>
     </MudGrid>
+    }
 
     <MudGrid Spacing="3">
         <MudItem xs="12" md="6">
@@ -116,28 +156,34 @@
                 </MudList>
             </MudPaper>
         </MudItem>
-        <MudItem xs="12" md="6">
-            <MudPaper Class="pa-4 marketing-card h-100" Elevation="0">
-                <MudText Typo="Typo.h6">@UiText.Get("DocumentsEvidence_AISuggestionsTitle")</MudText>
-                <MudList T="string" Dense="true" Class="mt-3">
-                    @foreach (var suggestion in _suggestions.Take(6))
-                    {
-                        <MudListItem T="string">@suggestion.SuggestionType - @suggestion.PromptSummary</MudListItem>
-                    }
-                </MudList>
-            </MudPaper>
-        </MudItem>
+        @if (!IsDemoCleanView)
+        {
+            <MudItem xs="12" md="6">
+                <MudPaper Class="pa-4 marketing-card h-100" Elevation="0">
+                    <MudText Typo="Typo.h6">@UiText.Get("DocumentsEvidence_AISuggestionsTitle")</MudText>
+                    <MudList T="string" Dense="true" Class="mt-3">
+                        @foreach (var suggestion in _suggestions.Take(6))
+                        {
+                            <MudListItem T="string">@suggestion.SuggestionType - @suggestion.PromptSummary</MudListItem>
+                        }
+                    </MudList>
+                </MudPaper>
+            </MudItem>
+        }
     </MudGrid>
 
-    <MudPaper Class="pa-4 marketing-card" Elevation="0">
-        <MudText Typo="Typo.h6">@UiText.Get("DocumentsEvidence_VendorReadinessTitle")</MudText>
-        <MudList T="string" Dense="true" Class="mt-3">
-            @foreach (var vendor in _vendors.Take(6))
-            {
-                <MudListItem T="string">@vendor.Name - @vendor.Trade - @vendor.ServiceArea</MudListItem>
-            }
-        </MudList>
-    </MudPaper>
+    @if (!IsDemoCleanView)
+    {
+        <MudPaper Class="pa-4 marketing-card" Elevation="0">
+            <MudText Typo="Typo.h6">@UiText.Get("DocumentsEvidence_VendorReadinessTitle")</MudText>
+            <MudList T="string" Dense="true" Class="mt-3">
+                @foreach (var vendor in _vendors.Take(6))
+                {
+                    <MudListItem T="string">@vendor.Name - @vendor.Trade - @vendor.ServiceArea</MudListItem>
+                }
+            </MudList>
+        </MudPaper>
+    }
 
     <MudPaper Class="pa-4 marketing-card" Elevation="0">
         <MudText Typo="Typo.h6">@UiText.Get("DocumentsEvidence_MaintenanceEvidenceTitle")</MudText>
@@ -231,12 +277,16 @@
 </MudStack>
 
 @code {
+    [SupplyParameterFromQuery(Name = "demo")]
+    public string? DemoMode { get; set; }
+
     private List<MediaAssetSummaryDto> _mediaAssets = new();
     private List<AISuggestionSummaryDto> _suggestions = new();
     private List<VendorSummaryDto> _vendors = new();
     private List<MaintenanceEvidenceSummaryDto> _maintenanceEvidence = new();
     private List<ListingSummaryDto> _listings = new();
     private List<MaintenanceRequest> _maintenanceRequests = new();
+    private List<TenantConversationSummaryDto> _conversations = new();
     private MediaAsset _newMedia = new() { Category = MediaAssetCategory.PropertyPhoto };
     private MediaAsset _editMedia = new() { Category = MediaAssetCategory.PropertyPhoto };
     private bool _isMediaPanelOpen;
@@ -248,8 +298,33 @@
     private string _selectedTicketFilter = string.Empty;
     private string _selectedPropertyFilter = string.Empty;
     private string _selectedStatusFilter = string.Empty;
+    private MaintenanceEvidenceSummaryDto? PriorityEvidence => FilteredMaintenanceEvidence.OrderByDescending(x => x.EvidenceCount).ThenBy(x => x.Status).FirstOrDefault();
+    private bool IsDemoCleanView => string.Equals(DemoMode, "clean", StringComparison.OrdinalIgnoreCase);
+    private string DemoModeQuery => IsDemoCleanView ? "demo=clean" : string.Empty;
+    private Guid? ResidentJourneyTenantId => PriorityEvidence is null
+        ? _generatedEvidencePackRequestId.HasValue
+            ? _conversations.FirstOrDefault(x => x.MaintenanceRequestId == _generatedEvidencePackRequestId.Value)?.TenantId
+            : null
+        : _conversations.FirstOrDefault(x => x.MaintenanceRequestId == PriorityEvidence.MaintenanceRequestId)?.TenantId;
+    private string Resident360Route => ResidentJourneyTenantId.HasValue
+        ? $"/resident-360?tenantId={ResidentJourneyTenantId.Value}"
+        : "/resident-360";
 
     private MediaAsset ActiveMedia => _isMediaCreateMode ? _newMedia : _editMedia;
+
+    private string WithDemoMode(string route)
+    {
+        if (!IsDemoCleanView || string.IsNullOrWhiteSpace(route) || route.Contains("demo=", StringComparison.OrdinalIgnoreCase))
+        {
+            return route;
+        }
+
+        var anchorIndex = route.IndexOf('#');
+        var anchor = anchorIndex >= 0 ? route[anchorIndex..] : string.Empty;
+        var baseRoute = anchorIndex >= 0 ? route[..anchorIndex] : route;
+        var separator = baseRoute.Contains('?') ? "&" : "?";
+        return $"{baseRoute}{separator}{DemoModeQuery}{anchor}";
+    }
     private IEnumerable<string> CategoryOptions => _mediaAssets.Select(x => x.Category).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(x => x);
     private IEnumerable<string> TicketOptions => _maintenanceEvidence.Select(x => x.Title).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(x => x);
     private IEnumerable<string> PropertyOptions => _maintenanceEvidence.Select(x => x.PropertyName).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(x => x);
@@ -271,6 +346,54 @@
         .Where(evidence => string.IsNullOrWhiteSpace(_selectedTicketFilter) || string.Equals(evidence.Title, _selectedTicketFilter, StringComparison.OrdinalIgnoreCase))
         .Where(evidence => string.IsNullOrWhiteSpace(_selectedPropertyFilter) || string.Equals(evidence.PropertyName, _selectedPropertyFilter, StringComparison.OrdinalIgnoreCase))
         .Where(evidence => string.IsNullOrWhiteSpace(_selectedStatusFilter) || string.Equals(evidence.Status, _selectedStatusFilter, StringComparison.OrdinalIgnoreCase));
+    private string InsightUrgencyLabel
+        => PriorityEvidence is not null && PriorityEvidence.EvidenceCount >= 3
+            ? UiText.Get("DocumentsEvidence_InsightUrgencyHigh")
+            : _mediaAssets.Count > 0
+                ? UiText.Get("DocumentsEvidence_InsightUrgencyMedium")
+                : UiText.Get("DocumentsEvidence_InsightUrgencyStable");
+
+    private string InsightFocusLabel
+        => PriorityEvidence is not null && PriorityEvidence.EvidenceCount >= 3
+            ? UiText.Get("DocumentsEvidence_InsightFocusTribunalReady")
+            : _mediaAssets.Count > 0
+                ? UiText.Get("DocumentsEvidence_InsightFocusAssetHygiene")
+                : UiText.Get("DocumentsEvidence_InsightFocusStable");
+
+    private string InsightMessage
+        => PriorityEvidence is not null && PriorityEvidence.EvidenceCount >= 3
+            ? UiText.Get("DocumentsEvidence_InsightMessageTribunalReady")
+            : _mediaAssets.Count > 0
+                ? UiText.Get("DocumentsEvidence_InsightMessageAssetHygiene")
+                : UiText.Get("DocumentsEvidence_InsightMessageStable");
+
+    private string InsightActionLabel
+        => PriorityEvidence is not null && PriorityEvidence.EvidenceCount >= 3
+            ? UiText.Get("DocumentsEvidence_InsightOpenPack")
+            : _mediaAssets.Count > 0
+                ? UiText.Get("DocumentsEvidence_InsightOpenMedia")
+                : UiText.Get("DocumentsEvidence_InsightOpenStable");
+
+    private Color InsightColor
+        => PriorityEvidence is not null && PriorityEvidence.EvidenceCount >= 3
+            ? Color.Warning
+            : _mediaAssets.Count > 0
+                ? Color.Info
+                : Color.Success;
+
+    private string RecommendedNextStopLabel
+        => PriorityEvidence is not null
+            ? UiText.Get("Nav_Maintenance")
+            : _generatedEvidencePackRequestId.HasValue
+                ? UiText.Get("Nav_TenantCommunications")
+                : UiText.Get("Nav_Dashboard");
+
+    private Color RecommendedNextStopColor
+        => PriorityEvidence is not null
+            ? Color.Warning
+            : _generatedEvidencePackRequestId.HasValue
+                ? Color.Secondary
+                : Color.Primary;
 
     private Guid? FormListingId
     {
@@ -297,6 +420,7 @@
         _maintenanceEvidence = await DataService.GetMaintenanceEvidenceAsync();
         _listings = await DataService.GetListingsAsync();
         _maintenanceRequests = await DataService.GetMaintenanceAsync();
+        _conversations = await DataService.GetTenantConversationsAsync();
     }
 
     private void OpenCreateMediaPanel()
@@ -400,7 +524,61 @@
     }
 
     private void OpenPrintableEvidencePack(Guid maintenanceRequestId)
-        => NavigationManager.NavigateTo($"/documents-evidence/pack/{maintenanceRequestId}");
+        => NavigationManager.NavigateTo(WithDemoMode($"/documents-evidence/pack/{maintenanceRequestId}"));
+
+    private Task OpenInsightNextActionAsync()
+    {
+        if (PriorityEvidence is not null && PriorityEvidence.EvidenceCount >= 3)
+        {
+            GenerateEvidencePack(PriorityEvidence);
+            return Task.CompletedTask;
+        }
+
+        NavigationManager.NavigateTo(WithDemoMode("/documents-evidence"));
+        return Task.CompletedTask;
+    }
+
+    private Task OpenPriorityMaintenanceAsync()
+    {
+        if (PriorityEvidence is not null)
+        {
+            NavigationManager.NavigateTo(WithDemoMode($"/maintenance?ticket={PriorityEvidence.MaintenanceRequestId}#ticket-{PriorityEvidence.MaintenanceRequestId}"));
+            return Task.CompletedTask;
+        }
+
+        NavigationManager.NavigateTo(WithDemoMode("/maintenance"));
+        return Task.CompletedTask;
+    }
+
+    private async Task OpenPriorityConversationAsync()
+    {
+        if (PriorityEvidence is null)
+        {
+            NavigationManager.NavigateTo(WithDemoMode("/tenant-communications"));
+            return;
+        }
+
+        var conversationId = await DataService.EnsureMaintenanceConversationAsync(PriorityEvidence.MaintenanceRequestId);
+        NavigationManager.NavigateTo(WithDemoMode(conversationId.HasValue
+            ? $"/tenant-communications?conversationId={conversationId.Value}&compose=maintenance-entry"
+            : "/tenant-communications"));
+    }
+
+    private Task OpenRecommendedNextStopAsync()
+    {
+        if (PriorityEvidence is not null)
+        {
+            return OpenPriorityMaintenanceAsync();
+        }
+
+        if (_generatedEvidencePackRequestId.HasValue)
+        {
+            return OpenPriorityConversationAsync();
+        }
+
+        NavigationManager.NavigateTo(WithDemoMode("/dashboard"));
+        return Task.CompletedTask;
+    }
 
     private string ResolveAssetPropertyName(MediaAssetSummaryDto asset)
         => asset.MaintenanceRequestId.HasValue

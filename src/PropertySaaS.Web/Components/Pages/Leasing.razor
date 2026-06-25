@@ -1,6 +1,7 @@
 @attribute [Authorize]
 @page "/leasing"
 @inject SaasDataService DataService
+@inject NavigationManager NavigationManager
 @inject PropertySaaS.Application.Common.CurrentOrganization CurrentOrganization
 @using PropertySaaS.Web.Localization
 @using PropertySaaS.Domain.Entities
@@ -15,6 +16,8 @@
         <MudText Typo="Typo.body2">@UiText.Get("Leasing_Subtitle")</MudText>
     </MudStack>
 
+    <DemoJourneyBanner CurrentStepKey="leasing" UsePortfolioJourney="true" PropertiesRoute="@PropertiesRoute" PropertyProfileRoute="@PropertyProfileRoute" />
+
     @if (_listings.Count == 0)
     {
         <MudPaper Class="pa-6 properties-empty-state" Elevation="0">
@@ -24,6 +27,31 @@
     }
     else
     {
+        <MudPaper Class="pa-4 property-detail-panel" Elevation="0">
+            <MudText Typo="Typo.h6">@UiText.Get("Leasing_InsightTitle")</MudText>
+            <MudGrid Spacing="2" Class="mt-2">
+                <MudItem xs="12" md="4">
+                    <MudPaper Class="pa-3 property-mini-stat" Elevation="0">
+                        <MudText Typo="Typo.overline">@UiText.Get("Leasing_InsightUrgency")</MudText>
+                        <MudChip T="string" Variant="Variant.Outlined" Color="@InsightColor" Class="mt-2">@InsightUrgencyLabel</MudChip>
+                    </MudPaper>
+                </MudItem>
+                <MudItem xs="12" md="4">
+                    <MudPaper Class="pa-3 property-mini-stat" Elevation="0">
+                        <MudText Typo="Typo.overline">@UiText.Get("Leasing_InsightFocus")</MudText>
+                        <MudChip T="string" Variant="Variant.Outlined" Color="@InsightColor" Class="mt-2">@InsightFocusLabel</MudChip>
+                    </MudPaper>
+                </MudItem>
+                <MudItem xs="12" md="4">
+                    <MudPaper Class="pa-3 property-mini-stat" Elevation="0">
+                        <MudText Typo="Typo.overline">@UiText.Get("Leasing_InsightNextAction")</MudText>
+                        <MudButton Class="mt-2" Variant="Variant.Text" Color="@InsightColor" OnClick="OpenInsightNextAction">@InsightActionLabel</MudButton>
+                    </MudPaper>
+                </MudItem>
+            </MudGrid>
+            <MudText Typo="Typo.body2" Class="mt-3">@InsightMessage</MudText>
+        </MudPaper>
+
         <MudGrid Spacing="3">
             <MudItem xs="12" md="6">
                 <MudPaper Class="pa-4 marketing-card h-100" Elevation="0">
@@ -45,17 +73,20 @@
                     </MudList>
                 </MudPaper>
             </MudItem>
-            <MudItem xs="12" md="6">
-                <MudPaper Class="pa-4 marketing-card h-100" Elevation="0">
-                    <MudText Typo="Typo.h6">@UiText.Get("Leasing_AIListingTitle")</MudText>
-                    <MudText Typo="Typo.body2" Class="mb-3">@UiText.Get("Leasing_AIListingSubtitle")</MudText>
-                    <MudList T="string" Dense="true">
-                        <MudListItem T="string">@UiText.Get("Leasing_AIListing1")</MudListItem>
-                        <MudListItem T="string">@UiText.Get("Leasing_AIListing2")</MudListItem>
-                        <MudListItem T="string">@UiText.Get("Leasing_AIListing3")</MudListItem>
-                    </MudList>
-                </MudPaper>
-            </MudItem>
+            @if (!IsDemoCleanView)
+            {
+                <MudItem xs="12" md="6">
+                    <MudPaper Class="pa-4 marketing-card h-100" Elevation="0">
+                        <MudText Typo="Typo.h6">@UiText.Get("Leasing_AIListingTitle")</MudText>
+                        <MudText Typo="Typo.body2" Class="mb-3">@UiText.Get("Leasing_AIListingSubtitle")</MudText>
+                        <MudList T="string" Dense="true">
+                            <MudListItem T="string">@UiText.Get("Leasing_AIListing1")</MudListItem>
+                            <MudListItem T="string">@UiText.Get("Leasing_AIListing2")</MudListItem>
+                            <MudListItem T="string">@UiText.Get("Leasing_AIListing3")</MudListItem>
+                        </MudList>
+                    </MudPaper>
+                </MudItem>
+            }
         </MudGrid>
 
         @if (_selectedListingPreview is not null)
@@ -65,7 +96,7 @@
                     <MudPaper Class="pa-4 marketing-card h-100" Elevation="0">
                         <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
                             <MudText Typo="Typo.h6">@UiText.Get("Leasing_PublicationPreviewTitle")</MudText>
-                            <MudButton Href="@($"/export/listings/{_selectedListingPreview.ListingId}/copy")" Variant="Variant.Outlined" Color="Color.Secondary" Size="Size.Small">@UiText.Get("Leasing_ExportCopy")</MudButton>
+                            <MudButton Href="@ExportListingCopyRoute" Variant="Variant.Outlined" Color="Color.Secondary" Size="Size.Small">@UiText.Get("Leasing_ExportCopy")</MudButton>
                         </MudStack>
                         <MudText Class="mt-3"><strong>@_selectedListingPreview.Title</strong></MudText>
                         <MudText Typo="Typo.body2">@UiText.Get("Leasing_PublishReadiness"): @_selectedListingPreview.PublishReadinessSummary</MudText>
@@ -120,24 +151,36 @@
             </MudItem>
             <MudItem xs="12" md="6">
                 <MudPaper Class="pa-4 marketing-card h-100" Elevation="0">
-                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
-                        <MudText Typo="Typo.h6">@UiText.Get("Leasing_ShowingsTitle")</MudText>
-                        @if (CurrentOrganization.CanManageData)
-                        {
-                            <MudButton Variant="Variant.Text" Color="Color.Primary" Size="Size.Small" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreateShowingPanel">@UiText.Get("Common_Add")</MudButton>
-                        }
-                    </MudStack>
+                    <MudText Typo="Typo.h6">@UiText.Get("Leasing_ApplicationsTitle")</MudText>
                     <MudList T="string" Dense="true" Class="mt-3">
-                        @foreach (var showing in _showings.Take(6))
+                        @foreach (var lead in ApplicationLeads.Take(5))
                         {
                             <MudListItem T="string">
                                 <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="w-100">
-                                    <MudText>@showing.ScheduledUtc.ToLocalTime().ToString("g") - @showing.ListingTitle - @showing.LeadName</MudText>
+                                    <MudStack Spacing="0">
+                                        <MudText>@lead.FullName - @GetLeadStatusLabel(lead.Status)</MudText>
+                                        <MudText Typo="Typo.caption">@UiText.Get("Leasing_ApplicationSummary"): @lead.ApplicationSummary</MudText>
+                                    </MudStack>
                                     @if (CurrentOrganization.CanManageData)
                                     {
-                                        <MudStack Row="true" Spacing="1">
-                                            <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Secondary" OnClick="() => OpenEditShowingPanel(showing)" />
-                                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="() => DeleteShowingAsync(showing.ShowingId)" />
+                                        <MudStack Row="true" Spacing="1" Wrap="Wrap.Wrap">
+                                            <MudChip T="string" Variant="Variant.Filled" Color="@GetApplicationScoreColor(lead.ApplicationScore)">@UiText.Get("Leasing_ApplicationScore"): @lead.ApplicationScore</MudChip>
+                                            @if (!string.Equals(lead.Status, nameof(LeadStatus.Approved), StringComparison.OrdinalIgnoreCase))
+                                            {
+                                                <MudButton Variant="Variant.Text" Color="Color.Success" Size="Size.Small" OnClick='() => UpdateLeadStatusAsync(lead.LeadId, LeadStatus.Approved)'>@UiText.Get("Leasing_LeadApprove")</MudButton>
+                                            }
+                                            @if (!string.Equals(lead.Status, nameof(LeadStatus.AwaitingDocuments), StringComparison.OrdinalIgnoreCase))
+                                            {
+                                                <MudButton Variant="Variant.Text" Color="Color.Warning" Size="Size.Small" OnClick='() => UpdateLeadStatusAsync(lead.LeadId, LeadStatus.AwaitingDocuments)'>@UiText.Get("Leasing_LeadRequestDocs")</MudButton>
+                                            }
+                                            @if (!string.Equals(lead.Status, nameof(LeadStatus.Declined), StringComparison.OrdinalIgnoreCase))
+                                            {
+                                                <MudButton Variant="Variant.Text" Color="Color.Error" Size="Size.Small" OnClick='() => UpdateLeadStatusAsync(lead.LeadId, LeadStatus.Declined)'>@UiText.Get("Leasing_LeadDecline")</MudButton>
+                                            }
+                                            @if (string.Equals(lead.Status, nameof(LeadStatus.Approved), StringComparison.OrdinalIgnoreCase) && lead.UnitId.HasValue)
+                                            {
+                                                <MudButton Variant="Variant.Text" Color="Color.Primary" Size="Size.Small" OnClick='() => ConvertLeadToTenantAsync(lead.LeadId)'>@UiText.Get("Leasing_LeadConvertToTenant")</MudButton>
+                                            }
                                         </MudStack>
                                     }
                                 </MudStack>
@@ -146,6 +189,37 @@
                     </MudList>
                 </MudPaper>
             </MudItem>
+            @if (!IsDemoCleanView)
+            {
+                <MudItem xs="12" md="6">
+                    <MudPaper Class="pa-4 marketing-card h-100" Elevation="0">
+                        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                            <MudText Typo="Typo.h6">@UiText.Get("Leasing_ShowingsTitle")</MudText>
+                            @if (CurrentOrganization.CanManageData)
+                            {
+                                <MudButton Variant="Variant.Text" Color="Color.Primary" Size="Size.Small" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreateShowingPanel">@UiText.Get("Common_Add")</MudButton>
+                            }
+                        </MudStack>
+                        <MudList T="string" Dense="true" Class="mt-3">
+                            @foreach (var showing in _showings.Take(6))
+                            {
+                                <MudListItem T="string">
+                                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="w-100">
+                                        <MudText>@showing.ScheduledUtc.ToLocalTime().ToString("g") - @showing.ListingTitle - @showing.LeadName</MudText>
+                                        @if (CurrentOrganization.CanManageData)
+                                        {
+                                            <MudStack Row="true" Spacing="1">
+                                                <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Secondary" OnClick="() => OpenEditShowingPanel(showing)" />
+                                                <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="() => DeleteShowingAsync(showing.ShowingId)" />
+                                            </MudStack>
+                                        }
+                                    </MudStack>
+                                </MudListItem>
+                            }
+                        </MudList>
+                    </MudPaper>
+                </MudItem>
+            }
         </MudGrid>
 
         @if (_isLeadPanelOpen)
@@ -177,10 +251,16 @@
                                     <MudSelect T="LeadStatus" Label="@UiText.Get("Leasing_LeadStatus")" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="ActiveLead.Status">
                                         @foreach (var status in Enum.GetValues<LeadStatus>())
                                         {
-                                            <MudSelectItem T="LeadStatus" Value="@status">@status</MudSelectItem>
+                                            <MudSelectItem T="LeadStatus" Value="@status">@GetLeadStatusLabel(status.ToString())</MudSelectItem>
                                         }
                                     </MudSelect>
                                 </MudItem>
+                                <MudItem xs="12" md="6"><MudNumericField T="decimal" Label="@UiText.Get("Leasing_LeadIncome")" Variant="Variant.Outlined" Adornment="Adornment.Start" AdornmentText="$" @bind-Value="ActiveLead.MonthlyIncome" /></MudItem>
+                                <MudItem xs="12" md="6"><MudNumericField T="int" Label="@UiText.Get("Leasing_LeadCreditScore")" Variant="Variant.Outlined" @bind-Value="ActiveLead.CreditScore" /></MudItem>
+                                <MudItem xs="12" md="6"><MudDatePicker Label="@UiText.Get("Leasing_LeadMoveInDate")" Variant="Variant.Outlined" Date="@GetLeadMoveInDate()" DateChanged="OnLeadMoveInDateChanged" Editable="true" /></MudItem>
+                                <MudItem xs="12" md="6"><MudNumericField T="int" Label="@UiText.Get("Leasing_LeadOccupants")" Variant="Variant.Outlined" @bind-Value="ActiveLead.OccupantCount" /></MudItem>
+                                <MudItem xs="12" md="6"><MudSwitch T="bool" Color="Color.Primary" Label="@UiText.Get("Leasing_LeadPets")" @bind-Value="ActiveLead.HasPets" /></MudItem>
+                                <MudItem xs="12" md="6"><MudSwitch T="bool" Color="Color.Primary" Label="@UiText.Get("Leasing_LeadConsent")" @bind-Value="ActiveLead.ConsentToScreening" /></MudItem>
                                 <MudItem xs="12"><MudTextField Label="@UiText.Get("Leasing_LeadNotes")" Variant="Variant.Outlined" Lines="3" @bind-Value="ActiveLead.Notes" /></MudItem>
                             </MudGrid>
 
@@ -242,6 +322,9 @@
 </MudStack>
 
 @code {
+    [SupplyParameterFromQuery(Name = "demo")]
+    public string? DemoMode { get; set; }
+
     private List<ListingSummaryDto> _listings = new();
     private List<LeadSummaryDto> _leads = new();
     private List<ShowingSummaryDto> _showings = new();
@@ -255,10 +338,61 @@
     private bool _isShowingPanelOpen;
     private bool _isShowingCreateMode = true;
     private DateTime? _showingScheduledDate = DateTime.Now.AddDays(1);
+    private bool IsDemoCleanView => string.Equals(DemoMode, "clean", StringComparison.OrdinalIgnoreCase);
+    private string DemoModeQuery => IsDemoCleanView ? "demo=clean" : string.Empty;
 
     private Lead ActiveLead => _isLeadCreateMode ? _newLead : _editLead;
     private Showing ActiveShowing => _isShowingCreateMode ? _newShowing : _editShowing;
     private IEnumerable<LeadSummaryDto> AvailableLeads => FormShowingListingId is null || FormShowingListingId == Guid.Empty ? _leads : _leads.Where(x => x.ListingId == FormShowingListingId.Value);
+    private IEnumerable<LeadSummaryDto> ApplicationLeads => _leads.Where(x => x.Status is nameof(LeadStatus.Applied) or nameof(LeadStatus.AwaitingDocuments) or nameof(LeadStatus.UnderReview) or nameof(LeadStatus.Approved) or nameof(LeadStatus.Declined)).OrderByDescending(x => x.ApplicationScore);
+    private int ReadyListingsCount => _listings.Count(x => string.Equals(x.Status, "ReadyToPublish", StringComparison.OrdinalIgnoreCase) || string.Equals(x.Status, "Published", StringComparison.OrdinalIgnoreCase));
+    private int UpcomingShowingsCount => _showings.Count(x => x.ScheduledUtc >= DateTime.UtcNow);
+    private ListingSummaryDto? PriorityPortfolioListing => _listings.FirstOrDefault(x => string.Equals(x.Status, "ReadyToPublish", StringComparison.OrdinalIgnoreCase) || string.Equals(x.Status, "Published", StringComparison.OrdinalIgnoreCase)) ?? _selectedListingPreview ?? _listings.FirstOrDefault();
+    private string PropertiesRoute => WithDemoMode("/properties");
+    private string PropertyProfileRoute => PriorityPortfolioListing is not null ? WithDemoMode($"/properties/{PriorityPortfolioListing.PropertyId}") : WithDemoMode("/properties");
+    private string ExportListingCopyRoute => _selectedListingPreview is not null ? WithDemoMode($"/export/listings/{_selectedListingPreview.ListingId}/copy") : WithDemoMode("/leasing");
+    private string InsightUrgencyLabel
+        => ApplicationLeads.Any(x => string.Equals(x.Status, nameof(LeadStatus.Approved), StringComparison.OrdinalIgnoreCase))
+            ? UiText.Get("Leasing_InsightUrgencyHigh")
+            : ReadyListingsCount > 0 || UpcomingShowingsCount > 0
+                ? UiText.Get("Leasing_InsightUrgencyMedium")
+                : UiText.Get("Leasing_InsightUrgencyStable");
+
+    private string InsightFocusLabel
+        => ApplicationLeads.Any(x => string.Equals(x.Status, nameof(LeadStatus.Approved), StringComparison.OrdinalIgnoreCase))
+            ? UiText.Get("Leasing_InsightFocusApplications")
+            : ReadyListingsCount > 0
+                ? UiText.Get("Leasing_InsightFocusListings")
+                : UpcomingShowingsCount > 0
+                    ? UiText.Get("Leasing_InsightFocusShowings")
+                    : UiText.Get("Leasing_InsightFocusStable");
+
+    private string InsightMessage
+        => ApplicationLeads.Any(x => string.Equals(x.Status, nameof(LeadStatus.Approved), StringComparison.OrdinalIgnoreCase))
+            ? UiText.Get("Leasing_InsightMessageApplications")
+            : ReadyListingsCount > 0
+                ? UiText.Get("Leasing_InsightMessageListings")
+                : UpcomingShowingsCount > 0
+                    ? UiText.Get("Leasing_InsightMessageShowings")
+                    : UiText.Get("Leasing_InsightMessageStable");
+
+    private string InsightActionLabel
+        => ApplicationLeads.Any(x => string.Equals(x.Status, nameof(LeadStatus.Approved), StringComparison.OrdinalIgnoreCase))
+            ? UiText.Get("Leasing_OpenApplications")
+            : ReadyListingsCount > 0
+                ? UiText.Get("Leasing_OpenListings")
+                : UpcomingShowingsCount > 0
+                    ? UiText.Get("Leasing_OpenShowings")
+                    : UiText.Get("Leasing_OpenGrowthReview");
+
+    private Color InsightColor
+        => ApplicationLeads.Any(x => string.Equals(x.Status, nameof(LeadStatus.Approved), StringComparison.OrdinalIgnoreCase))
+            ? Color.Success
+            : ReadyListingsCount > 0
+                ? Color.Primary
+                : UpcomingShowingsCount > 0
+                    ? Color.Warning
+                    : Color.Default;
 
     private Guid? FormLeadListingId
     {
@@ -290,6 +424,20 @@
         await ReloadAsync();
     }
 
+    private string WithDemoMode(string route)
+    {
+        if (!IsDemoCleanView || string.IsNullOrWhiteSpace(route) || route.Contains("demo=", StringComparison.OrdinalIgnoreCase))
+        {
+            return route;
+        }
+
+        var anchorIndex = route.IndexOf('#');
+        var anchor = anchorIndex >= 0 ? route[anchorIndex..] : string.Empty;
+        var baseRoute = anchorIndex >= 0 ? route[..anchorIndex] : route;
+        var separator = baseRoute.Contains('?') ? "&" : "?";
+        return $"{baseRoute}{separator}{DemoModeQuery}{anchor}";
+    }
+
     private static string FormatUnitLabel(string unitLabel)
         => string.IsNullOrWhiteSpace(unitLabel) ? string.Empty : $"- Unit {unitLabel}";
 
@@ -304,6 +452,44 @@
     private async Task SelectListingPreviewAsync(Guid listingId)
     {
         _selectedListingPreview = await DataService.GetListingPublicationPreviewAsync(listingId);
+    }
+
+    private async Task OpenInsightNextAction()
+    {
+        if (ApplicationLeads.Any(x => string.Equals(x.Status, nameof(LeadStatus.Approved), StringComparison.OrdinalIgnoreCase)))
+        {
+            NavigationManager.NavigateTo(WithDemoMode("/leasing"));
+            return;
+        }
+
+        if (ReadyListingsCount > 0)
+        {
+            var listingId = _listings.FirstOrDefault(x => string.Equals(x.Status, "ReadyToPublish", StringComparison.OrdinalIgnoreCase) || string.Equals(x.Status, "Published", StringComparison.OrdinalIgnoreCase))?.ListingId;
+            if (listingId.HasValue)
+            {
+                await SelectListingPreviewAsync(listingId.Value);
+            }
+
+            return;
+        }
+
+        if (UpcomingShowingsCount > 0)
+        {
+            NavigationManager.NavigateTo(WithDemoMode("/leasing"));
+            return;
+        }
+
+        if (_selectedListingPreview?.ListingId is Guid previewId)
+        {
+            await SelectListingPreviewAsync(previewId);
+            return;
+        }
+
+        var firstListing = _listings.FirstOrDefault()?.ListingId;
+        if (firstListing.HasValue)
+        {
+            await SelectListingPreviewAsync(firstListing.Value);
+        }
     }
 
     private void OpenCreateLeadPanel()
@@ -322,8 +508,16 @@
             ListingId = lead.ListingId,
             FullName = lead.FullName,
             Email = lead.Email,
+            PhoneNumber = lead.PhoneNumber,
             Source = lead.Source,
-            Status = Enum.TryParse<LeadStatus>(lead.Status, out var status) ? status : LeadStatus.New
+            Status = Enum.TryParse<LeadStatus>(lead.Status, out var status) ? status : LeadStatus.New,
+            MonthlyIncome = lead.MonthlyIncome,
+            DesiredMoveInDate = lead.DesiredMoveInDate,
+            OccupantCount = lead.OccupantCount,
+            HasPets = lead.HasPets,
+            CreditScore = lead.CreditScore,
+            ConsentToScreening = lead.ConsentToScreening,
+            Notes = lead.Notes
         };
         _isLeadPanelOpen = true;
     }
@@ -359,6 +553,59 @@
         await DataService.DeleteLeadAsync(id);
         await ReloadAsync();
     }
+
+    private async Task UpdateLeadStatusAsync(Guid id, LeadStatus status)
+    {
+        var lead = _leads.FirstOrDefault(x => x.LeadId == id);
+        if (lead is null)
+        {
+            return;
+        }
+
+        await DataService.UpdateLeadAsync(new Lead
+        {
+            Id = lead.LeadId,
+            ListingId = lead.ListingId,
+            FullName = lead.FullName,
+            Email = lead.Email,
+            PhoneNumber = lead.PhoneNumber,
+            Source = lead.Source,
+            Status = status,
+            MonthlyIncome = lead.MonthlyIncome,
+            DesiredMoveInDate = lead.DesiredMoveInDate,
+            OccupantCount = lead.OccupantCount,
+            HasPets = lead.HasPets,
+            CreditScore = lead.CreditScore,
+            ConsentToScreening = lead.ConsentToScreening,
+            Notes = lead.Notes
+        });
+
+        await ReloadAsync();
+    }
+
+    private async Task ConvertLeadToTenantAsync(Guid leadId)
+    {
+        var converted = await DataService.ConvertLeadToTenantAsync(leadId);
+        if (!converted)
+        {
+            return;
+        }
+
+        await ReloadAsync();
+        _selectedListingPreview = _listings.FirstOrDefault();
+    }
+
+    private DateTime? GetLeadMoveInDate()
+        => ActiveLead.DesiredMoveInDate?.ToDateTime(TimeOnly.MinValue);
+
+    private void OnLeadMoveInDateChanged(DateTime? value)
+        => ActiveLead.DesiredMoveInDate = value.HasValue ? DateOnly.FromDateTime(value.Value) : null;
+
+    private static Color GetApplicationScoreColor(int score)
+        => score >= 80 ? Color.Success : score >= 60 ? Color.Warning : Color.Error;
+
+    private static string GetLeadStatusLabel(string status)
+        => UiText.Get($"Leasing_LeadStatus{status}");
 
     private void OpenCreateShowingPanel()
     {

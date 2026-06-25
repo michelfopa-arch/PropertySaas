@@ -46,6 +46,7 @@ namespace PropertySaaS.Application.Common
         public IReadOnlyList<string> NoticeTypes { get; init; } = Array.Empty<string>();
         public string LeasePackageLabel { get; init; } = "Lease package";
         public IReadOnlyDictionary<string, string> DocumentTemplates { get; init; } = new Dictionary<string, string>();
+        public IReadOnlyDictionary<string, string> OfficialDocumentUrls { get; init; } = new Dictionary<string, string>();
         public IReadOnlyList<string> ComplianceChecklist { get; init; } = Array.Empty<string>();
     }
 
@@ -66,6 +67,13 @@ namespace PropertySaaS.Application.Common
                     ["lease-package"] = "Ontario Standard Lease Package",
                     ["non-payment-notice"] = "N4 Non-payment Notice",
                     ["rent-increase-notice"] = "N1 Rent Increase Notice"
+                },
+                OfficialDocumentUrls = new Dictionary<string, string>
+                {
+                    ["lease-package"] = "https://forms.mgcs.gov.on.ca/dataset/edff7620-980b-455f-9666-643196d8312f/resource/05677ea2-3173-4c0e-9a14-7a06cbcb41b9/download/2229e_standard-lease_static.pdf",
+                    ["lease-package-fr"] = "https://forms.mgcs.gov.on.ca/dataset/edff7620-980b-455f-9666-643196d8312f/resource/90186613-2e1e-47ed-84e9-8786bf137396/download/2229f.pdf",
+                    ["rent-increase-notice"] = "https://tribunalsontario.ca/documents/ltb/Notices of Rent Increase & Instructions/N1.pdf",
+                    ["non-payment-notice"] = "https://tribunalsontario.ca/documents/ltb/Notices of Termination & Instructions/N4.pdf"
                 },
                 ComplianceChecklist = new[]
                 {
@@ -287,11 +295,24 @@ namespace PropertySaaS.Application.Common
     {
         public Guid LeadId { get; set; }
         public Guid ListingId { get; set; }
+        public Guid PropertyId { get; set; }
+        public Guid? UnitId { get; set; }
         public string FullName { get; set; } = string.Empty;
         public string ListingTitle { get; set; } = string.Empty;
         public string Source { get; set; } = string.Empty;
         public string Status { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
+        public string PhoneNumber { get; set; } = string.Empty;
+        public decimal AskingRent { get; set; }
+        public decimal MonthlyIncome { get; set; }
+        public DateOnly? DesiredMoveInDate { get; set; }
+        public int OccupantCount { get; set; }
+        public bool HasPets { get; set; }
+        public int CreditScore { get; set; }
+        public bool ConsentToScreening { get; set; }
+        public int ApplicationScore { get; set; }
+        public string ApplicationSummary { get; set; } = string.Empty;
+        public string Notes { get; set; } = string.Empty;
     }
 
     public sealed class ShowingSummaryDto
@@ -322,6 +343,7 @@ namespace PropertySaaS.Application.Common
         public Guid? PropertyId { get; set; }
         public Guid? UnitId { get; set; }
         public Guid? ListingId { get; set; }
+        public Guid? LeaseId { get; set; }
         public Guid? MaintenanceRequestId { get; set; }
         public string FileName { get; set; } = string.Empty;
         public string BlobPath { get; set; } = string.Empty;
@@ -331,6 +353,45 @@ namespace PropertySaaS.Application.Common
         public DateTime CreatedUtc { get; set; }
         public bool IsPrimary { get; set; }
         public string ScopeLabel { get; set; } = string.Empty;
+    }
+
+    public sealed class LeaseMoveInDocumentDto
+    {
+        public Guid MediaAssetId { get; set; }
+        public Guid LeaseId { get; set; }
+        public string FileName { get; set; } = string.Empty;
+        public string BlobPath { get; set; } = string.Empty;
+        public string Caption { get; set; } = string.Empty;
+        public string DocumentType { get; set; } = string.Empty;
+        public string OfficialUrl { get; set; } = string.Empty;
+        public DateTime CreatedUtc { get; set; }
+        public bool IsPrimary { get; set; }
+    }
+
+    public sealed class LeaseMoveInContextDto
+    {
+        public Guid LeaseId { get; set; }
+        public string PropertyName { get; set; } = string.Empty;
+        public string UnitLabel { get; set; } = string.Empty;
+        public string TenantName { get; set; } = string.Empty;
+    }
+
+    public sealed class LeaseMoveInOutreachDraftDto
+    {
+        public Guid LeaseId { get; set; }
+        public Guid? TenantConversationId { get; set; }
+        public string Subject { get; set; } = string.Empty;
+        public string Body { get; set; } = string.Empty;
+        public IReadOnlyList<string> MissingItems { get; set; } = Array.Empty<string>();
+    }
+
+    public sealed class LeaseMoveInRequirementDto
+    {
+        public string DocumentType { get; set; } = string.Empty;
+        public string Label { get; set; } = string.Empty;
+        public bool IsCompleted { get; set; }
+        public string StatusLabel { get; set; } = string.Empty;
+        public string Guidance { get; set; } = string.Empty;
     }
 
     public sealed class MaintenanceEvidenceSummaryDto
@@ -372,6 +433,32 @@ namespace PropertySaaS.Application.Common
         public string LastMessagePreview { get; set; } = string.Empty;
         public DateTime? LastContactUtc { get; set; }
         public int MessageCount { get; set; }
+        public bool HasMoveInWorkflow { get; set; }
+        public int MoveInMissingItemCount { get; set; }
+        public IReadOnlyList<string> MoveInMissingItems { get; set; } = Array.Empty<string>();
+        public IReadOnlyList<string> MoveInActionableItems { get; set; } = Array.Empty<string>();
+        public IReadOnlyDictionary<string, string> MoveInDocumentActions { get; set; } = new Dictionary<string, string>();
+        public string MoveInNextDraftBody { get; set; } = string.Empty;
+        public bool CanCompleteOnboardingHandoff { get; set; }
+        public bool HasActiveTenancy { get; set; }
+    }
+
+    public sealed class Resident360SummaryDto
+    {
+        public Tenant? Tenant { get; set; }
+        public Lease? ActiveLease { get; set; }
+        public IReadOnlyList<Lease> Leases { get; set; } = Array.Empty<Lease>();
+        public IReadOnlyList<InvoiceSummaryDto> Invoices { get; set; } = Array.Empty<InvoiceSummaryDto>();
+        public IReadOnlyList<PaymentEntrySummaryDto> Payments { get; set; } = Array.Empty<PaymentEntrySummaryDto>();
+        public IReadOnlyList<TenantConversationSummaryDto> Conversations { get; set; } = Array.Empty<TenantConversationSummaryDto>();
+        public IReadOnlyList<MaintenanceRequest> MaintenanceRequests { get; set; } = Array.Empty<MaintenanceRequest>();
+        public IReadOnlyList<Unit> Units { get; set; } = Array.Empty<Unit>();
+        public decimal OpenBalance { get; set; }
+        public decimal PaymentsReceived { get; set; }
+        public bool HasMoveInCompleted { get; set; }
+        public bool HasRentFollowUp { get; set; }
+        public bool HasNoticeWorkflow { get; set; }
+        public bool HasMaintenanceWorkflow { get; set; }
     }
 
     public sealed class TenantMessageSummaryDto
@@ -433,6 +520,13 @@ namespace PropertySaaS.Application.Common
         public int DispatchBlocked { get; set; }
         public int ComplianceDueSoon { get; set; }
         public int JurisdictionNoticesInWorkflow { get; set; }
+        public int CommunicationAwaitingReply { get; set; }
+        public int CommunicationRentAtRisk { get; set; }
+        public int CommunicationMoveInBlocked { get; set; }
+        public int CommunicationMaintenanceActive { get; set; }
+        public int RecentConversationUpdates24h { get; set; }
+        public int NewMaintenanceToday { get; set; }
+        public int ComplianceDueNext7Days { get; set; }
         public int ExportFeedsReady { get; set; } = 3;
         public decimal MonthlyRentRoll { get; set; }
         public string SubscriptionTier { get; set; } = "Growth";
@@ -545,6 +639,131 @@ namespace PropertySaaS.Application.Features
                     TrialDaysRemaining = trialDaysRemaining
                 }
             };
+        }
+        public async Task<LeaseMoveInOutreachDraftDto?> GetLeaseMoveInOutreachDraftAsync(Guid leaseId)
+        {
+            var context = await GetLeaseMoveInContextAsync(leaseId);
+            if (context is null)
+            {
+                return null;
+            }
+
+            var requirements = await GetLeaseMoveInRequirementsAsync(leaseId);
+            var missingItems = requirements.Where(x => !x.IsCompleted).Select(x => x.Label).ToList();
+            var existingConversation = await _db.TenantConversations
+                .Where(x => x.OrganizationId == _current.OrganizationId && x.LeaseId == leaseId)
+                .Select(x => (Guid?)x.Id)
+                .FirstOrDefaultAsync();
+
+            var unitLabel = string.IsNullOrWhiteSpace(context.UnitLabel) ? "your unit" : $"unit {context.UnitLabel}";
+            var body = BuildLeaseMoveInNextDraftBody(context.TenantName, context.UnitLabel, missingItems);
+
+            return new LeaseMoveInOutreachDraftDto
+            {
+                LeaseId = leaseId,
+                TenantConversationId = existingConversation,
+                Subject = missingItems.Count == 0
+                    ? $"Welcome to {unitLabel} - move-in confirmed"
+                    : $"Move-in documents for {unitLabel}",
+                Body = body,
+                MissingItems = missingItems
+            };
+        }
+
+        private static string BuildLeaseMoveInNextDraftBody(string tenantName, string? unitLabel, IReadOnlyCollection<string> missingItems)
+        {
+            var normalizedUnitLabel = string.IsNullOrWhiteSpace(unitLabel) ? "your unit" : $"unit {unitLabel}";
+            return missingItems.Count == 0
+                ? $"Hello {tenantName}, welcome to {normalizedUnitLabel}. Your move-in package is now complete, and we are excited to finalize your arrival. We will share the final access details, move-in timing, and day-one instructions shortly. Please reply if you have any last questions before move-in day."
+                : $"Hello {tenantName}, thank you for the latest update. To complete your move-in package for {normalizedUnitLabel}, please send the following remaining items: {string.Join(", ", missingItems)}. Once we receive them, we will confirm your move-in details and finalize onboarding.";
+        }
+        public async Task<Guid?> EnsureLeaseMoveInOutreachDraftAsync(Guid leaseId)
+        {
+            EnsureCanManageData();
+            var draft = await GetLeaseMoveInOutreachDraftAsync(leaseId);
+            var context = await GetLeaseMoveInContextAsync(leaseId);
+            if (draft is null || context is null)
+            {
+                return null;
+            }
+
+            var conversationId = await EnsureLeaseConversationAsync(leaseId);
+            if (!conversationId.HasValue)
+            {
+                return null;
+            }
+
+            var alreadyLogged = await _db.TenantMessages.AnyAsync(x => x.OrganizationId == _current.OrganizationId && x.TenantConversationId == conversationId.Value && x.Body == draft.Body);
+            if (!alreadyLogged)
+            {
+                _db.TenantMessages.Add(new TenantMessage
+                {
+                    Id = Guid.NewGuid(),
+                    OrganizationId = _current.OrganizationId,
+                    TenantConversationId = conversationId.Value,
+                    IsIncoming = false,
+                    Body = draft.Body,
+                    SentBy = _current.UserEmail,
+                    SentUtc = DateTime.UtcNow,
+                    IsAISuggested = true,
+                    DeliveryMethod = "Email draft",
+                    DeliveryProof = $"Move-in outreach draft generated for {context.TenantName}.",
+                    CreatedUtc = DateTime.UtcNow
+                });
+
+                var conversation = await _db.TenantConversations.FirstOrDefaultAsync(x => x.Id == conversationId.Value && x.OrganizationId == _current.OrganizationId);
+                if (conversation is not null)
+                {
+                    conversation.Subject = draft.Subject;
+                    conversation.Status = "Draft";
+                    conversation.LastContactUtc = DateTime.UtcNow;
+                }
+
+                await _db.SaveChangesAsync();
+            }
+
+            return conversationId;
+        }
+        public async Task<bool> CompleteLeaseMoveInActionAsync(Guid leaseId, string actionKey)
+        {
+            EnsureCanManageData();
+            var lease = await _db.Leases.FirstOrDefaultAsync(x => x.OrganizationId == _current.OrganizationId && x.Id == leaseId);
+            if (lease is null)
+            {
+                return false;
+            }
+
+            switch (actionKey?.Trim())
+            {
+                case "Deposit received":
+                    lease.DepositReceived = true;
+                    break;
+                case "Insurance proof received":
+                    lease.InsuranceProofReceived = true;
+                    break;
+                case "Move-in checklist completed":
+                    lease.MoveInChecklistCompleted = true;
+                    break;
+                case "Signed lease confirmation":
+                    lease.StandardOntarioLeaseSigned = true;
+                    break;
+                default:
+                    return false;
+            }
+
+            _db.AuditLogs.Add(new AuditLog
+            {
+                OrganizationId = _current.OrganizationId,
+                EntityName = nameof(Lease),
+                Action = "MoveInAction",
+                PerformedBy = _current.UserEmail,
+                Details = $"Completed move-in action '{actionKey}' for lease {lease.Id}"
+            });
+
+            await LogLeaseMoveInThreadUpdateAsync(lease.Id, $"Move-in update recorded: {actionKey}.");
+
+            await _db.SaveChangesAsync();
+            return true;
         }
 
         private async Task EnsureUserLimitAsync(CancellationToken cancellationToken = default)
@@ -667,6 +886,34 @@ namespace PropertySaaS.Application.Features
                 ? Array.Empty<string>()
                 : publishTargets.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
+        private static int BuildLeadApplicationScore(Lead lead)
+        {
+            var score = 0;
+
+            if (lead.MonthlyIncome >= 9000m) score += 35;
+            else if (lead.MonthlyIncome >= 7000m) score += 25;
+            else if (lead.MonthlyIncome > 0m) score += 15;
+
+            if (lead.CreditScore >= 750) score += 25;
+            else if (lead.CreditScore >= 700) score += 18;
+            else if (lead.CreditScore >= 650) score += 10;
+
+            if (lead.ConsentToScreening) score += 15;
+            if (lead.DesiredMoveInDate.HasValue) score += 10;
+            if (lead.OccupantCount is > 0 and <= 3) score += 10;
+            if (!lead.HasPets) score += 5;
+
+            return Math.Min(score, 100);
+        }
+
+        private static string BuildLeadApplicationSummary(Lead lead, int score)
+        {
+            var moveIn = lead.DesiredMoveInDate?.ToString("yyyy-MM-dd") ?? "move-in date pending";
+            var pets = lead.HasPets ? "pets declared" : "no pets declared";
+            var screening = lead.ConsentToScreening ? "screening consent ready" : "screening consent pending";
+            return $"{score}% application fit · move-in {moveIn} · {lead.OccupantCount} occupant(s) · {pets} · {screening}";
+        }
+
         private static ListingSummaryDto BuildListingSummary(Listing listing)
         {
             var channels = SplitPublishTargets(listing.PublishTargets);
@@ -761,6 +1008,10 @@ namespace PropertySaaS.Application.Features
             var organization = await _db.Organizations.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id);
             var jurisdictionProfile = JurisdictionCatalog.GetProfile(_current.Province);
             var dispatchSignals = await GetDispatchSignalsAsync();
+            var tenantConversations = await GetTenantConversationsAsync();
+            var today = DateOnly.FromDateTime(DateTime.Today);
+            var nextWeek = DateOnly.FromDateTime(DateTime.Today.AddDays(7));
+            var last24HoursUtc = DateTime.UtcNow.AddHours(-24);
             return new DashboardSummaryDto
             {
                 Properties = await _db.Properties.CountAsync(x => x.OrganizationId == id),
@@ -773,6 +1024,13 @@ namespace PropertySaaS.Application.Features
                 DispatchBlocked = dispatchSignals.Count(x => x.IsBlocked),
                 ComplianceDueSoon = await _db.ComplianceReminders.CountAsync(x => x.OrganizationId == id && !x.IsCompleted && x.DueDate <= DateOnly.FromDateTime(DateTime.Today.AddDays(45))),
                 JurisdictionNoticesInWorkflow = leases.Count(x => x.N1IncreaseNoticeScheduled) + await _db.ComplianceReminders.CountAsync(x => x.OrganizationId == id && !x.IsCompleted && jurisdictionProfile.NoticeTypes.Contains(x.NoticeType)),
+                CommunicationAwaitingReply = tenantConversations.Count(x => string.Equals(x.Status, "Awaiting reply", StringComparison.OrdinalIgnoreCase)),
+                CommunicationRentAtRisk = tenantConversations.Count(x => x.Subject.Contains("rent", StringComparison.OrdinalIgnoreCase) || x.Subject.Contains("invoice", StringComparison.OrdinalIgnoreCase) || x.Subject.Contains("n4", StringComparison.OrdinalIgnoreCase)),
+                CommunicationMoveInBlocked = tenantConversations.Count(x => x.HasMoveInWorkflow && x.MoveInMissingItemCount > 0),
+                CommunicationMaintenanceActive = tenantConversations.Count(x => x.Subject.Contains("maintenance", StringComparison.OrdinalIgnoreCase) || x.Subject.Contains("repair", StringComparison.OrdinalIgnoreCase)),
+                RecentConversationUpdates24h = tenantConversations.Count(x => (x.LastContactUtc ?? DateTime.MinValue) >= last24HoursUtc),
+                NewMaintenanceToday = await _db.MaintenanceRequests.CountAsync(x => x.OrganizationId == id && x.RequestedDate >= today),
+                ComplianceDueNext7Days = await _db.ComplianceReminders.CountAsync(x => x.OrganizationId == id && !x.IsCompleted && x.DueDate >= today && x.DueDate <= nextWeek),
                 MonthlyRentRoll = units.Sum(x => x.MonthlyRent),
                 SubscriptionTier = organization?.SubscriptionTier.ToString() ?? "Growth"
             };
@@ -844,16 +1102,263 @@ namespace PropertySaaS.Application.Features
                     .ToListAsync())
                 .Select(BuildListingSummary)
                 .ToList();
-        public Task<List<LeadSummaryDto>> GetLeadsAsync() => _db.Leads.Where(x => x.OrganizationId == _current.OrganizationId).OrderBy(x => x.Status).ThenBy(x => x.FullName).Select(x => new LeadSummaryDto { LeadId = x.Id, ListingId = x.ListingId, FullName = x.FullName, ListingTitle = x.Listing != null ? x.Listing.Title : string.Empty, Source = x.Source, Status = x.Status.ToString(), Email = x.Email }).ToListAsync();
+        public async Task<List<LeadSummaryDto>> GetLeadsAsync()
+            => (await _db.Leads
+                    .AsNoTracking()
+                    .Where(x => x.OrganizationId == _current.OrganizationId)
+                    .Include(x => x.Listing)
+                    .OrderBy(x => x.Status)
+                    .ThenBy(x => x.FullName)
+                    .ToListAsync())
+                .Select(x =>
+                {
+                    var score = BuildLeadApplicationScore(x);
+                    return new LeadSummaryDto
+                    {
+                        LeadId = x.Id,
+                        ListingId = x.ListingId,
+                        PropertyId = x.Listing?.PropertyId ?? Guid.Empty,
+                        UnitId = x.Listing?.UnitId,
+                        FullName = x.FullName,
+                        ListingTitle = x.Listing?.Title ?? string.Empty,
+                        Source = x.Source,
+                        Status = x.Status.ToString(),
+                        Email = x.Email,
+                        PhoneNumber = x.PhoneNumber,
+                        AskingRent = x.Listing?.AskingRent ?? 0m,
+                        MonthlyIncome = x.MonthlyIncome,
+                        DesiredMoveInDate = x.DesiredMoveInDate,
+                        OccupantCount = x.OccupantCount,
+                        HasPets = x.HasPets,
+                        CreditScore = x.CreditScore,
+                        ConsentToScreening = x.ConsentToScreening,
+                        ApplicationScore = score,
+                        ApplicationSummary = BuildLeadApplicationSummary(x, score),
+                        Notes = x.Notes
+                    };
+                })
+                .ToList();
         public Task<List<ShowingSummaryDto>> GetShowingsAsync() => _db.Showings.Where(x => x.OrganizationId == _current.OrganizationId).OrderBy(x => x.ScheduledUtc).Select(x => new ShowingSummaryDto { ShowingId = x.Id, ListingId = x.ListingId, LeadId = x.LeadId, ListingTitle = x.Listing != null ? x.Listing.Title : string.Empty, LeadName = x.Lead != null ? x.Lead.FullName : string.Empty, ScheduledUtc = x.ScheduledUtc, Status = x.Status }).ToListAsync();
         public Task<List<InvoiceSummaryDto>> GetInvoicesAsync() => _db.Invoices.Where(x => x.OrganizationId == _current.OrganizationId).OrderBy(x => x.DueDate).Select(x => new InvoiceSummaryDto { InvoiceId = x.Id, Number = x.Number, TenantName = x.Lease != null && x.Lease.Tenant != null ? x.Lease.Tenant.FullName : string.Empty, UnitLabel = x.Lease != null && x.Lease.Unit != null ? x.Lease.Unit.UnitNumber : string.Empty, Amount = x.Amount, Balance = x.Balance, Status = x.Status.ToString(), DueDate = x.DueDate }).ToListAsync();
         public Task<List<PaymentEntrySummaryDto>> GetPaymentEntriesAsync() => _db.PaymentEntries.Where(x => x.OrganizationId == _current.OrganizationId).OrderByDescending(x => x.ReceivedDate).Select(x => new PaymentEntrySummaryDto { PaymentEntryId = x.Id, InvoiceId = x.InvoiceId, InvoiceNumber = x.Invoice != null ? x.Invoice.Number : string.Empty, ReceivedDate = x.ReceivedDate, Amount = x.Amount, Method = x.Method, Reference = x.Reference }).ToListAsync();
-        public Task<List<MediaAssetSummaryDto>> GetMediaAssetsAsync() => _db.MediaAssets.Where(x => x.OrganizationId == _current.OrganizationId).OrderByDescending(x => x.IsPrimary).ThenBy(x => x.SortOrder).Select(x => new MediaAssetSummaryDto { MediaAssetId = x.Id, PropertyId = x.PropertyId, UnitId = x.UnitId, ListingId = x.ListingId, MaintenanceRequestId = x.MaintenanceRequestId, FileName = x.FileName, BlobPath = x.BlobPath, Caption = x.Caption, Category = x.Category.ToString(), SortOrder = x.SortOrder, CreatedUtc = x.CreatedUtc, IsPrimary = x.IsPrimary, ScopeLabel = x.MaintenanceRequest != null ? x.MaintenanceRequest.Title : x.Listing != null ? x.Listing.Title : x.Unit != null ? x.Unit.UnitNumber : x.Property != null ? x.Property.Name : string.Empty }).ToListAsync();
-        public Task<List<MediaAssetSummaryDto>> GetMaintenanceMediaAssetsAsync() => _db.MediaAssets.Where(x => x.OrganizationId == _current.OrganizationId && x.MaintenanceRequestId != null).OrderByDescending(x => x.IsPrimary).ThenBy(x => x.SortOrder).Select(x => new MediaAssetSummaryDto { MediaAssetId = x.Id, PropertyId = x.PropertyId, UnitId = x.UnitId, ListingId = x.ListingId, MaintenanceRequestId = x.MaintenanceRequestId, FileName = x.FileName, BlobPath = x.BlobPath, Caption = x.Caption, Category = x.Category.ToString(), SortOrder = x.SortOrder, CreatedUtc = x.CreatedUtc, IsPrimary = x.IsPrimary, ScopeLabel = x.MaintenanceRequest != null ? x.MaintenanceRequest.Title : string.Empty }).ToListAsync();
+        public Task<List<MediaAssetSummaryDto>> GetMediaAssetsAsync() => _db.MediaAssets.Where(x => x.OrganizationId == _current.OrganizationId).OrderByDescending(x => x.IsPrimary).ThenBy(x => x.SortOrder).Select(x => new MediaAssetSummaryDto { MediaAssetId = x.Id, PropertyId = x.PropertyId, UnitId = x.UnitId, ListingId = x.ListingId, LeaseId = x.LeaseId, MaintenanceRequestId = x.MaintenanceRequestId, FileName = x.FileName, BlobPath = x.BlobPath, Caption = x.Caption, Category = x.Category.ToString(), SortOrder = x.SortOrder, CreatedUtc = x.CreatedUtc, IsPrimary = x.IsPrimary, ScopeLabel = x.MaintenanceRequest != null ? x.MaintenanceRequest.Title : x.Lease != null && x.Lease.Unit != null ? $"Lease package - unit {x.Lease.Unit.UnitNumber}" : x.Listing != null ? x.Listing.Title : x.Unit != null ? x.Unit.UnitNumber : x.Property != null ? x.Property.Name : string.Empty }).ToListAsync();
+        public Task<List<MediaAssetSummaryDto>> GetMaintenanceMediaAssetsAsync() => _db.MediaAssets.Where(x => x.OrganizationId == _current.OrganizationId && x.MaintenanceRequestId != null).OrderByDescending(x => x.IsPrimary).ThenBy(x => x.SortOrder).Select(x => new MediaAssetSummaryDto { MediaAssetId = x.Id, PropertyId = x.PropertyId, UnitId = x.UnitId, ListingId = x.ListingId, LeaseId = x.LeaseId, MaintenanceRequestId = x.MaintenanceRequestId, FileName = x.FileName, BlobPath = x.BlobPath, Caption = x.Caption, Category = x.Category.ToString(), SortOrder = x.SortOrder, CreatedUtc = x.CreatedUtc, IsPrimary = x.IsPrimary, ScopeLabel = x.MaintenanceRequest != null ? x.MaintenanceRequest.Title : string.Empty }).ToListAsync();
+        public Task<List<LeaseMoveInDocumentDto>> GetLeaseMoveInDocumentsAsync(Guid leaseId) => _db.MediaAssets
+            .Where(x => x.OrganizationId == _current.OrganizationId && x.LeaseId == leaseId && x.Category == MediaAssetCategory.LeaseDocument)
+            .OrderByDescending(x => x.IsPrimary)
+            .ThenBy(x => x.SortOrder)
+            .Select(x => new LeaseMoveInDocumentDto
+            {
+                MediaAssetId = x.Id,
+                LeaseId = x.LeaseId ?? Guid.Empty,
+                FileName = x.FileName,
+                BlobPath = x.BlobPath,
+                Caption = x.Caption,
+                DocumentType = x.DocumentType,
+                OfficialUrl = x.DocumentType == "SignedLease" && _current.Province == "ON"
+                    ? (_current.PreferredLanguage == "fr-CA"
+                        ? "https://forms.mgcs.gov.on.ca/dataset/edff7620-980b-455f-9666-643196d8312f/resource/90186613-2e1e-47ed-84e9-8786bf137396/download/2229f.pdf"
+                        : "https://forms.mgcs.gov.on.ca/dataset/edff7620-980b-455f-9666-643196d8312f/resource/05677ea2-3173-4c0e-9a14-7a06cbcb41b9/download/2229e_standard-lease_static.pdf")
+                    : x.DocumentType == "InsuranceProof" && _current.Province == "ON"
+                        ? "https://www.fsrao.ca/consumers/property-and-casualty-insurance"
+                        : string.Empty,
+                CreatedUtc = x.CreatedUtc,
+                IsPrimary = x.IsPrimary
+            })
+            .ToListAsync();
+        public async Task<List<LeaseMoveInRequirementDto>> GetLeaseMoveInRequirementsAsync(Guid leaseId)
+        {
+            var documents = await _db.MediaAssets
+                .Where(x => x.OrganizationId == _current.OrganizationId && x.LeaseId == leaseId && x.Category == MediaAssetCategory.LeaseDocument)
+                .Select(x => x.DocumentType)
+                .ToListAsync();
+
+            return GetMoveInRequirementCatalog()
+                .Select(requirement => new LeaseMoveInRequirementDto
+                {
+                    DocumentType = requirement.DocumentType,
+                    Label = requirement.Label,
+                    IsCompleted = documents.Contains(requirement.DocumentType, StringComparer.OrdinalIgnoreCase),
+                    StatusLabel = documents.Contains(requirement.DocumentType, StringComparer.OrdinalIgnoreCase) ? "Complete" : "Missing",
+                    Guidance = documents.Contains(requirement.DocumentType, StringComparer.OrdinalIgnoreCase)
+                        ? $"{requirement.Label} already logged in the package."
+                        : $"Add {requirement.Label.ToLowerInvariant()} before activation."
+                })
+                .ToList();
+        }
+        public async Task<LeaseMoveInContextDto?> GetLeaseMoveInContextAsync(Guid leaseId)
+        {
+            var lease = await _db.Leases
+                .Where(x => x.OrganizationId == _current.OrganizationId && x.Id == leaseId)
+                .Select(x => new
+                {
+                    x.Id,
+                    UnitLabel = x.Unit != null ? x.Unit.UnitNumber : string.Empty,
+                    PropertyName = x.Unit != null && x.Unit.Property != null ? x.Unit.Property.Name : string.Empty,
+                    TenantName = x.Tenant != null ? x.Tenant.FullName : string.Empty
+                })
+                .FirstOrDefaultAsync();
+
+            return lease is null
+                ? null
+                : new LeaseMoveInContextDto
+                {
+                    LeaseId = lease.Id,
+                    PropertyName = lease.PropertyName,
+                    UnitLabel = lease.UnitLabel,
+                    TenantName = lease.TenantName
+                };
+        }
         public Task<List<MaintenanceEvidenceSummaryDto>> GetMaintenanceEvidenceAsync() => _db.MaintenanceRequests.Where(x => x.OrganizationId == _current.OrganizationId).OrderByDescending(x => x.RequestedDate).Select(x => new MaintenanceEvidenceSummaryDto { MaintenanceRequestId = x.Id, Title = x.Title, PropertyName = _db.Properties.Where(property => property.Id == x.PropertyId).Select(property => property.Name).FirstOrDefault() ?? string.Empty, UnitLabel = x.UnitId.HasValue ? _db.Units.Where(unit => unit.Id == x.UnitId.Value).Select(unit => unit.UnitNumber).FirstOrDefault() ?? string.Empty : string.Empty, Status = x.Status, DispatchStatus = x.DispatchStatus, VendorName = x.VendorName, RequestedDate = x.RequestedDate, EvidenceCount = _db.MediaAssets.Count(asset => asset.MaintenanceRequestId == x.Id), DossierSignature = $"EVP-{x.RequestedDate:yyyyMMdd}-{x.Id.ToString().Substring(0, 8).ToUpperInvariant()}", EvidencePackSummary = $"Timeline ready for {x.Title}: {_db.MediaAssets.Count(asset => asset.MaintenanceRequestId == x.Id)} item(s), status {x.Status}, dispatch {x.DispatchStatus}{(string.IsNullOrWhiteSpace(x.VendorName) ? string.Empty : $", vendor {x.VendorName}")}." }).ToListAsync();
         public Task<List<AISuggestionSummaryDto>> GetAISuggestionsAsync() => _db.AISuggestionLogs.Where(x => x.OrganizationId == _current.OrganizationId).OrderByDescending(x => x.CreatedUtc).Select(x => new AISuggestionSummaryDto { SuggestionId = x.Id, SuggestionType = x.SuggestionType.ToString(), SourceEntityName = x.SourceEntityName, PromptSummary = x.PromptSummary, SuggestedContent = x.SuggestedContent, ReviewedByHuman = x.ReviewedByHuman }).ToListAsync();
-        public Task<List<TenantConversationSummaryDto>> GetTenantConversationsAsync() => _db.TenantConversations.Where(x => x.OrganizationId == _current.OrganizationId).OrderByDescending(x => x.LastContactUtc ?? x.CreatedUtc).Select(x => new TenantConversationSummaryDto { TenantConversationId = x.Id, TenantId = x.TenantId, LeaseId = x.LeaseId, MaintenanceRequestId = x.MaintenanceRequestId, TenantName = x.Tenant != null ? x.Tenant.FullName : string.Empty, Subject = x.Subject, Channel = x.Channel.ToString(), Status = x.Status, UnitLabel = x.Lease != null && x.Lease.Unit != null ? x.Lease.Unit.UnitNumber : string.Empty, LastMessagePreview = _db.TenantMessages.Where(message => message.TenantConversationId == x.Id).OrderByDescending(message => message.SentUtc).Select(message => message.Body).FirstOrDefault() ?? string.Empty, LastContactUtc = x.LastContactUtc, MessageCount = _db.TenantMessages.Count(message => message.TenantConversationId == x.Id) }).ToListAsync();
+        public async Task<List<TenantConversationSummaryDto>> GetTenantConversationsAsync()
+        {
+            var conversations = await _db.TenantConversations
+                .Where(x => x.OrganizationId == _current.OrganizationId)
+                .OrderByDescending(x => x.LastContactUtc ?? x.CreatedUtc)
+                .Select(x => new TenantConversationSummaryDto
+                {
+                    TenantConversationId = x.Id,
+                    TenantId = x.TenantId,
+                    LeaseId = x.LeaseId,
+                    MaintenanceRequestId = x.MaintenanceRequestId,
+                    TenantName = x.Tenant != null ? x.Tenant.FullName : string.Empty,
+                    Subject = x.Subject,
+                    Channel = x.Channel.ToString(),
+                    Status = x.Status,
+                    UnitLabel = x.Lease != null && x.Lease.Unit != null ? x.Lease.Unit.UnitNumber : string.Empty,
+                    LastMessagePreview = _db.TenantMessages.Where(message => message.TenantConversationId == x.Id).OrderByDescending(message => message.SentUtc).Select(message => message.Body).FirstOrDefault() ?? string.Empty,
+                    LastContactUtc = x.LastContactUtc,
+                    MessageCount = _db.TenantMessages.Count(message => message.TenantConversationId == x.Id),
+                    HasMoveInWorkflow = x.LeaseId.HasValue,
+                    MoveInMissingItemCount = 0,
+                    MoveInMissingItems = Array.Empty<string>(),
+                    MoveInActionableItems = Array.Empty<string>(),
+                    MoveInDocumentActions = new Dictionary<string, string>(),
+                    MoveInNextDraftBody = string.Empty,
+                    CanCompleteOnboardingHandoff = false,
+                    HasActiveTenancy = false
+                })
+                .ToListAsync();
+
+            var leaseIds = conversations.Where(x => x.LeaseId.HasValue).Select(x => x.LeaseId!.Value).Distinct().ToList();
+            if (leaseIds.Count == 0)
+            {
+                return conversations;
+            }
+
+            var requiredTypes = GetMoveInRequirementCatalog().Select(x => x.DocumentType).ToList();
+            var completedDocuments = await _db.MediaAssets
+                .Where(x => x.OrganizationId == _current.OrganizationId && x.LeaseId.HasValue && leaseIds.Contains(x.LeaseId.Value) && x.Category == MediaAssetCategory.LeaseDocument)
+                .Select(x => new { LeaseId = x.LeaseId!.Value, x.DocumentType })
+                .ToListAsync();
+
+            var leaseState = await _db.Leases
+                .Where(x => x.OrganizationId == _current.OrganizationId && leaseIds.Contains(x.Id))
+                .Select(x => new { x.Id, x.DepositReceived, x.InsuranceProofReceived, x.MoveInChecklistCompleted, x.StandardOntarioLeaseSigned, x.Status })
+                .ToListAsync();
+
+            foreach (var conversation in conversations.Where(x => x.LeaseId.HasValue))
+            {
+                var completedTypes = completedDocuments.Where(x => x.LeaseId == conversation.LeaseId!.Value).Select(x => x.DocumentType).ToList();
+                var missingItems = GetMoveInRequirementCatalog()
+                    .Where(requirement => !completedTypes.Contains(requirement.DocumentType, StringComparer.OrdinalIgnoreCase))
+                    .Select(requirement => requirement.Label)
+                    .ToList();
+
+                var lease = leaseState.FirstOrDefault(x => x.Id == conversation.LeaseId!.Value);
+                if (lease is not null)
+                {
+                    if (!lease.DepositReceived)
+                    {
+                        missingItems.Add("Deposit received");
+                    }
+
+                    if (!lease.InsuranceProofReceived)
+                    {
+                        missingItems.Add("Insurance proof received");
+                    }
+
+                    if (!lease.MoveInChecklistCompleted)
+                    {
+                        missingItems.Add("Move-in checklist completed");
+                    }
+
+                    if (!lease.StandardOntarioLeaseSigned)
+                    {
+                        missingItems.Add("Signed lease confirmation");
+                    }
+                }
+
+                conversation.MoveInMissingItems = missingItems;
+                conversation.MoveInMissingItemCount = missingItems.Count;
+                conversation.MoveInActionableItems = missingItems
+                    .Where(x => x is "Deposit received" or "Insurance proof received" or "Move-in checklist completed" or "Signed lease confirmation")
+                    .ToList();
+                conversation.MoveInDocumentActions = GetMoveInRequirementCatalog()
+                    .Where(requirement => missingItems.Contains(requirement.Label, StringComparer.OrdinalIgnoreCase))
+                    .ToDictionary(requirement => requirement.Label, requirement => requirement.DocumentType, StringComparer.OrdinalIgnoreCase);
+
+                conversation.MoveInNextDraftBody = BuildLeaseMoveInNextDraftBody(
+                    conversation.TenantName,
+                    string.IsNullOrWhiteSpace(conversation.UnitLabel) ? string.Empty : conversation.UnitLabel,
+                    missingItems);
+                conversation.CanCompleteOnboardingHandoff = missingItems.Count == 0;
+                conversation.HasActiveTenancy = lease?.Status == LeaseStatus.Active || lease?.Status == LeaseStatus.EndingSoon;
+            }
+
+            return conversations;
+        }
         public Task<List<TenantMessageSummaryDto>> GetTenantMessagesAsync(Guid conversationId) => _db.TenantMessages.Where(x => x.OrganizationId == _current.OrganizationId && x.TenantConversationId == conversationId).OrderBy(x => x.SentUtc).Select(x => new TenantMessageSummaryDto { TenantMessageId = x.Id, TenantConversationId = x.TenantConversationId, IsIncoming = x.IsIncoming, Body = x.Body, SentBy = x.SentBy, SentUtc = x.SentUtc, IsAISuggested = x.IsAISuggested, DeliveryMethod = x.DeliveryMethod, DeliveredUtc = x.DeliveredUtc, DeliveryProof = x.DeliveryProof }).ToListAsync();
+        public async Task<Resident360SummaryDto?> GetResident360Async(Guid tenantId)
+        {
+            var tenant = await _db.Tenants.FirstOrDefaultAsync(x => x.OrganizationId == _current.OrganizationId && x.Id == tenantId);
+            if (tenant is null)
+            {
+                return null;
+            }
+
+            var units = await _db.Units.Where(x => x.OrganizationId == _current.OrganizationId).ToListAsync();
+            var leases = await _db.Leases
+                .Where(x => x.OrganizationId == _current.OrganizationId && x.TenantId == tenantId)
+                .OrderByDescending(x => x.StartDate)
+                .ToListAsync();
+
+            var activeLease = leases.FirstOrDefault(x => x.Status == LeaseStatus.Active || x.Status == LeaseStatus.EndingSoon) ?? leases.FirstOrDefault();
+            var invoices = (await GetInvoicesAsync())
+                .Where(x => x.TenantName.Equals(tenant.FullName, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+            var invoiceIds = invoices.Select(x => x.InvoiceId).ToHashSet();
+            var payments = (await GetPaymentEntriesAsync())
+                .Where(x => invoiceIds.Contains(x.InvoiceId))
+                .ToList();
+            var conversations = (await GetTenantConversationsAsync())
+                .Where(x => x.TenantId == tenantId)
+                .ToList();
+            var unitIds = leases.Select(x => x.UnitId).ToHashSet();
+            var maintenance = await _db.MaintenanceRequests
+                .Where(x => x.OrganizationId == _current.OrganizationId && x.UnitId.HasValue && unitIds.Contains(x.UnitId.Value))
+                .OrderByDescending(x => x.RequestedDate)
+                .ToListAsync();
+
+            return new Resident360SummaryDto
+            {
+                Tenant = tenant,
+                ActiveLease = activeLease,
+                Leases = leases,
+                Invoices = invoices,
+                Payments = payments,
+                Conversations = conversations,
+                MaintenanceRequests = maintenance,
+                Units = units,
+                OpenBalance = invoices.Sum(x => x.Balance),
+                PaymentsReceived = payments.Sum(x => x.Amount),
+                HasMoveInCompleted = activeLease is not null && activeLease.DepositReceived && activeLease.InsuranceProofReceived && activeLease.MoveInChecklistCompleted,
+                HasRentFollowUp = invoices.Any(x => x.Balance > 0) || conversations.Any(x => x.Subject.Contains("rent", StringComparison.OrdinalIgnoreCase) || x.Subject.Contains("invoice", StringComparison.OrdinalIgnoreCase)),
+                HasNoticeWorkflow = activeLease?.N1IncreaseNoticeScheduled == true || invoices.Any(x => x.Balance > 0),
+                HasMaintenanceWorkflow = maintenance.Any() || conversations.Any(x => x.Subject.Contains("maintenance", StringComparison.OrdinalIgnoreCase) || x.Subject.Contains("repair", StringComparison.OrdinalIgnoreCase))
+            };
+        }
         public Task<List<MaintenanceCommunicationSummaryDto>> GetMaintenanceCommunicationMessagesAsync(Guid maintenanceRequestId) => _db.TenantMessages
             .Where(x => x.OrganizationId == _current.OrganizationId && x.Conversation != null && x.Conversation.MaintenanceRequestId == maintenanceRequestId)
             .OrderBy(x => x.SentUtc)
@@ -874,13 +1379,51 @@ namespace PropertySaaS.Application.Features
             .ToListAsync();
         public Task<List<TenantMessageTemplateDto>> GetTenantMessageTemplatesAsync()
         {
+            var isFrench = string.Equals(_current.PreferredLanguage, "fr-CA", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(_current.PreferredLanguage, "fr", StringComparison.OrdinalIgnoreCase);
+
             var templates = new List<TenantMessageTemplateDto>
             {
-                new() { Key = "rent-reminder", Title = "Ontario rent reminder", BodyTemplate = "Hello {{tenantName}}, this is a friendly reminder regarding the rent balance for {{unitLabel}}. Please confirm your expected payment date and let us know if you need to discuss the next steps." },
-                new() { Key = "n4-prep", Title = "Ontario arrears follow-up before N4", BodyTemplate = "Hello {{tenantName}}, we are following up on the outstanding rent for {{unitLabel}}. Please contact us by {{nextStepDate}} to confirm payment timing before formal Ontario notice steps are reviewed." },
-                new() { Key = "maintenance-entry", Title = "Maintenance access coordination", BodyTemplate = "Hello {{tenantName}}, we are coordinating access for '{{subject}}' at {{unitLabel}}. Please confirm your availability and any access instructions so we can finalize the visit window." },
-                new() { Key = "notice-delivery", Title = "Notice delivery confirmation", BodyTemplate = "Hello {{tenantName}}, this message confirms delivery of the related notice for {{unitLabel}}. Please reply to confirm receipt and keep this thread for your records." },
-                new() { Key = "renewal-checkin", Title = "Lease renewal check-in", BodyTemplate = "Hello {{tenantName}}, we are starting an early renewal check-in for {{unitLabel}}. Please let us know if you would like to discuss your plans, questions or any proposed changes." }
+                new()
+                {
+                    Key = "rent-reminder",
+                    Title = isFrench ? "Relance de loyer Ontario" : "Ontario rent reminder",
+                    BodyTemplate = isFrench
+                        ? "Bonjour {{tenantName}}, ceci est un rappel amical concernant le solde de loyer pour {{unitLabel}}. Merci de confirmer votre date prévue de paiement et de nous indiquer si vous souhaitez discuter des prochaines étapes."
+                        : "Hello {{tenantName}}, this is a friendly reminder regarding the rent balance for {{unitLabel}}. Please confirm your expected payment date and let us know if you need to discuss the next steps."
+                },
+                new()
+                {
+                    Key = "n4-prep",
+                    Title = isFrench ? "Suivi d’arriérés avant N4" : "Ontario arrears follow-up before N4",
+                    BodyTemplate = isFrench
+                        ? "Bonjour {{tenantName}}, nous faisons un suivi du solde de loyer impayé pour {{unitLabel}}. Merci de nous répondre d’ici {{nextStepDate}} afin de confirmer le moment du paiement avant toute étape formelle en Ontario."
+                        : "Hello {{tenantName}}, we are following up on the outstanding rent for {{unitLabel}}. Please contact us by {{nextStepDate}} to confirm payment timing before formal Ontario notice steps are reviewed."
+                },
+                new()
+                {
+                    Key = "maintenance-entry",
+                    Title = isFrench ? "Coordination d’accès maintenance" : "Maintenance access coordination",
+                    BodyTemplate = isFrench
+                        ? "Bonjour {{tenantName}}, nous coordonnons l’accès pour « {{subject}} » à {{unitLabel}}. Merci de confirmer vos disponibilités et toute instruction d’accès afin que nous puissions finaliser l’intervention."
+                        : "Hello {{tenantName}}, we are coordinating access for '{{subject}}' at {{unitLabel}}. Please confirm your availability and any access instructions so we can finalize the visit window."
+                },
+                new()
+                {
+                    Key = "notice-delivery",
+                    Title = isFrench ? "Confirmation de remise d’avis" : "Notice delivery confirmation",
+                    BodyTemplate = isFrench
+                        ? "Bonjour {{tenantName}}, ce message confirme la remise de l’avis lié à {{unitLabel}}. Merci de répondre pour confirmer la réception et de conserver ce fil pour vos dossiers."
+                        : "Hello {{tenantName}}, this message confirms delivery of the related notice for {{unitLabel}}. Please reply to confirm receipt and keep this thread for your records."
+                },
+                new()
+                {
+                    Key = "renewal-checkin",
+                    Title = isFrench ? "Prise de contact pour renouvellement" : "Lease renewal check-in",
+                    BodyTemplate = isFrench
+                        ? "Bonjour {{tenantName}}, nous lançons un premier échange concernant le renouvellement de {{unitLabel}}. Merci de nous indiquer si vous souhaitez discuter de vos plans, questions ou changements proposés."
+                        : "Hello {{tenantName}}, we are starting an early renewal check-in for {{unitLabel}}. Please let us know if you would like to discuss your plans, questions or any proposed changes."
+                }
             };
 
             return Task.FromResult(templates);
@@ -995,6 +1538,45 @@ namespace PropertySaaS.Application.Features
                 $"Draft a resident update for maintenance request {request.Title}",
                 $"Confirm that {recommendation.VendorName} has been assigned, share the expected response window of {recommendation.TypicalResponseHours} hours, and explain the next scheduling step.");
 
+            await _db.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<bool> AddLeaseMoveInDocumentAsync(Guid leaseId, string documentType, string fileName, string caption)
+        {
+            EnsureCanManageData();
+            var lease = await _db.Leases.FirstOrDefaultAsync(x => x.Id == leaseId && x.OrganizationId == _current.OrganizationId);
+            if (lease is null)
+            {
+                return false;
+            }
+
+            var normalizedDocumentType = NormalizeLeaseMoveInDocumentType(documentType);
+            if (string.IsNullOrWhiteSpace(normalizedDocumentType))
+            {
+                return false;
+            }
+
+            var nextSortOrder = await _db.MediaAssets.Where(x => x.OrganizationId == _current.OrganizationId && x.LeaseId == leaseId).CountAsync() + 1;
+            _db.MediaAssets.Add(new MediaAsset
+            {
+                Id = Guid.NewGuid(),
+                OrganizationId = _current.OrganizationId,
+                PropertyId = await _db.Units.Where(x => x.Id == lease.UnitId).Select(x => (Guid?)x.PropertyId).FirstOrDefaultAsync(),
+                UnitId = lease.UnitId,
+                LeaseId = leaseId,
+                FileName = string.IsNullOrWhiteSpace(fileName) ? $"{GetLeaseMoveInDocumentLabel(normalizedDocumentType)} item" : fileName.Trim(),
+                BlobPath = $"/leases/{leaseId}/documents/{Guid.NewGuid():N}",
+                Caption = caption?.Trim() ?? string.Empty,
+                DocumentType = normalizedDocumentType,
+                SortOrder = nextSortOrder,
+                IsPrimary = nextSortOrder == 1,
+                Category = MediaAssetCategory.LeaseDocument,
+                CreatedUtc = DateTime.UtcNow
+            });
+
+            _db.AuditLogs.Add(new AuditLog { OrganizationId = _current.OrganizationId, EntityName = nameof(MediaAsset), Action = "LeaseDocument", PerformedBy = _current.UserEmail, Details = $"Added move-in document for lease {leaseId}" });
+            await LogLeaseMoveInThreadUpdateAsync(leaseId, $"Move-in document added to the package: {GetLeaseMoveInDocumentLabel(normalizedDocumentType)}.");
             await _db.SaveChangesAsync();
             return true;
         }
@@ -1212,10 +1794,379 @@ namespace PropertySaaS.Application.Features
             entity.PhoneNumber = lead.PhoneNumber;
             entity.Source = lead.Source;
             entity.Status = lead.Status;
+            entity.MonthlyIncome = lead.MonthlyIncome;
+            entity.DesiredMoveInDate = lead.DesiredMoveInDate;
+            entity.OccupantCount = lead.OccupantCount;
+            entity.HasPets = lead.HasPets;
+            entity.CreditScore = lead.CreditScore;
+            entity.ConsentToScreening = lead.ConsentToScreening;
             entity.Notes = lead.Notes;
 
             _db.AuditLogs.Add(new AuditLog { OrganizationId = _current.OrganizationId, EntityName = nameof(Lead), Action = "Update", PerformedBy = _current.UserEmail, Details = $"Updated lead {lead.FullName}" });
             await _db.SaveChangesAsync();
+        }
+
+        public async Task<bool> ConvertLeadToTenantAsync(Guid leadId)
+        {
+            EnsureCanManageData();
+
+            var lead = await _db.Leads
+                .Include(x => x.Listing)
+                .FirstOrDefaultAsync(x => x.Id == leadId && x.OrganizationId == _current.OrganizationId);
+
+            if (lead?.Listing is null || !lead.Listing.UnitId.HasValue)
+            {
+                return false;
+            }
+
+            var existingTenant = await _db.Tenants.FirstOrDefaultAsync(x => x.OrganizationId == _current.OrganizationId && x.Email == lead.Email);
+            var tenantId = existingTenant?.Id ?? Guid.NewGuid();
+
+            if (existingTenant is null)
+            {
+                _db.Tenants.Add(new Tenant
+                {
+                    Id = tenantId,
+                    OrganizationId = _current.OrganizationId,
+                    FullName = lead.FullName,
+                    Email = lead.Email,
+                    PhoneNumber = lead.PhoneNumber,
+                    CreditScore = lead.CreditScore,
+                    ScreeningCompleted = lead.ConsentToScreening,
+                    ScreeningProvider = lead.ConsentToScreening ? "Application pipeline" : string.Empty,
+                    CreatedUtc = DateTime.UtcNow
+                });
+            }
+
+            var unit = await _db.Units.FirstOrDefaultAsync(x => x.Id == lead.Listing.UnitId.Value && x.OrganizationId == _current.OrganizationId);
+            if (unit is null)
+            {
+                return false;
+            }
+
+            unit.IsOccupied = true;
+
+            var lease = new Lease
+            {
+                Id = Guid.NewGuid(),
+                OrganizationId = _current.OrganizationId,
+                UnitId = unit.Id,
+                TenantId = tenantId,
+                StartDate = lead.DesiredMoveInDate ?? DateOnly.FromDateTime(DateTime.Today.AddDays(14)),
+                EndDate = (lead.DesiredMoveInDate ?? DateOnly.FromDateTime(DateTime.Today.AddDays(14))).AddYears(1),
+                MonthlyRent = lead.Listing.AskingRent,
+                Status = LeaseStatus.Draft,
+                StandardOntarioLeaseSigned = false,
+                N1IncreaseNoticeScheduled = false,
+                DepositReceived = false,
+                InsuranceProofReceived = false,
+                MoveInChecklistCompleted = false,
+                MoveInNotes = "Newly converted from approved application. Draft lease package and income verification were preloaded; collect deposit, insurance proof and remaining move-in documents before activation.",
+                CreatedUtc = DateTime.UtcNow
+            };
+
+            _db.Leases.Add(lease);
+            SeedLeaseMoveInDocumentsFromLead(lead, lease, unit.PropertyId);
+
+            lead.Status = LeadStatus.Won;
+            lead.ModifiedUtc = DateTime.UtcNow;
+
+            _db.AuditLogs.Add(new AuditLog { OrganizationId = _current.OrganizationId, EntityName = nameof(Lead), Action = "Convert", PerformedBy = _current.UserEmail, Details = $"Converted lead {lead.FullName} into tenant and draft lease" });
+            AddAISuggestion(AISuggestionType.WorkQueue, nameof(Lead), lead.Id, $"Prepare lease package for {lead.FullName}", "Send the Ontario lease package, collect signatures and confirm the move-in checklist before handoff.");
+            await _db.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<bool> UpdateLeaseMoveInPackageAsync(Guid leaseId, bool depositReceived, bool insuranceProofReceived, bool checklistCompleted, string moveInNotes)
+        {
+            EnsureCanManageData();
+            var lease = await _db.Leases.FirstOrDefaultAsync(x => x.Id == leaseId && x.OrganizationId == _current.OrganizationId);
+            if (lease is null)
+            {
+                return false;
+            }
+
+            lease.DepositReceived = depositReceived;
+            lease.InsuranceProofReceived = insuranceProofReceived;
+            lease.MoveInChecklistCompleted = checklistCompleted;
+            lease.MoveInNotes = moveInNotes?.Trim() ?? string.Empty;
+
+            _db.AuditLogs.Add(new AuditLog { OrganizationId = _current.OrganizationId, EntityName = nameof(Lease), Action = "MoveInPackage", PerformedBy = _current.UserEmail, Details = $"Updated move-in package for lease {lease.Id}" });
+            await _db.SaveChangesAsync();
+            return true;
+        }
+
+        private async Task LogLeaseMoveInThreadUpdateAsync(Guid leaseId, string body)
+        {
+            var conversation = await _db.TenantConversations
+                .FirstOrDefaultAsync(x => x.OrganizationId == _current.OrganizationId && x.LeaseId == leaseId);
+
+            if (conversation is null)
+            {
+                return;
+            }
+
+            var sentUtc = DateTime.UtcNow;
+            _db.TenantMessages.Add(new TenantMessage
+            {
+                Id = Guid.NewGuid(),
+                OrganizationId = _current.OrganizationId,
+                TenantConversationId = conversation.Id,
+                IsIncoming = false,
+                Body = body,
+                SentBy = _current.UserEmail,
+                SentUtc = sentUtc,
+                DeliveredUtc = sentUtc,
+                DeliveryMethod = "Internal workflow",
+                DeliveryProof = $"Logged automatically after move-in workflow action by {_current.UserEmail} on {sentUtc:u}",
+                IsAISuggested = false,
+                CreatedUtc = sentUtc
+            });
+
+            conversation.LastContactUtc = sentUtc;
+            conversation.Status = "Awaiting reply";
+
+            var context = await GetLeaseMoveInContextAsync(leaseId);
+            if (context is null)
+            {
+                return;
+            }
+
+            var requirements = await GetLeaseMoveInRequirementsAsync(leaseId);
+            var leaseState = await _db.Leases.FirstOrDefaultAsync(x => x.OrganizationId == _current.OrganizationId && x.Id == leaseId);
+
+            if (leaseState is null)
+            {
+                return;
+            }
+
+            var missingItems = requirements.Where(x => !x.IsCompleted).Select(x => x.Label).ToList();
+            if (!leaseState.DepositReceived)
+            {
+                missingItems.Add("Deposit received");
+            }
+
+            if (!leaseState.InsuranceProofReceived)
+            {
+                missingItems.Add("Insurance proof received");
+            }
+
+            if (!leaseState.MoveInChecklistCompleted)
+            {
+                missingItems.Add("Move-in checklist completed");
+            }
+
+            if (!leaseState.StandardOntarioLeaseSigned)
+            {
+                missingItems.Add("Signed lease confirmation");
+            }
+
+            var nextDraftBody = BuildLeaseMoveInNextDraftBody(context.TenantName, context.UnitLabel, missingItems);
+            var alreadyLogged = await _db.TenantMessages.AnyAsync(x => x.OrganizationId == _current.OrganizationId && x.TenantConversationId == conversation.Id && x.Body == nextDraftBody);
+            if (alreadyLogged)
+            {
+                return;
+            }
+
+            _db.TenantMessages.Add(new TenantMessage
+            {
+                Id = Guid.NewGuid(),
+                OrganizationId = _current.OrganizationId,
+                TenantConversationId = conversation.Id,
+                IsIncoming = false,
+                Body = nextDraftBody,
+                SentBy = _current.UserEmail,
+                SentUtc = sentUtc.AddSeconds(1),
+                IsAISuggested = true,
+                DeliveryMethod = "Email draft",
+                DeliveryProof = $"Next recommended move-in follow-up generated automatically for {context.TenantName}.",
+                CreatedUtc = sentUtc.AddSeconds(1)
+            });
+        }
+
+        public async Task<Guid?> EnsureLeaseConversationAsync(Guid leaseId)
+        {
+            var lease = await _db.Leases
+                .Include(x => x.Tenant)
+                .Include(x => x.Unit)
+                .FirstOrDefaultAsync(x => x.Id == leaseId && x.OrganizationId == _current.OrganizationId);
+
+            if (lease?.Tenant is null)
+            {
+                return null;
+            }
+
+            var existing = await _db.TenantConversations.FirstOrDefaultAsync(x => x.OrganizationId == _current.OrganizationId && x.LeaseId == leaseId && x.TenantId == lease.TenantId);
+            if (existing is not null)
+            {
+                return existing.Id;
+            }
+
+            var conversation = new TenantConversation
+            {
+                Id = Guid.NewGuid(),
+                OrganizationId = _current.OrganizationId,
+                TenantId = lease.TenantId,
+                LeaseId = leaseId,
+                Subject = $"Lease onboarding for unit {lease.Unit?.UnitNumber ?? string.Empty}".Trim(),
+                Channel = ConversationChannel.Email,
+                Status = "Draft",
+                LastContactUtc = DateTime.UtcNow,
+                CreatedUtc = DateTime.UtcNow
+            };
+
+            _db.TenantConversations.Add(conversation);
+            _db.TenantMessages.Add(new TenantMessage
+            {
+                Id = Guid.NewGuid(),
+                OrganizationId = _current.OrganizationId,
+                TenantConversationId = conversation.Id,
+                IsIncoming = false,
+                Body = "Welcome to the onboarding workflow. We will share the lease package, move-in timing and access instructions shortly.",
+                SentBy = _current.UserEmail,
+                SentUtc = DateTime.UtcNow,
+                IsAISuggested = true,
+                DeliveryMethod = "Email draft",
+                CreatedUtc = DateTime.UtcNow
+            });
+
+            await _db.SaveChangesAsync();
+            return conversation.Id;
+        }
+
+        public async Task<bool> CompleteLeaseMoveInStepAsync(Guid leaseId, bool markSigned, bool activateLease)
+        {
+            EnsureCanManageData();
+            var lease = await _db.Leases.FirstOrDefaultAsync(x => x.Id == leaseId && x.OrganizationId == _current.OrganizationId);
+            if (lease is null)
+            {
+                return false;
+            }
+
+            if (markSigned)
+            {
+                lease.StandardOntarioLeaseSigned = true;
+            }
+
+            if (activateLease)
+            {
+                var requiredDocumentTypes = GetMoveInRequirementCatalog().Select(x => x.DocumentType).ToList();
+                var completedDocumentTypes = await _db.MediaAssets
+                    .Where(x => x.OrganizationId == _current.OrganizationId && x.LeaseId == leaseId && x.Category == MediaAssetCategory.LeaseDocument)
+                    .Select(x => x.DocumentType)
+                    .ToListAsync();
+
+                var allDocumentsComplete = requiredDocumentTypes.All(required => completedDocumentTypes.Contains(required, StringComparer.OrdinalIgnoreCase));
+                if (!lease.DepositReceived || !lease.InsuranceProofReceived || !lease.MoveInChecklistCompleted || !allDocumentsComplete || !lease.StandardOntarioLeaseSigned)
+                {
+                    return false;
+                }
+
+                lease.Status = LeaseStatus.Active;
+            }
+
+            _db.AuditLogs.Add(new AuditLog { OrganizationId = _current.OrganizationId, EntityName = nameof(Lease), Action = "MoveIn", PerformedBy = _current.UserEmail, Details = $"Updated move-in workflow for lease {lease.Id}" });
+            await _db.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<bool> CompleteLeaseOnboardingHandoffAsync(Guid leaseId)
+        {
+            EnsureCanManageData();
+            var activated = await CompleteLeaseMoveInStepAsync(leaseId, false, true);
+            if (!activated)
+            {
+                return false;
+            }
+
+            var lease = await _db.Leases.FirstOrDefaultAsync(x => x.OrganizationId == _current.OrganizationId && x.Id == leaseId);
+            if (lease is null)
+            {
+                return false;
+            }
+
+            lease.MoveInNotes = string.IsNullOrWhiteSpace(lease.MoveInNotes)
+                ? "Onboarding handoff completed and lease moved to active tenancy."
+                : $"{lease.MoveInNotes.Trim()} Handoff completed and lease moved to active tenancy.";
+
+            _db.AuditLogs.Add(new AuditLog
+            {
+                OrganizationId = _current.OrganizationId,
+                EntityName = nameof(Lease),
+                Action = "OnboardingHandoff",
+                PerformedBy = _current.UserEmail,
+                Details = $"Completed onboarding handoff for lease {lease.Id}"
+            });
+
+            await LogLeaseMoveInThreadUpdateAsync(lease.Id, "Onboarding handoff completed. Lease is now active and ready for resident operations.");
+            await _db.SaveChangesAsync();
+            return true;
+        }
+
+        private static IReadOnlyList<(string DocumentType, string Label)> GetMoveInRequirementCatalog()
+            => new[]
+            {
+                ("SignedLease", "Signed lease"),
+                ("InsuranceProof", "Insurance proof"),
+                ("GovernmentId", "Government ID"),
+                ("IncomeProof", "Income proof"),
+                ("DepositReceipt", "Deposit receipt")
+            };
+
+        private static string NormalizeLeaseMoveInDocumentType(string? documentType)
+            => GetMoveInRequirementCatalog()
+                .Select(x => x.DocumentType)
+                .FirstOrDefault(x => string.Equals(x, documentType?.Trim(), StringComparison.OrdinalIgnoreCase))
+                ?? string.Empty;
+
+        private static string GetLeaseMoveInDocumentLabel(string documentType)
+            => GetMoveInRequirementCatalog()
+                .FirstOrDefault(x => string.Equals(x.DocumentType, documentType, StringComparison.OrdinalIgnoreCase)).Label
+                ?? "Lease package";
+
+        private void SeedLeaseMoveInDocumentsFromLead(Lead lead, Lease lease, Guid propertyId)
+        {
+            var seedDocuments = new List<MediaAsset>
+            {
+                new()
+                {
+                    Id = Guid.NewGuid(),
+                    OrganizationId = _current.OrganizationId,
+                    PropertyId = propertyId,
+                    UnitId = lease.UnitId,
+                    LeaseId = lease.Id,
+                    FileName = $"Draft lease package - {lead.FullName}.pdf",
+                    BlobPath = $"/leases/{lease.Id}/seed/signed-lease",
+                    Caption = "Draft lease package generated from the approved application and ready for signature collection.",
+                    DocumentType = "SignedLease",
+                    SortOrder = 1,
+                    IsPrimary = true,
+                    Category = MediaAssetCategory.LeaseDocument,
+                    CreatedUtc = DateTime.UtcNow
+                }
+            };
+
+            if (lead.MonthlyIncome > 0)
+            {
+                seedDocuments.Add(new MediaAsset
+                {
+                    Id = Guid.NewGuid(),
+                    OrganizationId = _current.OrganizationId,
+                    PropertyId = propertyId,
+                    UnitId = lease.UnitId,
+                    LeaseId = lease.Id,
+                    FileName = $"Income verification - {lead.FullName}.pdf",
+                    BlobPath = $"/leases/{lease.Id}/seed/income-proof",
+                    Caption = $"Income verification placeholder created from the approved application amount of {lead.MonthlyIncome:C0}.",
+                    DocumentType = "IncomeProof",
+                    SortOrder = 2,
+                    IsPrimary = false,
+                    Category = MediaAssetCategory.LeaseDocument,
+                    CreatedUtc = DateTime.UtcNow
+                });
+            }
+
+            _db.MediaAssets.AddRange(seedDocuments);
         }
 
         public async Task DeleteLeadAsync(Guid id)
@@ -2195,9 +3146,46 @@ namespace PropertySaaS.Application.Features
                 Status = LeaseStatus.Active,
                 StandardOntarioLeaseSigned = profile.ProvinceCode == "ON",
                 N1IncreaseNoticeScheduled = profile.ProvinceCode == "ON",
+                DepositReceived = true,
+                InsuranceProofReceived = true,
+                MoveInChecklistCompleted = true,
+                MoveInNotes = "Demo move-in package completed with keys, insurance proof and deposit confirmed.",
                 CreatedUtc = DateTime.UtcNow
             };
             _db.Leases.Add(lease);
+            _db.MediaAssets.AddRange(
+                new MediaAsset
+                {
+                    Id = Guid.NewGuid(),
+                    OrganizationId = organization.Id,
+                    PropertyId = property.Id,
+                    UnitId = unit.Id,
+                    LeaseId = lease.Id,
+                    FileName = $"{profile.ProvinceDisplayName} lease package.pdf",
+                    BlobPath = $"/demo/{organization.Id}/lease-package/main",
+                    Caption = "Signed lease package ready for onboarding handoff.",
+                    DocumentType = "SignedLease",
+                    SortOrder = 1,
+                    IsPrimary = true,
+                    Category = MediaAssetCategory.LeaseDocument,
+                    CreatedUtc = DateTime.UtcNow
+                },
+                new MediaAsset
+                {
+                    Id = Guid.NewGuid(),
+                    OrganizationId = organization.Id,
+                    PropertyId = property.Id,
+                    UnitId = unit.Id,
+                    LeaseId = lease.Id,
+                    FileName = "Insurance proof.pdf",
+                    BlobPath = $"/demo/{organization.Id}/lease-package/insurance",
+                    Caption = "Resident insurance proof logged before key release.",
+                    DocumentType = "InsuranceProof",
+                    SortOrder = 2,
+                    IsPrimary = false,
+                    Category = MediaAssetCategory.LeaseDocument,
+                    CreatedUtc = DateTime.UtcNow
+                });
             _db.MaintenanceRequests.Add(new MaintenanceRequest
             {
                 Id = Guid.NewGuid(),

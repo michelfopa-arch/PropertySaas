@@ -1,6 +1,7 @@
 @attribute [Authorize]
 @page "/tenants"
 @inject SaasDataService DataService
+@inject NavigationManager NavigationManager
 @inject PropertySaaS.Application.Common.CurrentOrganization CurrentOrganization
 @inject IStringLocalizer<SharedResource> Localizer
 @using PropertySaaS.Web.Localization
@@ -13,6 +14,8 @@
         <MudText Typo="Typo.h4">@Localizer["Tenants_Title"]</MudText>
         <MudText Typo="Typo.body2">@Localizer["Tenants_Subtitle"]</MudText>
     </MudStack>
+
+    <DemoJourneyBanner CurrentStepKey="resident" ResidentRoute="@Resident360Route" />
 
     <MudGrid Spacing="2" Class="align-center-grid">
         <MudItem xs="12" lg="4">
@@ -66,6 +69,16 @@
         <MudItem xs="12" sm="6" lg="3"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">@Localizer["Tenants_StatProvidersUsed"]</MudText><MudText Typo="Typo.h6">@FilteredTenants.Select(x => x.ScreeningProvider).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct(StringComparer.OrdinalIgnoreCase).Count()</MudText></MudPaper></MudItem>
         <MudItem xs="12" sm="6" lg="3"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">@Localizer["Tenants_StatHighScoreResidents"]</MudText><MudText Typo="Typo.h6">@FilteredTenants.Count(x => x.CreditScore >= 750)</MudText></MudPaper></MudItem>
     </MudGrid>
+
+    <MudPaper Class="pa-4 property-detail-panel" Elevation="0">
+        <MudText Typo="Typo.h6">@UiText.Get("Tenants_InsightTitle")</MudText>
+        <MudGrid Spacing="2" Class="mt-2">
+            <MudItem xs="12" md="4"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">@UiText.Get("Tenants_InsightUrgency")</MudText><MudChip T="string" Variant="Variant.Outlined" Color="@InsightColor" Class="mt-2">@InsightUrgencyLabel</MudChip></MudPaper></MudItem>
+            <MudItem xs="12" md="4"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">@UiText.Get("Tenants_InsightFocus")</MudText><MudChip T="string" Variant="Variant.Outlined" Color="@InsightColor" Class="mt-2">@InsightFocusLabel</MudChip></MudPaper></MudItem>
+            <MudItem xs="12" md="4"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">@UiText.Get("Tenants_InsightNextAction")</MudText><MudButton Class="mt-2" Variant="Variant.Text" Color="@InsightColor" OnClick="OpenInsightNextActionAsync">@InsightActionLabel</MudButton></MudPaper></MudItem>
+        </MudGrid>
+        <MudText Typo="Typo.body2" Class="mt-3">@InsightMessage</MudText>
+    </MudPaper>
 
     <MudExpansionPanels>
         <MudExpansionPanel Text="@Localizer["Common_BulkImport"]">
@@ -175,6 +188,8 @@
 </MudStack>
 
 @code {
+    [SupplyParameterFromQuery] public Guid? TenantId { get; set; }
+
     private List<Tenant> _items = new();
     private Tenant _newTenant = new() { ScreeningCompleted = true, ScreeningProvider = "SingleKey" };
     private Tenant _editTenant = new() { ScreeningCompleted = true, ScreeningProvider = "SingleKey" };
@@ -185,10 +200,47 @@
     private string _selectedScoreBand = string.Empty;
     private bool _isFormPanelOpen;
     private bool _isCreateMode = true;
+    private Tenant? PriorityTenant => SelectedTenant ?? FilteredTenants.OrderBy(x => x.CreditScore).FirstOrDefault();
+
+    private Tenant? SelectedTenant => TenantId.HasValue ? _items.FirstOrDefault(x => x.Id == TenantId.Value) : null;
+
+    private string Resident360Route => PriorityTenant is not null ? $"/resident-360?tenantId={PriorityTenant.Id}" : "/resident-360";
 
     private bool HasActiveFilters => !string.IsNullOrWhiteSpace(_searchText) || !string.IsNullOrWhiteSpace(_selectedProviderFilter) || !string.IsNullOrWhiteSpace(_selectedScoreBand);
     private Tenant ActiveTenant => _isCreateMode ? _newTenant : _editTenant;
     private IEnumerable<string> ProviderOptions => _items.Select(x => GetProviderLabel(x.ScreeningProvider)).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(x => x);
+    private string InsightUrgencyLabel
+        => PriorityTenant is not null && PriorityTenant.CreditScore < 700
+            ? UiText.Get("Tenants_InsightUrgencyHigh")
+            : PriorityTenant is not null
+                ? UiText.Get("Tenants_InsightUrgencyMedium")
+                : UiText.Get("Tenants_InsightUrgencyStable");
+
+    private string InsightFocusLabel
+        => PriorityTenant is not null && PriorityTenant.CreditScore < 700
+            ? UiText.Get("Tenants_InsightFocusScreening")
+            : PriorityTenant is not null
+                ? UiText.Get("Tenants_InsightFocusResidentOps")
+                : UiText.Get("Tenants_InsightFocusStable");
+
+    private string InsightMessage
+        => PriorityTenant is not null && PriorityTenant.CreditScore < 700
+            ? UiText.Get("Tenants_InsightMessageScreening")
+            : PriorityTenant is not null
+                ? UiText.Get("Tenants_InsightMessageResidentOps")
+                : UiText.Get("Tenants_InsightMessageStable");
+
+    private string InsightActionLabel
+        => PriorityTenant is not null
+            ? UiText.Get("Tenants_InsightOpenResident")
+            : UiText.Get("Tenants_InsightOpenRoster");
+
+    private Color InsightColor
+        => PriorityTenant is not null && PriorityTenant.CreditScore < 700
+            ? Color.Warning
+            : PriorityTenant is not null
+                ? Color.Info
+                : Color.Success;
 
     private IEnumerable<Tenant> FilteredTenants => _items
         .Where(tenant => string.IsNullOrWhiteSpace(_searchText)
@@ -199,9 +251,28 @@
         .Where(tenant => string.IsNullOrWhiteSpace(_selectedProviderFilter) || string.Equals(GetProviderLabel(tenant.ScreeningProvider), _selectedProviderFilter, StringComparison.OrdinalIgnoreCase))
         .Where(tenant => string.IsNullOrWhiteSpace(_selectedScoreBand) || IsInScoreBand(tenant.CreditScore, _selectedScoreBand));
 
-    protected override async Task OnInitializedAsync() => await ReloadAsync();
+    protected override async Task OnInitializedAsync()
+    {
+        await ReloadAsync();
+        if (SelectedTenant is not null)
+        {
+            OpenEditPanel(SelectedTenant);
+        }
+    }
 
     private async Task ReloadAsync() => _items = await DataService.GetTenantsAsync();
+
+    private Task OpenInsightNextActionAsync()
+    {
+        if (PriorityTenant is not null)
+        {
+            NavigationManager.NavigateTo($"/resident-360?tenantId={PriorityTenant.Id}");
+            return Task.CompletedTask;
+        }
+
+        NavigationManager.NavigateTo("/tenants");
+        return Task.CompletedTask;
+    }
 
     private void OpenCreatePanel()
     {

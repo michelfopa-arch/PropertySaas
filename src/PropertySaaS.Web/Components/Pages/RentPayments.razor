@@ -15,6 +15,8 @@
         <MudText Typo="Typo.body2">@UiText.Get("RentPayments_Subtitle")</MudText>
     </MudStack>
 
+    <DemoJourneyBanner CurrentStepKey="resident" ResidentRoute="@Resident360Route" />
+
     @if (_invoices.Count == 0)
     {
         <MudPaper Class="pa-6 properties-empty-state" Elevation="0">
@@ -24,14 +26,39 @@
     }
     else
     {
+        <MudPaper Class="pa-4 property-detail-panel" Elevation="0">
+            <MudText Typo="Typo.h6">@UiText.Get("RentPayments_InsightTitle")</MudText>
+            <MudGrid Spacing="2" Class="mt-2">
+                <MudItem xs="12" md="4">
+                    <MudPaper Class="pa-3 property-mini-stat" Elevation="0">
+                        <MudText Typo="Typo.overline">@UiText.Get("RentPayments_InsightUrgency")</MudText>
+                        <MudChip T="string" Variant="Variant.Outlined" Color="@InsightColor" Class="mt-2">@InsightUrgencyLabel</MudChip>
+                    </MudPaper>
+                </MudItem>
+                <MudItem xs="12" md="4">
+                    <MudPaper Class="pa-3 property-mini-stat" Elevation="0">
+                        <MudText Typo="Typo.overline">@UiText.Get("RentPayments_InsightFocus")</MudText>
+                        <MudChip T="string" Variant="Variant.Outlined" Color="@InsightColor" Class="mt-2">@InsightFocusLabel</MudChip>
+                    </MudPaper>
+                </MudItem>
+                <MudItem xs="12" md="4">
+                    <MudPaper Class="pa-3 property-mini-stat" Elevation="0">
+                        <MudText Typo="Typo.overline">@UiText.Get("RentPayments_InsightNextAction")</MudText>
+                        <MudButton Class="mt-2" Variant="Variant.Text" Color="@InsightColor" OnClick="OpenInsightNextActionAsync">@InsightActionLabel</MudButton>
+                    </MudPaper>
+                </MudItem>
+            </MudGrid>
+            <MudText Typo="Typo.body2" Class="mt-3">@InsightMessage</MudText>
+        </MudPaper>
+
         <MudGrid Spacing="3">
-            <MudItem xs="12" md="4"><MetricCard Title="@UiText.Get("RentPayments_ExpectedRent")" Value="@_invoices.Sum(x => x.Amount).ToString("C")" Caption="@UiText.Get("RentPayments_ExpectedRentCaption")" Icon="@Icons.Material.Filled.Payments" /></MudItem>
-            <MudItem xs="12" md="4"><MetricCard Title="@UiText.Get("RentPayments_ActiveLeases")" Value="@_invoices.Count.ToString()" Caption="@UiText.Get("RentPayments_ActiveLeasesCaption")" Icon="@Icons.Material.Filled.Description" /></MudItem>
+            <MudItem xs="12" md="4"><MetricCard Title="@UiText.Get("RentPayments_ExpectedRent")" Value="@FilteredInvoices.Sum(x => x.Amount).ToString("C")" Caption="@UiText.Get("RentPayments_ExpectedRentCaption")" Icon="@Icons.Material.Filled.Payments" /></MudItem>
+            <MudItem xs="12" md="4"><MetricCard Title="@UiText.Get("RentPayments_ActiveLeases")" Value="@FilteredInvoices.Count().ToString()" Caption="@UiText.Get("RentPayments_ActiveLeasesCaption")" Icon="@Icons.Material.Filled.Description" /></MudItem>
             <MudItem xs="12" md="4"><MetricCard Title="@UiText.Get("RentPayments_CollectionsTitle")" Value="@UiText.Get("RentPayments_CollectionsValue")" Caption="@UiText.Get("RentPayments_CollectionsCaption")" Icon="@Icons.Material.Filled.ReceiptLong" /></MudItem>
         </MudGrid>
 
         <MudPaper Class="pa-2 table-wrap properties-table-shell" Elevation="0">
-            <MudTable Items="_invoices" Dense="true" Hover="true" Breakpoint="Breakpoint.Md">
+            <MudTable Items="FilteredInvoices" Dense="true" Hover="true" Breakpoint="Breakpoint.Md">
                 <HeaderContent>
                     <MudTh>@UiText.Get("RentPayments_InvoiceNumber")</MudTh>
                     <MudTh>@UiText.Get("RentPayments_Tenant")</MudTh>
@@ -51,7 +78,10 @@
                     <MudTd>
                         @if (CurrentOrganization.CanManageData)
                         {
-                            <MudButton Variant="Variant.Text" Color="Color.Primary" Size="Size.Small" OnClick="() => OpenInvoiceConversationAsync(context.InvoiceId)">@UiText.Get("TenantCommunications_OpenFromRent")</MudButton>
+                            <MudStack Row="true" Spacing="1" Wrap="Wrap.Wrap">
+                                <MudButton Variant="Variant.Text" Color="Color.Primary" Size="Size.Small" OnClick="() => OpenInvoiceConversationAsync(context.InvoiceId)">@UiText.Get("TenantCommunications_OpenFromRent")</MudButton>
+                                <MudButton Variant="Variant.Text" Color="Color.Warning" Size="Size.Small" OnClick="() => OpenInvoiceNoticeDraftAsync(context.InvoiceId)">@UiText.Get("RentPayments_PrepareN4Draft")</MudButton>
+                            </MudStack>
                         }
                     </MudTd>
                 </RowTemplate>
@@ -143,6 +173,8 @@
 </MudStack>
 
 @code {
+    [SupplyParameterFromQuery] public Guid? TenantId { get; set; }
+
     private List<InvoiceSummaryDto> _invoices = new();
     private List<PaymentEntrySummaryDto> _payments = new();
     private PaymentEntry _newPayment = new();
@@ -150,6 +182,62 @@
     private bool _isPaymentPanelOpen;
     private bool _isPaymentCreateMode = true;
     private DateTime? _paymentReceivedDate = DateTime.Today;
+    private InvoiceSummaryDto? HighestBalanceInvoice => FilteredInvoices.OrderByDescending(x => x.Balance).ThenBy(x => x.DueDate).FirstOrDefault(x => x.Balance > 0);
+    private InvoiceSummaryDto? PartialPaymentInvoice => FilteredInvoices.OrderByDescending(x => x.Balance).ThenBy(x => x.DueDate).FirstOrDefault(x => string.Equals(x.Status, "PartiallyPaid", StringComparison.OrdinalIgnoreCase));
+    private string InsightUrgencyLabel
+        => HighestBalanceInvoice is not null
+            ? UiText.Get("RentPayments_InsightUrgencyHigh")
+            : PartialPaymentInvoice is not null
+                ? UiText.Get("RentPayments_InsightUrgencyMedium")
+                : _payments.Count > 0
+                    ? UiText.Get("RentPayments_InsightUrgencyStable")
+                    : UiText.Get("RentPayments_InsightUrgencyMedium");
+
+    private string InsightFocusLabel
+        => HighestBalanceInvoice is not null
+            ? UiText.Get("RentPayments_InsightFocusOverdue")
+            : PartialPaymentInvoice is not null
+                ? UiText.Get("RentPayments_InsightFocusPartial")
+                : UiText.Get("RentPayments_InsightFocusReceipts");
+
+    private string InsightMessage
+        => HighestBalanceInvoice is not null
+            ? UiText.Get("RentPayments_InsightMessageOverdue")
+            : PartialPaymentInvoice is not null
+                ? UiText.Get("RentPayments_InsightMessagePartial")
+                : _payments.Count > 0
+                    ? UiText.Get("RentPayments_InsightMessageStable")
+                    : UiText.Get("RentPayments_InsightMessageReceipts");
+
+    private string InsightActionLabel
+        => HighestBalanceInvoice is not null
+            ? UiText.Get("RentPayments_OpenCollectionsThread")
+            : PartialPaymentInvoice is not null
+                ? UiText.Get("RentPayments_OpenPartialFollowUp")
+                : CurrentOrganization.CanManageData
+                    ? UiText.Get("RentPayments_OpenReceiptLog")
+                    : UiText.Get("RentPayments_OpenStableReview");
+
+    private Color InsightColor
+        => HighestBalanceInvoice is not null
+            ? Color.Error
+            : PartialPaymentInvoice is not null
+                ? Color.Warning
+                : Color.Success;
+
+    private IEnumerable<InvoiceSummaryDto> FilteredInvoices => TenantId.HasValue
+        ? _invoices.Where(x => string.Equals(x.TenantName, SelectedTenantName, StringComparison.OrdinalIgnoreCase))
+        : _invoices;
+
+    private string SelectedTenantName => !TenantId.HasValue
+        ? string.Empty
+        : _tenantLookup.TryGetValue(TenantId.Value, out var tenantName)
+            ? tenantName
+            : string.Empty;
+
+    private string Resident360Route => TenantId.HasValue ? $"/resident-360?tenantId={TenantId.Value}" : "/resident-360";
+
+    private Dictionary<Guid, string> _tenantLookup = new();
 
     private PaymentEntry ActivePayment => _isPaymentCreateMode ? _newPayment : _editPayment;
 
@@ -168,6 +256,7 @@
     {
         _invoices = await DataService.GetInvoicesAsync();
         _payments = await DataService.GetPaymentEntriesAsync();
+        _tenantLookup = (await DataService.GetTenantsAsync()).ToDictionary(x => x.Id, x => x.FullName);
     }
 
     private void OpenCreatePaymentPanel()
@@ -234,5 +323,36 @@
         NavigationManager.NavigateTo(conversationId.HasValue
             ? $"/tenant-communications?conversationId={conversationId.Value}"
             : "/tenant-communications");
+    }
+
+    private async Task OpenInvoiceNoticeDraftAsync(Guid invoiceId)
+    {
+        var conversationId = await DataService.EnsureInvoiceConversationAsync(invoiceId);
+        NavigationManager.NavigateTo(conversationId.HasValue
+            ? $"/tenant-communications?conversationId={conversationId.Value}&compose=n4-prep&invoiceId={invoiceId}"
+            : "/tenant-communications");
+    }
+
+    private async Task OpenInsightNextActionAsync()
+    {
+        if (HighestBalanceInvoice is not null)
+        {
+            await OpenInvoiceConversationAsync(HighestBalanceInvoice.InvoiceId);
+            return;
+        }
+
+        if (PartialPaymentInvoice is not null)
+        {
+            await OpenInvoiceConversationAsync(PartialPaymentInvoice.InvoiceId);
+            return;
+        }
+
+        if (CurrentOrganization.CanManageData)
+        {
+            OpenCreatePaymentPanel();
+            return;
+        }
+
+        NavigationManager.NavigateTo("/rent-payments");
     }
 }

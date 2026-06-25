@@ -1,0 +1,637 @@
+@attribute [Authorize]
+@page "/resident-360"
+@inject SaasDataService DataService
+@inject NavigationManager NavigationManager
+@inject PropertySaaS.Application.Common.CurrentOrganization CurrentOrganization
+@using PropertySaaS.Web.Localization
+@using PropertySaaS.Domain.Entities
+@using PropertySaaS.Domain.Enums
+
+<PageTitle>@UiText.Get("Nav_Resident360")</PageTitle>
+
+@if (_isLoading)
+{
+    <MudPaper Class="pa-6 d-flex justify-center">
+        <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+    </MudPaper>
+}
+else if (_summary?.Tenant is null)
+{
+    <MudAlert Severity="Severity.Warning">@UiText.Get("Resident360_NotFound")</MudAlert>
+}
+else
+{
+    var tenant = _summary.Tenant;
+    var activeLease = _summary.ActiveLease;
+
+    <MudStack Spacing="3">
+        <MudStack Spacing="0">
+            <MudChip T="string" Color="Color.Primary" Variant="Variant.Outlined" Size="Size.Small" Class="mb-2">@UiText.Get("Resident360_PremiumBadge")</MudChip>
+            <MudText Typo="Typo.h4">@tenant.FullName</MudText>
+            <MudText Typo="Typo.body2">@tenant.Email · @tenant.PhoneNumber</MudText>
+        </MudStack>
+
+        <DemoJourneyBanner CurrentStepKey="resident" ResidentRoute="@ResidentRoute" />
+
+        <MudPaper Class="pa-3 marketing-card" Elevation="0">
+            <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Wrap="Wrap.Wrap">
+                <MudText Typo="Typo.subtitle2">@UiText.Get("Common_RecommendedNextStop")</MudText>
+                <MudButton Variant="Variant.Text" Color="@RecommendedNextStopColor" OnClick="OpenRecommendedNextStopAsync">@RecommendedNextStopLabel</MudButton>
+            </MudStack>
+        </MudPaper>
+
+        @if (!IsDemoCleanView)
+        {
+        <MudGrid Spacing="2">
+            <MudItem xs="12" md="3"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">@UiText.Get("Resident360_ActiveLease")</MudText><MudText Typo="Typo.h6">@(activeLease is null ? UiText.Get("Resident360_None") : activeLease.Status.ToString())</MudText></MudPaper></MudItem>
+            <MudItem xs="12" md="3"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">@UiText.Get("Resident360_OpenBalance")</MudText><MudText Typo="Typo.h6">@_summary.OpenBalance.ToString("C")</MudText></MudPaper></MudItem>
+            <MudItem xs="12" md="3"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">@UiText.Get("Resident360_PaymentsReceived")</MudText><MudText Typo="Typo.h6">@_summary.PaymentsReceived.ToString("C")</MudText></MudPaper></MudItem>
+            <MudItem xs="12" md="3"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">@UiText.Get("Resident360_ConversationCount")</MudText><MudText Typo="Typo.h6">@_summary.Conversations.Count</MudText></MudPaper></MudItem>
+            <MudItem xs="12" md="3"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">@UiText.Get("Resident360_MaintenanceCount")</MudText><MudText Typo="Typo.h6">@_summary.MaintenanceRequests.Count</MudText></MudPaper></MudItem>
+        </MudGrid>
+        }
+
+        @if (!IsDemoCleanView)
+        {
+            <MudStack Row="true" Spacing="1" Wrap="Wrap.Wrap">
+                <MudButton Href="@WithDemoMode($"/tenant-communications?tenantId={EffectiveTenantId}")" Variant="Variant.Text" Color="Color.Primary">@UiText.Get("Nav_TenantCommunications")</MudButton>
+                <MudButton Href="@WithDemoMode($"/rent-payments?tenantId={EffectiveTenantId}")" Variant="Variant.Text" Color="Color.Secondary">@UiText.Get("Nav_RentPayments")</MudButton>
+                <MudButton Href="@WithDemoMode($"/leases?tenantId={EffectiveTenantId}")" Variant="Variant.Text" Color="Color.Info">@UiText.Get("Nav_Leases")</MudButton>
+                <MudButton Href="@WithDemoMode($"/tenants?tenantId={EffectiveTenantId}")" Variant="Variant.Text" Color="Color.Default">@UiText.Get("Nav_Tenants")</MudButton>
+            </MudStack>
+        }
+
+        @if (!IsDemoCleanView)
+        {
+            <MudStack Row="true" Spacing="1" Wrap="Wrap.Wrap">
+                @if (PrimaryConversation is not null)
+                {
+                    <MudButton Href="@WithDemoMode($"/tenant-communications?conversationId={PrimaryConversation.TenantConversationId}")" Variant="Variant.Outlined" Color="Color.Primary">@UiText.Get("Resident360_OpenActiveThread")</MudButton>
+                }
+                @if (PriorityMaintenance is not null)
+                {
+                    <MudButton Href="@WithDemoMode($"/maintenance?ticket={PriorityMaintenance.Id}#ticket-{PriorityMaintenance.Id}")" Variant="Variant.Outlined" Color="Color.Warning">@UiText.Get("Resident360_OpenPriorityMaintenance")</MudButton>
+                }
+                @if (PrimaryInvoice is not null)
+                {
+                    <MudButton Href="@WithDemoMode($"/tenant-communications?tenantId={EffectiveTenantId}&compose=rent-reminder&invoiceId={PrimaryInvoice.InvoiceId}")" Variant="Variant.Outlined" Color="Color.Secondary">@UiText.Get("Resident360_PrepareRentReminder")</MudButton>
+                    <MudButton Variant="Variant.Outlined" Color="Color.Error" OnClick="OpenN4DraftAsync">@UiText.Get("RentPayments_PrepareN4Draft")</MudButton>
+                }
+                @if (activeLease is not null)
+                {
+                    <MudButton Variant="Variant.Outlined" Color="Color.Default" OnClick="OpenNoticeDeliveryDraftAsync">@UiText.Get("Leases_MoveInOpenNoticeDeliveryDraft")</MudButton>
+                }
+            </MudStack>
+        }
+
+        <MudPaper Class="pa-4 property-detail-panel" Elevation="0">
+            <MudText Typo="Typo.subtitle2">@UiText.Get("Resident360_InsightTitle")</MudText>
+            <MudGrid Spacing="2" Class="mt-2">
+                <MudItem xs="12" md="4">
+                    <MudPaper Class="pa-3 property-mini-stat" Elevation="0">
+                        <MudText Typo="Typo.overline">@UiText.Get("Resident360_CollectionStatus")</MudText>
+                        <MudChip T="string" Variant="Variant.Outlined" Color="@CollectionStatusColor" Class="mt-2">@CollectionStatusLabel</MudChip>
+                    </MudPaper>
+                </MudItem>
+                <MudItem xs="12" md="4">
+                    <MudPaper Class="pa-3 property-mini-stat" Elevation="0">
+                        <MudText Typo="Typo.overline">@UiText.Get("Resident360_RiskLevel")</MudText>
+                        <MudChip T="string" Variant="Variant.Outlined" Color="@RiskLevelColor" Class="mt-2">@RiskLevelLabel</MudChip>
+                    </MudPaper>
+                </MudItem>
+                <MudItem xs="12" md="4">
+                    <MudPaper Class="pa-3 property-mini-stat" Elevation="0">
+                        <MudText Typo="Typo.overline">@UiText.Get("Resident360_NextBestAction")</MudText>
+                        <MudButton Class="mt-2" Variant="Variant.Text" Color="@NextBestActionColor" OnClick="NextBestAction">@NextBestActionLabel</MudButton>
+                    </MudPaper>
+                </MudItem>
+            </MudGrid>
+            <MudText Typo="Typo.body2" Class="mt-3">@NextBestActionMessage</MudText>
+        </MudPaper>
+
+        <MudPaper Class="pa-4 marketing-card" Elevation="0">
+            <MudText Typo="Typo.h6">@UiText.Get("Resident360_DemoStoryTitle")</MudText>
+            <MudText Typo="Typo.body2" Class="mt-1">@UiText.Get("Resident360_DemoStoryBody")</MudText>
+            <MudList T="string" Dense="true" Class="mt-3">
+                <MudListItem T="string">@UiText.Get("Resident360_DemoStoryStep1")</MudListItem>
+                <MudListItem T="string">@UiText.Get("Resident360_DemoStoryStep2")</MudListItem>
+                <MudListItem T="string">@UiText.Get("Resident360_DemoStoryStep3")</MudListItem>
+            </MudList>
+            <MudStack Row="true" Spacing="1" Class="mt-3" Wrap="Wrap.Wrap">
+                <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="NextBestAction">@NextBestActionLabel</MudButton>
+                <MudButton Variant="Variant.Text" Color="Color.Secondary" OnClick="OpenCollectionsBoardAsync">@UiText.Get("Resident360_OpenCollectionsBoard")</MudButton>
+                <MudButton Variant="Variant.Text" Color="Color.Warning" OnClick="OpenMaintenanceBoardAsync">@UiText.Get("Resident360_OpenMaintenanceBoard")</MudButton>
+            </MudStack>
+        </MudPaper>
+
+        @if (!IsDemoCleanView)
+        {
+            <MudPaper Class="pa-4 property-detail-panel" Elevation="0">
+                <MudText Typo="Typo.subtitle2">@UiText.Get("Resident360_ComplianceTitle")</MudText>
+                @if (!ComplianceSignals.Any())
+                {
+                    <MudText Typo="Typo.body2" Class="mt-2">@UiText.Get("Resident360_ComplianceEmpty")</MudText>
+                }
+                else
+                {
+                    <MudStack Spacing="2" Class="mt-3">
+                        @foreach (var signal in ComplianceSignals)
+                        {
+                            <MudPaper Class="pa-3 property-detail-panel" Elevation="0">
+                                <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Wrap="Wrap.Wrap">
+                                    <MudText Typo="Typo.body2">@signal.Message</MudText>
+                                    <MudChip T="string" Variant="Variant.Outlined" Color="@signal.Color">@signal.StatusLabel</MudChip>
+                                </MudStack>
+                                @if (signal.Action is not null && !string.IsNullOrWhiteSpace(signal.ActionLabel))
+                                {
+                                    <MudButton Class="mt-2" Variant="Variant.Text" Color="@signal.Color" OnClick="signal.Action">@signal.ActionLabel</MudButton>
+                                }
+                            </MudPaper>
+                        }
+                    </MudStack>
+                }
+            </MudPaper>
+        }
+
+        @if (!IsDemoCleanView)
+        {
+            <MudPaper Class="pa-4 property-detail-panel" Elevation="0">
+                <MudText Typo="Typo.subtitle2">@UiText.Get("Resident360_LifecycleTitle")</MudText>
+                <MudGrid Spacing="2" Class="mt-2">
+                    @foreach (var milestone in LifecycleMilestones)
+                    {
+                        <MudItem xs="12" md="6" lg="4">
+                            <MudPaper Class="pa-3 property-detail-panel" Elevation="0">
+                                <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Wrap="Wrap.Wrap">
+                                    <MudText Typo="Typo.body2">@milestone.Label</MudText>
+                                    <MudChip T="string" Variant="Variant.Outlined" Color="@milestone.Color">@(milestone.IsComplete ? UiText.Get("Resident360_LifecycleCompleted") : UiText.Get("Resident360_LifecyclePending"))</MudChip>
+                                </MudStack>
+                                @if (milestone.Action is not null && !string.IsNullOrWhiteSpace(milestone.ActionLabel))
+                                {
+                                    <MudButton Class="mt-2" Variant="Variant.Text" Color="@milestone.Color" OnClick="milestone.Action">@milestone.ActionLabel</MudButton>
+                                }
+                            </MudPaper>
+                        </MudItem>
+                    }
+                </MudGrid>
+            </MudPaper>
+        }
+
+        <MudTabs Rounded="true" PanelClass="pa-4">
+            <MudTabPanel Text="@UiText.Get("Resident360_TabLease")">
+                @if (activeLease is null)
+                {
+                    <MudAlert Severity="Severity.Info">@UiText.Get("Resident360_NoLease")</MudAlert>
+                }
+                else
+                {
+                    <MudPaper Class="pa-4 property-detail-panel" Elevation="0">
+                        <MudText Typo="Typo.subtitle2">@UiText.Get("Resident360_LeaseSummary")</MudText>
+                        <MudList T="string" Dense="true" Class="mt-2">
+                            <MudListItem T="string">@($"{UiText.Get("Resident360_Unit")}: {GetUnitLabel(activeLease.UnitId)}")</MudListItem>
+                            <MudListItem T="string">@($"{UiText.Get("Resident360_Term")}: {activeLease.StartDate} - {activeLease.EndDate}")</MudListItem>
+                            <MudListItem T="string">@($"{UiText.Get("Resident360_Rent")}: {activeLease.MonthlyRent:C}")</MudListItem>
+                            <MudListItem T="string">@($"{UiText.Get("Resident360_MoveInNotes")}: {activeLease.MoveInNotes}")</MudListItem>
+                        </MudList>
+                    </MudPaper>
+                }
+            </MudTabPanel>
+            <MudTabPanel Text="@UiText.Get("Resident360_TabPayments")">
+                <MudStack Spacing="3">
+                    <MudTable Items="_summary.Invoices" Dense="true" Hover="true" Breakpoint="Breakpoint.Sm">
+                        <HeaderContent>
+                            <MudTh>@UiText.Get("RentPayments_InvoiceNumber")</MudTh>
+                            <MudTh>@UiText.Get("RentPayments_DueDate")</MudTh>
+                            <MudTh>@UiText.Get("RentPayments_Status")</MudTh>
+                            <MudTh>@UiText.Get("RentPayments_Balance")</MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd DataLabel="@UiText.Get("RentPayments_InvoiceNumber")">@context.Number</MudTd>
+                            <MudTd DataLabel="@UiText.Get("RentPayments_DueDate")">@context.DueDate</MudTd>
+                            <MudTd DataLabel="@UiText.Get("RentPayments_Status")">@context.Status</MudTd>
+                            <MudTd DataLabel="@UiText.Get("RentPayments_Balance")">@context.Balance.ToString("C")</MudTd>
+                        </RowTemplate>
+                    </MudTable>
+
+                    <MudPaper Class="pa-4 property-detail-panel" Elevation="0">
+                        <MudText Typo="Typo.subtitle2">@UiText.Get("Resident360_PaymentHistory")</MudText>
+                        @if (_summary.Payments.Count == 0)
+                        {
+                            <MudAlert Severity="Severity.Info" Class="mt-3">@UiText.Get("Resident360_NoPayments")</MudAlert>
+                        }
+                        else
+                        {
+                            <MudTable Items="_summary.Payments" Dense="true" Hover="true" Breakpoint="Breakpoint.Sm" Class="mt-3">
+                                <HeaderContent>
+                                    <MudTh>@UiText.Get("RentPayments_InvoiceNumber")</MudTh>
+                                    <MudTh>@UiText.Get("RentPayments_ReceivedDate")</MudTh>
+                                    <MudTh>@UiText.Get("RentPayments_Method")</MudTh>
+                                    <MudTh>@UiText.Get("RentPayments_Reference")</MudTh>
+                                    <MudTh>@UiText.Get("RentPayments_Amount")</MudTh>
+                                </HeaderContent>
+                                <RowTemplate>
+                                    <MudTd DataLabel="@UiText.Get("RentPayments_InvoiceNumber")">@context.InvoiceNumber</MudTd>
+                                    <MudTd DataLabel="@UiText.Get("RentPayments_ReceivedDate")">@context.ReceivedDate</MudTd>
+                                    <MudTd DataLabel="@UiText.Get("RentPayments_Method")">@context.Method</MudTd>
+                                    <MudTd DataLabel="@UiText.Get("RentPayments_Reference")">@context.Reference</MudTd>
+                                    <MudTd DataLabel="@UiText.Get("RentPayments_Amount")">@context.Amount.ToString("C")</MudTd>
+                                </RowTemplate>
+                            </MudTable>
+                        }
+                    </MudPaper>
+                </MudStack>
+            </MudTabPanel>
+            <MudTabPanel Text="@UiText.Get("Resident360_TabCommunications")">
+                <MudList T="string" Dense="true">
+                    @foreach (var conversation in _summary.Conversations.Take(8))
+                    {
+                        <MudListItem T="string">@conversation.Subject - @conversation.Status - @conversation.LastMessagePreview</MudListItem>
+                    }
+                </MudList>
+            </MudTabPanel>
+            <MudTabPanel Text="@UiText.Get("Resident360_TabMaintenance")">
+                @if (_summary.MaintenanceRequests.Count == 0)
+                {
+                    <MudAlert Severity="Severity.Info">@UiText.Get("Resident360_NoMaintenance")</MudAlert>
+                }
+                else
+                {
+                    <MudList T="string" Dense="true">
+                        @foreach (var request in _summary.MaintenanceRequests.Take(8))
+                        {
+                            <MudListItem T="string">@request.Title - @request.Status - @request.Priority</MudListItem>
+                        }
+                    </MudList>
+                }
+            </MudTabPanel>
+        </MudTabs>
+    </MudStack>
+}
+
+@code {
+    [SupplyParameterFromQuery] public Guid? TenantId { get; set; }
+    [SupplyParameterFromQuery(Name = "demo")] public string? DemoMode { get; set; }
+
+    private Resident360SummaryDto? _summary;
+    private bool _isLoading = true;
+    private Guid? EffectiveTenantId => _summary?.Tenant?.Id ?? TenantId;
+    private string ResidentRoute => EffectiveTenantId.HasValue ? $"/resident-360?tenantId={EffectiveTenantId.Value}" : "/resident-360";
+    private bool IsDemoCleanView => string.Equals(DemoMode, "clean", StringComparison.OrdinalIgnoreCase);
+    private string DemoModeQuery => IsDemoCleanView ? "demo=clean" : string.Empty;
+
+    private string WithDemoMode(string route)
+    {
+        if (!IsDemoCleanView || string.IsNullOrWhiteSpace(route) || route.Contains("demo=", StringComparison.OrdinalIgnoreCase))
+        {
+            return route;
+        }
+
+        var anchorIndex = route.IndexOf('#');
+        var anchor = anchorIndex >= 0 ? route[anchorIndex..] : string.Empty;
+        var baseRoute = anchorIndex >= 0 ? route[..anchorIndex] : route;
+        var separator = baseRoute.Contains('?') ? "&" : "?";
+        return $"{baseRoute}{separator}{DemoModeQuery}{anchor}";
+    }
+
+    private TenantConversationSummaryDto? PrimaryConversation => _summary?.Conversations
+        .OrderByDescending(x => x.LastContactUtc ?? DateTime.MinValue)
+        .FirstOrDefault();
+
+    private MaintenanceRequest? PriorityMaintenance => _summary?.MaintenanceRequests
+        .OrderByDescending(x => x.Priority)
+        .ThenByDescending(x => x.RequestedDate)
+        .FirstOrDefault(x => !string.Equals(x.Status, "Closed", StringComparison.OrdinalIgnoreCase));
+
+    private InvoiceSummaryDto? PrimaryInvoice => _summary?.Invoices
+        .OrderByDescending(x => x.Balance)
+        .ThenBy(x => x.DueDate)
+        .FirstOrDefault(x => x.Balance > 0);
+
+    private string CollectionStatusLabel
+        => _summary is null
+            ? string.Empty
+            : _summary.Invoices.Count == 0
+                ? UiText.Get("Resident360_CollectionNoCharges")
+                : _summary.OpenBalance > 0
+                    ? UiText.Get("Resident360_CollectionAtRisk")
+                    : UiText.Get("Resident360_CollectionCurrent");
+
+    private Color CollectionStatusColor
+        => _summary is null
+            ? Color.Default
+            : _summary.Invoices.Count == 0
+                ? Color.Default
+                : _summary.OpenBalance > 0
+                    ? Color.Warning
+                    : Color.Success;
+
+    private string RiskLevelLabel
+    {
+        get
+        {
+            if (_summary is null)
+            {
+                return string.Empty;
+            }
+
+            if (PrimaryInvoice is not null || PriorityMaintenance is not null)
+            {
+                return UiText.Get("Resident360_RiskActionRequired");
+            }
+
+            if (!_summary.HasMoveInCompleted || _summary.HasNoticeWorkflow)
+            {
+                return UiText.Get("Resident360_RiskWatch");
+            }
+
+            return UiText.Get("Resident360_RiskStable");
+        }
+    }
+
+    private Color RiskLevelColor
+        => PrimaryInvoice is not null || PriorityMaintenance is not null
+            ? Color.Error
+            : _summary is not null && (!_summary.HasMoveInCompleted || _summary.HasNoticeWorkflow)
+                ? Color.Warning
+                : Color.Success;
+
+    private Func<Task> NextBestAction
+        => PrimaryInvoice is not null
+            ? OpenRentReminderAsync
+            : PriorityMaintenance is not null
+                ? OpenPriorityMaintenanceAsync
+                : _summary is not null && !_summary.HasMoveInCompleted
+                    ? OpenLeaseWorkspaceAsync
+                    : PrimaryConversation is not null
+                        ? OpenActiveConversationAsync
+                        : OpenTenantWorkspaceAsync;
+
+    private string NextBestActionLabel
+        => PrimaryInvoice is not null
+            ? UiText.Get("Resident360_PrepareRentReminder")
+            : PriorityMaintenance is not null
+                ? UiText.Get("Resident360_OpenPriorityMaintenance")
+                : _summary is not null && !_summary.HasMoveInCompleted
+                    ? UiText.Get("Nav_Leases")
+                    : PrimaryConversation is not null
+                        ? UiText.Get("Resident360_OpenActiveThread")
+                        : UiText.Get("Nav_Tenants");
+
+    private string NextBestActionMessage
+        => PrimaryInvoice is not null
+            ? UiText.Get("Resident360_NextBestActionRent")
+            : PriorityMaintenance is not null
+                ? UiText.Get("Resident360_NextBestActionMaintenance")
+                : _summary is not null && !_summary.HasMoveInCompleted
+                    ? UiText.Get("Resident360_NextBestActionMoveIn")
+                    : PrimaryConversation is not null
+                        ? UiText.Get("Resident360_NextBestActionConversation")
+                        : UiText.Get("Resident360_NextBestActionProfile");
+
+    private Color NextBestActionColor
+        => PrimaryInvoice is not null
+            ? Color.Secondary
+            : PriorityMaintenance is not null
+                ? Color.Warning
+                : _summary is not null && !_summary.HasMoveInCompleted
+                    ? Color.Info
+                    : PrimaryConversation is not null
+                        ? Color.Primary
+                        : Color.Default;
+
+    private string RecommendedNextStopLabel
+        => PrimaryInvoice is not null
+            ? UiText.Get("Nav_RentPayments")
+            : PriorityMaintenance is not null
+                ? UiText.Get("Nav_Maintenance")
+                : PrimaryConversation is not null
+                    ? UiText.Get("Nav_TenantCommunications")
+                    : UiText.Get("Nav_Leases");
+
+    private Color RecommendedNextStopColor
+        => PrimaryInvoice is not null
+            ? Color.Secondary
+            : PriorityMaintenance is not null
+                ? Color.Warning
+                : PrimaryConversation is not null
+                    ? Color.Primary
+                    : Color.Info;
+
+    private sealed record ComplianceSignal(string Message, string StatusLabel, Color Color, Func<Task>? Action, string ActionLabel);
+    private sealed record LifecycleMilestone(string Label, bool IsComplete, Color Color, Func<Task>? Action, string ActionLabel);
+
+    private IReadOnlyList<ComplianceSignal> ComplianceSignals
+    {
+        get
+        {
+            var signals = new List<ComplianceSignal>();
+
+            if (PrimaryInvoice?.Balance > 0)
+            {
+                signals.Add(new ComplianceSignal(
+                    UiText.Get("Resident360_ComplianceN4"),
+                    UiText.Get("Resident360_ComplianceRecommended"),
+                    Color.Error,
+                    OpenN4DraftAsync,
+                    UiText.Get("RentPayments_PrepareN4Draft")));
+            }
+
+            if (_summary?.ActiveLease is not null)
+            {
+                signals.Add(new ComplianceSignal(
+                    UiText.Get("Resident360_ComplianceNotice"),
+                    UiText.Get("Resident360_ComplianceRecommended"),
+                    Color.Info,
+                    OpenNoticeDeliveryDraftAsync,
+                    UiText.Get("Leases_MoveInOpenNoticeDeliveryDraft")));
+
+                if (_summary.ActiveLease.N1IncreaseNoticeScheduled)
+                {
+                    signals.Add(new ComplianceSignal(
+                        UiText.Get("Resident360_ComplianceN1"),
+                        UiText.Get("Resident360_ComplianceScheduled"),
+                        Color.Warning,
+                        null,
+                        string.Empty));
+                }
+            }
+
+            return signals;
+        }
+    }
+
+    private IReadOnlyList<LifecycleMilestone> LifecycleMilestones
+    {
+        get
+        {
+            if (_summary is null)
+            {
+                return Array.Empty<LifecycleMilestone>();
+            }
+
+            return new List<LifecycleMilestone>
+            {
+                new(UiText.Get("Resident360_LifecycleApprovedLead"), true, Color.Success, null, string.Empty),
+                new(UiText.Get("Resident360_LifecycleDraftLease"), _summary.Leases.Any(), _summary.Leases.Any() ? Color.Success : Color.Default, _summary.Leases.Any() ? OpenLeaseWorkspaceAsync : null, _summary.Leases.Any() ? UiText.Get("Nav_Leases") : string.Empty),
+                new(UiText.Get("Resident360_LifecycleMoveIn"), _summary.HasMoveInCompleted, _summary.HasMoveInCompleted ? Color.Success : Color.Warning, _summary.ActiveLease is null ? null : OpenLeaseWorkspaceAsync, _summary.ActiveLease is null ? string.Empty : UiText.Get("Nav_Leases")),
+                new(UiText.Get("Resident360_LifecycleActiveTenancy"), _summary.ActiveLease is not null, _summary.ActiveLease is not null ? Color.Success : Color.Default, _summary.Tenant is null ? null : OpenTenantWorkspaceAsync, _summary.Tenant is null ? string.Empty : UiText.Get("Nav_Tenants")),
+                new(UiText.Get("Resident360_LifecycleRentFollowUp"), _summary.HasRentFollowUp, _summary.HasRentFollowUp ? Color.Warning : Color.Default, PrimaryInvoice is null ? null : OpenRentReminderAsync, PrimaryInvoice is null ? string.Empty : UiText.Get("Resident360_PrepareRentReminder")),
+                new(UiText.Get("Resident360_LifecycleNotices"), _summary.HasNoticeWorkflow, _summary.HasNoticeWorkflow ? Color.Warning : Color.Default, GetNoticeWorkflowAction(), GetNoticeWorkflowActionLabel()),
+                new(UiText.Get("Resident360_LifecycleMaintenance"), _summary.HasMaintenanceWorkflow, _summary.HasMaintenanceWorkflow ? Color.Info : Color.Default, PriorityMaintenance is null ? null : OpenPriorityMaintenanceAsync, PriorityMaintenance is null ? string.Empty : UiText.Get("Resident360_OpenPriorityMaintenance"))
+            };
+        }
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _isLoading = true;
+
+        var tenantId = TenantId;
+
+        if (!tenantId.HasValue)
+        {
+            tenantId = await ResolveDefaultTenantIdAsync();
+        }
+
+        _summary = tenantId.HasValue
+            ? await DataService.GetResident360Async(tenantId.Value)
+            : null;
+
+        _isLoading = false;
+    }
+
+    private async Task<Guid?> ResolveDefaultTenantIdAsync()
+    {
+        var tenants = await DataService.GetTenantsAsync();
+        return tenants
+            .OrderBy(x => x.CreditScore)
+            .ThenBy(x => x.FullName)
+            .Select(x => (Guid?)x.Id)
+            .FirstOrDefault();
+    }
+
+    private Task OpenLeaseWorkspaceAsync()
+    {
+        if (!TenantId.HasValue)
+        {
+            return Task.CompletedTask;
+        }
+
+        NavigationManager.NavigateTo(WithDemoMode($"/leases?tenantId={TenantId.Value}"));
+        return Task.CompletedTask;
+    }
+
+    private Task OpenTenantWorkspaceAsync()
+    {
+        if (!TenantId.HasValue)
+        {
+            return Task.CompletedTask;
+        }
+
+        NavigationManager.NavigateTo(WithDemoMode($"/tenants?tenantId={TenantId.Value}"));
+        return Task.CompletedTask;
+    }
+
+    private Task OpenActiveConversationAsync()
+    {
+        if (PrimaryConversation is null)
+        {
+            return Task.CompletedTask;
+        }
+
+        NavigationManager.NavigateTo(WithDemoMode($"/tenant-communications?conversationId={PrimaryConversation.TenantConversationId}"));
+        return Task.CompletedTask;
+    }
+
+    private async Task OpenRentReminderAsync()
+    {
+        if (PrimaryInvoice is null)
+        {
+            return;
+        }
+
+        var conversationId = await DataService.EnsureInvoiceConversationAsync(PrimaryInvoice.InvoiceId);
+        NavigationManager.NavigateTo(WithDemoMode(conversationId.HasValue
+            ? $"/tenant-communications?conversationId={conversationId.Value}&compose=rent-reminder&invoiceId={PrimaryInvoice.InvoiceId}"
+            : "/tenant-communications"));
+    }
+
+    private Func<Task>? GetNoticeWorkflowAction()
+        => PrimaryInvoice is not null
+            ? OpenN4DraftAsync
+            : _summary?.ActiveLease is not null
+                ? OpenNoticeDeliveryDraftAsync
+                : null;
+
+    private string GetNoticeWorkflowActionLabel()
+        => PrimaryInvoice is not null
+            ? UiText.Get("RentPayments_PrepareN4Draft")
+            : _summary?.ActiveLease is not null
+                ? UiText.Get("Leases_MoveInOpenNoticeDeliveryDraft")
+                : string.Empty;
+
+    private async Task OpenN4DraftAsync()
+    {
+        if (PrimaryInvoice is null)
+        {
+            return;
+        }
+
+        var conversationId = await DataService.EnsureInvoiceConversationAsync(PrimaryInvoice.InvoiceId);
+        NavigationManager.NavigateTo(WithDemoMode(conversationId.HasValue
+            ? $"/tenant-communications?conversationId={conversationId.Value}&compose=n4-prep&invoiceId={PrimaryInvoice.InvoiceId}"
+            : "/tenant-communications"));
+    }
+
+    private async Task OpenNoticeDeliveryDraftAsync()
+    {
+        if (_summary?.ActiveLease is null)
+        {
+            return;
+        }
+
+        var conversationId = await DataService.EnsureLeaseConversationAsync(_summary.ActiveLease.Id);
+        NavigationManager.NavigateTo(WithDemoMode(conversationId.HasValue
+            ? $"/tenant-communications?conversationId={conversationId.Value}&compose=notice-delivery"
+            : "/tenant-communications"));
+    }
+
+    private Task OpenPriorityMaintenanceAsync()
+    {
+        if (PriorityMaintenance is null)
+        {
+            return Task.CompletedTask;
+        }
+
+        NavigationManager.NavigateTo(WithDemoMode($"/maintenance?ticket={PriorityMaintenance.Id}#ticket-{PriorityMaintenance.Id}"));
+        return Task.CompletedTask;
+    }
+
+    private Task OpenCollectionsBoardAsync()
+    {
+        NavigationManager.NavigateTo(WithDemoMode(EffectiveTenantId.HasValue
+            ? $"/rent-payments?tenantId={EffectiveTenantId.Value}"
+            : "/rent-payments"));
+        return Task.CompletedTask;
+    }
+
+    private Task OpenRecommendedNextStopAsync()
+        => PrimaryInvoice is not null
+            ? OpenCollectionsBoardAsync()
+            : PriorityMaintenance is not null
+                ? OpenMaintenanceBoardAsync()
+                : PrimaryConversation is not null
+                    ? OpenActiveConversationAsync()
+                    : OpenLeaseWorkspaceAsync();
+
+    private Task OpenMaintenanceBoardAsync()
+    {
+        NavigationManager.NavigateTo(WithDemoMode(EffectiveTenantId.HasValue && PriorityMaintenance is not null
+            ? $"/maintenance?ticket={PriorityMaintenance.Id}#ticket-{PriorityMaintenance.Id}"
+            : "/maintenance"));
+        return Task.CompletedTask;
+    }
+
+    private string GetUnitLabel(Guid unitId)
+        => _summary?.Units.FirstOrDefault(x => x.Id == unitId)?.UnitNumber ?? UiText.Get("TenantCommunications_UnitFallback");
+}

@@ -1,6 +1,7 @@
 @attribute [Authorize]
 @page "/compliance"
 @inject SaasDataService DataService
+@inject NavigationManager NavigationManager
 @inject PropertySaaS.Application.Common.CurrentOrganization CurrentOrganization
 @inject IStringLocalizer<SharedResource> Localizer
 @using PropertySaaS.Web.Localization
@@ -61,6 +62,31 @@
         <MudItem xs="12" sm="6" lg="3"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">@Localizer["Compliance_StatCompleted"]</MudText><MudText Typo="Typo.h6">@FilteredItems.Count(x => x.IsCompleted)</MudText></MudPaper></MudItem>
         <MudItem xs="12" sm="6" lg="3"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">@Localizer["Compliance_StatNoticeTypes"]</MudText><MudText Typo="Typo.h6">@FilteredItems.Select(x => x.NoticeType).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct(StringComparer.OrdinalIgnoreCase).Count()</MudText></MudPaper></MudItem>
     </MudGrid>
+
+    <MudPaper Class="pa-4 property-detail-panel" Elevation="0">
+        <MudText Typo="Typo.h6">@UiText.Get("Compliance_InsightTitle")</MudText>
+        <MudGrid Spacing="2" Class="mt-2">
+            <MudItem xs="12" md="4">
+                <MudPaper Class="pa-3 property-mini-stat" Elevation="0">
+                    <MudText Typo="Typo.overline">@UiText.Get("Compliance_InsightUrgency")</MudText>
+                    <MudChip T="string" Variant="Variant.Outlined" Color="@InsightColor" Class="mt-2">@InsightUrgencyLabel</MudChip>
+                </MudPaper>
+            </MudItem>
+            <MudItem xs="12" md="4">
+                <MudPaper Class="pa-3 property-mini-stat" Elevation="0">
+                    <MudText Typo="Typo.overline">@UiText.Get("Compliance_InsightFocus")</MudText>
+                    <MudChip T="string" Variant="Variant.Outlined" Color="@InsightColor" Class="mt-2">@InsightFocusLabel</MudChip>
+                </MudPaper>
+            </MudItem>
+            <MudItem xs="12" md="4">
+                <MudPaper Class="pa-3 property-mini-stat" Elevation="0">
+                    <MudText Typo="Typo.overline">@UiText.Get("Compliance_InsightNextAction")</MudText>
+                    <MudButton Class="mt-2" Variant="Variant.Text" Color="@InsightColor" OnClick="OpenInsightNextActionAsync">@InsightActionLabel</MudButton>
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+        <MudText Typo="Typo.body2" Class="mt-3">@InsightMessage</MudText>
+    </MudPaper>
 
     <MudPaper Class="pa-2 table-wrap properties-table-shell">
         <MudTable Items="FilteredItems.ToList()" Dense="true" Hover="true" Breakpoint="Breakpoint.Md" RowsPerPage="10">
@@ -135,6 +161,42 @@
 
     private bool HasActiveFilters => !string.IsNullOrWhiteSpace(_searchText) || !string.IsNullOrWhiteSpace(_selectedNoticeFilter) || !string.IsNullOrWhiteSpace(_selectedStateFilter);
     private IEnumerable<string> NoticeOptions => _items.Select(x => x.NoticeType).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(x => x);
+    private int DueSoonCount => FilteredItems.Count(x => !x.IsCompleted && x.DueDate <= DateOnly.FromDateTime(DateTime.Today.AddDays(14)));
+    private int OpenCount => FilteredItems.Count(x => !x.IsCompleted);
+    private string InsightUrgencyLabel
+        => DueSoonCount > 0
+            ? UiText.Get("Compliance_InsightUrgencyHigh")
+            : OpenCount > 0
+                ? UiText.Get("Compliance_InsightUrgencyMedium")
+                : UiText.Get("Compliance_InsightUrgencyStable");
+
+    private string InsightFocusLabel
+        => DueSoonCount > 0
+            ? UiText.Get("Compliance_InsightFocusDueSoon")
+            : OpenCount > 0
+                ? UiText.Get("Compliance_InsightFocusOpen")
+                : UiText.Get("Compliance_InsightFocusStable");
+
+    private string InsightMessage
+        => DueSoonCount > 0
+            ? UiText.Get("Compliance_InsightMessageDueSoon")
+            : OpenCount > 0
+                ? UiText.Get("Compliance_InsightMessageOpen")
+                : UiText.Get("Compliance_InsightMessageStable");
+
+    private string InsightActionLabel
+        => DueSoonCount > 0
+            ? UiText.Get("Compliance_InsightOpenDueSoon")
+            : OpenCount > 0
+                ? UiText.Get("Compliance_InsightOpenOpenWork")
+                : UiText.Get("Compliance_InsightOpenTemplates");
+
+    private Color InsightColor
+        => DueSoonCount > 0
+            ? Color.Warning
+            : OpenCount > 0
+                ? Color.Info
+                : Color.Success;
 
     private IEnumerable<ComplianceReminder> FilteredItems => _items
         .Where(item => string.IsNullOrWhiteSpace(_searchText)
@@ -154,6 +216,24 @@
         _searchText = string.Empty;
         _selectedNoticeFilter = string.Empty;
         _selectedStateFilter = string.Empty;
+    }
+
+    private Task OpenInsightNextActionAsync()
+    {
+        if (DueSoonCount > 0)
+        {
+            _selectedStateFilter = Localizer["Compliance_StateDueSoon"].Value;
+            return Task.CompletedTask;
+        }
+
+        if (OpenCount > 0)
+        {
+            _selectedStateFilter = Localizer["Compliance_StateOpen"].Value;
+            return Task.CompletedTask;
+        }
+
+        NavigationManager.NavigateTo("/docs/jurisdiction/lease-package");
+        return Task.CompletedTask;
     }
 
     private string GetStateLabel(ComplianceReminder reminder)

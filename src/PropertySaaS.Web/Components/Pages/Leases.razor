@@ -1,9 +1,11 @@
 @attribute [Authorize]
 @page "/leases"
 @inject SaasDataService DataService
+@inject NavigationManager NavigationManager
 @inject PropertySaaS.Application.Common.CurrentOrganization CurrentOrganization
 @inject IStringLocalizer<SharedResource> Localizer
 @using PropertySaaS.Domain.Enums
+@using PropertySaaS.Application.Features
 @using PropertySaaS.Web.Localization
 
 <PageTitle>@Localizer["Leases_Title"]</PageTitle>
@@ -14,6 +16,8 @@
         <MudText Typo="Typo.h4">@Localizer["Leases_Title"]</MudText>
         <MudText Typo="Typo.body2">@Localizer["Leases_Subtitle"]</MudText>
     </MudStack>
+
+    <DemoJourneyBanner CurrentStepKey="resident" ResidentRoute="@Resident360Route" />
 
     <MudGrid Spacing="2" Class="align-center-grid">
         <MudItem xs="12" lg="4">
@@ -69,6 +73,133 @@
         <MudItem xs="12" sm="6" lg="3"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">@Localizer["Leases_StatJurisdictionMissing"]</MudText><MudText Typo="Typo.h6">@FilteredLeases.Count(x => !x.StandardOntarioLeaseSigned)</MudText></MudPaper></MudItem>
         <MudItem xs="12" sm="6" lg="3"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">@Localizer["Leases_StatNoticeScheduled"]</MudText><MudText Typo="Typo.h6">@FilteredLeases.Count(x => x.N1IncreaseNoticeScheduled)</MudText></MudPaper></MudItem>
     </MudGrid>
+
+    <MudPaper Class="pa-4 property-detail-panel" Elevation="0">
+        <MudText Typo="Typo.h6">@UiText.Get("Leases_InsightTitle")</MudText>
+        <MudGrid Spacing="2" Class="mt-2">
+            <MudItem xs="12" md="4"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">@UiText.Get("Leases_InsightUrgency")</MudText><MudChip T="string" Variant="Variant.Outlined" Color="@InsightColor" Class="mt-2">@InsightUrgencyLabel</MudChip></MudPaper></MudItem>
+            <MudItem xs="12" md="4"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">@UiText.Get("Leases_InsightFocus")</MudText><MudChip T="string" Variant="Variant.Outlined" Color="@InsightColor" Class="mt-2">@InsightFocusLabel</MudChip></MudPaper></MudItem>
+            <MudItem xs="12" md="4"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">@UiText.Get("Leases_InsightNextAction")</MudText><MudButton Class="mt-2" Variant="Variant.Text" Color="@InsightColor" OnClick="OpenInsightNextActionAsync">@InsightActionLabel</MudButton></MudPaper></MudItem>
+        </MudGrid>
+        <MudText Typo="Typo.body2" Class="mt-3">@InsightMessage</MudText>
+    </MudPaper>
+
+    <MudPaper Class="pa-4 marketing-card" Elevation="0">
+        <MudText Typo="Typo.h6">@UiText.Get("Leases_MoveInTitle")</MudText>
+        @if (PriorityMoveInLease is null)
+        {
+            <MudText Typo="Typo.body2" Class="mt-2">@UiText.Get("Leases_MoveInEmpty")</MudText>
+        }
+        else
+        {
+            <MudText Typo="Typo.subtitle2" Class="mt-2">@GetTenantLabel(PriorityMoveInLease.TenantId) - @GetUnitLabel(PriorityMoveInLease.UnitId)</MudText>
+            <MudText Typo="Typo.body2">@(PriorityMoveInLease.StandardOntarioLeaseSigned ? UiText.Get("Leases_MoveInStatusReady") : UiText.Get("Leases_MoveInStatusDraft"))</MudText>
+            <MudList T="string" Dense="true" Class="mt-3">
+                <MudListItem T="string">@UiText.Get("Leases_MoveInChecklist1")</MudListItem>
+                <MudListItem T="string">@UiText.Get("Leases_MoveInChecklist2")</MudListItem>
+                <MudListItem T="string">@UiText.Get("Leases_MoveInChecklist3")</MudListItem>
+                <MudListItem T="string">@UiText.Get("Leases_MoveInChecklist4")</MudListItem>
+            </MudList>
+            <MudStack Row="true" Spacing="1" Class="mt-3" Wrap="Wrap.Wrap">
+                <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick='() => OpenLeaseConversationAsync(PriorityMoveInLease.Id)'>@UiText.Get("Leases_MoveInOpenCommunication")</MudButton>
+                <MudButton Variant="Variant.Text" Color="Color.Secondary" OnClick='() => OpenLeaseMoveInOutreachDraftAsync(PriorityMoveInLease.Id)'>@UiText.Get("Leases_MoveInOpenOutreachDraft")</MudButton>
+                <MudButton Variant="Variant.Text" Color="Color.Default" OnClick='() => OpenLeaseNoticeDeliveryDraftAsync(PriorityMoveInLease.Id)'>@UiText.Get("Leases_MoveInOpenNoticeDeliveryDraft")</MudButton>
+                @if (!PriorityMoveInLease.StandardOntarioLeaseSigned)
+                {
+                    <MudButton Variant="Variant.Text" Color="Color.Warning" OnClick='() => CompleteMoveInStepAsync(PriorityMoveInLease.Id, true, false)'>@UiText.Get("Leases_MoveInMarkSigned")</MudButton>
+                }
+                @if (PriorityMoveInLease.Status == LeaseStatus.Draft)
+                {
+                    <MudButton Variant="Variant.Text" Color="Color.Success" OnClick='() => CompleteMoveInStepAsync(PriorityMoveInLease.Id, true, true)'>@UiText.Get("Leases_MoveInMarkActive")</MudButton>
+                }
+            </MudStack>
+
+            <MudDivider Class="my-3" />
+            <MudText Typo="Typo.subtitle2">@UiText.Get("Leases_MoveInPackageTitle")</MudText>
+            <MudGrid Spacing="2" Class="mt-1">
+                <MudItem xs="12" md="4"><MudSwitch T="bool" Color="Color.Primary" Label="@UiText.Get("Leases_MoveInDeposit")" @bind-Value="_moveInDepositReceived" /></MudItem>
+                <MudItem xs="12" md="4"><MudSwitch T="bool" Color="Color.Primary" Label="@UiText.Get("Leases_MoveInInsurance")" @bind-Value="_moveInInsuranceReceived" /></MudItem>
+                <MudItem xs="12" md="4"><MudSwitch T="bool" Color="Color.Primary" Label="@UiText.Get("Leases_MoveInChecklist")" @bind-Value="_moveInChecklistCompleted" /></MudItem>
+                <MudItem xs="12"><MudTextField Label="@UiText.Get("Leases_MoveInNotes")" Variant="Variant.Outlined" Lines="3" @bind-Value="_moveInNotes" /></MudItem>
+            </MudGrid>
+            <MudButton Class="mt-3" Variant="Variant.Filled" Color="Color.Primary" OnClick='() => SaveMoveInPackageAsync(PriorityMoveInLease.Id)'>@UiText.Get("Leases_MoveInSave")</MudButton>
+
+            <MudDivider Class="my-3" />
+            <MudText Typo="Typo.subtitle2">@UiText.Get("Leases_MoveInRequirementsTitle")</MudText>
+            <MudText Typo="Typo.body2" Class="mt-2">@UiText.Get("Leases_MoveInAutoloadHint")</MudText>
+            @if (string.Equals(CurrentOrganization.Province, "ON", StringComparison.OrdinalIgnoreCase))
+            {
+                <MudStack Row="true" Spacing="1" Class="mt-2" Wrap="Wrap.Wrap">
+                    <MudChip T="string" Color="Color.Primary" Variant="Variant.Outlined">@UiText.Get("Leases_MoveInOfficialOntarioDocs")</MudChip>
+                    <MudButton Href="/docs/ontario-standard-lease" Target="_blank" Variant="Variant.Text" Color="Color.Primary">@UiText.Get("Leases_MoveInOfficialLease")</MudButton>
+                    <MudButton Href="/docs/n1-template" Target="_blank" Variant="Variant.Text" Color="Color.Default">@UiText.Get("Leases_MoveInOfficialN1")</MudButton>
+                    <MudButton Href="/docs/n4-template" Target="_blank" Variant="Variant.Text" Color="Color.Default">@UiText.Get("Leases_MoveInOfficialN4")</MudButton>
+                </MudStack>
+            }
+            <MudGrid Spacing="2" Class="mt-2">
+                @foreach (var requirement in _leaseMoveInRequirements)
+                {
+                    <MudItem xs="12" md="6">
+                        <MudPaper Class="pa-3 property-detail-panel" Elevation="0">
+                            <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                                <MudText Typo="Typo.subtitle2">@requirement.Label</MudText>
+                                <MudChip T="string" Variant="Variant.Outlined" Color="@(requirement.IsCompleted ? Color.Success : Color.Warning)">@requirement.StatusLabel</MudChip>
+                            </MudStack>
+                            <MudText Typo="Typo.caption" Class="mt-1">@requirement.Guidance</MudText>
+                        </MudPaper>
+                    </MudItem>
+                }
+            </MudGrid>
+
+            <MudDivider Class="my-3" />
+            <MudText Typo="Typo.subtitle2">@UiText.Get("Leases_MoveInDocumentsTitle")</MudText>
+            @if (!_leaseMoveInDocuments.Any())
+            {
+                <MudText Typo="Typo.body2" Class="mt-2">@UiText.Get("Leases_MoveInDocumentsEmpty")</MudText>
+            }
+            else
+            {
+                <MudList T="LeaseMoveInDocumentDto" Dense="true" Class="mt-2">
+                    @foreach (var document in _leaseMoveInDocuments)
+                    {
+                        <MudListItem T="LeaseMoveInDocumentDto" Value="document">
+                            <MudText Typo="Typo.subtitle2">@document.FileName</MudText>
+                            <MudText Typo="Typo.caption">@GetMoveInDocumentTypeLabel(document.DocumentType)</MudText>
+                            <MudText Typo="Typo.caption">@document.Caption</MudText>
+                            <MudStack Row="true" Spacing="2">
+                                @if (!string.IsNullOrWhiteSpace(document.OfficialUrl))
+                                {
+                                    <MudLink Href="@document.OfficialUrl" Target="_blank" Typo="Typo.caption">@UiText.Get("Leases_MoveInDocumentOfficialSource")</MudLink>
+                                }
+                                @if (PriorityMoveInLease is not null && IsInternalTemplateDocument(document.DocumentType))
+                                {
+                                    <MudLink Href="@GetInternalTemplateUrl(PriorityMoveInLease.Id, document.DocumentType)" Target="_blank" Typo="Typo.caption">@UiText.Get("Leases_MoveInDocumentInternalTemplate")</MudLink>
+                                }
+                            </MudStack>
+                        </MudListItem>
+                    }
+                </MudList>
+            }
+
+            <MudGrid Spacing="2" Class="mt-1">
+                <MudItem xs="12" md="3">
+                    <MudSelect T="string" Label="@UiText.Get("Leases_MoveInDocumentType")" Variant="Variant.Outlined" @bind-Value="_newMoveInDocumentType">
+                        @foreach (var option in MoveInDocumentTypeOptions)
+                        {
+                            <MudSelectItem T="string" Value="@option">@GetMoveInDocumentTypeLabel(option)</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12" md="4"><MudTextField Label="@UiText.Get("Leases_MoveInDocumentsName")" Variant="Variant.Outlined" @bind-Value="_newMoveInDocumentName" /></MudItem>
+                <MudItem xs="12" md="3"><MudTextField Label="@UiText.Get("Leases_MoveInDocumentsCaption")" Variant="Variant.Outlined" @bind-Value="_newMoveInDocumentCaption" /></MudItem>
+                <MudItem xs="12" md="2" Class="d-flex align-end"><MudButton Variant="Variant.Outlined" Color="Color.Secondary" FullWidth="true" OnClick='() => AddMoveInDocumentAsync(PriorityMoveInLease.Id)'>@UiText.Get("Leases_MoveInDocumentsAdd")</MudButton></MudItem>
+            </MudGrid>
+            @if (_activationBlocked)
+            {
+                <MudAlert Severity="Severity.Warning" Dense="true" Class="mt-3 mb-0">@UiText.Get("Leases_MoveInActivationBlocked")</MudAlert>
+            }
+        }
+    </MudPaper>
 
     <MudExpansionPanels>
         <MudExpansionPanel Text="@Localizer["Common_BulkImport"]">
@@ -202,6 +333,8 @@
 </MudStack>
 
 @code {
+    [SupplyParameterFromQuery] public Guid? TenantId { get; set; }
+
     private List<Lease> _items = new();
     private List<Unit> _units = new();
     private List<Tenant> _tenants = new();
@@ -218,10 +351,76 @@
     private string _selectedWorkflowFilter = string.Empty;
     private bool _isFormPanelOpen;
     private bool _isCreateMode = true;
+    private bool _moveInDepositReceived;
+    private bool _moveInInsuranceReceived;
+    private bool _moveInChecklistCompleted;
+    private string _moveInNotes = string.Empty;
+    private List<LeaseMoveInDocumentDto> _leaseMoveInDocuments = new();
+    private List<LeaseMoveInRequirementDto> _leaseMoveInRequirements = new();
+    private LeaseMoveInContextDto? _leaseMoveInContext;
+    private bool _activationBlocked;
+    private string _newMoveInDocumentType = "SignedLease";
+    private string _newMoveInDocumentName = string.Empty;
+    private string _newMoveInDocumentCaption = string.Empty;
+
+    private Lease? SelectedLease => TenantId.HasValue
+        ? _items
+            .Where(x => x.TenantId == TenantId.Value)
+            .OrderByDescending(x => x.Status == LeaseStatus.Active || x.Status == LeaseStatus.EndingSoon)
+            .ThenByDescending(x => x.StartDate)
+            .FirstOrDefault()
+        : null;
+
+    private string Resident360Route => SelectedLease is not null ? $"/resident-360?tenantId={SelectedLease.TenantId}" : "/resident-360";
 
     private bool HasActiveFilters => !string.IsNullOrWhiteSpace(_searchText) || !string.IsNullOrWhiteSpace(_selectedStatusFilter) || !string.IsNullOrWhiteSpace(_selectedOntarioFilter) || !string.IsNullOrWhiteSpace(_selectedWorkflowFilter);
     private Lease ActiveLease => _isCreateMode ? _newLease : _editLease;
     private IEnumerable<LeaseStatus> StatusOptions => Enum.GetValues<LeaseStatus>();
+    private IEnumerable<string> MoveInDocumentTypeOptions => new[] { "SignedLease", "InsuranceProof", "GovernmentId", "IncomeProof", "DepositReceipt" };
+    private Lease? PriorityMoveInLease => SelectedLease ?? _items.FirstOrDefault(x => x.Status == LeaseStatus.Draft) ?? _items.FirstOrDefault(x => !x.StandardOntarioLeaseSigned);
+    private Lease? PriorityNoticeLease => FilteredLeases.FirstOrDefault(x => x.N1IncreaseNoticeScheduled);
+    private string InsightUrgencyLabel
+        => PriorityMoveInLease is not null && (PriorityMoveInLease.Status == LeaseStatus.Draft || !PriorityMoveInLease.StandardOntarioLeaseSigned)
+            ? UiText.Get("Leases_InsightUrgencyHigh")
+            : FilteredLeases.Any(x => !x.StandardOntarioLeaseSigned) || PriorityNoticeLease is not null
+                ? UiText.Get("Leases_InsightUrgencyMedium")
+                : UiText.Get("Leases_InsightUrgencyStable");
+
+    private string InsightFocusLabel
+        => PriorityMoveInLease is not null && PriorityMoveInLease.Status == LeaseStatus.Draft
+            ? UiText.Get("Leases_InsightFocusMoveIn")
+            : FilteredLeases.Any(x => !x.StandardOntarioLeaseSigned)
+                ? UiText.Get("Leases_InsightFocusJurisdiction")
+                : PriorityNoticeLease is not null
+                    ? UiText.Get("Leases_InsightFocusNoticeWorkflow")
+                    : UiText.Get("Leases_InsightFocusStable");
+
+    private string InsightMessage
+        => PriorityMoveInLease is not null && PriorityMoveInLease.Status == LeaseStatus.Draft
+            ? UiText.Get("Leases_InsightMessageMoveIn")
+            : FilteredLeases.Any(x => !x.StandardOntarioLeaseSigned)
+                ? UiText.Get("Leases_InsightMessageJurisdiction")
+                : PriorityNoticeLease is not null
+                    ? UiText.Get("Leases_InsightMessageNoticeWorkflow")
+                    : UiText.Get("Leases_InsightMessageStable");
+
+    private string InsightActionLabel
+        => PriorityMoveInLease is not null && PriorityMoveInLease.Status == LeaseStatus.Draft
+            ? UiText.Get("Leases_InsightOpenMoveIn")
+            : FilteredLeases.Any(x => !x.StandardOntarioLeaseSigned)
+                ? UiText.Get("Leases_InsightOpenJurisdiction")
+                : PriorityNoticeLease is not null
+                    ? UiText.Get("Leases_InsightOpenNotice")
+                    : UiText.Get("Leases_InsightOpenStable");
+
+    private Color InsightColor
+        => PriorityMoveInLease is not null && PriorityMoveInLease.Status == LeaseStatus.Draft
+            ? Color.Warning
+            : FilteredLeases.Any(x => !x.StandardOntarioLeaseSigned)
+                ? Color.Info
+                : PriorityNoticeLease is not null
+                    ? Color.Secondary
+                    : Color.Success;
 
     private Guid? FormUnitId
     {
@@ -246,7 +445,14 @@
         .Where(lease => string.IsNullOrWhiteSpace(_selectedOntarioFilter) || string.Equals(GetOntarioLabel(lease), _selectedOntarioFilter, StringComparison.OrdinalIgnoreCase))
         .Where(lease => string.IsNullOrWhiteSpace(_selectedWorkflowFilter) || string.Equals(GetWorkflowLabel(lease), _selectedWorkflowFilter, StringComparison.OrdinalIgnoreCase));
 
-    protected override async Task OnInitializedAsync() => await ReloadAsync();
+    protected override async Task OnInitializedAsync()
+    {
+        await ReloadAsync();
+        if (SelectedLease is not null)
+        {
+            _selectedStatusFilter = SelectedLease.Status.ToString();
+        }
+    }
 
     private async Task ReloadAsync()
     {
@@ -254,6 +460,10 @@
         _units = await DataService.GetUnitsAsync();
         _tenants = await DataService.GetTenantsAsync();
         _properties = await DataService.GetPropertiesAsync();
+        _leaseMoveInDocuments = PriorityMoveInLease is null ? new List<LeaseMoveInDocumentDto>() : await DataService.GetLeaseMoveInDocumentsAsync(PriorityMoveInLease.Id);
+        _leaseMoveInRequirements = PriorityMoveInLease is null ? new List<LeaseMoveInRequirementDto>() : await DataService.GetLeaseMoveInRequirementsAsync(PriorityMoveInLease.Id);
+        _leaseMoveInContext = PriorityMoveInLease is null ? null : await DataService.GetLeaseMoveInContextAsync(PriorityMoveInLease.Id);
+        SyncMoveInPackage();
     }
 
     private void OpenCreatePanel()
@@ -324,6 +534,94 @@
     private async Task DeleteAsync(Guid id)
     {
         await DataService.DeleteLeaseAsync(id);
+        await ReloadAsync();
+    }
+
+    private async Task AddMoveInDocumentAsync(Guid leaseId)
+    {
+        var added = await DataService.AddLeaseMoveInDocumentAsync(leaseId, _newMoveInDocumentType, _newMoveInDocumentName, _newMoveInDocumentCaption);
+        if (!added)
+        {
+            return;
+        }
+
+        _newMoveInDocumentType = "SignedLease";
+        _newMoveInDocumentName = string.Empty;
+        _newMoveInDocumentCaption = string.Empty;
+        await ReloadAsync();
+    }
+
+    private async Task OpenLeaseConversationAsync(Guid leaseId)
+    {
+        var conversationId = await DataService.EnsureLeaseConversationAsync(leaseId);
+        NavigationManager.NavigateTo(conversationId.HasValue
+            ? $"/tenant-communications?conversationId={conversationId.Value}"
+            : "/tenant-communications");
+    }
+
+    private async Task OpenLeaseMoveInOutreachDraftAsync(Guid leaseId)
+    {
+        var conversationId = await DataService.EnsureLeaseMoveInOutreachDraftAsync(leaseId);
+        NavigationManager.NavigateTo(conversationId.HasValue
+            ? $"/tenant-communications?conversationId={conversationId.Value}"
+            : "/tenant-communications");
+    }
+
+    private async Task OpenLeaseNoticeDeliveryDraftAsync(Guid leaseId)
+    {
+        var conversationId = await DataService.EnsureLeaseConversationAsync(leaseId);
+        NavigationManager.NavigateTo(conversationId.HasValue
+            ? $"/tenant-communications?conversationId={conversationId.Value}&compose=notice-delivery"
+            : "/tenant-communications");
+    }
+
+    private async Task OpenInsightNextActionAsync()
+    {
+        if (PriorityMoveInLease is not null && PriorityMoveInLease.Status == LeaseStatus.Draft)
+        {
+            await OpenLeaseConversationAsync(PriorityMoveInLease.Id);
+            return;
+        }
+
+        if (FilteredLeases.Any(x => !x.StandardOntarioLeaseSigned))
+        {
+            _selectedOntarioFilter = Localizer["Leases_OntarioMissing"].Value;
+            return;
+        }
+
+        if (PriorityNoticeLease is not null)
+        {
+            await OpenLeaseNoticeDeliveryDraftAsync(PriorityNoticeLease.Id);
+            return;
+        }
+
+        NavigationManager.NavigateTo("/leases");
+    }
+
+    private async Task CompleteMoveInStepAsync(Guid leaseId, bool markSigned, bool activateLease)
+    {
+        _activationBlocked = false;
+        var updated = await DataService.CompleteLeaseMoveInStepAsync(leaseId, markSigned, activateLease);
+        if (!updated)
+        {
+            if (activateLease)
+            {
+                _activationBlocked = true;
+            }
+            return;
+        }
+
+        await ReloadAsync();
+    }
+
+    private async Task SaveMoveInPackageAsync(Guid leaseId)
+    {
+        var updated = await DataService.UpdateLeaseMoveInPackageAsync(leaseId, _moveInDepositReceived, _moveInInsuranceReceived, _moveInChecklistCompleted, _moveInNotes);
+        if (!updated)
+        {
+            return;
+        }
+
         await ReloadAsync();
     }
 
@@ -451,6 +749,49 @@
         return ActiveLease.N1IncreaseNoticeScheduled
             ? Localizer["Leases_GuidanceScheduled"].Value
             : Localizer["Leases_GuidanceReady"].Value;
+    }
+
+    private void SyncMoveInPackage()
+    {
+        if (PriorityMoveInLease is null)
+        {
+            _moveInDepositReceived = false;
+            _moveInInsuranceReceived = false;
+            _moveInChecklistCompleted = false;
+            _moveInNotes = string.Empty;
+            _leaseMoveInDocuments = new();
+            _leaseMoveInRequirements = new();
+            _leaseMoveInContext = null;
+            _activationBlocked = false;
+            return;
+        }
+
+        _moveInDepositReceived = PriorityMoveInLease.DepositReceived;
+        _moveInInsuranceReceived = PriorityMoveInLease.InsuranceProofReceived;
+        _moveInChecklistCompleted = PriorityMoveInLease.MoveInChecklistCompleted;
+        _moveInNotes = PriorityMoveInLease.MoveInNotes;
+    }
+
+    private string GetMoveInDocumentTypeLabel(string documentType)
+        => documentType switch
+        {
+            "SignedLease" => UiText.Get("Leases_MoveInDocumentTypeSignedLease"),
+            "InsuranceProof" => UiText.Get("Leases_MoveInDocumentTypeInsuranceProof"),
+            "GovernmentId" => UiText.Get("Leases_MoveInDocumentTypeGovernmentId"),
+            "IncomeProof" => UiText.Get("Leases_MoveInDocumentTypeIncomeProof"),
+            "DepositReceipt" => UiText.Get("Leases_MoveInDocumentTypeDepositReceipt"),
+            _ => documentType
+        };
+
+    private bool IsInternalTemplateDocument(string documentType)
+        => documentType is "DepositReceipt" or "IncomeProof" or "GovernmentId";
+
+    private string GetInternalTemplateUrl(Guid leaseId, string documentType)
+    {
+        var propertyName = Uri.EscapeDataString(_leaseMoveInContext?.PropertyName ?? string.Empty);
+        var unitLabel = Uri.EscapeDataString(_leaseMoveInContext?.UnitLabel ?? string.Empty);
+        var tenantName = Uri.EscapeDataString(_leaseMoveInContext?.TenantName ?? string.Empty);
+        return $"/docs/move-in/{documentType}?propertyName={propertyName}&unitLabel={unitLabel}&tenantName={tenantName}";
     }
 }
 

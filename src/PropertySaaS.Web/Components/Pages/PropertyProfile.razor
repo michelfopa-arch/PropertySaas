@@ -1,7 +1,10 @@
 @attribute [Authorize]
 @page "/properties/{PropertyId:guid}"
 @inject SaasDataService DataService
+@inject NavigationManager NavigationManager
 @inject IStringLocalizer<SharedResource> Localizer
+@using PropertySaaS.Domain.Enums
+@using PropertySaaS.Web.Localization
 
 <PageTitle>@Localizer["PropertyProfile_PageTitle"]</PageTitle>
 
@@ -32,18 +35,23 @@ else
 
             <MudStack Row="true" Spacing="2" Wrap="Wrap.Wrap">
                 <MudChip T="string" Variant="Variant.Filled" Color="@performanceColor">@performanceLabel</MudChip>
-                <MudButton Href="/properties" Variant="Variant.Outlined" Color="Color.Default" StartIcon="@Icons.Material.Filled.ArrowBack">@Localizer["PropertyProfile_BackToProperties"]</MudButton>
+                <MudButton Href="@PropertiesRoute" Variant="Variant.Outlined" Color="Color.Default" StartIcon="@Icons.Material.Filled.ArrowBack">@Localizer["PropertyProfile_BackToProperties"]</MudButton>
             </MudStack>
         </MudStack>
 
-        <MudStack Row="true" Spacing="1" Wrap="Wrap.Wrap">
-            <MudChip T="string" Variant="Variant.Filled" Color="Color.Dark">@LocalizePropertyType(_property.PropertyType)</MudChip>
-            <MudChip T="string" Variant="Variant.Outlined" Color="Color.Primary">@_property.City</MudChip>
-            <MudChip T="string" Variant="Variant.Outlined" Color="Color.Info">@GetPostalCodeOrFallback(_property)</MudChip>
-            <MudChip T="string" Variant="Variant.Outlined" Color="Color.Secondary">@string.Format(Localizer["PropertyProfile_UnitsCount"].Value, _units.Count)</MudChip>
-            <MudChip T="string" Variant="Variant.Filled" Color="Color.Success">@string.Format(Localizer["PropertyProfile_OccupiedCount"].Value, occupiedCount)</MudChip>
-            <MudChip T="string" Variant="Variant.Filled" Color="Color.Warning">@string.Format(Localizer["PropertyProfile_VacantCount"].Value, vacantCount)</MudChip>
-        </MudStack>
+        <DemoJourneyBanner CurrentStepKey="property-profile" UsePortfolioJourney="true" PropertiesRoute="@PropertiesRoute" PropertyProfileRoute="@PropertyProfileRoute" />
+
+        @if (!IsDemoCleanView)
+        {
+            <MudStack Row="true" Spacing="1" Wrap="Wrap.Wrap">
+                <MudChip T="string" Variant="Variant.Filled" Color="Color.Dark">@LocalizePropertyType(_property.PropertyType)</MudChip>
+                <MudChip T="string" Variant="Variant.Outlined" Color="Color.Primary">@_property.City</MudChip>
+                <MudChip T="string" Variant="Variant.Outlined" Color="Color.Info">@GetPostalCodeOrFallback(_property)</MudChip>
+                <MudChip T="string" Variant="Variant.Outlined" Color="Color.Secondary">@string.Format(Localizer["PropertyProfile_UnitsCount"].Value, _units.Count)</MudChip>
+                <MudChip T="string" Variant="Variant.Filled" Color="Color.Success">@string.Format(Localizer["PropertyProfile_OccupiedCount"].Value, occupiedCount)</MudChip>
+                <MudChip T="string" Variant="Variant.Filled" Color="Color.Warning">@string.Format(Localizer["PropertyProfile_VacantCount"].Value, vacantCount)</MudChip>
+            </MudStack>
+        }
 
         <MudGrid Spacing="2">
             <MudItem xs="12" md="3"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">@Localizer["PropertyProfile_StatRevenueTarget"]</MudText><MudText Typo="Typo.h6">@_property.MonthlyRevenueTarget.ToString("C")</MudText></MudPaper></MudItem>
@@ -51,6 +59,31 @@ else
             <MudItem xs="12" md="3"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">@Localizer["PropertyProfile_StatOccupancy"]</MudText><MudText Typo="Typo.h6">@GetOccupancyLabel(_units.Count, occupiedCount)</MudText></MudPaper></MudItem>
             <MudItem xs="12" md="3"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">@Localizer["PropertyProfile_StatLeasingReadiness"]</MudText><MudText Typo="Typo.h6">@readinessScore/100</MudText></MudPaper></MudItem>
         </MudGrid>
+
+        <MudPaper Class="pa-4 property-detail-panel" Elevation="0">
+            <MudText Typo="Typo.h6">@UiText.Get("PropertyProfile_InsightTitle")</MudText>
+            <MudGrid Spacing="2" Class="mt-2">
+                <MudItem xs="12" md="4">
+                    <MudPaper Class="pa-3 property-mini-stat" Elevation="0">
+                        <MudText Typo="Typo.overline">@UiText.Get("PropertyProfile_InsightUrgency")</MudText>
+                        <MudChip T="string" Variant="Variant.Outlined" Color="@InsightColor" Class="mt-2">@InsightUrgencyLabel</MudChip>
+                    </MudPaper>
+                </MudItem>
+                <MudItem xs="12" md="4">
+                    <MudPaper Class="pa-3 property-mini-stat" Elevation="0">
+                        <MudText Typo="Typo.overline">@UiText.Get("PropertyProfile_InsightFocus")</MudText>
+                        <MudChip T="string" Variant="Variant.Outlined" Color="@InsightColor" Class="mt-2">@InsightFocusLabel</MudChip>
+                    </MudPaper>
+                </MudItem>
+                <MudItem xs="12" md="4">
+                    <MudPaper Class="pa-3 property-mini-stat" Elevation="0">
+                        <MudText Typo="Typo.overline">@UiText.Get("PropertyProfile_InsightNextAction")</MudText>
+                        <MudButton Class="mt-2" Variant="Variant.Text" Color="@InsightColor" OnClick="OpenInsightNextActionAsync">@InsightActionLabel</MudButton>
+                    </MudPaper>
+                </MudItem>
+            </MudGrid>
+            <MudText Typo="Typo.body2" Class="mt-3">@InsightMessage</MudText>
+        </MudPaper>
 
         <MudTabs Rounded="true" PanelClass="pa-4">
             <MudTabPanel Text="@Localizer["PropertyProfile_TabOverview"]">
@@ -156,6 +189,8 @@ else
                     </MudItem>
                 </MudGrid>
             </MudTabPanel>
+            @if (!IsDemoCleanView)
+            {
             <MudTabPanel Text="@Localizer["Compliance_Title"]">
                 <MudGrid Spacing="2">
                     <MudItem xs="12" md="6">
@@ -202,18 +237,76 @@ else
                     </MudItem>
                 </MudGrid>
             </MudTabPanel>
+            }
         </MudTabs>
     </MudStack>
 }
 
 @code {
     [Parameter] public Guid PropertyId { get; set; }
+    [SupplyParameterFromQuery(Name = "demo")] public string? DemoMode { get; set; }
 
     private Property? _property;
     private List<Unit> _units = new();
     private List<Lease> _leases = new();
     private List<MaintenanceRequest> _maintenance = new();
     private List<ComplianceReminder> _compliance = new();
+    private MaintenanceRequest? PriorityMaintenance => _maintenance.OrderByDescending(x => x.Priority).ThenByDescending(x => x.RequestedDate).FirstOrDefault(x => !string.Equals(x.Status, "Closed", StringComparison.OrdinalIgnoreCase));
+    private int VacantCount => _units.Count(x => !x.IsOccupied);
+    private ComplianceReminder? PriorityCompliance => _compliance.FirstOrDefault(x => !x.IsCompleted);
+    private Lease? RenewalLease => _leases.FirstOrDefault(x => x.EndDate <= DateOnly.FromDateTime(DateTime.Today.AddDays(60)) && (x.Status == LeaseStatus.Active || x.Status == LeaseStatus.EndingSoon));
+    private bool IsDemoCleanView => string.Equals(DemoMode, "clean", StringComparison.OrdinalIgnoreCase);
+    private string DemoModeQuery => IsDemoCleanView ? "demo=clean" : string.Empty;
+    private string PropertiesRoute => WithDemoMode("/properties");
+    private string PropertyProfileRoute => WithDemoMode($"/properties/{PropertyId}");
+    private string InsightUrgencyLabel
+        => PriorityMaintenance is not null
+            ? UiText.Get("PropertyProfile_InsightUrgencyHigh")
+            : VacantCount > 0 || PriorityCompliance is not null || RenewalLease is not null
+                ? UiText.Get("PropertyProfile_InsightUrgencyMedium")
+                : UiText.Get("PropertyProfile_InsightUrgencyStable");
+
+    private string InsightFocusLabel
+        => PriorityMaintenance is not null
+            ? UiText.Get("PropertyProfile_InsightFocusMaintenance")
+            : VacantCount > 0
+                ? UiText.Get("PropertyProfile_InsightFocusVacancy")
+                : PriorityCompliance is not null
+                    ? UiText.Get("PropertyProfile_InsightFocusCompliance")
+                    : RenewalLease is not null
+                        ? UiText.Get("PropertyProfile_InsightFocusRenewal")
+                        : UiText.Get("PropertyProfile_InsightFocusStable");
+
+    private string InsightMessage
+        => PriorityMaintenance is not null
+            ? UiText.Get("PropertyProfile_InsightMessageMaintenance")
+            : VacantCount > 0
+                ? UiText.Get("PropertyProfile_InsightMessageVacancy")
+                : PriorityCompliance is not null
+                    ? UiText.Get("PropertyProfile_InsightMessageCompliance")
+                    : RenewalLease is not null
+                        ? UiText.Get("PropertyProfile_InsightMessageRenewal")
+                        : UiText.Get("PropertyProfile_InsightMessageStable");
+
+    private string InsightActionLabel
+        => PriorityMaintenance is not null
+            ? UiText.Get("PropertyProfile_InsightOpenMaintenance")
+            : VacantCount > 0
+                ? UiText.Get("PropertyProfile_InsightOpenLeasing")
+                : PriorityCompliance is not null
+                    ? UiText.Get("PropertyProfile_InsightOpenCompliance")
+                    : RenewalLease is not null
+                        ? UiText.Get("PropertyProfile_InsightOpenLeases")
+                        : UiText.Get("PropertyProfile_InsightOpenReview");
+
+    private Color InsightColor
+        => PriorityMaintenance is not null
+            ? Color.Error
+            : VacantCount > 0
+                ? Color.Warning
+                : PriorityCompliance is not null || RenewalLease is not null
+                    ? Color.Info
+                    : Color.Success;
 
     protected override async Task OnParametersSetAsync()
     {
@@ -245,6 +338,50 @@ else
     {
         var parts = new[] { property.AddressLine1, property.City, property.Province, property.PostalCode }.Where(x => !string.IsNullOrWhiteSpace(x));
         return string.Join(", ", parts);
+    }
+
+    private string WithDemoMode(string route)
+    {
+        if (!IsDemoCleanView || string.IsNullOrWhiteSpace(route) || route.Contains("demo=", StringComparison.OrdinalIgnoreCase))
+        {
+            return route;
+        }
+
+        var anchorIndex = route.IndexOf('#');
+        var anchor = anchorIndex >= 0 ? route[anchorIndex..] : string.Empty;
+        var baseRoute = anchorIndex >= 0 ? route[..anchorIndex] : route;
+        var separator = baseRoute.Contains('?') ? "&" : "?";
+        return $"{baseRoute}{separator}{DemoModeQuery}{anchor}";
+    }
+
+    private Task OpenInsightNextActionAsync()
+    {
+        if (PriorityMaintenance is not null)
+        {
+            NavigationManager.NavigateTo(WithDemoMode($"/maintenance?ticket={PriorityMaintenance.Id}#ticket-{PriorityMaintenance.Id}"));
+            return Task.CompletedTask;
+        }
+
+        if (VacantCount > 0)
+        {
+            NavigationManager.NavigateTo(WithDemoMode("/leasing"));
+            return Task.CompletedTask;
+        }
+
+        if (PriorityCompliance is not null)
+        {
+            NavigationManager.NavigateTo(WithDemoMode("/compliance"));
+            return Task.CompletedTask;
+        }
+
+        if (RenewalLease is not null)
+        {
+            NavigationManager.NavigateTo(WithDemoMode("/leases"));
+            return Task.CompletedTask;
+        }
+
+        NavigationManager.NavigateTo(WithDemoMode("/properties"));
+        return Task.CompletedTask;
     }
 
     private string GetOccupancyLabel(int totalUnits, int occupiedUnits)

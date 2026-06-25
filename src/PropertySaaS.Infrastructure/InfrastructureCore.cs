@@ -93,11 +93,13 @@ namespace PropertySaaS.Infrastructure.Data
             modelBuilder.Entity<TenantMessage>().HasOne(x => x.Conversation).WithMany(x => x.Messages).HasForeignKey(x => x.TenantConversationId).OnDelete(DeleteBehavior.Cascade);
             modelBuilder.Entity<TenantMessage>().Property(x => x.DeliveryMethod).HasDefaultValue(string.Empty);
             modelBuilder.Entity<TenantMessage>().Property(x => x.DeliveryProof).HasDefaultValue(string.Empty);
+            modelBuilder.Entity<MediaAsset>().Property(x => x.DocumentType).HasDefaultValue(string.Empty);
             modelBuilder.Entity<Vendor>().Property(x => x.DispatchStatus).HasDefaultValue("Available");
             modelBuilder.Entity<Vendor>().Property(x => x.PreferredForPriority).HasDefaultValue(string.Empty);
             modelBuilder.Entity<MaintenanceRequest>().Property(x => x.DispatchStatus).HasDefaultValue("Unassigned");
             modelBuilder.Entity<MaintenanceRequest>().Property(x => x.EstimatedCost).HasPrecision(18, 2);
             modelBuilder.Entity<Listing>().Property(x => x.AskingRent).HasPrecision(18, 2);
+            modelBuilder.Entity<Lead>().Property(x => x.MonthlyIncome).HasPrecision(18, 2);
             modelBuilder.Entity<Invoice>().Property(x => x.Amount).HasPrecision(18, 2);
             modelBuilder.Entity<Invoice>().Property(x => x.Balance).HasPrecision(18, 2);
             modelBuilder.Entity<PaymentEntry>().Property(x => x.Amount).HasPrecision(18, 2);
@@ -111,6 +113,7 @@ namespace PropertySaaS.Infrastructure.Data
             modelBuilder.Entity<MediaAsset>().HasOne(x => x.Property).WithMany(x => x.MediaAssets).HasForeignKey(x => x.PropertyId).OnDelete(DeleteBehavior.Restrict);
             modelBuilder.Entity<MediaAsset>().HasOne(x => x.Unit).WithMany(x => x.MediaAssets).HasForeignKey(x => x.UnitId).OnDelete(DeleteBehavior.Restrict);
             modelBuilder.Entity<MediaAsset>().HasOne(x => x.Listing).WithMany(x => x.MediaAssets).HasForeignKey(x => x.ListingId).OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<MediaAsset>().HasOne(x => x.Lease).WithMany(x => x.MediaAssets).HasForeignKey(x => x.LeaseId).OnDelete(DeleteBehavior.Restrict);
             modelBuilder.Entity<MediaAsset>().HasOne(x => x.MaintenanceRequest).WithMany().HasForeignKey(x => x.MaintenanceRequestId).OnDelete(DeleteBehavior.Restrict);
             ApplicationDbSeeder.Seed(modelBuilder);
             base.OnModelCreating(modelBuilder);
@@ -143,7 +146,7 @@ namespace PropertySaaS.Infrastructure.Data
             modelBuilder.Entity<Property>().HasData(new Property { Id = propertyId, OrganizationId = orgId, Name = "King West Lofts", PropertyType = "Urban mid-rise", AddressLine1 = "18 Stafford Street", City = "Toronto", Province = "ON", PostalCode = "M6J 2R9", YearBuilt = 2017, MonthlyRevenueTarget = 14800m, AmenitySummary = "Gym access, rooftop terrace, bike storage", NeighborhoodNotes = "Walkable King West location with strong renter demand and transit access.", LeasingNotes = "Position as design-forward downtown living for professionals and couples.", OperationalNotes = "Monitor turnover windows closely and prioritize same-week suite refreshes.", CreatedUtc = new DateTime(2026,1,1,0,0,0,DateTimeKind.Utc) });
             modelBuilder.Entity<Unit>().HasData(new Unit { Id = unitId, OrganizationId = orgId, PropertyId = propertyId, UnitNumber = "508", Bedrooms = 1, Bathrooms = 1, MonthlyRent = 2895m, IsOccupied = true, CreatedUtc = new DateTime(2026,1,1,0,0,0,DateTimeKind.Utc) });
             modelBuilder.Entity<Tenant>().HasData(new Tenant { Id = tenantId, OrganizationId = orgId, FullName = "Jordan Patel", Email = "jordan.patel@example.com", PhoneNumber = "647-555-0134", CreditScore = 731, ScreeningCompleted = true, ScreeningProvider = "SingleKey", CreatedUtc = new DateTime(2026,1,1,0,0,0,DateTimeKind.Utc) });
-            modelBuilder.Entity<Lease>().HasData(new Lease { Id = Guid.Parse("55555555-5555-5555-5555-555555555555"), OrganizationId = orgId, UnitId = unitId, TenantId = tenantId, StartDate = new DateOnly(2026,1,1), EndDate = new DateOnly(2026,12,31), MonthlyRent = 2895m, Status = LeaseStatus.Active, StandardOntarioLeaseSigned = true, N1IncreaseNoticeScheduled = true, CreatedUtc = new DateTime(2026,1,1,0,0,0,DateTimeKind.Utc) });
+            modelBuilder.Entity<Lease>().HasData(new Lease { Id = Guid.Parse("55555555-5555-5555-5555-555555555555"), OrganizationId = orgId, UnitId = unitId, TenantId = tenantId, StartDate = new DateOnly(2026,1,1), EndDate = new DateOnly(2026,12,31), MonthlyRent = 2895m, Status = LeaseStatus.Active, StandardOntarioLeaseSigned = true, N1IncreaseNoticeScheduled = true, DepositReceived = true, InsuranceProofReceived = true, MoveInChecklistCompleted = true, MoveInNotes = "Demo move-in package completed and ready for resident handoff.", CreatedUtc = new DateTime(2026,1,1,0,0,0,DateTimeKind.Utc) });
             modelBuilder.Entity<MaintenanceRequest>().HasData(new MaintenanceRequest { Id = Guid.Parse("77777777-7777-7777-7777-777777777777"), OrganizationId = orgId, PropertyId = propertyId, UnitId = unitId, Title = "Annual smoke detector certification", Description = "Ontario compliance inspection and battery replacement.", Priority = MaintenancePriority.High, Status = "Open", DispatchStatus = "Assigned", VendorName = "SafeHome Fire Services", EstimatedCost = 180m, RequestedDate = new DateOnly(2026,6,15), CreatedUtc = new DateTime(2026,1,1,0,0,0,DateTimeKind.Utc) });
             modelBuilder.Entity<AuditLog>().HasData(new AuditLog { Id = Guid.Parse("88888888-8888-8888-8888-888888888888"), OrganizationId = orgId, EntityName = "Lease", Action = "Seed", PerformedBy = "system", Details = "Seeded demo Ontario lease", CreatedUtc = new DateTime(2026,1,1,0,0,0,DateTimeKind.Utc) });
             modelBuilder.Entity<ComplianceReminder>().HasData(
@@ -152,6 +155,9 @@ namespace PropertySaaS.Infrastructure.Data
             modelBuilder.Entity<DocumentTemplate>().HasData(
                 new DocumentTemplate { Id = Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"), OrganizationId = orgId, Name = "Ontario Standard Lease Package", Category = "Lease", Province = "ON", Description = "Prebuilt package with required Ontario clauses and signature checklist.", CreatedUtc = new DateTime(2026,1,1,0,0,0,DateTimeKind.Utc) },
                 new DocumentTemplate { Id = Guid.Parse("cccccccc-cccc-cccc-cccc-cccccccccccc"), OrganizationId = orgId, Name = "N4 Non-payment Notice Template", Category = "Notice", Province = "ON", Description = "Guided landlord workflow for arrears communication.", CreatedUtc = new DateTime(2026,1,1,0,0,0,DateTimeKind.Utc) });
+            modelBuilder.Entity<MediaAsset>().HasData(
+                new MediaAsset { Id = Guid.Parse("12121212-1212-1212-1212-121212121212"), OrganizationId = orgId, PropertyId = propertyId, UnitId = unitId, LeaseId = Guid.Parse("55555555-5555-5555-5555-555555555555"), FileName = "Ontario Standard Lease.pdf", BlobPath = "/demo/lease-package/ontario-standard-lease.pdf", Caption = "Signed standard lease ready for tenant welcome package.", DocumentType = "SignedLease", SortOrder = 1, IsPrimary = true, Category = MediaAssetCategory.LeaseDocument, CreatedUtc = new DateTime(2026,1,1,0,0,0,DateTimeKind.Utc) },
+                new MediaAsset { Id = Guid.Parse("34343434-3434-3434-3434-343434343434"), OrganizationId = orgId, PropertyId = propertyId, UnitId = unitId, LeaseId = Guid.Parse("55555555-5555-5555-5555-555555555555"), FileName = "Insurance Certificate.pdf", BlobPath = "/demo/lease-package/insurance-certificate.pdf", Caption = "Tenant insurance proof collected before move-in.", DocumentType = "InsuranceProof", SortOrder = 2, IsPrimary = false, Category = MediaAssetCategory.LeaseDocument, CreatedUtc = new DateTime(2026,1,1,0,0,0,DateTimeKind.Utc) });
         }
     }
 
