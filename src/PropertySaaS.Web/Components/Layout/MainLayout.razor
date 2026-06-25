@@ -38,7 +38,7 @@
                                 <select name="organizationId" class="mud-input-slot mud-input-root mud-input-root-outlined mud-select-input" style="width:100%;padding:12px;border-radius:4px;">
                                     @foreach (var option in _organizationOptions)
                                     {
-                                         <option value="@option.OrganizationId" selected="@(option.OrganizationId == CurrentOrganization.OrganizationId)">@option.OrganizationName@(option.IsDemo ? " [Demo]" : string.Empty) (@option.Role)</option>
+                                         <option value="@option.OrganizationId" selected="@(option.OrganizationId == CurrentOrganization.OrganizationId)">@option.OrganizationName@(option.IsDemo ? $" [{UiText.Get("Layout_DemoOptionSuffix")}]" : string.Empty) (@option.Role)</option>
                                     }
                                 </select>
                                 <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Text" Color="Color.Primary" Class="mt-2">@UiText.Get("Layout_SwitchOrganization")</MudButton>
@@ -127,7 +127,7 @@
                         OrganizationId = option.OrganizationId,
                         OrganizationName = option.OrganizationName,
                         IsDemo = option.IsDemo,
-                        Role = "SuperAdmin",
+                        Role = UiText.Get("Nav_SuperAdmin"),
                         Status = "Active"
                     })
                     .ToList();
