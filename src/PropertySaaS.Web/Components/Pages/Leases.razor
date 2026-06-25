@@ -19,53 +19,63 @@
 
     <DemoJourneyBanner CurrentStepKey="resident" ResidentRoute="@Resident360Route" />
 
-    <MudGrid Spacing="2" Class="align-center-grid">
-        <MudItem xs="12" lg="4">
-            <MudTextField T="string"
-                          Label="@Localizer["Leases_SearchLabel"]"
-                          Variant="Variant.Outlined"
-                          Immediate="true"
-                          @bind-Value="_searchText"
-                          Adornment="Adornment.Start"
-                          AdornmentIcon="@Icons.Material.Filled.Search"
-                          Placeholder="@Localizer["Leases_SearchPlaceholder"]" />
-        </MudItem>
-        <MudItem xs="12" sm="4" lg="2">
-            <MudSelect T="string" Label="@Localizer["Leases_FilterStatus"]" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedStatusFilter">
-                <MudSelectItem T="string" Value="@string.Empty">@Localizer["Leases_FilterAllStatuses"]</MudSelectItem>
-                @foreach (var option in StatusOptions)
-                {
-                    <MudSelectItem T="string" Value="@option.ToString()">@GetLeaseStatusLabel(option)</MudSelectItem>
-                }
-            </MudSelect>
-        </MudItem>
-        <MudItem xs="12" sm="4" lg="2">
-            <MudSelect T="string" Label="@Localizer["Leases_FilterJurisdictionLease"]" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedOntarioFilter">
-                <MudSelectItem T="string" Value="@string.Empty">@Localizer["Leases_FilterAll"]</MudSelectItem>
-                <MudSelectItem T="string" Value='@Localizer["Leases_OntarioSigned"].Value'>@Localizer["Leases_OntarioSigned"]</MudSelectItem>
-                <MudSelectItem T="string" Value='@Localizer["Leases_OntarioMissing"].Value'>@Localizer["Leases_OntarioMissing"]</MudSelectItem>
-            </MudSelect>
-        </MudItem>
-        <MudItem xs="12" sm="4" lg="2">
-            <MudSelect T="string" Label="@Localizer["Leases_FilterNoticeWorkflow"]" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedWorkflowFilter">
-                <MudSelectItem T="string" Value="@string.Empty">@Localizer["Leases_FilterAll"]</MudSelectItem>
-                <MudSelectItem T="string" Value='@Localizer["Leases_WorkflowScheduled"].Value'>@Localizer["Leases_WorkflowScheduled"]</MudSelectItem>
-                <MudSelectItem T="string" Value='@Localizer["Leases_WorkflowNotScheduled"].Value'>@Localizer["Leases_WorkflowNotScheduled"]</MudSelectItem>
-            </MudSelect>
-        </MudItem>
-        <MudItem xs="12" lg="2">
-            <MudStack Row="true" Spacing="1" Class="properties-toolbar-actions">
-                @if (HasActiveFilters)
-                {
-                    <MudButton Variant="Variant.Outlined" Color="Color.Default" FullWidth="true" StartIcon="@Icons.Material.Filled.FilterAltOff" OnClick="ClearFilters">@Localizer["Common_Reset"]</MudButton>
-                }
-                @if (CurrentOrganization.CanManageData)
-                {
-                    <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreatePanel">@Localizer["Leases_AddLease"]</MudButton>
-                }
-            </MudStack>
-        </MudItem>
-    </MudGrid>
+    <MudPaper Class="pa-3 marketing-card" Elevation="0">
+        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Wrap="Wrap.Wrap">
+            <MudText Typo="Typo.subtitle2">@UiText.Get("Common_RecommendedNextStop")</MudText>
+            <MudButton Variant="Variant.Text" Color="@RecommendedNextStopColor" OnClick="OpenRecommendedNextStopAsync">@RecommendedNextStopLabel</MudButton>
+        </MudStack>
+    </MudPaper>
+
+    @if (!IsDemoCleanView)
+    {
+        <MudGrid Spacing="2" Class="align-center-grid">
+            <MudItem xs="12" lg="4">
+                <MudTextField T="string"
+                              Label="@Localizer["Leases_SearchLabel"]"
+                              Variant="Variant.Outlined"
+                              Immediate="true"
+                              @bind-Value="_searchText"
+                              Adornment="Adornment.Start"
+                              AdornmentIcon="@Icons.Material.Filled.Search"
+                              Placeholder="@Localizer["Leases_SearchPlaceholder"]" />
+            </MudItem>
+            <MudItem xs="12" sm="4" lg="2">
+                <MudSelect T="string" Label="@Localizer["Leases_FilterStatus"]" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedStatusFilter">
+                    <MudSelectItem T="string" Value="@string.Empty">@Localizer["Leases_FilterAllStatuses"]</MudSelectItem>
+                    @foreach (var option in StatusOptions)
+                    {
+                        <MudSelectItem T="string" Value="@option.ToString()">@GetLeaseStatusLabel(option)</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" sm="4" lg="2">
+                <MudSelect T="string" Label="@Localizer["Leases_FilterJurisdictionLease"]" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedOntarioFilter">
+                    <MudSelectItem T="string" Value="@string.Empty">@Localizer["Leases_FilterAll"]</MudSelectItem>
+                    <MudSelectItem T="string" Value='@Localizer["Leases_OntarioSigned"].Value'>@Localizer["Leases_OntarioSigned"]</MudSelectItem>
+                    <MudSelectItem T="string" Value='@Localizer["Leases_OntarioMissing"].Value'>@Localizer["Leases_OntarioMissing"]</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" sm="4" lg="2">
+                <MudSelect T="string" Label="@Localizer["Leases_FilterNoticeWorkflow"]" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedWorkflowFilter">
+                    <MudSelectItem T="string" Value="@string.Empty">@Localizer["Leases_FilterAll"]</MudSelectItem>
+                    <MudSelectItem T="string" Value='@Localizer["Leases_WorkflowScheduled"].Value'>@Localizer["Leases_WorkflowScheduled"]</MudSelectItem>
+                    <MudSelectItem T="string" Value='@Localizer["Leases_WorkflowNotScheduled"].Value'>@Localizer["Leases_WorkflowNotScheduled"]</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" lg="2">
+                <MudStack Row="true" Spacing="1" Class="properties-toolbar-actions">
+                    @if (HasActiveFilters)
+                    {
+                        <MudButton Variant="Variant.Outlined" Color="Color.Default" FullWidth="true" StartIcon="@Icons.Material.Filled.FilterAltOff" OnClick="ClearFilters">@Localizer["Common_Reset"]</MudButton>
+                    }
+                    @if (CurrentOrganization.CanManageData)
+                    {
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreatePanel">@Localizer["Leases_AddLease"]</MudButton>
+                    }
+                </MudStack>
+            </MudItem>
+        </MudGrid>
+    }
 
     <MudGrid Spacing="2">
         <MudItem xs="12" sm="6" lg="3"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">@Localizer["Leases_StatShown"]</MudText><MudText Typo="Typo.h6">@FilteredLeases.Count()</MudText></MudPaper></MudItem>
@@ -82,6 +92,21 @@
             <MudItem xs="12" md="4"><MudPaper Class="pa-3 property-mini-stat" Elevation="0"><MudText Typo="Typo.overline">@UiText.Get("Leases_InsightNextAction")</MudText><MudButton Class="mt-2" Variant="Variant.Text" Color="@InsightColor" OnClick="OpenInsightNextActionAsync">@InsightActionLabel</MudButton></MudPaper></MudItem>
         </MudGrid>
         <MudText Typo="Typo.body2" Class="mt-3">@InsightMessage</MudText>
+    </MudPaper>
+
+    <MudPaper Class="pa-4 marketing-card" Elevation="0">
+        <MudText Typo="Typo.h6">@UiText.Get("Leases_DemoStoryTitle")</MudText>
+        <MudText Typo="Typo.body2" Class="mt-1">@UiText.Get("Leases_DemoStoryBody")</MudText>
+        <MudList T="string" Dense="true" Class="mt-3">
+            <MudListItem T="string">@UiText.Get("Leases_DemoStoryStep1")</MudListItem>
+            <MudListItem T="string">@UiText.Get("Leases_DemoStoryStep2")</MudListItem>
+            <MudListItem T="string">@UiText.Get("Leases_DemoStoryStep3")</MudListItem>
+        </MudList>
+        <MudStack Row="true" Spacing="1" Class="mt-3" Wrap="Wrap.Wrap">
+            <MudButton Variant="Variant.Outlined" Color="@InsightColor" OnClick="OpenInsightNextActionAsync">@InsightActionLabel</MudButton>
+            <MudButton Variant="Variant.Text" Color="Color.Secondary" Disabled="@(PriorityMoveInLease is null)" OnClick="OpenPriorityLeaseConversationAsync">@UiText.Get("Leases_MoveInOpenCommunication")</MudButton>
+            <MudButton Variant="Variant.Text" Color="Color.Warning" Disabled="@(PriorityNoticeLease is null)" OnClick="OpenPriorityNoticeDraftAsync">@UiText.Get("Leases_InsightOpenNotice")</MudButton>
+        </MudStack>
     </MudPaper>
 
     <MudPaper Class="pa-4 marketing-card" Elevation="0">
@@ -334,6 +359,7 @@
 
 @code {
     [SupplyParameterFromQuery] public Guid? TenantId { get; set; }
+    [SupplyParameterFromQuery(Name = "demo")] public string? DemoMode { get; set; }
 
     private List<Lease> _items = new();
     private List<Unit> _units = new();
@@ -379,6 +405,7 @@
     private IEnumerable<string> MoveInDocumentTypeOptions => new[] { "SignedLease", "InsuranceProof", "GovernmentId", "IncomeProof", "DepositReceipt" };
     private Lease? PriorityMoveInLease => SelectedLease ?? _items.FirstOrDefault(x => x.Status == LeaseStatus.Draft) ?? _items.FirstOrDefault(x => !x.StandardOntarioLeaseSigned);
     private Lease? PriorityNoticeLease => FilteredLeases.FirstOrDefault(x => x.N1IncreaseNoticeScheduled);
+    private bool IsDemoCleanView => DemoModeRouteHelper.IsClean(DemoMode);
     private string InsightUrgencyLabel
         => PriorityMoveInLease is not null && (PriorityMoveInLease.Status == LeaseStatus.Draft || !PriorityMoveInLease.StandardOntarioLeaseSigned)
             ? UiText.Get("Leases_InsightUrgencyHigh")
@@ -422,6 +449,10 @@
                     ? Color.Secondary
                     : Color.Success;
 
+    private string RecommendedNextStopLabel => InsightActionLabel;
+
+    private Color RecommendedNextStopColor => InsightColor;
+
     private Guid? FormUnitId
     {
         get => ActiveLease.UnitId == Guid.Empty ? null : ActiveLease.UnitId;
@@ -444,6 +475,9 @@
         .Where(lease => string.IsNullOrWhiteSpace(_selectedStatusFilter) || string.Equals(lease.Status.ToString(), _selectedStatusFilter, StringComparison.OrdinalIgnoreCase))
         .Where(lease => string.IsNullOrWhiteSpace(_selectedOntarioFilter) || string.Equals(GetOntarioLabel(lease), _selectedOntarioFilter, StringComparison.OrdinalIgnoreCase))
         .Where(lease => string.IsNullOrWhiteSpace(_selectedWorkflowFilter) || string.Equals(GetWorkflowLabel(lease), _selectedWorkflowFilter, StringComparison.OrdinalIgnoreCase));
+
+    private string WithDemoMode(string route)
+        => DemoModeRouteHelper.Apply(route, IsDemoCleanView);
 
     protected override async Task OnInitializedAsync()
     {
@@ -554,25 +588,25 @@
     private async Task OpenLeaseConversationAsync(Guid leaseId)
     {
         var conversationId = await DataService.EnsureLeaseConversationAsync(leaseId);
-        NavigationManager.NavigateTo(conversationId.HasValue
+        NavigationManager.NavigateTo(WithDemoMode(conversationId.HasValue
             ? $"/tenant-communications?conversationId={conversationId.Value}"
-            : "/tenant-communications");
+            : "/tenant-communications"));
     }
 
     private async Task OpenLeaseMoveInOutreachDraftAsync(Guid leaseId)
     {
         var conversationId = await DataService.EnsureLeaseMoveInOutreachDraftAsync(leaseId);
-        NavigationManager.NavigateTo(conversationId.HasValue
+        NavigationManager.NavigateTo(WithDemoMode(conversationId.HasValue
             ? $"/tenant-communications?conversationId={conversationId.Value}"
-            : "/tenant-communications");
+            : "/tenant-communications"));
     }
 
     private async Task OpenLeaseNoticeDeliveryDraftAsync(Guid leaseId)
     {
         var conversationId = await DataService.EnsureLeaseConversationAsync(leaseId);
-        NavigationManager.NavigateTo(conversationId.HasValue
+        NavigationManager.NavigateTo(WithDemoMode(conversationId.HasValue
             ? $"/tenant-communications?conversationId={conversationId.Value}&compose=notice-delivery"
-            : "/tenant-communications");
+            : "/tenant-communications"));
     }
 
     private async Task OpenInsightNextActionAsync()
@@ -595,8 +629,17 @@
             return;
         }
 
-        NavigationManager.NavigateTo("/leases");
+        NavigationManager.NavigateTo(WithDemoMode("/leases"));
     }
+
+    private Task OpenRecommendedNextStopAsync()
+        => OpenInsightNextActionAsync();
+
+    private Task OpenPriorityLeaseConversationAsync()
+        => PriorityMoveInLease is null ? Task.CompletedTask : OpenLeaseConversationAsync(PriorityMoveInLease.Id);
+
+    private Task OpenPriorityNoticeDraftAsync()
+        => PriorityNoticeLease is null ? Task.CompletedTask : OpenLeaseNoticeDeliveryDraftAsync(PriorityNoticeLease.Id);
 
     private async Task CompleteMoveInStepAsync(Guid leaseId, bool markSigned, bool activateLease)
     {
@@ -696,7 +739,7 @@
     private string GetPropertyHref(Lease lease)
     {
         var unit = _units.FirstOrDefault(x => x.Id == lease.UnitId);
-        return unit is null ? "/properties" : $"/properties/{unit.PropertyId}";
+        return WithDemoMode(unit is null ? "/properties" : $"/properties/{unit.PropertyId}");
     }
 
     private string GetPropertyName(Guid propertyId)

@@ -26,6 +26,13 @@
     }
     else
     {
+        <MudPaper Class="pa-3 marketing-card" Elevation="0">
+            <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Wrap="Wrap.Wrap">
+                <MudText Typo="Typo.subtitle2">@UiText.Get("Common_RecommendedNextStop")</MudText>
+                <MudButton Variant="Variant.Text" Color="@RecommendedNextStopColor" OnClick="OpenRecommendedNextStopAsync">@RecommendedNextStopLabel</MudButton>
+            </MudStack>
+        </MudPaper>
+
         <MudPaper Class="pa-4 property-detail-panel" Elevation="0">
             <MudText Typo="Typo.h6">@UiText.Get("RentPayments_InsightTitle")</MudText>
             <MudGrid Spacing="2" Class="mt-2">
@@ -49,6 +56,21 @@
                 </MudItem>
             </MudGrid>
             <MudText Typo="Typo.body2" Class="mt-3">@InsightMessage</MudText>
+        </MudPaper>
+
+        <MudPaper Class="pa-4 marketing-card" Elevation="0">
+            <MudText Typo="Typo.h6">@UiText.Get("RentPayments_DemoStoryTitle")</MudText>
+            <MudText Typo="Typo.body2" Class="mt-1">@UiText.Get("RentPayments_DemoStoryBody")</MudText>
+            <MudList T="string" Dense="true" Class="mt-3">
+                <MudListItem T="string">@UiText.Get("RentPayments_DemoStoryStep1")</MudListItem>
+                <MudListItem T="string">@UiText.Get("RentPayments_DemoStoryStep2")</MudListItem>
+                <MudListItem T="string">@UiText.Get("RentPayments_DemoStoryStep3")</MudListItem>
+            </MudList>
+            <MudStack Row="true" Spacing="1" Class="mt-3" Wrap="Wrap.Wrap">
+                <MudButton Variant="Variant.Outlined" Color="@InsightColor" OnClick="OpenInsightNextActionAsync">@InsightActionLabel</MudButton>
+                <MudButton Variant="Variant.Text" Color="Color.Secondary" OnClick="OpenResident360Async">@UiText.Get("TenantCommunications_OpenResident360")</MudButton>
+                <MudButton Variant="Variant.Text" Color="Color.Warning" Disabled="@(!CanPreparePriorityNotice)" OnClick="OpenPriorityNoticeDraftAsync">@UiText.Get("RentPayments_PrepareN4Draft")</MudButton>
+            </MudStack>
         </MudPaper>
 
         <MudGrid Spacing="3">
@@ -88,15 +110,18 @@
             </MudTable>
         </MudPaper>
 
-        <MudPaper Class="pa-4 marketing-card" Elevation="0">
-            <MudText Typo="Typo.h6">@UiText.Get("RentPayments_WorkflowTitle")</MudText>
-            <MudList T="string" Dense="true" Class="mt-3">
-                <MudListItem T="string">@UiText.Get("RentPayments_Workflow1")</MudListItem>
-                <MudListItem T="string">@UiText.Get("RentPayments_Workflow2")</MudListItem>
-                <MudListItem T="string">@UiText.Get("RentPayments_Workflow3")</MudListItem>
-                <MudListItem T="string">@UiText.Get("RentPayments_Workflow4")</MudListItem>
-            </MudList>
-        </MudPaper>
+        @if (!IsDemoCleanView)
+        {
+            <MudPaper Class="pa-4 marketing-card" Elevation="0">
+                <MudText Typo="Typo.h6">@UiText.Get("RentPayments_WorkflowTitle")</MudText>
+                <MudList T="string" Dense="true" Class="mt-3">
+                    <MudListItem T="string">@UiText.Get("RentPayments_Workflow1")</MudListItem>
+                    <MudListItem T="string">@UiText.Get("RentPayments_Workflow2")</MudListItem>
+                    <MudListItem T="string">@UiText.Get("RentPayments_Workflow3")</MudListItem>
+                    <MudListItem T="string">@UiText.Get("RentPayments_Workflow4")</MudListItem>
+                </MudList>
+            </MudPaper>
+        }
 
         <MudPaper Class="pa-2 table-wrap properties-table-shell" Elevation="0">
             <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="pa-3">
@@ -174,6 +199,7 @@
 
 @code {
     [SupplyParameterFromQuery] public Guid? TenantId { get; set; }
+    [SupplyParameterFromQuery(Name = "demo")] public string? DemoMode { get; set; }
 
     private List<InvoiceSummaryDto> _invoices = new();
     private List<PaymentEntrySummaryDto> _payments = new();
@@ -182,6 +208,7 @@
     private bool _isPaymentPanelOpen;
     private bool _isPaymentCreateMode = true;
     private DateTime? _paymentReceivedDate = DateTime.Today;
+    private bool IsDemoCleanView => DemoModeRouteHelper.IsClean(DemoMode);
     private InvoiceSummaryDto? HighestBalanceInvoice => FilteredInvoices.OrderByDescending(x => x.Balance).ThenBy(x => x.DueDate).FirstOrDefault(x => x.Balance > 0);
     private InvoiceSummaryDto? PartialPaymentInvoice => FilteredInvoices.OrderByDescending(x => x.Balance).ThenBy(x => x.DueDate).FirstOrDefault(x => string.Equals(x.Status, "PartiallyPaid", StringComparison.OrdinalIgnoreCase));
     private string InsightUrgencyLabel
@@ -218,6 +245,10 @@
                     ? UiText.Get("RentPayments_OpenReceiptLog")
                     : UiText.Get("RentPayments_OpenStableReview");
 
+    private string RecommendedNextStopLabel => InsightActionLabel;
+
+    private Color RecommendedNextStopColor => InsightColor;
+
     private Color InsightColor
         => HighestBalanceInvoice is not null
             ? Color.Error
@@ -240,6 +271,16 @@
     private Dictionary<Guid, string> _tenantLookup = new();
 
     private PaymentEntry ActivePayment => _isPaymentCreateMode ? _newPayment : _editPayment;
+
+    private InvoiceSummaryDto? PriorityCollectionsInvoice => HighestBalanceInvoice ?? PartialPaymentInvoice;
+
+    private bool CanPreparePriorityNotice => PriorityCollectionsInvoice is not null;
+
+    private string WithDemoMode(string route)
+        => DemoModeRouteHelper.Apply(route, IsDemoCleanView);
+
+    private void OpenResident360Async()
+        => NavigationManager.NavigateTo(WithDemoMode(Resident360Route));
 
     private Guid? FormInvoiceId
     {
@@ -320,18 +361,32 @@
     private async Task OpenInvoiceConversationAsync(Guid invoiceId)
     {
         var conversationId = await DataService.EnsureInvoiceConversationAsync(invoiceId);
-        NavigationManager.NavigateTo(conversationId.HasValue
+        NavigationManager.NavigateTo(WithDemoMode(conversationId.HasValue
             ? $"/tenant-communications?conversationId={conversationId.Value}"
-            : "/tenant-communications");
+            : "/tenant-communications"));
     }
 
     private async Task OpenInvoiceNoticeDraftAsync(Guid invoiceId)
     {
         var conversationId = await DataService.EnsureInvoiceConversationAsync(invoiceId);
-        NavigationManager.NavigateTo(conversationId.HasValue
+        NavigationManager.NavigateTo(WithDemoMode(conversationId.HasValue
             ? $"/tenant-communications?conversationId={conversationId.Value}&compose=n4-prep&invoiceId={invoiceId}"
-            : "/tenant-communications");
+            : "/tenant-communications"));
     }
+
+    private async Task OpenPriorityNoticeDraftAsync()
+    {
+        if (PriorityCollectionsInvoice is null)
+        {
+            OpenResident360Async();
+            return;
+        }
+
+        await OpenInvoiceNoticeDraftAsync(PriorityCollectionsInvoice.InvoiceId);
+    }
+
+    private Task OpenRecommendedNextStopAsync()
+        => OpenInsightNextActionAsync();
 
     private async Task OpenInsightNextActionAsync()
     {
@@ -353,6 +408,6 @@
             return;
         }
 
-        NavigationManager.NavigateTo("/rent-payments");
+        NavigationManager.NavigateTo(WithDemoMode("/rent-payments"));
     }
 }

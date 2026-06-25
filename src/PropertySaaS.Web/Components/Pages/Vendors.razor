@@ -59,8 +59,8 @@
             else
             {
                 <MudText Typo="Typo.subtitle2" Class="mt-2">@_recommendation.VendorName</MudText>
-                <MudText Typo="Typo.body2">@UiText.Get("Vendors_DispatchStatus"): @_recommendation.DispatchStatus</MudText>
-                <MudText Typo="Typo.body2">@UiText.Get("Vendors_ResponseHours"): @_recommendation.TypicalResponseHours h</MudText>
+                <MudText Typo="Typo.body2">@UiText.Get("Vendors_DispatchStatus"): @GetDispatchStatusLabel(_recommendation.DispatchStatus)</MudText>
+                <MudText Typo="Typo.body2">@UiText.Get("Vendors_ResponseHours"): @UiText.Format("Vendors_ResponseHoursCompact", _recommendation.TypicalResponseHours)</MudText>
                 <MudText Typo="Typo.body2">@UiText.Get("Vendors_RecommendationReason"): @_recommendation.RecommendationReason</MudText>
             }
         </MudPaper>
@@ -108,9 +108,9 @@
                     <MudTd DataLabel="@UiText.Get("Vendors_Email")">@context.Email</MudTd>
                     <MudTd DataLabel="@UiText.Get("Vendors_Phone")">@context.PhoneNumber</MudTd>
                     <MudTd DataLabel="@UiText.Get("Vendors_Status")">@(context.IsPreferred ? UiText.Get("Vendors_PreferredStatus") : UiText.Get("Vendors_StandardStatus"))</MudTd>
-                    <MudTd DataLabel="@UiText.Get("Vendors_DispatchStatus")">@context.DispatchStatus</MudTd>
+                    <MudTd DataLabel="@UiText.Get("Vendors_DispatchStatus")">@GetDispatchStatusLabel(context.DispatchStatus)</MudTd>
                     <MudTd DataLabel="@UiText.Get("Vendors_PreferredPriority")">@context.PreferredForPriority</MudTd>
-                    <MudTd DataLabel="@UiText.Get("Vendors_ResponseHours")">@context.TypicalResponseHours h</MudTd>
+                    <MudTd DataLabel="@UiText.Get("Vendors_ResponseHours")">@UiText.Format("Vendors_ResponseHoursCompact", context.TypicalResponseHours)</MudTd>
                     <MudTd DataLabel="@UiText.Get("Vendors_LinkedOpenRequests")">@context.LinkedOpenRequests</MudTd>
                     <MudTd DataLabel="@UiText.Get("Vendors_RiskColumn")">
                         <MudChip T="string" Variant="Variant.Filled" Color="@GetVendorRiskColor(vendorDispatch)">@GetVendorRiskLabel(vendorDispatch)</MudChip>
@@ -175,7 +175,7 @@
                 <MudText Typo="Typo.caption" Color="Color.Secondary">@UiText.Format("Vendors_SelectedVendorSummary", SelectedVendorTickets.Count, _selectedTicket.VendorName)</MudText>
                 <MudText Typo="Typo.subtitle2" Class="mt-2">@_selectedTicket.Title</MudText>
                 <MudStack Row="true" Spacing="1" Class="mt-2" Wrap="Wrap.Wrap">
-                    <MudChip T="string" Variant="Variant.Filled" Color="@GetDispatchColor(_selectedTicket)">@_selectedTicket.DispatchStatus</MudChip>
+                    <MudChip T="string" Variant="Variant.Filled" Color="@GetDispatchColor(_selectedTicket)">@GetDispatchStatusLabel(_selectedTicket.DispatchStatus)</MudChip>
                     <MudChip T="string" Variant="Variant.Outlined" Color="@GetRiskColor(_selectedTicket)">@GetRiskLabel(_selectedTicket)</MudChip>
                     <MudChip T="string" Variant="Variant.Outlined" Color="Color.Default">@UiText.Get("Vendors_TicketPriority"): @_selectedTicket.Priority</MudChip>
                 </MudStack>
@@ -193,7 +193,7 @@
                         @foreach (var ticket in SelectedVendorTickets)
                         {
                             <MudListItem T="string" OnClick='() => SelectVendorTicket(ticket.Id)'>
-                                @UiText.Format("Vendors_ReviewTicketSummary", ticket.Title, ticket.DispatchStatus, GetRiskLabel(ticket))
+                                @UiText.Format("Vendors_ReviewTicketSummary", ticket.Title, GetDispatchStatusLabel(ticket.DispatchStatus), GetRiskLabel(ticket))
                             </MudListItem>
                         }
                     </MudList>
@@ -364,6 +364,22 @@
             && request.RequestedDate <= DateOnly.FromDateTime(DateTime.Today.AddDays(-1))
             && !string.Equals(request.DispatchStatus, "Completed", StringComparison.OrdinalIgnoreCase);
     }
+
+    private string GetDispatchStatusLabel(string? dispatchStatus)
+        => dispatchStatus switch
+        {
+            "Unassigned" => UiText.Get("Maintenance_DispatchUnassigned"),
+            "Recommended" => UiText.Get("Maintenance_DispatchRecommended"),
+            "Assigned" => UiText.Get("Maintenance_DispatchAssigned"),
+            "Acknowledged" => UiText.Get("Maintenance_DispatchAcknowledged"),
+            "Completed" => UiText.Get("Maintenance_DispatchCompleted"),
+            _ => dispatchStatus ?? string.Empty
+        };
+
+    private string GetPreferredPriorityLabel(bool preferredForPriority)
+        => preferredForPriority
+            ? UiText.Get("Vendors_PreferredPriorityYes")
+            : UiText.Get("Vendors_PreferredPriorityNo");
 
     private static bool IsBlocked(MaintenanceRequest request)
         => string.IsNullOrWhiteSpace(request.VendorName) || string.Equals(request.DispatchStatus, "Unassigned", StringComparison.OrdinalIgnoreCase);

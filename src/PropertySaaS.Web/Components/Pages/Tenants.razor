@@ -121,7 +121,7 @@
                 <MudTd DataLabel="@Localizer["Tenants_ColumnScore"]"><MudChip T="string" Variant="Variant.Filled" Color="@GetScoreColor(context.CreditScore)">@context.CreditScore</MudChip></MudTd>
                 <MudTd DataLabel="@Localizer["Tenants_ColumnActions"]">
                     <MudStack Row="true" Spacing="1" Wrap="Wrap.Wrap">
-                        <MudButton Href="/leases" Variant="Variant.Text" Color="Color.Primary" Size="Size.Small">@Localizer["Tenants_OpenLeases"]</MudButton>
+                        <MudButton Href="@WithDemoMode("/leases")" Variant="Variant.Text" Color="Color.Primary" Size="Size.Small">@Localizer["Tenants_OpenLeases"]</MudButton>
                         @if (CurrentOrganization.CanManageData)
                         {
                             <MudButton Variant="Variant.Text" Color="Color.Secondary" Size="Size.Small" OnClick="() => OpenEditPanel(context)">@Localizer["Common_Edit"]</MudButton>
@@ -148,7 +148,7 @@
     </MudPaper>
 
     <MudStack Row="true" Spacing="2" Wrap="Wrap.Wrap">
-        <MudButton Href="/import-export" Variant="Variant.Outlined" Color="Color.Default">@Localizer["Tenants_OpenImportExport"]</MudButton>
+        <MudButton Href="@WithDemoMode("/import-export")" Variant="Variant.Outlined" Color="Color.Default">@Localizer["Tenants_OpenImportExport"]</MudButton>
         <MudButton Href="/export/tenants" Variant="Variant.Outlined" Color="Color.Primary">@Localizer["Tenants_ExportCsv"]</MudButton>
     </MudStack>
 
