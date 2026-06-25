@@ -841,7 +841,7 @@
         _selectedMoveInContext = conversation.LeaseId.HasValue
             ? await DataService.GetLeaseMoveInContextAsync(conversation.LeaseId.Value)
             : null;
-        NavigationManager.NavigateTo($"/tenant-communications?conversationId={conversation.TenantConversationId}", replace: true);
+        NavigationManager.NavigateTo(WithDemoMode($"/tenant-communications?conversationId={conversation.TenantConversationId}"), replace: true);
     }
 
     private void OpenCreateConversationPanel()

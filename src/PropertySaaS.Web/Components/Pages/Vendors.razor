@@ -204,6 +204,9 @@
 </MudStack>
 
 @code {
+    [SupplyParameterFromQuery(Name = "demo")]
+    public string? DemoMode { get; set; }
+
     [SupplyParameterFromQuery(Name = "vendor")]
     public string? VendorQuery { get; set; }
 
@@ -212,6 +215,7 @@
     private VendorRecommendationDto? _recommendation;
     private MaintenanceRequest? _selectedTicket;
     private string? _selectedVendorName;
+    private bool IsDemoCleanView => DemoModeRouteHelper.IsClean(DemoMode);
     private IEnumerable<IGrouping<string, MaintenanceRequest>> ActiveVendorDispatch => _maintenance
         .Where(x => !string.IsNullOrWhiteSpace(x.VendorName) && !string.Equals(x.DispatchStatus, "Completed", StringComparison.OrdinalIgnoreCase) && !string.Equals(x.Status, "Closed", StringComparison.OrdinalIgnoreCase))
         .GroupBy(x => x.VendorName)
@@ -291,11 +295,14 @@
         }
     }
 
+    private string WithDemoMode(string route)
+        => DemoModeRouteHelper.Apply(route, IsDemoCleanView);
+
     private void OpenVendorDispatch(string vendorName)
-        => NavigationManager.NavigateTo($"/maintenance?vendor={Uri.EscapeDataString(vendorName)}");
+        => NavigationManager.NavigateTo(WithDemoMode($"/maintenance?vendor={Uri.EscapeDataString(vendorName)}"));
 
     private void OpenVendorTicket(Guid maintenanceRequestId)
-        => NavigationManager.NavigateTo($"/maintenance?ticket={maintenanceRequestId}#ticket-{maintenanceRequestId}");
+        => NavigationManager.NavigateTo(WithDemoMode($"/maintenance?ticket={maintenanceRequestId}#ticket-{maintenanceRequestId}"));
 
     private Task OpenInsightNextActionAsync()
     {
@@ -305,16 +312,16 @@
             return Task.CompletedTask;
         }
 
-        NavigationManager.NavigateTo("/vendors");
+        NavigationManager.NavigateTo(WithDemoMode("/vendors"));
         return Task.CompletedTask;
     }
 
     private async Task OpenVendorTenantThreadAsync(Guid maintenanceRequestId)
     {
         var conversationId = await DataService.EnsureMaintenanceConversationAsync(maintenanceRequestId);
-        NavigationManager.NavigateTo(conversationId.HasValue
+        NavigationManager.NavigateTo(WithDemoMode(conversationId.HasValue
             ? $"/tenant-communications?conversationId={conversationId.Value}"
-            : "/tenant-communications");
+            : "/tenant-communications"));
     }
 
     private async Task MarkVendorTicketAsync(Guid maintenanceRequestId, string dispatchStatus)

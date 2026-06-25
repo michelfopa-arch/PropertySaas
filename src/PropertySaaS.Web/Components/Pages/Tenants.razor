@@ -189,6 +189,7 @@
 
 @code {
     [SupplyParameterFromQuery] public Guid? TenantId { get; set; }
+    [SupplyParameterFromQuery(Name = "demo")] public string? DemoMode { get; set; }
 
     private List<Tenant> _items = new();
     private Tenant _newTenant = new() { ScreeningCompleted = true, ScreeningProvider = "SingleKey" };
@@ -201,6 +202,7 @@
     private bool _isFormPanelOpen;
     private bool _isCreateMode = true;
     private Tenant? PriorityTenant => SelectedTenant ?? FilteredTenants.OrderBy(x => x.CreditScore).FirstOrDefault();
+    private bool IsDemoCleanView => DemoModeRouteHelper.IsClean(DemoMode);
 
     private Tenant? SelectedTenant => TenantId.HasValue ? _items.FirstOrDefault(x => x.Id == TenantId.Value) : null;
 
@@ -262,15 +264,18 @@
 
     private async Task ReloadAsync() => _items = await DataService.GetTenantsAsync();
 
+    private string WithDemoMode(string route)
+        => DemoModeRouteHelper.Apply(route, IsDemoCleanView);
+
     private Task OpenInsightNextActionAsync()
     {
         if (PriorityTenant is not null)
         {
-            NavigationManager.NavigateTo($"/resident-360?tenantId={PriorityTenant.Id}");
+            NavigationManager.NavigateTo(WithDemoMode($"/resident-360?tenantId={PriorityTenant.Id}"));
             return Task.CompletedTask;
         }
 
-        NavigationManager.NavigateTo("/tenants");
+        NavigationManager.NavigateTo(WithDemoMode("/tenants"));
         return Task.CompletedTask;
     }
 
