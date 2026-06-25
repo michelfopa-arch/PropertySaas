@@ -178,8 +178,7 @@
     private Guid? _residentDemoTenantId;
     private int _listingsReady;
     private int _invoicesDue;
-    private bool IsDemoCleanView => string.Equals(DemoMode, "clean", StringComparison.OrdinalIgnoreCase);
-    private string DemoModeQuery => IsDemoCleanView ? "demo=clean" : string.Empty;
+    private bool IsDemoCleanView => DemoModeRouteHelper.IsClean(DemoMode);
     private string Resident360DemoRoute => _residentDemoTenantId.HasValue ? $"/resident-360?tenantId={_residentDemoTenantId.Value}" : "/resident-360";
     private DispatchSignalDto? PriorityVendorSignal => _dispatchSignals.FirstOrDefault(x => !string.IsNullOrWhiteSpace(x.VendorName) && x.IsAtRisk)
         ?? _dispatchSignals.FirstOrDefault(x => !string.IsNullOrWhiteSpace(x.VendorName) && string.Equals(x.DispatchStatus, "Assigned", StringComparison.OrdinalIgnoreCase))
@@ -285,18 +284,7 @@
     }
 
     private string WithDemoMode(string route)
-    {
-        if (!IsDemoCleanView || string.IsNullOrWhiteSpace(route) || route.Contains("demo=", StringComparison.OrdinalIgnoreCase))
-        {
-            return route;
-        }
-
-        var anchorIndex = route.IndexOf('#');
-        var anchor = anchorIndex >= 0 ? route[anchorIndex..] : string.Empty;
-        var baseRoute = anchorIndex >= 0 ? route[..anchorIndex] : route;
-        var separator = baseRoute.Contains('?') ? "&" : "?";
-        return $"{baseRoute}{separator}{DemoModeQuery}{anchor}";
-    }
+        => DemoModeRouteHelper.Apply(route, IsDemoCleanView);
 
     private void OpenMaintenanceWithDispatchFilter(string dispatchStatus)
     {

@@ -299,8 +299,7 @@
     private string _selectedPropertyFilter = string.Empty;
     private string _selectedStatusFilter = string.Empty;
     private MaintenanceEvidenceSummaryDto? PriorityEvidence => FilteredMaintenanceEvidence.OrderByDescending(x => x.EvidenceCount).ThenBy(x => x.Status).FirstOrDefault();
-    private bool IsDemoCleanView => string.Equals(DemoMode, "clean", StringComparison.OrdinalIgnoreCase);
-    private string DemoModeQuery => IsDemoCleanView ? "demo=clean" : string.Empty;
+    private bool IsDemoCleanView => DemoModeRouteHelper.IsClean(DemoMode);
     private Guid? ResidentJourneyTenantId => PriorityEvidence is null
         ? _generatedEvidencePackRequestId.HasValue
             ? _conversations.FirstOrDefault(x => x.MaintenanceRequestId == _generatedEvidencePackRequestId.Value)?.TenantId
@@ -313,18 +312,7 @@
     private MediaAsset ActiveMedia => _isMediaCreateMode ? _newMedia : _editMedia;
 
     private string WithDemoMode(string route)
-    {
-        if (!IsDemoCleanView || string.IsNullOrWhiteSpace(route) || route.Contains("demo=", StringComparison.OrdinalIgnoreCase))
-        {
-            return route;
-        }
-
-        var anchorIndex = route.IndexOf('#');
-        var anchor = anchorIndex >= 0 ? route[anchorIndex..] : string.Empty;
-        var baseRoute = anchorIndex >= 0 ? route[..anchorIndex] : route;
-        var separator = baseRoute.Contains('?') ? "&" : "?";
-        return $"{baseRoute}{separator}{DemoModeQuery}{anchor}";
-    }
+        => DemoModeRouteHelper.Apply(route, IsDemoCleanView);
     private IEnumerable<string> CategoryOptions => _mediaAssets.Select(x => x.Category).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(x => x);
     private IEnumerable<string> TicketOptions => _maintenanceEvidence.Select(x => x.Title).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(x => x);
     private IEnumerable<string> PropertyOptions => _maintenanceEvidence.Select(x => x.PropertyName).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(x => x);

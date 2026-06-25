@@ -338,8 +338,7 @@
     private bool _isShowingPanelOpen;
     private bool _isShowingCreateMode = true;
     private DateTime? _showingScheduledDate = DateTime.Now.AddDays(1);
-    private bool IsDemoCleanView => string.Equals(DemoMode, "clean", StringComparison.OrdinalIgnoreCase);
-    private string DemoModeQuery => IsDemoCleanView ? "demo=clean" : string.Empty;
+    private bool IsDemoCleanView => DemoModeRouteHelper.IsClean(DemoMode);
 
     private Lead ActiveLead => _isLeadCreateMode ? _newLead : _editLead;
     private Showing ActiveShowing => _isShowingCreateMode ? _newShowing : _editShowing;
@@ -425,18 +424,7 @@
     }
 
     private string WithDemoMode(string route)
-    {
-        if (!IsDemoCleanView || string.IsNullOrWhiteSpace(route) || route.Contains("demo=", StringComparison.OrdinalIgnoreCase))
-        {
-            return route;
-        }
-
-        var anchorIndex = route.IndexOf('#');
-        var anchor = anchorIndex >= 0 ? route[anchorIndex..] : string.Empty;
-        var baseRoute = anchorIndex >= 0 ? route[..anchorIndex] : route;
-        var separator = baseRoute.Contains('?') ? "&" : "?";
-        return $"{baseRoute}{separator}{DemoModeQuery}{anchor}";
-    }
+        => DemoModeRouteHelper.Apply(route, IsDemoCleanView);
 
     private static string FormatUnitLabel(string unitLabel)
         => string.IsNullOrWhiteSpace(unitLabel) ? string.Empty : $"- Unit {unitLabel}";

@@ -309,8 +309,7 @@ else
     private SubscriptionEntitlementsDto? _entitlements;
     private List<DispatchSignalDto> _dispatchSignals = new();
     private Guid? _residentDemoTenantId;
-    private bool IsDemoCleanView => string.Equals(DemoMode, "clean", StringComparison.OrdinalIgnoreCase);
-    private string DemoModeQuery => IsDemoCleanView ? "demo=clean" : string.Empty;
+    private bool IsDemoCleanView => DemoModeRouteHelper.IsClean(DemoMode);
     private string OccupancyCaption => _summary is null ? string.Empty : UiText.Format("Dashboard_OccupancyCaption", _summary.OccupancyRate);
     private string RentRollValue => _summary is null ? string.Empty : _summary.MonthlyRentRoll.ToString("C");
     private string Resident360DemoRoute => _residentDemoTenantId.HasValue ? $"/resident-360?tenantId={_residentDemoTenantId.Value}" : "/resident-360";
@@ -535,18 +534,7 @@ else
     }
 
     private string WithDemoMode(string route)
-    {
-        if (!IsDemoCleanView || string.IsNullOrWhiteSpace(route) || route.Contains("demo=", StringComparison.OrdinalIgnoreCase))
-        {
-            return route;
-        }
-
-        var anchorIndex = route.IndexOf('#');
-        var anchor = anchorIndex >= 0 ? route[anchorIndex..] : string.Empty;
-        var baseRoute = anchorIndex >= 0 ? route[..anchorIndex] : route;
-        var separator = baseRoute.Contains('?') ? "&" : "?";
-        return $"{baseRoute}{separator}{DemoModeQuery}{anchor}";
-    }
+        => DemoModeRouteHelper.Apply(route, IsDemoCleanView);
 
     private void OpenMaintenanceDispatch(string filter)
         => NavigationManager.NavigateTo(WithDemoMode($"/maintenance?dispatch={Uri.EscapeDataString(filter)}"));

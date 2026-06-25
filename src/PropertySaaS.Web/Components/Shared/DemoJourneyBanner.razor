@@ -111,21 +111,10 @@
     private void RestartJourney()
         => NavigationManager.NavigateTo(ApplyDemoMode(UsePortfolioJourney ? "/dashboard" : ResidentRoute));
 
-    private bool IsDemoCleanView => NavigationManager.Uri.Contains("demo=clean", StringComparison.OrdinalIgnoreCase);
+    private bool IsDemoCleanView => DemoModeRouteHelper.IsCleanUri(NavigationManager.Uri);
 
     private string ApplyDemoMode(string route)
-    {
-        if (!IsDemoCleanView || string.IsNullOrWhiteSpace(route) || route.Contains("demo=", StringComparison.OrdinalIgnoreCase))
-        {
-            return route;
-        }
-
-        var anchorIndex = route.IndexOf('#');
-        var anchor = anchorIndex >= 0 ? route[anchorIndex..] : string.Empty;
-        var baseRoute = anchorIndex >= 0 ? route[..anchorIndex] : route;
-        var separator = baseRoute.Contains('?') ? "&" : "?";
-        return $"{baseRoute}{separator}demo=clean{anchor}";
-    }
+        => DemoModeRouteHelper.Apply(route, IsDemoCleanView);
 
     private sealed record DemoStep(string Key, string Label);
 }

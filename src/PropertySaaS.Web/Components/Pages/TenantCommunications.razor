@@ -393,22 +393,10 @@
     private string _selectedConversationFilter = "all";
     private Guid? EffectiveTenantId => _selectedConversation?.TenantId ?? TenantId;
     private string Resident360Route => EffectiveTenantId.HasValue ? $"/resident-360?tenantId={EffectiveTenantId.Value}" : "/resident-360";
-    private bool IsDemoCleanView => string.Equals(DemoMode, "clean", StringComparison.OrdinalIgnoreCase);
-    private string DemoModeQuery => IsDemoCleanView ? "demo=clean" : string.Empty;
+    private bool IsDemoCleanView => DemoModeRouteHelper.IsClean(DemoMode);
 
     private string WithDemoMode(string route)
-    {
-        if (!IsDemoCleanView || string.IsNullOrWhiteSpace(route) || route.Contains("demo=", StringComparison.OrdinalIgnoreCase))
-        {
-            return route;
-        }
-
-        var anchorIndex = route.IndexOf('#');
-        var anchor = anchorIndex >= 0 ? route[anchorIndex..] : string.Empty;
-        var baseRoute = anchorIndex >= 0 ? route[..anchorIndex] : route;
-        var separator = baseRoute.Contains('?') ? "&" : "?";
-        return $"{baseRoute}{separator}{DemoModeQuery}{anchor}";
-    }
+        => DemoModeRouteHelper.Apply(route, IsDemoCleanView);
 
     private sealed record ConversationFilterOption(string Key, string Label, Color Color);
 

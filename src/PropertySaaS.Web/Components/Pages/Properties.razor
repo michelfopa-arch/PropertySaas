@@ -438,8 +438,7 @@
     private string _selectedStageFilter = string.Empty;
     private bool _isFormPanelOpen;
     private bool _isCreateMode = true;
-    private bool IsDemoCleanView => string.Equals(DemoMode, "clean", StringComparison.OrdinalIgnoreCase);
-    private string DemoModeQuery => IsDemoCleanView ? "demo=clean" : string.Empty;
+    private bool IsDemoCleanView => DemoModeRouteHelper.IsClean(DemoMode);
     private Property? PriorityPortfolioProperty => FilteredProperties
         .OrderByDescending(property => GetUnitsForProperty(property.Id).Count(x => !x.IsOccupied) > 0)
         .ThenBy(property => GetMarketingReadinessScore(property, GetUnitsForProperty(property.Id), GetUnitsForProperty(property.Id).Count(x => x.IsOccupied), GetUnitsForProperty(property.Id).Sum(x => x.MonthlyRent)))
@@ -544,18 +543,7 @@
     }
 
     private string WithDemoMode(string route)
-    {
-        if (!IsDemoCleanView || string.IsNullOrWhiteSpace(route) || route.Contains("demo=", StringComparison.OrdinalIgnoreCase))
-        {
-            return route;
-        }
-
-        var anchorIndex = route.IndexOf('#');
-        var anchor = anchorIndex >= 0 ? route[anchorIndex..] : string.Empty;
-        var baseRoute = anchorIndex >= 0 ? route[..anchorIndex] : route;
-        var separator = baseRoute.Contains('?') ? "&" : "?";
-        return $"{baseRoute}{separator}{DemoModeQuery}{anchor}";
-    }
+        => DemoModeRouteHelper.Apply(route, IsDemoCleanView);
 
     private void ClearFilters()
     {
