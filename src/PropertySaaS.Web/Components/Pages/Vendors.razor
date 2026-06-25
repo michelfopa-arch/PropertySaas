@@ -141,7 +141,7 @@
                     {
                         var firstTicket = group.FirstOrDefault();
                         <MudListItem T="string">
-                            @group.Key - @group.Count() ticket(s) - @GetGroupEta(group.Key) - @UiText.Format("Vendors_AtRiskCount", group.Count(IsAtRisk)) - @string.Join(", ", group.Select(x => x.Title).Take(3))
+                            @UiText.Format("Vendors_ActiveDispatchSummary", group.Key, group.Count(), GetGroupEta(group.Key), UiText.Format("Vendors_AtRiskCount", group.Count(IsAtRisk)), string.Join(", ", group.Select(x => x.Title).Take(3)))
                             <MudButton Class="ml-2" Variant="Variant.Text" Color="Color.Primary" Size="Size.Small" OnClick='() => OpenVendorDispatch(group.Key)'>@UiText.Get("Vendors_OpenVendorDispatch")</MudButton>
                             @if (firstTicket is not null)
                             {
@@ -193,7 +193,7 @@
                         @foreach (var ticket in SelectedVendorTickets)
                         {
                             <MudListItem T="string" OnClick='() => SelectVendorTicket(ticket.Id)'>
-                                @ticket.Title - @ticket.DispatchStatus - @GetRiskLabel(ticket)
+                                @UiText.Format("Vendors_ReviewTicketSummary", ticket.Title, ticket.DispatchStatus, GetRiskLabel(ticket))
                             </MudListItem>
                         }
                     </MudList>
@@ -273,7 +273,7 @@
     {
         var hours = _vendors.FirstOrDefault(x => string.Equals(x.Name, vendorName, StringComparison.OrdinalIgnoreCase))?.TypicalResponseHours;
         return hours.HasValue && hours.Value > 0
-            ? $"ETA {hours.Value} h"
+            ? UiText.Format("Vendors_ResponseEta", hours.Value)
             : UiText.Get("Maintenance_TodayDispatchNoEta");
     }
 
