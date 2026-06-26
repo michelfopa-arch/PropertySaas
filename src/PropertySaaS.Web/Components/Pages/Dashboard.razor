@@ -46,48 +46,50 @@ else
             </MudStack>
         </MudPaper>
 
-        <MudPaper Class="pa-4 marketing-card mb-4" Elevation="0">
-            <MudText Typo="Typo.h6">@UiText.Get("Dashboard_OperationalStoryTitle")</MudText>
-            <MudText Typo="Typo.body2" Class="mt-1">@UiText.Get("Dashboard_OperationalStorySubtitle")</MudText>
-            <MudList T="string" Dense="true" Class="mt-3">
-                <MudListItem T="string">@UiText.Get("Dashboard_OperationalStoryStep1")</MudListItem>
-                <MudListItem T="string">@UiText.Get("Dashboard_OperationalStoryStep2")</MudListItem>
-                <MudListItem T="string">@UiText.Get("Dashboard_OperationalStoryStep3")</MudListItem>
-            </MudList>
-        </MudPaper>
+        <MudExpansionPanels Class="marketing-card mb-4" Elevation="0">
+            <MudExpansionPanel Text="@UiText.Get("Dashboard_OperationalStoryTitle")">
+                <MudText Typo="Typo.body2">@UiText.Get("Dashboard_OperationalStorySubtitle")</MudText>
+                <MudList T="string" Dense="true" Class="mt-3">
+                    <MudListItem T="string">@UiText.Get("Dashboard_OperationalStoryStep1")</MudListItem>
+                    <MudListItem T="string">@UiText.Get("Dashboard_OperationalStoryStep2")</MudListItem>
+                    <MudListItem T="string">@UiText.Get("Dashboard_OperationalStoryStep3")</MudListItem>
+                </MudList>
+            </MudExpansionPanel>
+        </MudExpansionPanels>
 
         @if (!IsDemoCleanView)
         {
-            <MudPaper Class="pa-4 property-detail-panel mb-4" Elevation="0">
-                <MudText Typo="Typo.h6">@UiText.Get("Dashboard_ManagerQueueTitle")</MudText>
-                <MudText Typo="Typo.body2" Class="mt-1">@UiText.Get("Dashboard_ManagerQueueSubtitle")</MudText>
-                <MudGrid Spacing="2" Class="mt-2">
-                    <MudItem xs="12" sm="6" md="3">
-                        <MudPaper Class="pa-3 property-mini-stat" Elevation="0">
-                            <MudText Typo="Typo.overline">@UiText.Get("Dashboard_ManagerQueueAwaitingReply")</MudText>
-                            <MudButton Class="mt-2" Variant="Variant.Text" Color="Color.Warning" OnClick='() => OpenCommunicationQueue("awaiting-reply")'>@_summary.CommunicationAwaitingReply</MudButton>
-                        </MudPaper>
-                    </MudItem>
-                    <MudItem xs="12" sm="6" md="3">
-                        <MudPaper Class="pa-3 property-mini-stat" Elevation="0">
-                            <MudText Typo="Typo.overline">@UiText.Get("Dashboard_ManagerQueueRentAtRisk")</MudText>
-                            <MudButton Class="mt-2" Variant="Variant.Text" Color="Color.Secondary" OnClick='() => OpenCommunicationQueue("rent")'>@_summary.CommunicationRentAtRisk</MudButton>
-                        </MudPaper>
-                    </MudItem>
-                    <MudItem xs="12" sm="6" md="3">
-                        <MudPaper Class="pa-3 property-mini-stat" Elevation="0">
-                            <MudText Typo="Typo.overline">@UiText.Get("Dashboard_ManagerQueueMoveInBlocked")</MudText>
-                            <MudButton Class="mt-2" Variant="Variant.Text" Color="Color.Info" OnClick='() => OpenCommunicationQueue("move-in")'>@_summary.CommunicationMoveInBlocked</MudButton>
-                        </MudPaper>
-                    </MudItem>
-                    <MudItem xs="12" sm="6" md="3">
-                        <MudPaper Class="pa-3 property-mini-stat" Elevation="0">
-                            <MudText Typo="Typo.overline">@UiText.Get("Dashboard_ManagerQueueMaintenanceActive")</MudText>
-                            <MudButton Class="mt-2" Variant="Variant.Text" Color="Color.Error" OnClick='() => OpenCommunicationQueue("maintenance")'>@_summary.CommunicationMaintenanceActive</MudButton>
-                        </MudPaper>
-                    </MudItem>
-                </MudGrid>
-            </MudPaper>
+            <MudExpansionPanels Class="property-detail-panel mb-4" Elevation="0">
+                <MudExpansionPanel Text="@UiText.Get("Dashboard_ManagerQueueTitle")">
+                    <MudText Typo="Typo.body2">@UiText.Get("Dashboard_ManagerQueueSubtitle")</MudText>
+                    <MudGrid Spacing="2" Class="mt-2">
+                        <MudItem xs="12" sm="6" md="3">
+                            <MudPaper Class="pa-3 property-mini-stat" Elevation="0">
+                                <MudText Typo="Typo.overline">@UiText.Get("Dashboard_ManagerQueueAwaitingReply")</MudText>
+                                <MudButton Class="mt-2" Variant="Variant.Text" Color="Color.Warning" OnClick='() => OpenCommunicationQueue("awaiting-reply")'>@_summary.CommunicationAwaitingReply</MudButton>
+                            </MudPaper>
+                        </MudItem>
+                        <MudItem xs="12" sm="6" md="3">
+                            <MudPaper Class="pa-3 property-mini-stat" Elevation="0">
+                                <MudText Typo="Typo.overline">@UiText.Get("Dashboard_ManagerQueueRentAtRisk")</MudText>
+                                <MudButton Class="mt-2" Variant="Variant.Text" Color="Color.Secondary" OnClick='() => OpenCommunicationQueue("rent")'>@_summary.CommunicationRentAtRisk</MudButton>
+                            </MudPaper>
+                        </MudItem>
+                        <MudItem xs="12" sm="6" md="3">
+                            <MudPaper Class="pa-3 property-mini-stat" Elevation="0">
+                                <MudText Typo="Typo.overline">@UiText.Get("Dashboard_ManagerQueueMoveInBlocked")</MudText>
+                                <MudButton Class="mt-2" Variant="Variant.Text" Color="Color.Info" OnClick='() => OpenCommunicationQueue("move-in")'>@_summary.CommunicationMoveInBlocked</MudButton>
+                            </MudPaper>
+                        </MudItem>
+                        <MudItem xs="12" sm="6" md="3">
+                            <MudPaper Class="pa-3 property-mini-stat" Elevation="0">
+                                <MudText Typo="Typo.overline">@UiText.Get("Dashboard_ManagerQueueMaintenanceActive")</MudText>
+                                <MudButton Class="mt-2" Variant="Variant.Text" Color="Color.Error" OnClick='() => OpenCommunicationQueue("maintenance")'>@_summary.CommunicationMaintenanceActive</MudButton>
+                            </MudPaper>
+                        </MudItem>
+                    </MudGrid>
+                </MudExpansionPanel>
+            </MudExpansionPanels>
         }
 
         <MudPaper Class="pa-4 marketing-card mb-4" Elevation="0">
@@ -96,74 +98,76 @@ else
             <MudButton Class="mt-3" Variant="Variant.Filled" Color="@ManagerNextActionColor" OnClick="OpenManagerNextAction">@UiText.Get("Dashboard_ManagerNextActionOpen")</MudButton>
         </MudPaper>
 
-        <MudPaper Class="pa-4 marketing-card mb-4" Elevation="0">
-            <MudText Typo="Typo.h6">@UiText.Get("Dashboard_DailyBriefTitle")</MudText>
-            <MudText Typo="Typo.body2" Class="mt-1">@UiText.Get("Dashboard_DailyBriefSubtitle")</MudText>
-            <MudText Typo="Typo.subtitle2" Class="mt-3">@DailyBriefHeadline</MudText>
-            <MudList T="string" Dense="true" Class="mt-2">
-                @foreach (var item in DailyBriefItems)
-                {
-                    <MudListItem T="string">@item</MudListItem>
-                }
-            </MudList>
-            <MudStack Row="true" Spacing="1" AlignItems="AlignItems.Center" Class="mt-3" Wrap="Wrap.Wrap">
-                <MudText Typo="Typo.overline">@UiText.Get("Dashboard_DailyBriefOpeningLane")</MudText>
-                <MudChip T="string" Variant="Variant.Outlined" Color="@ManagerNextActionColor">@NextOpeningLaneLabel</MudChip>
-            </MudStack>
-            <MudButton Class="mt-3" Variant="Variant.Filled" Color="@ManagerNextActionColor" OnClick="OpenManagerNextAction">@UiText.Get("Dashboard_DailyBriefStartDay")</MudButton>
-        </MudPaper>
+        <MudExpansionPanels Class="marketing-card mb-4" Elevation="0">
+            <MudExpansionPanel Text="@UiText.Get("Dashboard_DailyBriefTitle")">
+                <MudText Typo="Typo.body2">@UiText.Get("Dashboard_DailyBriefSubtitle")</MudText>
+                <MudText Typo="Typo.subtitle2" Class="mt-3">@DailyBriefHeadline</MudText>
+                <MudList T="string" Dense="true" Class="mt-2">
+                    @foreach (var item in DailyBriefItems)
+                    {
+                        <MudListItem T="string">@item</MudListItem>
+                    }
+                </MudList>
+                <MudStack Row="true" Spacing="1" AlignItems="AlignItems.Center" Class="mt-3" Wrap="Wrap.Wrap">
+                    <MudText Typo="Typo.overline">@UiText.Get("Dashboard_DailyBriefOpeningLane")</MudText>
+                    <MudChip T="string" Variant="Variant.Outlined" Color="@ManagerNextActionColor">@NextOpeningLaneLabel</MudChip>
+                </MudStack>
+                <MudButton Class="mt-3" Variant="Variant.Filled" Color="@ManagerNextActionColor" OnClick="OpenManagerNextAction">@UiText.Get("Dashboard_DailyBriefStartDay")</MudButton>
+            </MudExpansionPanel>
+        </MudExpansionPanels>
 
         @if (!IsDemoCleanView)
         {
-            <MudPaper Class="pa-4 property-detail-panel mb-4" Elevation="0">
-                <MudText Typo="Typo.h6">@UiText.Get("Dashboard_ChangesTitle")</MudText>
-                <MudStack Spacing="2" Class="mt-2">
-                    @foreach (var item in ChangeHighlights)
-                    {
-                        <MudPaper Class="pa-3 property-detail-panel" Elevation="0">
-                            <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Wrap="Wrap.Wrap">
-                                <MudText Typo="Typo.body2">@item.Message</MudText>
-                                @if (item.Action is not null)
-                                {
-                            <MudButton Variant="Variant.Text" Color="@item.Color" OnClick="item.Action">@UiText.Get("Common_ReviewNow")</MudButton>
-                                }
-                            </MudStack>
-                        </MudPaper>
-                    }
-                </MudStack>
-            </MudPaper>
+            <MudExpansionPanels Class="property-detail-panel mb-4" Elevation="0">
+                <MudExpansionPanel Text="@UiText.Get("Dashboard_ChangesTitle")">
+                    <MudStack Spacing="2">
+                        @foreach (var item in ChangeHighlights)
+                        {
+                            <MudPaper Class="pa-3 property-detail-panel" Elevation="0">
+                                <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Wrap="Wrap.Wrap">
+                                    <MudText Typo="Typo.body2">@item.Message</MudText>
+                                    @if (item.Action is not null)
+                                    {
+                                        <MudButton Variant="Variant.Text" Color="@item.Color" OnClick="item.Action">@UiText.Get("Common_ReviewNow")</MudButton>
+                                    }
+                                </MudStack>
+                            </MudPaper>
+                        }
+                    </MudStack>
+                </MudExpansionPanel>
+            </MudExpansionPanels>
         }
 
-        <MudPaper Class="pa-4 marketing-card mb-4" Elevation="0">
-            <MudText Typo="Typo.h6">@UiText.Get("Dashboard_GuidedDemoTitle")</MudText>
-            <MudText Typo="Typo.body2" Class="mt-1">@UiText.Get("Dashboard_GuidedDemoSubtitle")</MudText>
-            <MudGrid Spacing="2" Class="mt-2">
-                <MudItem xs="12" md="6">
-                    <MudPaper Class="pa-3 property-detail-panel h-100" Elevation="0">
-                        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Wrap="Wrap.Wrap">
-                            <MudText Typo="Typo.subtitle2">@UiText.Get("Dashboard_GuidedDemoStep1")</MudText>
-                            @if (string.Equals(RecommendedDemoStepKey, "portfolio", StringComparison.OrdinalIgnoreCase))
-                            {
-                                <MudChip T="string" Variant="Variant.Outlined" Color="Color.Primary">@UiText.Get("Dashboard_GuidedDemoRecommended")</MudChip>
-                            }
-                        </MudStack>
-                        <MudText Typo="Typo.body2" Class="mt-1">@UiText.Get("Dashboard_GuidedDemoStep1Body")</MudText>
-                        <MudButton Class="mt-2" Variant="Variant.Text" Color="Color.Primary" Href="@WithDemoMode("/properties")">@UiText.Get("Common_ReviewNow")</MudButton>
-                    </MudPaper>
-                </MudItem>
-                <MudItem xs="12" md="6">
-                    <MudPaper Class="pa-3 property-detail-panel h-100" Elevation="0">
-                        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Wrap="Wrap.Wrap">
-                            <MudText Typo="Typo.subtitle2">@UiText.Get("Dashboard_GuidedDemoStep2")</MudText>
-                            @if (string.Equals(RecommendedDemoStepKey, "leasing", StringComparison.OrdinalIgnoreCase))
-                            {
-                                <MudChip T="string" Variant="Variant.Outlined" Color="Color.Primary">@UiText.Get("Dashboard_GuidedDemoRecommended")</MudChip>
-                            }
-                        </MudStack>
-                        <MudText Typo="Typo.body2" Class="mt-1">@UiText.Get("Dashboard_GuidedDemoStep2Body")</MudText>
-                        <MudButton Class="mt-2" Variant="Variant.Text" Color="Color.Primary" Href="@WithDemoMode("/leasing")">@UiText.Get("Common_ReviewNow")</MudButton>
-                    </MudPaper>
-                </MudItem>
+        <MudExpansionPanels Class="marketing-card mb-4" Elevation="0">
+            <MudExpansionPanel Text="@UiText.Get("Dashboard_GuidedDemoTitle")">
+                <MudText Typo="Typo.body2">@UiText.Get("Dashboard_GuidedDemoSubtitle")</MudText>
+                <MudGrid Spacing="2" Class="mt-2">
+                    <MudItem xs="12" md="6">
+                        <MudPaper Class="pa-3 property-detail-panel h-100" Elevation="0">
+                            <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Wrap="Wrap.Wrap">
+                                <MudText Typo="Typo.subtitle2">@UiText.Get("Dashboard_GuidedDemoStep1")</MudText>
+                                @if (string.Equals(RecommendedDemoStepKey, "portfolio", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    <MudChip T="string" Variant="Variant.Outlined" Color="Color.Primary">@UiText.Get("Dashboard_GuidedDemoRecommended")</MudChip>
+                                }
+                            </MudStack>
+                            <MudText Typo="Typo.body2" Class="mt-1">@UiText.Get("Dashboard_GuidedDemoStep1Body")</MudText>
+                            <MudButton Class="mt-2" Variant="Variant.Text" Color="Color.Primary" Href="@WithDemoMode("/properties")">@UiText.Get("Common_ReviewNow")</MudButton>
+                        </MudPaper>
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudPaper Class="pa-3 property-detail-panel h-100" Elevation="0">
+                            <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Wrap="Wrap.Wrap">
+                                <MudText Typo="Typo.subtitle2">@UiText.Get("Dashboard_GuidedDemoStep2")</MudText>
+                                @if (string.Equals(RecommendedDemoStepKey, "leasing", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    <MudChip T="string" Variant="Variant.Outlined" Color="Color.Primary">@UiText.Get("Dashboard_GuidedDemoRecommended")</MudChip>
+                                }
+                            </MudStack>
+                            <MudText Typo="Typo.body2" Class="mt-1">@UiText.Get("Dashboard_GuidedDemoStep2Body")</MudText>
+                            <MudButton Class="mt-2" Variant="Variant.Text" Color="Color.Primary" Href="@WithDemoMode("/leasing")">@UiText.Get("Common_ReviewNow")</MudButton>
+                        </MudPaper>
+                    </MudItem>
                 <MudItem xs="12" md="4">
                     <MudPaper Class="pa-3 property-detail-panel h-100" Elevation="0">
                         <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Wrap="Wrap.Wrap">
@@ -203,8 +207,9 @@ else
                         <MudButton Class="mt-2" Variant="Variant.Text" Color="Color.Primary" Href="@WithDemoMode("/documents-evidence")">@UiText.Get("Common_ReviewNow")</MudButton>
                     </MudPaper>
                 </MudItem>
-            </MudGrid>
-        </MudPaper>
+                </MudGrid>
+            </MudExpansionPanel>
+        </MudExpansionPanels>
 
         <MudGrid Spacing="3">
             <MudItem xs="12" sm="6" md="3"><MetricCard Title="@UiText.Get("Nav_Properties")" Value="@_summary.Properties.ToString()" Caption="@UiText.Get("Dashboard_ManagedBuildings")" Icon="@Icons.Material.Filled.Apartment" /></MudItem>

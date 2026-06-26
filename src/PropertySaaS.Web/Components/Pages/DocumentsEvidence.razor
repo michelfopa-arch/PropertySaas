@@ -27,28 +27,22 @@
 
     @if (!IsDemoCleanView)
     {
-        <MudGrid Spacing="3">
-            <MudItem xs="12" md="6">
-                <MudPaper Class="pa-4 marketing-card h-100" Elevation="0">
-                    <MudText Typo="Typo.h6">@UiText.Get("DocumentsEvidence_MarketingAssetsTitle")</MudText>
-                    <MudList T="string" Dense="true" Class="mt-3">
-                        <MudListItem T="string">@UiText.Get("DocumentsEvidence_Marketing1")</MudListItem>
-                        <MudListItem T="string">@UiText.Get("DocumentsEvidence_Marketing2")</MudListItem>
-                        <MudListItem T="string">@UiText.Get("DocumentsEvidence_Marketing3")</MudListItem>
-                    </MudList>
-                </MudPaper>
-            </MudItem>
-            <MudItem xs="12" md="6">
-                <MudPaper Class="pa-4 marketing-card h-100" Elevation="0">
-                    <MudText Typo="Typo.h6">@UiText.Get("DocumentsEvidence_EvidenceTitle")</MudText>
-                    <MudList T="string" Dense="true" Class="mt-3">
-                        <MudListItem T="string">@UiText.Get("DocumentsEvidence_Evidence1")</MudListItem>
-                        <MudListItem T="string">@UiText.Get("DocumentsEvidence_Evidence2")</MudListItem>
-                        <MudListItem T="string">@UiText.Get("DocumentsEvidence_Evidence3")</MudListItem>
-                    </MudList>
-                </MudPaper>
-            </MudItem>
-        </MudGrid>
+        <MudExpansionPanels Class="marketing-card mb-4" Elevation="0">
+            <MudExpansionPanel Text="@UiText.Get("DocumentsEvidence_MarketingAssetsTitle")">
+                <MudList T="string" Dense="true">
+                    <MudListItem T="string">@UiText.Get("DocumentsEvidence_Marketing1")</MudListItem>
+                    <MudListItem T="string">@UiText.Get("DocumentsEvidence_Marketing2")</MudListItem>
+                    <MudListItem T="string">@UiText.Get("DocumentsEvidence_Marketing3")</MudListItem>
+                </MudList>
+            </MudExpansionPanel>
+            <MudExpansionPanel Text="@UiText.Get("DocumentsEvidence_EvidenceTitle")">
+                <MudList T="string" Dense="true">
+                    <MudListItem T="string">@UiText.Get("DocumentsEvidence_Evidence1")</MudListItem>
+                    <MudListItem T="string">@UiText.Get("DocumentsEvidence_Evidence2")</MudListItem>
+                    <MudListItem T="string">@UiText.Get("DocumentsEvidence_Evidence3")</MudListItem>
+                </MudList>
+            </MudExpansionPanel>
+        </MudExpansionPanels>
     }
 
     <MudPaper Class="pa-4 property-detail-panel" Elevation="0">
@@ -61,70 +55,75 @@
         <MudText Typo="Typo.body2" Class="mt-3">@InsightMessage</MudText>
     </MudPaper>
 
-    <MudPaper Class="pa-4 marketing-card" Elevation="0">
-        <MudText Typo="Typo.h6">@UiText.Get("DocumentsEvidence_DemoStoryTitle")</MudText>
-        <MudText Typo="Typo.body2" Class="mt-1">@UiText.Get("DocumentsEvidence_DemoStoryBody")</MudText>
-        <MudList T="string" Dense="true" Class="mt-3">
-            <MudListItem T="string">@UiText.Get("DocumentsEvidence_DemoStoryStep1")</MudListItem>
-            <MudListItem T="string">@UiText.Get("DocumentsEvidence_DemoStoryStep2")</MudListItem>
-            <MudListItem T="string">@UiText.Get("DocumentsEvidence_DemoStoryStep3")</MudListItem>
-        </MudList>
-        <MudStack Row="true" Spacing="1" Class="mt-3" Wrap="Wrap.Wrap">
-            <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="OpenInsightNextActionAsync">@InsightActionLabel</MudButton>
-            <MudButton Variant="Variant.Text" Color="Color.Secondary" OnClick="OpenPriorityMaintenanceAsync">@UiText.Get("DocumentsEvidence_OpenMaintenance")</MudButton>
-            <MudButton Variant="Variant.Text" Color="Color.Warning" OnClick="OpenPriorityConversationAsync">@UiText.Get("DocumentsEvidence_OpenResidentThread")</MudButton>
-        </MudStack>
-    </MudPaper>
+    <MudExpansionPanels Class="marketing-card mb-4" Elevation="0">
+        <MudExpansionPanel Text="@UiText.Get("DocumentsEvidence_DemoStoryTitle")">
+            <MudText Typo="Typo.body2">@UiText.Get("DocumentsEvidence_DemoStoryBody")</MudText>
+            <MudList T="string" Dense="true" Class="mt-3">
+                <MudListItem T="string">@UiText.Get("DocumentsEvidence_DemoStoryStep1")</MudListItem>
+                <MudListItem T="string">@UiText.Get("DocumentsEvidence_DemoStoryStep2")</MudListItem>
+                <MudListItem T="string">@UiText.Get("DocumentsEvidence_DemoStoryStep3")</MudListItem>
+            </MudList>
+            <MudStack Row="true" Spacing="1" Class="mt-3" Wrap="Wrap.Wrap">
+                <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="OpenInsightNextActionAsync">@InsightActionLabel</MudButton>
+                <MudButton Variant="Variant.Text" Color="Color.Secondary" OnClick="OpenPriorityMaintenanceAsync">@UiText.Get("DocumentsEvidence_OpenMaintenance")</MudButton>
+                <MudButton Variant="Variant.Text" Color="Color.Warning" OnClick="OpenPriorityConversationAsync">@UiText.Get("DocumentsEvidence_OpenResidentThread")</MudButton>
+            </MudStack>
+        </MudExpansionPanel>
+    </MudExpansionPanels>
 
     @if (!IsDemoCleanView)
     {
-    <MudGrid Spacing="2">
-        <MudItem xs="12" md="4">
-            <MudTextField T="string"
-                          Label="@UiText.Get("DocumentsEvidence_SearchLabel")"
-                          Variant="Variant.Outlined"
-                          Immediate="true"
-                          @bind-Value="_searchText"
-                          Adornment="Adornment.Start"
-                          AdornmentIcon="@Icons.Material.Filled.Search" />
-        </MudItem>
-        <MudItem xs="12" md="4">
-            <MudSelect T="string" Label="@UiText.Get("DocumentsEvidence_FilterCategory")" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedCategoryFilter">
-                <MudSelectItem T="string" Value="@string.Empty">@UiText.Get("DocumentsEvidence_FilterAll")</MudSelectItem>
-                @foreach (var category in CategoryOptions)
-                {
-                    <MudSelectItem T="string" Value="@category">@category</MudSelectItem>
-                }
-            </MudSelect>
-        </MudItem>
-        <MudItem xs="12" md="4">
-            <MudSelect T="string" Label="@UiText.Get("DocumentsEvidence_FilterTicket")" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedTicketFilter">
-                <MudSelectItem T="string" Value="@string.Empty">@UiText.Get("DocumentsEvidence_FilterAll")</MudSelectItem>
-                @foreach (var ticket in TicketOptions)
-                {
-                    <MudSelectItem T="string" Value="@ticket">@ticket</MudSelectItem>
-                }
-            </MudSelect>
-        </MudItem>
-        <MudItem xs="12" md="4">
-            <MudSelect T="string" Label="@UiText.Get("DocumentsEvidence_FilterProperty")" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedPropertyFilter">
-                <MudSelectItem T="string" Value="@string.Empty">@UiText.Get("DocumentsEvidence_FilterAll")</MudSelectItem>
-                @foreach (var property in PropertyOptions)
-                {
-                    <MudSelectItem T="string" Value="@property">@property</MudSelectItem>
-                }
-            </MudSelect>
-        </MudItem>
-        <MudItem xs="12" md="4">
-            <MudSelect T="string" Label="@UiText.Get("DocumentsEvidence_FilterStatus")" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedStatusFilter">
-                <MudSelectItem T="string" Value="@string.Empty">@UiText.Get("DocumentsEvidence_FilterAll")</MudSelectItem>
-                @foreach (var status in StatusOptions)
-                {
-                    <MudSelectItem T="string" Value="@status">@status</MudSelectItem>
-                }
-            </MudSelect>
-        </MudItem>
-    </MudGrid>
+        <MudExpansionPanels Class="property-detail-panel mb-4" Elevation="0">
+            <MudExpansionPanel Text="@UiText.Get("Common_Filters")">
+                <MudGrid Spacing="2">
+                    <MudItem xs="12" md="4">
+                        <MudTextField T="string"
+                                      Label="@UiText.Get("DocumentsEvidence_SearchLabel")"
+                                      Variant="Variant.Outlined"
+                                      Immediate="true"
+                                      @bind-Value="_searchText"
+                                      Adornment="Adornment.Start"
+                                      AdornmentIcon="@Icons.Material.Filled.Search" />
+                    </MudItem>
+                    <MudItem xs="12" md="4">
+                        <MudSelect T="string" Label="@UiText.Get("DocumentsEvidence_FilterCategory")" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedCategoryFilter">
+                            <MudSelectItem T="string" Value="@string.Empty">@UiText.Get("DocumentsEvidence_FilterAll")</MudSelectItem>
+                            @foreach (var category in CategoryOptions)
+                            {
+                                <MudSelectItem T="string" Value="@category">@category</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" md="4">
+                        <MudSelect T="string" Label="@UiText.Get("DocumentsEvidence_FilterTicket")" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedTicketFilter">
+                            <MudSelectItem T="string" Value="@string.Empty">@UiText.Get("DocumentsEvidence_FilterAll")</MudSelectItem>
+                            @foreach (var ticket in TicketOptions)
+                            {
+                                <MudSelectItem T="string" Value="@ticket">@ticket</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" md="4">
+                        <MudSelect T="string" Label="@UiText.Get("DocumentsEvidence_FilterProperty")" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedPropertyFilter">
+                            <MudSelectItem T="string" Value="@string.Empty">@UiText.Get("DocumentsEvidence_FilterAll")</MudSelectItem>
+                            @foreach (var property in PropertyOptions)
+                            {
+                                <MudSelectItem T="string" Value="@property">@property</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" md="4">
+                        <MudSelect T="string" Label="@UiText.Get("DocumentsEvidence_FilterStatus")" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedStatusFilter">
+                            <MudSelectItem T="string" Value="@string.Empty">@UiText.Get("DocumentsEvidence_FilterAll")</MudSelectItem>
+                            @foreach (var status in StatusOptions)
+                            {
+                                <MudSelectItem T="string" Value="@status">@status</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+                </MudGrid>
+            </MudExpansionPanel>
+        </MudExpansionPanels>
     }
 
     <MudGrid Spacing="3">

@@ -24,46 +24,50 @@
 
     @if (!IsDemoCleanView)
     {
-        <MudGrid Spacing="2" Class="align-center-grid">
-            <MudItem xs="12" lg="4">
-                <MudTextField T="string"
-                              Label="@Localizer["Compliance_SearchLabel"]"
-                              Variant="Variant.Outlined"
-                              Immediate="true"
-                              @bind-Value="_searchText"
-                              Adornment="Adornment.Start"
-                              AdornmentIcon="@Icons.Material.Filled.Search"
-                              Placeholder="@Localizer["Compliance_SearchPlaceholder"]" />
-            </MudItem>
-            <MudItem xs="12" sm="4" lg="2">
-                <MudSelect T="string" Label="@Localizer["Compliance_FilterNotice"]" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedNoticeFilter">
-                    <MudSelectItem T="string" Value="@string.Empty">@Localizer["Compliance_FilterAllNotices"]</MudSelectItem>
-                    @foreach (var option in NoticeOptions)
-                    {
-                        <MudSelectItem T="string" Value="@option">@option</MudSelectItem>
-                    }
-                </MudSelect>
-            </MudItem>
-            <MudItem xs="12" sm="4" lg="2">
-                <MudSelect T="string" Label="@Localizer["Compliance_FilterState"]" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedStateFilter">
-                    <MudSelectItem T="string" Value="@string.Empty">@Localizer["Compliance_FilterAllStates"]</MudSelectItem>
-                    <MudSelectItem T="string" Value='@Localizer["Compliance_StateOpen"].Value'>@Localizer["Compliance_StateOpen"]</MudSelectItem>
-                    <MudSelectItem T="string" Value='@Localizer["Compliance_StateCompleted"].Value'>@Localizer["Compliance_StateCompleted"]</MudSelectItem>
-                    <MudSelectItem T="string" Value='@Localizer["Compliance_StateDueSoon"].Value'>@Localizer["Compliance_StateDueSoon"]</MudSelectItem>
-                </MudSelect>
-            </MudItem>
-            <MudItem xs="12" sm="4" lg="2">
-                <MudStack Row="true" Spacing="1" Class="properties-toolbar-actions">
-                    @if (HasActiveFilters)
-                    {
-                        <MudButton Variant="Variant.Outlined" Color="Color.Default" FullWidth="true" StartIcon="@Icons.Material.Filled.FilterAltOff" OnClick="ClearFilters">@Localizer["Common_Reset"]</MudButton>
-                    }
-                </MudStack>
-            </MudItem>
-            <MudItem xs="12" lg="2">
-                <MudButton Href="@TemplatesRoute" Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" StartIcon="@Icons.Material.Filled.Description">@Localizer["Compliance_OpenTemplates"]</MudButton>
-            </MudItem>
-        </MudGrid>
+        <MudExpansionPanels Class="property-detail-panel mb-4" Elevation="0">
+            <MudExpansionPanel Text="@Localizer["Common_Filters"]">
+                <MudGrid Spacing="2" Class="align-center-grid">
+                    <MudItem xs="12" lg="4">
+                        <MudTextField T="string"
+                                      Label="@Localizer["Compliance_SearchLabel"]"
+                                      Variant="Variant.Outlined"
+                                      Immediate="true"
+                                      @bind-Value="_searchText"
+                                      Adornment="Adornment.Start"
+                                      AdornmentIcon="@Icons.Material.Filled.Search"
+                                      Placeholder="@Localizer["Compliance_SearchPlaceholder"]" />
+                    </MudItem>
+                    <MudItem xs="12" sm="4" lg="2">
+                        <MudSelect T="string" Label="@Localizer["Compliance_FilterNotice"]" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedNoticeFilter">
+                            <MudSelectItem T="string" Value="@string.Empty">@Localizer["Compliance_FilterAllNotices"]</MudSelectItem>
+                            @foreach (var option in NoticeOptions)
+                            {
+                                <MudSelectItem T="string" Value="@option">@option</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" sm="4" lg="2">
+                        <MudSelect T="string" Label="@Localizer["Compliance_FilterState"]" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedStateFilter">
+                            <MudSelectItem T="string" Value="@string.Empty">@Localizer["Compliance_FilterAllStates"]</MudSelectItem>
+                            <MudSelectItem T="string" Value='@Localizer["Compliance_StateOpen"].Value'>@Localizer["Compliance_StateOpen"]</MudSelectItem>
+                            <MudSelectItem T="string" Value='@Localizer["Compliance_StateCompleted"].Value'>@Localizer["Compliance_StateCompleted"]</MudSelectItem>
+                            <MudSelectItem T="string" Value='@Localizer["Compliance_StateDueSoon"].Value'>@Localizer["Compliance_StateDueSoon"]</MudSelectItem>
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" sm="4" lg="2">
+                        <MudStack Row="true" Spacing="1" Class="properties-toolbar-actions">
+                            @if (HasActiveFilters)
+                            {
+                                <MudButton Variant="Variant.Outlined" Color="Color.Default" FullWidth="true" StartIcon="@Icons.Material.Filled.FilterAltOff" OnClick="ClearFilters">@Localizer["Common_Reset"]</MudButton>
+                            }
+                        </MudStack>
+                    </MudItem>
+                    <MudItem xs="12" lg="2">
+                        <MudButton Href="@TemplatesRoute" Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" StartIcon="@Icons.Material.Filled.Description">@Localizer["Compliance_OpenTemplates"]</MudButton>
+                    </MudItem>
+                </MudGrid>
+            </MudExpansionPanel>
+        </MudExpansionPanels>
     }
 
     <MudGrid Spacing="2">
@@ -98,19 +102,20 @@
         <MudText Typo="Typo.body2" Class="mt-3">@InsightMessage</MudText>
     </MudPaper>
 
-    <MudPaper Class="pa-4 marketing-card" Elevation="0">
-        <MudText Typo="Typo.h6">@UiText.Get("Compliance_DemoStoryTitle")</MudText>
-        <MudText Typo="Typo.body2" Class="mt-1">@UiText.Get("Compliance_DemoStoryBody")</MudText>
-        <MudList T="string" Dense="true" Class="mt-3">
-            <MudListItem T="string">@UiText.Get("Compliance_DemoStoryStep1")</MudListItem>
-            <MudListItem T="string">@UiText.Get("Compliance_DemoStoryStep2")</MudListItem>
-            <MudListItem T="string">@UiText.Get("Compliance_DemoStoryStep3")</MudListItem>
-        </MudList>
-        <MudStack Row="true" Spacing="1" Class="mt-3" Wrap="Wrap.Wrap">
-            <MudButton Variant="Variant.Outlined" Color="@InsightColor" OnClick="OpenInsightNextActionAsync">@InsightActionLabel</MudButton>
-            <MudButton Variant="Variant.Text" Color="Color.Secondary" OnClick="OpenTemplatesAsync">@UiText.Get("Compliance_InsightOpenTemplates")</MudButton>
-        </MudStack>
-    </MudPaper>
+    <MudExpansionPanels Class="marketing-card mb-4" Elevation="0">
+        <MudExpansionPanel Text="@UiText.Get("Compliance_DemoStoryTitle")">
+            <MudText Typo="Typo.body2">@UiText.Get("Compliance_DemoStoryBody")</MudText>
+            <MudList T="string" Dense="true" Class="mt-3">
+                <MudListItem T="string">@UiText.Get("Compliance_DemoStoryStep1")</MudListItem>
+                <MudListItem T="string">@UiText.Get("Compliance_DemoStoryStep2")</MudListItem>
+                <MudListItem T="string">@UiText.Get("Compliance_DemoStoryStep3")</MudListItem>
+            </MudList>
+            <MudStack Row="true" Spacing="1" Class="mt-3" Wrap="Wrap.Wrap">
+                <MudButton Variant="Variant.Outlined" Color="@InsightColor" OnClick="OpenInsightNextActionAsync">@InsightActionLabel</MudButton>
+                <MudButton Variant="Variant.Text" Color="Color.Secondary" OnClick="OpenTemplatesAsync">@UiText.Get("Compliance_InsightOpenTemplates")</MudButton>
+            </MudStack>
+        </MudExpansionPanel>
+    </MudExpansionPanels>
 
     <MudPaper Class="pa-2 table-wrap properties-table-shell">
         <MudTable Items="FilteredItems.ToList()" Dense="true" Hover="true" Breakpoint="Breakpoint.Md" RowsPerPage="10">
@@ -150,31 +155,25 @@
         </MudTable>
     </MudPaper>
 
-    <MudGrid Spacing="2">
-        <MudItem xs="12" md="6">
-            <MudPaper Class="pa-4 property-detail-panel h-100" Elevation="0">
-                <MudText Typo="Typo.h6" GutterBottom="true">@string.Format(Localizer["Compliance_TemplatesTitle"].Value, CurrentOrganization.Jurisdiction.ProvinceDisplayName)</MudText>
-                <MudList T="string" Dense="true">
-                    <MudListItem T="string" Href="/docs/jurisdiction/lease-package">@CurrentOrganization.Jurisdiction.LeasePackageLabel</MudListItem>
-                    @foreach (var template in CurrentOrganization.Jurisdiction.DocumentTemplates.Where(x => x.Key != "lease-package"))
-                    {
-                        <MudListItem T="string" Href="@($"/docs/jurisdiction/{template.Key}")">@template.Value</MudListItem>
-                    }
-                </MudList>
-            </MudPaper>
-        </MudItem>
-        <MudItem xs="12" md="6">
-            <MudPaper Class="pa-4 property-detail-panel h-100" Elevation="0">
-                <MudText Typo="Typo.h6" GutterBottom="true">@Localizer["Compliance_OperationalChecklist"]</MudText>
-                <MudList T="string" Dense="true">
-                    @foreach (var item in CurrentOrganization.Jurisdiction.ComplianceChecklist)
-                    {
-                        <MudListItem T="string">@item</MudListItem>
-                    }
-                </MudList>
-            </MudPaper>
-        </MudItem>
-    </MudGrid>
+    <MudExpansionPanels Class="marketing-card mb-4" Elevation="0">
+        <MudExpansionPanel Text="@string.Format(Localizer["Compliance_TemplatesTitle"].Value, CurrentOrganization.Jurisdiction.ProvinceDisplayName)">
+            <MudList T="string" Dense="true">
+                <MudListItem T="string" Href="/docs/jurisdiction/lease-package">@CurrentOrganization.Jurisdiction.LeasePackageLabel</MudListItem>
+                @foreach (var template in CurrentOrganization.Jurisdiction.DocumentTemplates.Where(x => x.Key != "lease-package"))
+                {
+                    <MudListItem T="string" Href="@($"/docs/jurisdiction/{template.Key}")">@template.Value</MudListItem>
+                }
+            </MudList>
+        </MudExpansionPanel>
+        <MudExpansionPanel Text="@Localizer["Compliance_OperationalChecklist"]">
+            <MudList T="string" Dense="true">
+                @foreach (var item in CurrentOrganization.Jurisdiction.ComplianceChecklist)
+                {
+                    <MudListItem T="string">@item</MudListItem>
+                }
+            </MudList>
+        </MudExpansionPanel>
+    </MudExpansionPanels>
 </MudStack>
 
 @code {

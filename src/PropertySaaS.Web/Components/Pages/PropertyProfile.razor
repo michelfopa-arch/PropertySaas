@@ -43,14 +43,18 @@ else
 
         @if (!IsDemoCleanView)
         {
-            <MudStack Row="true" Spacing="1" Wrap="Wrap.Wrap">
-                <MudChip T="string" Variant="Variant.Filled" Color="Color.Dark">@LocalizePropertyType(_property.PropertyType)</MudChip>
-                <MudChip T="string" Variant="Variant.Outlined" Color="Color.Primary">@_property.City</MudChip>
-                <MudChip T="string" Variant="Variant.Outlined" Color="Color.Info">@GetPostalCodeOrFallback(_property)</MudChip>
-                <MudChip T="string" Variant="Variant.Outlined" Color="Color.Secondary">@string.Format(Localizer["PropertyProfile_UnitsCount"].Value, _units.Count)</MudChip>
-                <MudChip T="string" Variant="Variant.Filled" Color="Color.Success">@string.Format(Localizer["PropertyProfile_OccupiedCount"].Value, occupiedCount)</MudChip>
-                <MudChip T="string" Variant="Variant.Filled" Color="Color.Warning">@string.Format(Localizer["PropertyProfile_VacantCount"].Value, vacantCount)</MudChip>
-            </MudStack>
+            <MudExpansionPanels Class="property-detail-panel mb-2" Elevation="0">
+                <MudExpansionPanel Text="@UiText.Get("Common_Overview")">
+                    <MudStack Row="true" Spacing="1" Wrap="Wrap.Wrap">
+                        <MudChip T="string" Variant="Variant.Filled" Color="Color.Dark">@LocalizePropertyType(_property.PropertyType)</MudChip>
+                        <MudChip T="string" Variant="Variant.Outlined" Color="Color.Primary">@_property.City</MudChip>
+                        <MudChip T="string" Variant="Variant.Outlined" Color="Color.Info">@GetPostalCodeOrFallback(_property)</MudChip>
+                        <MudChip T="string" Variant="Variant.Outlined" Color="Color.Secondary">@string.Format(Localizer["PropertyProfile_UnitsCount"].Value, _units.Count)</MudChip>
+                        <MudChip T="string" Variant="Variant.Filled" Color="Color.Success">@string.Format(Localizer["PropertyProfile_OccupiedCount"].Value, occupiedCount)</MudChip>
+                        <MudChip T="string" Variant="Variant.Filled" Color="Color.Warning">@string.Format(Localizer["PropertyProfile_VacantCount"].Value, vacantCount)</MudChip>
+                    </MudStack>
+                </MudExpansionPanel>
+            </MudExpansionPanels>
         }
 
         <MudGrid Spacing="2">
@@ -119,9 +123,24 @@ else
             </MudTabPanel>
             <MudTabPanel Text="@Localizer["Leases_Title"]">
                 <MudGrid Spacing="2">
-                    <MudItem xs="12" md="6"><MudPaper Class="pa-4 property-detail-panel h-100" Elevation="0"><MudText Typo="Typo.subtitle2">@Localizer["PropertyProfile_LeasingPlaybook"]</MudText><MudText Typo="Typo.body2">@GetTextOrFallback(_property.LeasingNotes, Localizer["PropertyProfile_LeasingPlaybookFallback"].Value)</MudText></MudPaper></MudItem>
-                    <MudItem xs="12" md="6"><MudPaper Class="pa-4 property-detail-panel h-100" Elevation="0"><MudText Typo="Typo.subtitle2">@Localizer["PropertyProfile_PricingPosture"]</MudText><MudText Typo="Typo.body2">@GetPricingPosture(_property, monthlyRent, vacantCount)</MudText></MudPaper></MudItem>
-                    <MudItem xs="12"><MudPaper Class="pa-4 property-detail-panel" Elevation="0"><MudText Typo="Typo.subtitle2">@Localizer["PropertyProfile_RecommendedActions"]</MudText><MudList T="string" Dense="true">@foreach (var action in GetRecommendedActions(_property, _units, vacantCount, readinessScore, monthlyRent)) { <MudListItem T="string">@action</MudListItem> }</MudList></MudPaper></MudItem>
+                    <MudItem xs="12">
+                        <MudExpansionPanels Class="property-detail-panel mb-2" Elevation="0">
+                            <MudExpansionPanel Text="@Localizer["PropertyProfile_LeasingPlaybook"]">
+                                <MudText Typo="Typo.body2">@GetTextOrFallback(_property.LeasingNotes, Localizer["PropertyProfile_LeasingPlaybookFallback"].Value)</MudText>
+                            </MudExpansionPanel>
+                            <MudExpansionPanel Text="@Localizer["PropertyProfile_PricingPosture"]">
+                                <MudText Typo="Typo.body2">@GetPricingPosture(_property, monthlyRent, vacantCount)</MudText>
+                            </MudExpansionPanel>
+                            <MudExpansionPanel Text="@Localizer["PropertyProfile_RecommendedActions"]">
+                                <MudList T="string" Dense="true">
+                                    @foreach (var action in GetRecommendedActions(_property, _units, vacantCount, readinessScore, monthlyRent))
+                                    {
+                                        <MudListItem T="string">@action</MudListItem>
+                                    }
+                                </MudList>
+                            </MudExpansionPanel>
+                        </MudExpansionPanels>
+                    </MudItem>
                     <MudItem xs="12">
                         <MudPaper Class="pa-4 property-detail-panel" Elevation="0">
                             <MudText Typo="Typo.subtitle2">@Localizer["PropertyProfile_LiveLeases"]</MudText>
@@ -156,9 +175,19 @@ else
             </MudTabPanel>
             <MudTabPanel Text="@Localizer["PropertyProfile_TabOps"]">
                 <MudGrid Spacing="2">
-                    <MudItem xs="12" md="6"><MudPaper Class="pa-4 property-detail-panel h-100" Elevation="0"><MudText Typo="Typo.subtitle2">@Localizer["PropertyProfile_OperationalNotes"]</MudText><MudText Typo="Typo.body2">@GetTextOrFallback(_property.OperationalNotes, Localizer["PropertyProfile_OperationalNotesFallback"].Value)</MudText></MudPaper></MudItem>
-                    <MudItem xs="12" md="6"><MudPaper Class="pa-4 property-detail-panel h-100" Elevation="0"><MudText Typo="Typo.subtitle2">@Localizer["PropertyProfile_OperationsFocus"]</MudText><MudText Typo="Typo.body2">@GetOperationsFocus(_property, vacantCount)</MudText></MudPaper></MudItem>
-                    <MudItem xs="12"><MudPaper Class="pa-4 property-detail-panel" Elevation="0"><MudText Typo="Typo.subtitle2">@Localizer["Properties_FormAmenities"]</MudText><MudText Typo="Typo.body2">@GetTextOrFallback(_property.AmenitySummary, Localizer["PropertyProfile_AmenitiesFallback"].Value)</MudText></MudPaper></MudItem>
+                    <MudItem xs="12">
+                        <MudExpansionPanels Class="property-detail-panel mb-2" Elevation="0">
+                            <MudExpansionPanel Text="@Localizer["PropertyProfile_OperationalNotes"]">
+                                <MudText Typo="Typo.body2">@GetTextOrFallback(_property.OperationalNotes, Localizer["PropertyProfile_OperationalNotesFallback"].Value)</MudText>
+                            </MudExpansionPanel>
+                            <MudExpansionPanel Text="@Localizer["PropertyProfile_OperationsFocus"]">
+                                <MudText Typo="Typo.body2">@GetOperationsFocus(_property, vacantCount)</MudText>
+                            </MudExpansionPanel>
+                            <MudExpansionPanel Text="@Localizer["Properties_FormAmenities"]">
+                                <MudText Typo="Typo.body2">@GetTextOrFallback(_property.AmenitySummary, Localizer["PropertyProfile_AmenitiesFallback"].Value)</MudText>
+                            </MudExpansionPanel>
+                        </MudExpansionPanels>
+                    </MudItem>
                     <MudItem xs="12">
                         <MudPaper Class="pa-4 property-detail-panel" Elevation="0">
                             <MudText Typo="Typo.subtitle2">@Localizer["PropertyProfile_MaintenancePipeline"]</MudText>
@@ -193,21 +222,19 @@ else
             {
             <MudTabPanel Text="@Localizer["Compliance_Title"]">
                 <MudGrid Spacing="2">
-                    <MudItem xs="12" md="6">
-                        <MudPaper Class="pa-4 property-detail-panel h-100" Elevation="0">
-                            <MudText Typo="Typo.subtitle2">@Localizer["PropertyProfile_ComplianceReminder"]</MudText>
-                            <MudText Typo="Typo.body2">@Localizer["PropertyProfile_ComplianceReminderBody"]</MudText>
-                        </MudPaper>
-                    </MudItem>
-                    <MudItem xs="12" md="6">
-                        <MudPaper Class="pa-4 property-detail-panel h-100" Elevation="0">
-                            <MudText Typo="Typo.subtitle2">@Localizer["PropertyProfile_ExecutionChecklist"]</MudText>
-                            <MudList T="string" Dense="true">
-                                <MudListItem T="string">@Localizer["PropertyProfile_ChecklistItem1"]</MudListItem>
-                                <MudListItem T="string">@Localizer["PropertyProfile_ChecklistItem2"]</MudListItem>
-                                <MudListItem T="string">@Localizer["PropertyProfile_ChecklistItem3"]</MudListItem>
-                            </MudList>
-                        </MudPaper>
+                    <MudItem xs="12">
+                        <MudExpansionPanels Class="property-detail-panel mb-2" Elevation="0">
+                            <MudExpansionPanel Text="@Localizer["PropertyProfile_ComplianceReminder"]">
+                                <MudText Typo="Typo.body2">@Localizer["PropertyProfile_ComplianceReminderBody"]</MudText>
+                            </MudExpansionPanel>
+                            <MudExpansionPanel Text="@Localizer["PropertyProfile_ExecutionChecklist"]">
+                                <MudList T="string" Dense="true">
+                                    <MudListItem T="string">@Localizer["PropertyProfile_ChecklistItem1"]</MudListItem>
+                                    <MudListItem T="string">@Localizer["PropertyProfile_ChecklistItem2"]</MudListItem>
+                                    <MudListItem T="string">@Localizer["PropertyProfile_ChecklistItem3"]</MudListItem>
+                                </MudList>
+                            </MudExpansionPanel>
+                        </MudExpansionPanels>
                     </MudItem>
                     <MudItem xs="12">
                         <MudPaper Class="pa-4 property-detail-panel" Elevation="0">

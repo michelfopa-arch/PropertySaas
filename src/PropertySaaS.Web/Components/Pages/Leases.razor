@@ -28,53 +28,57 @@
 
     @if (!IsDemoCleanView)
     {
-        <MudGrid Spacing="2" Class="align-center-grid">
-            <MudItem xs="12" lg="4">
-                <MudTextField T="string"
-                              Label="@Localizer["Leases_SearchLabel"]"
-                              Variant="Variant.Outlined"
-                              Immediate="true"
-                              @bind-Value="_searchText"
-                              Adornment="Adornment.Start"
-                              AdornmentIcon="@Icons.Material.Filled.Search"
-                              Placeholder="@Localizer["Leases_SearchPlaceholder"]" />
-            </MudItem>
-            <MudItem xs="12" sm="4" lg="2">
-                <MudSelect T="string" Label="@Localizer["Leases_FilterStatus"]" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedStatusFilter">
-                    <MudSelectItem T="string" Value="@string.Empty">@Localizer["Leases_FilterAllStatuses"]</MudSelectItem>
-                    @foreach (var option in StatusOptions)
-                    {
-                        <MudSelectItem T="string" Value="@option.ToString()">@GetLeaseStatusLabel(option)</MudSelectItem>
-                    }
-                </MudSelect>
-            </MudItem>
-            <MudItem xs="12" sm="4" lg="2">
-                <MudSelect T="string" Label="@Localizer["Leases_FilterJurisdictionLease"]" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedOntarioFilter">
-                    <MudSelectItem T="string" Value="@string.Empty">@Localizer["Leases_FilterAll"]</MudSelectItem>
-                    <MudSelectItem T="string" Value='@Localizer["Leases_OntarioSigned"].Value'>@Localizer["Leases_OntarioSigned"]</MudSelectItem>
-                    <MudSelectItem T="string" Value='@Localizer["Leases_OntarioMissing"].Value'>@Localizer["Leases_OntarioMissing"]</MudSelectItem>
-                </MudSelect>
-            </MudItem>
-            <MudItem xs="12" sm="4" lg="2">
-                <MudSelect T="string" Label="@Localizer["Leases_FilterNoticeWorkflow"]" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedWorkflowFilter">
-                    <MudSelectItem T="string" Value="@string.Empty">@Localizer["Leases_FilterAll"]</MudSelectItem>
-                    <MudSelectItem T="string" Value='@Localizer["Leases_WorkflowScheduled"].Value'>@Localizer["Leases_WorkflowScheduled"]</MudSelectItem>
-                    <MudSelectItem T="string" Value='@Localizer["Leases_WorkflowNotScheduled"].Value'>@Localizer["Leases_WorkflowNotScheduled"]</MudSelectItem>
-                </MudSelect>
-            </MudItem>
-            <MudItem xs="12" lg="2">
-                <MudStack Row="true" Spacing="1" Class="properties-toolbar-actions">
-                    @if (HasActiveFilters)
-                    {
-                        <MudButton Variant="Variant.Outlined" Color="Color.Default" FullWidth="true" StartIcon="@Icons.Material.Filled.FilterAltOff" OnClick="ClearFilters">@Localizer["Common_Reset"]</MudButton>
-                    }
-                    @if (CurrentOrganization.CanManageData)
-                    {
-                        <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreatePanel">@Localizer["Leases_AddLease"]</MudButton>
-                    }
-                </MudStack>
-            </MudItem>
-        </MudGrid>
+        <MudExpansionPanels Class="property-detail-panel mb-4" Elevation="0">
+            <MudExpansionPanel Text="@Localizer["Common_Filters"]">
+                <MudGrid Spacing="2" Class="align-center-grid">
+                    <MudItem xs="12" lg="4">
+                        <MudTextField T="string"
+                                      Label="@Localizer["Leases_SearchLabel"]"
+                                      Variant="Variant.Outlined"
+                                      Immediate="true"
+                                      @bind-Value="_searchText"
+                                      Adornment="Adornment.Start"
+                                      AdornmentIcon="@Icons.Material.Filled.Search"
+                                      Placeholder="@Localizer["Leases_SearchPlaceholder"]" />
+                    </MudItem>
+                    <MudItem xs="12" sm="4" lg="2">
+                        <MudSelect T="string" Label="@Localizer["Leases_FilterStatus"]" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedStatusFilter">
+                            <MudSelectItem T="string" Value="@string.Empty">@Localizer["Leases_FilterAllStatuses"]</MudSelectItem>
+                            @foreach (var option in StatusOptions)
+                            {
+                                <MudSelectItem T="string" Value="@option.ToString()">@GetLeaseStatusLabel(option)</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" sm="4" lg="2">
+                        <MudSelect T="string" Label="@Localizer["Leases_FilterJurisdictionLease"]" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedOntarioFilter">
+                            <MudSelectItem T="string" Value="@string.Empty">@Localizer["Leases_FilterAll"]</MudSelectItem>
+                            <MudSelectItem T="string" Value='@Localizer["Leases_OntarioSigned"].Value'>@Localizer["Leases_OntarioSigned"]</MudSelectItem>
+                            <MudSelectItem T="string" Value='@Localizer["Leases_OntarioMissing"].Value'>@Localizer["Leases_OntarioMissing"]</MudSelectItem>
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" sm="4" lg="2">
+                        <MudSelect T="string" Label="@Localizer["Leases_FilterNoticeWorkflow"]" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedWorkflowFilter">
+                            <MudSelectItem T="string" Value="@string.Empty">@Localizer["Leases_FilterAll"]</MudSelectItem>
+                            <MudSelectItem T="string" Value='@Localizer["Leases_WorkflowScheduled"].Value'>@Localizer["Leases_WorkflowScheduled"]</MudSelectItem>
+                            <MudSelectItem T="string" Value='@Localizer["Leases_WorkflowNotScheduled"].Value'>@Localizer["Leases_WorkflowNotScheduled"]</MudSelectItem>
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" lg="2">
+                        <MudStack Row="true" Spacing="1" Class="properties-toolbar-actions">
+                            @if (HasActiveFilters)
+                            {
+                                <MudButton Variant="Variant.Outlined" Color="Color.Default" FullWidth="true" StartIcon="@Icons.Material.Filled.FilterAltOff" OnClick="ClearFilters">@Localizer["Common_Reset"]</MudButton>
+                            }
+                            @if (CurrentOrganization.CanManageData)
+                            {
+                                <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreatePanel">@Localizer["Leases_AddLease"]</MudButton>
+                            }
+                        </MudStack>
+                    </MudItem>
+                </MudGrid>
+            </MudExpansionPanel>
+        </MudExpansionPanels>
     }
 
     <MudGrid Spacing="2">
@@ -95,22 +99,26 @@
     </MudPaper>
 
     <MudPaper Class="pa-4 marketing-card" Elevation="0">
-        <MudText Typo="Typo.h6">@UiText.Get("Leases_DemoStoryTitle")</MudText>
-        <MudText Typo="Typo.body2" Class="mt-1">@UiText.Get("Leases_DemoStoryBody")</MudText>
-        <MudList T="string" Dense="true" Class="mt-3">
-            <MudListItem T="string">@UiText.Get("Leases_DemoStoryStep1")</MudListItem>
-            <MudListItem T="string">@UiText.Get("Leases_DemoStoryStep2")</MudListItem>
-            <MudListItem T="string">@UiText.Get("Leases_DemoStoryStep3")</MudListItem>
-        </MudList>
-        <MudStack Row="true" Spacing="1" Class="mt-3" Wrap="Wrap.Wrap">
-            <MudButton Variant="Variant.Outlined" Color="@InsightColor" OnClick="OpenInsightNextActionAsync">@InsightActionLabel</MudButton>
-            <MudButton Variant="Variant.Text" Color="Color.Secondary" Disabled="@(PriorityMoveInLease is null)" OnClick="OpenPriorityLeaseConversationAsync">@UiText.Get("Leases_MoveInOpenCommunication")</MudButton>
-            <MudButton Variant="Variant.Text" Color="Color.Warning" Disabled="@(PriorityNoticeLease is null)" OnClick="OpenPriorityNoticeDraftAsync">@UiText.Get("Leases_InsightOpenNotice")</MudButton>
-        </MudStack>
+        <MudExpansionPanels Class="marketing-card" Elevation="0">
+            <MudExpansionPanel Text='@UiText.Get("Leases_DemoStoryTitle")'>
+                <MudText Typo="Typo.body2" Class="mt-1">@UiText.Get("Leases_DemoStoryBody")</MudText>
+                <MudList T="string" Dense="true" Class="mt-3">
+                    <MudListItem T="string">@UiText.Get("Leases_DemoStoryStep1")</MudListItem>
+                    <MudListItem T="string">@UiText.Get("Leases_DemoStoryStep2")</MudListItem>
+                    <MudListItem T="string">@UiText.Get("Leases_DemoStoryStep3")</MudListItem>
+                </MudList>
+                <MudStack Row="true" Spacing="1" Class="mt-3" Wrap="Wrap.Wrap">
+                    <MudButton Variant="Variant.Outlined" Color="@InsightColor" OnClick="OpenInsightNextActionAsync">@InsightActionLabel</MudButton>
+                    <MudButton Variant="Variant.Text" Color="Color.Secondary" Disabled="@(PriorityMoveInLease is null)" OnClick="OpenPriorityLeaseConversationAsync">@UiText.Get("Leases_MoveInOpenCommunication")</MudButton>
+                    <MudButton Variant="Variant.Text" Color="Color.Warning" Disabled="@(PriorityNoticeLease is null)" OnClick="OpenPriorityNoticeDraftAsync">@UiText.Get("Leases_InsightOpenNotice")</MudButton>
+                </MudStack>
+            </MudExpansionPanel>
+        </MudExpansionPanels>
     </MudPaper>
 
     <MudPaper Class="pa-4 marketing-card" Elevation="0">
-        <MudText Typo="Typo.h6">@UiText.Get("Leases_MoveInTitle")</MudText>
+        <MudExpansionPanels Class="marketing-card" Elevation="0">
+            <MudExpansionPanel Text='@UiText.Get("Leases_MoveInTitle")'>
         @if (PriorityMoveInLease is null)
         {
             <MudText Typo="Typo.body2" Class="mt-2">@UiText.Get("Leases_MoveInEmpty")</MudText>
@@ -224,6 +232,8 @@
                 <MudAlert Severity="Severity.Warning" Dense="true" Class="mt-3 mb-0">@UiText.Get("Leases_MoveInActivationBlocked")</MudAlert>
             }
         }
+            </MudExpansionPanel>
+        </MudExpansionPanels>
     </MudPaper>
 
     <MudExpansionPanels>

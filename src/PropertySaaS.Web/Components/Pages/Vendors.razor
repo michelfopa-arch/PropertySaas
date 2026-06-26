@@ -40,30 +40,32 @@
             <MudItem xs="12" md="4"><MetricCard Title="@UiText.Get("Vendors_ServiceAreaTitle")" Value="@_vendors.Select(x => x.ServiceArea).Distinct(StringComparer.OrdinalIgnoreCase).Count().ToString()" Caption="@UiText.Get("Vendors_ServiceAreaCaption")" Icon="@Icons.Material.Filled.Map" /></MudItem>
         </MudGrid>
 
-        <MudPaper Class="pa-4 marketing-card" Elevation="0">
-            <MudText Typo="Typo.h6">@UiText.Get("Maintenance_DispatchBoardTitle")</MudText>
-            <MudGrid Spacing="2" Class="mt-1">
-                <MudItem xs="12" sm="6" md="3"><MudChip T="string" Variant="Variant.Filled" Color="Color.Default">@UiText.Get("Maintenance_DispatchUnassigned"): @_maintenance.Count(x => string.Equals(x.DispatchStatus, "Unassigned", StringComparison.OrdinalIgnoreCase))</MudChip></MudItem>
-                <MudItem xs="12" sm="6" md="3"><MudChip T="string" Variant="Variant.Filled" Color="Color.Info">@UiText.Get("Maintenance_DispatchRecommended"): @_maintenance.Count(x => string.Equals(x.DispatchStatus, "Recommended", StringComparison.OrdinalIgnoreCase))</MudChip></MudItem>
-                <MudItem xs="12" sm="6" md="3"><MudChip T="string" Variant="Variant.Filled" Color="Color.Warning">@UiText.Get("Maintenance_DispatchAssigned"): @_maintenance.Count(x => string.Equals(x.DispatchStatus, "Assigned", StringComparison.OrdinalIgnoreCase) || string.Equals(x.DispatchStatus, "Acknowledged", StringComparison.OrdinalIgnoreCase))</MudChip></MudItem>
-                <MudItem xs="12" sm="6" md="3"><MudChip T="string" Variant="Variant.Filled" Color="Color.Success">@UiText.Get("Maintenance_DispatchCompleted"): @_maintenance.Count(x => string.Equals(x.DispatchStatus, "Completed", StringComparison.OrdinalIgnoreCase))</MudChip></MudItem>
-            </MudGrid>
-        </MudPaper>
+        <MudExpansionPanels Class="marketing-card mb-4" Elevation="0">
+            <MudExpansionPanel Text="@UiText.Get("Maintenance_DispatchBoardTitle")">
+                <MudGrid Spacing="2">
+                    <MudItem xs="12" sm="6" md="3"><MudChip T="string" Variant="Variant.Filled" Color="Color.Default">@UiText.Get("Maintenance_DispatchUnassigned"): @_maintenance.Count(x => string.Equals(x.DispatchStatus, "Unassigned", StringComparison.OrdinalIgnoreCase))</MudChip></MudItem>
+                    <MudItem xs="12" sm="6" md="3"><MudChip T="string" Variant="Variant.Filled" Color="Color.Info">@UiText.Get("Maintenance_DispatchRecommended"): @_maintenance.Count(x => string.Equals(x.DispatchStatus, "Recommended", StringComparison.OrdinalIgnoreCase))</MudChip></MudItem>
+                    <MudItem xs="12" sm="6" md="3"><MudChip T="string" Variant="Variant.Filled" Color="Color.Warning">@UiText.Get("Maintenance_DispatchAssigned"): @_maintenance.Count(x => string.Equals(x.DispatchStatus, "Assigned", StringComparison.OrdinalIgnoreCase) || string.Equals(x.DispatchStatus, "Acknowledged", StringComparison.OrdinalIgnoreCase))</MudChip></MudItem>
+                    <MudItem xs="12" sm="6" md="3"><MudChip T="string" Variant="Variant.Filled" Color="Color.Success">@UiText.Get("Maintenance_DispatchCompleted"): @_maintenance.Count(x => string.Equals(x.DispatchStatus, "Completed", StringComparison.OrdinalIgnoreCase))</MudChip></MudItem>
+                </MudGrid>
+            </MudExpansionPanel>
+        </MudExpansionPanels>
 
-        <MudPaper Class="pa-4 marketing-card" Elevation="0">
-            <MudText Typo="Typo.h6">@UiText.Get("Vendors_RecommendationTitle")</MudText>
-            @if (_recommendation is null)
-            {
-                <MudText Typo="Typo.body2" Class="mt-2">@UiText.Get("Vendors_RecommendationFallback")</MudText>
-            }
-            else
-            {
-                <MudText Typo="Typo.subtitle2" Class="mt-2">@_recommendation.VendorName</MudText>
-                <MudText Typo="Typo.body2">@UiText.Get("Vendors_DispatchStatus"): @GetDispatchStatusLabel(_recommendation.DispatchStatus)</MudText>
-                <MudText Typo="Typo.body2">@UiText.Get("Vendors_ResponseHours"): @UiText.Format("Vendors_ResponseHoursCompact", _recommendation.TypicalResponseHours)</MudText>
-                <MudText Typo="Typo.body2">@UiText.Get("Vendors_RecommendationReason"): @_recommendation.RecommendationReason</MudText>
-            }
-        </MudPaper>
+        <MudExpansionPanels Class="marketing-card mb-4" Elevation="0">
+            <MudExpansionPanel Text="@UiText.Get("Vendors_RecommendationTitle")">
+                @if (_recommendation is null)
+                {
+                    <MudText Typo="Typo.body2">@UiText.Get("Vendors_RecommendationFallback")</MudText>
+                }
+                else
+                {
+                    <MudText Typo="Typo.subtitle2">@_recommendation.VendorName</MudText>
+                    <MudText Typo="Typo.body2">@UiText.Get("Vendors_DispatchStatus"): @GetDispatchStatusLabel(_recommendation.DispatchStatus)</MudText>
+                    <MudText Typo="Typo.body2">@UiText.Get("Vendors_ResponseHours"): @UiText.Format("Vendors_ResponseHoursCompact", _recommendation.TypicalResponseHours)</MudText>
+                    <MudText Typo="Typo.body2">@UiText.Get("Vendors_RecommendationReason"): @_recommendation.RecommendationReason</MudText>
+                }
+            </MudExpansionPanel>
+        </MudExpansionPanels>
 
         <MudPaper Class="pa-4 marketing-card" Elevation="0">
             <MudText Typo="Typo.h6">@UiText.Get("Vendors_PriorityActionTitle")</MudText>
@@ -128,41 +130,42 @@
             </MudTable>
         </MudPaper>
 
-        <MudPaper Class="pa-4 marketing-card" Elevation="0">
-            <MudText Typo="Typo.h6">@UiText.Get("Vendors_ActiveDispatchTitle")</MudText>
-            @if (!ActiveVendorDispatch.Any())
-            {
-                <MudText Typo="Typo.body2" Class="mt-2">@UiText.Get("Vendors_ActiveDispatchEmpty")</MudText>
-            }
-            else
-            {
-                <MudList T="string" Dense="true" Class="mt-3">
-                    @foreach (var group in ActiveVendorDispatch)
-                    {
-                        var firstTicket = group.FirstOrDefault();
-                        <MudListItem T="string">
-                            @UiText.Format("Vendors_ActiveDispatchSummary", group.Key, group.Count(), GetGroupEta(group.Key), UiText.Format("Vendors_AtRiskCount", group.Count(IsAtRisk)), string.Join(", ", group.Select(x => x.Title).Take(3)))
-                            <MudButton Class="ml-2" Variant="Variant.Text" Color="Color.Primary" Size="Size.Small" OnClick='() => OpenVendorDispatch(group.Key)'>@UiText.Get("Vendors_OpenVendorDispatch")</MudButton>
-                            @if (firstTicket is not null)
-                            {
-                                <MudButton Class="ml-1" Variant="Variant.Text" Color="Color.Info" Size="Size.Small" OnClick='() => SelectVendorGroup(group.Key)'>@UiText.Get("Vendors_ReviewTickets")</MudButton>
-                                <MudButton Class="ml-1" Variant="Variant.Text" Color="Color.Default" Size="Size.Small" OnClick='() => SelectVendorTicket(firstTicket.Id)'>@UiText.Get("Common_OpenTicket")</MudButton>
-                                <MudButton Class="ml-1" Variant="Variant.Text" Color="Color.Secondary" Size="Size.Small" OnClick='() => OpenVendorTicket(firstTicket.Id)'>@UiText.Get("Vendors_OpenTicket")</MudButton>
-                                <MudButton Class="ml-1" Variant="Variant.Text" Color="Color.Primary" Size="Size.Small" OnClick='() => OpenVendorTenantThreadAsync(firstTicket.Id)'>@UiText.Get("Vendors_OpenTenantThread")</MudButton>
-                                @if (string.Equals(firstTicket.DispatchStatus, "Assigned", StringComparison.OrdinalIgnoreCase))
+        <MudExpansionPanels Class="marketing-card mb-4" Elevation="0">
+            <MudExpansionPanel Text="@UiText.Get("Vendors_ActiveDispatchTitle")">
+                @if (!ActiveVendorDispatch.Any())
+                {
+                    <MudText Typo="Typo.body2">@UiText.Get("Vendors_ActiveDispatchEmpty")</MudText>
+                }
+                else
+                {
+                    <MudList T="string" Dense="true" Class="mt-3">
+                        @foreach (var group in ActiveVendorDispatch)
+                        {
+                            var firstTicket = group.FirstOrDefault();
+                            <MudListItem T="string">
+                                @UiText.Format("Vendors_ActiveDispatchSummary", group.Key, group.Count(), GetGroupEta(group.Key), UiText.Format("Vendors_AtRiskCount", group.Count(IsAtRisk)), string.Join(", ", group.Select(x => x.Title).Take(3)))
+                                <MudButton Class="ml-2" Variant="Variant.Text" Color="Color.Primary" Size="Size.Small" OnClick='() => OpenVendorDispatch(group.Key)'>@UiText.Get("Vendors_OpenVendorDispatch")</MudButton>
+                                @if (firstTicket is not null)
                                 {
-                                    <MudButton Class="ml-1" Variant="Variant.Text" Color="Color.Warning" Size="Size.Small" OnClick='() => MarkVendorTicketAsync(firstTicket.Id, "Acknowledged")'>@UiText.Get("Vendors_MarkAcknowledged")</MudButton>
+                                    <MudButton Class="ml-1" Variant="Variant.Text" Color="Color.Info" Size="Size.Small" OnClick='() => SelectVendorGroup(group.Key)'>@UiText.Get("Vendors_ReviewTickets")</MudButton>
+                                    <MudButton Class="ml-1" Variant="Variant.Text" Color="Color.Default" Size="Size.Small" OnClick='() => SelectVendorTicket(firstTicket.Id)'>@UiText.Get("Common_OpenTicket")</MudButton>
+                                    <MudButton Class="ml-1" Variant="Variant.Text" Color="Color.Secondary" Size="Size.Small" OnClick='() => OpenVendorTicket(firstTicket.Id)'>@UiText.Get("Vendors_OpenTicket")</MudButton>
+                                    <MudButton Class="ml-1" Variant="Variant.Text" Color="Color.Primary" Size="Size.Small" OnClick='() => OpenVendorTenantThreadAsync(firstTicket.Id)'>@UiText.Get("Vendors_OpenTenantThread")</MudButton>
+                                    @if (string.Equals(firstTicket.DispatchStatus, "Assigned", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        <MudButton Class="ml-1" Variant="Variant.Text" Color="Color.Warning" Size="Size.Small" OnClick='() => MarkVendorTicketAsync(firstTicket.Id, "Acknowledged")'>@UiText.Get("Vendors_MarkAcknowledged")</MudButton>
+                                    }
+                                    @if (!string.Equals(firstTicket.DispatchStatus, "Completed", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        <MudButton Class="ml-1" Variant="Variant.Text" Color="Color.Success" Size="Size.Small" OnClick='() => MarkVendorTicketAsync(firstTicket.Id, "Completed")'>@UiText.Get("Vendors_MarkCompleted")</MudButton>
+                                    }
                                 }
-                                @if (!string.Equals(firstTicket.DispatchStatus, "Completed", StringComparison.OrdinalIgnoreCase))
-                                {
-                                    <MudButton Class="ml-1" Variant="Variant.Text" Color="Color.Success" Size="Size.Small" OnClick='() => MarkVendorTicketAsync(firstTicket.Id, "Completed")'>@UiText.Get("Vendors_MarkCompleted")</MudButton>
-                                }
-                            }
-                        </MudListItem>
-                    }
-                </MudList>
-            }
-        </MudPaper>
+                            </MudListItem>
+                        }
+                    </MudList>
+                }
+            </MudExpansionPanel>
+        </MudExpansionPanels>
 
         <MudPaper Class="pa-4 marketing-card" Elevation="0">
             <MudText Typo="Typo.h6">@UiText.Get("Vendors_TicketDetailTitle")</MudText>

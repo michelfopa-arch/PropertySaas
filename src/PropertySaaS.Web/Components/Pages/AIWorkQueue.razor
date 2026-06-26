@@ -61,108 +61,95 @@
             <MudText Typo="Typo.body2" Class="mt-3">@InsightMessage</MudText>
         </MudPaper>
 
-        <MudGrid Spacing="3">
-            <MudItem xs="12" md="6">
-                <MudPaper Class="pa-4 marketing-card h-100" Elevation="0">
-                    <MudText Typo="Typo.h6">@UiText.Get("AIWorkQueue_TodayTitle")</MudText>
-                    <MudList T="string" Dense="true" Class="mt-3">
-                        <MudListItem T="string">@UiText.Format("AIWorkQueue_TaskVacancy", _summary.VacantUnits)</MudListItem>
-                        <MudListItem T="string">@UiText.Format("AIWorkQueue_TaskCompliance", _summary.ComplianceDueSoon)</MudListItem>
-                        <MudListItem T="string">@UiText.Format("AIWorkQueue_TaskMaintenance", _summary.OpenMaintenance)</MudListItem>
-                        <MudListItem T="string">@UiText.Format("AIWorkQueue_DispatchAtRisk", _summary.DispatchAtRisk)</MudListItem>
-                        <MudListItem T="string">@UiText.Format("AIWorkQueue_DispatchBlocked", _summary.DispatchBlocked)</MudListItem>
-                        <MudListItem T="string">@UiText.Format("AIWorkQueue_TaskLeases", _summary.ActiveLeases)</MudListItem>
-                        <MudListItem T="string">@UiText.Format("AIWorkQueue_TaskListings", _listingsReady)</MudListItem>
-                        <MudListItem T="string">@UiText.Format("AIWorkQueue_TaskInvoices", _invoicesDue)</MudListItem>
-                    </MudList>
-                    <MudStack Row="true" Spacing="1" Class="mt-3" Wrap="Wrap.Wrap">
-                        <MudButton Variant="Variant.Outlined" Color="Color.Warning" OnClick='() => OpenMaintenanceWithDispatchFilter("AtRisk")'>@UiText.Get("AIWorkQueue_OpenAtRiskDispatch")</MudButton>
-                        <MudButton Variant="Variant.Outlined" Color="Color.Default" OnClick='() => OpenMaintenanceWithDispatchFilter("Blocked")'>@UiText.Get("AIWorkQueue_OpenBlockedDispatch")</MudButton>
-                        <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick='() => OpenMaintenanceWithDispatchFilter(string.Empty)'>@UiText.Get("AIWorkQueue_OpenDispatchQueue")</MudButton>
-                    </MudStack>
-                </MudPaper>
-            </MudItem>
+        <MudExpansionPanels Class="marketing-card mb-4" Elevation="0">
+            <MudExpansionPanel Text="@UiText.Get("AIWorkQueue_TodayTitle")">
+                <MudList T="string" Dense="true">
+                    <MudListItem T="string">@UiText.Format("AIWorkQueue_TaskVacancy", _summary.VacantUnits)</MudListItem>
+                    <MudListItem T="string">@UiText.Format("AIWorkQueue_TaskCompliance", _summary.ComplianceDueSoon)</MudListItem>
+                    <MudListItem T="string">@UiText.Format("AIWorkQueue_TaskMaintenance", _summary.OpenMaintenance)</MudListItem>
+                    <MudListItem T="string">@UiText.Format("AIWorkQueue_DispatchAtRisk", _summary.DispatchAtRisk)</MudListItem>
+                    <MudListItem T="string">@UiText.Format("AIWorkQueue_DispatchBlocked", _summary.DispatchBlocked)</MudListItem>
+                    <MudListItem T="string">@UiText.Format("AIWorkQueue_TaskLeases", _summary.ActiveLeases)</MudListItem>
+                    <MudListItem T="string">@UiText.Format("AIWorkQueue_TaskListings", _listingsReady)</MudListItem>
+                    <MudListItem T="string">@UiText.Format("AIWorkQueue_TaskInvoices", _invoicesDue)</MudListItem>
+                </MudList>
+                <MudStack Row="true" Spacing="1" Class="mt-3" Wrap="Wrap.Wrap">
+                    <MudButton Variant="Variant.Outlined" Color="Color.Warning" OnClick='() => OpenMaintenanceWithDispatchFilter("AtRisk")'>@UiText.Get("AIWorkQueue_OpenAtRiskDispatch")</MudButton>
+                    <MudButton Variant="Variant.Outlined" Color="Color.Default" OnClick='() => OpenMaintenanceWithDispatchFilter("Blocked")'>@UiText.Get("AIWorkQueue_OpenBlockedDispatch")</MudButton>
+                    <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick='() => OpenMaintenanceWithDispatchFilter(string.Empty)'>@UiText.Get("AIWorkQueue_OpenDispatchQueue")</MudButton>
+                </MudStack>
+            </MudExpansionPanel>
             @if (!IsDemoCleanView)
             {
-                <MudItem xs="12" md="6">
-                    <MudPaper Class="pa-4 marketing-card h-100" Elevation="0">
-                        <MudText Typo="Typo.h6">@UiText.Get("AIWorkQueue_AIRecommendationsTitle")</MudText>
-                        <MudList T="string" Dense="true" Class="mt-3">
-                            @if (_suggestions.Count == 0)
+                <MudExpansionPanel Text="@UiText.Get("AIWorkQueue_AIRecommendationsTitle")">
+                    <MudList T="string" Dense="true">
+                        @if (_suggestions.Count == 0)
+                        {
+                            <MudListItem T="string">@UiText.Get("AIWorkQueue_Recommendation1")</MudListItem>
+                            <MudListItem T="string">@UiText.Get("AIWorkQueue_Recommendation2")</MudListItem>
+                            <MudListItem T="string">@UiText.Get("AIWorkQueue_Recommendation3")</MudListItem>
+                            <MudListItem T="string">@UiText.Get("AIWorkQueue_Recommendation4")</MudListItem>
+                        }
+                        else
+                        {
+                            @foreach (var suggestion in _suggestions.Take(6))
                             {
-                                <MudListItem T="string">@UiText.Get("AIWorkQueue_Recommendation1")</MudListItem>
-                                <MudListItem T="string">@UiText.Get("AIWorkQueue_Recommendation2")</MudListItem>
-                                <MudListItem T="string">@UiText.Get("AIWorkQueue_Recommendation3")</MudListItem>
-                                <MudListItem T="string">@UiText.Get("AIWorkQueue_Recommendation4")</MudListItem>
+                                <MudListItem T="string">@suggestion.SuggestedContent</MudListItem>
                             }
-                            else
-                            {
-                                @foreach (var suggestion in _suggestions.Take(6))
-                                {
-                                    <MudListItem T="string">@suggestion.SuggestedContent</MudListItem>
-                                }
-                            }
-                        </MudList>
-                    </MudPaper>
-                </MudItem>
+                        }
+                    </MudList>
+                </MudExpansionPanel>
             }
-        </MudGrid>
+        </MudExpansionPanels>
 
-        <MudGrid Spacing="3">
-            <MudItem xs="12" md="6">
-                <MudPaper Class="pa-4 marketing-card h-100" Elevation="0">
-                    <MudText Typo="Typo.h6">@UiText.Get("AIWorkQueue_LeasingSignalsTitle")</MudText>
-                    <MudList T="string" Dense="true" Class="mt-3">
-                        @foreach (var listing in _listings.Take(4))
-                        {
-                            <MudListItem T="string">@listing.Title - @listing.Status - @listing.AskingRent.ToString("C")</MudListItem>
-                        }
-                    </MudList>
-                </MudPaper>
-            </MudItem>
-            <MudItem xs="12" md="6">
-                <MudPaper Class="pa-4 marketing-card h-100" Elevation="0">
-                    <MudText Typo="Typo.h6">@UiText.Get("AIWorkQueue_CollectionsSignalsTitle")</MudText>
-                    <MudList T="string" Dense="true" Class="mt-3">
-                        @foreach (var invoice in _invoices.Take(4))
-                        {
-                            <MudListItem T="string">@invoice.Number - @invoice.TenantName - @invoice.Balance.ToString("C") - @invoice.Status</MudListItem>
-                        }
-                    </MudList>
-                </MudPaper>
-            </MudItem>
-        </MudGrid>
+        <MudExpansionPanels Class="marketing-card mb-4" Elevation="0">
+            <MudExpansionPanel Text="@UiText.Get("AIWorkQueue_LeasingSignalsTitle")">
+                <MudList T="string" Dense="true">
+                    @foreach (var listing in _listings.Take(4))
+                    {
+                        <MudListItem T="string">@listing.Title - @listing.Status - @listing.AskingRent.ToString("C")</MudListItem>
+                    }
+                </MudList>
+            </MudExpansionPanel>
+            <MudExpansionPanel Text="@UiText.Get("AIWorkQueue_CollectionsSignalsTitle")">
+                <MudList T="string" Dense="true">
+                    @foreach (var invoice in _invoices.Take(4))
+                    {
+                        <MudListItem T="string">@invoice.Number - @invoice.TenantName - @invoice.Balance.ToString("C") - @invoice.Status</MudListItem>
+                    }
+                </MudList>
+            </MudExpansionPanel>
+        </MudExpansionPanels>
 
-        <MudPaper Class="pa-4 marketing-card h-100" Elevation="0">
-            <MudText Typo="Typo.h6">@UiText.Get("AIWorkQueue_DispatchSignalsTitle")</MudText>
-            <MudList T="string" Dense="true" Class="mt-3">
-                @foreach (var signal in _dispatchSignals.Take(6))
+        <MudExpansionPanels Class="marketing-card mb-4" Elevation="0">
+            <MudExpansionPanel Text="@UiText.Get("AIWorkQueue_DispatchSignalsTitle")">
+                <MudList T="string" Dense="true">
+                    @foreach (var signal in _dispatchSignals.Take(6))
+                    {
+                        <MudListItem T="string">
+                            @signal.Title - @signal.PropertyName - @signal.DispatchStatus - @(signal.IsAtRisk ? UiText.Get("Maintenance_SlaAtRisk") : signal.IsBlocked ? UiText.Get("Dashboard_DispatchBlocked") : UiText.Get("Maintenance_SlaOnTrack"))
+                            <MudButton Class="ml-2" Variant="Variant.Text" Color="Color.Primary" Size="Size.Small" OnClick='() => OpenMaintenanceTicket(signal.MaintenanceRequestId)'>@UiText.Get("AIWorkQueue_OpenTicket")</MudButton>
+                        </MudListItem>
+                    }
+                </MudList>
+            </MudExpansionPanel>
+            <MudExpansionPanel Text="@UiText.Get("AIWorkQueue_DispatchNextActionTitle")">
+                @if (PriorityVendorSignal is null)
                 {
-                    <MudListItem T="string">
-                        @signal.Title - @signal.PropertyName - @signal.DispatchStatus - @(signal.IsAtRisk ? UiText.Get("Maintenance_SlaAtRisk") : signal.IsBlocked ? UiText.Get("Dashboard_DispatchBlocked") : UiText.Get("Maintenance_SlaOnTrack"))
-                        <MudButton Class="ml-2" Variant="Variant.Text" Color="Color.Primary" Size="Size.Small" OnClick='() => OpenMaintenanceTicket(signal.MaintenanceRequestId)'>@UiText.Get("AIWorkQueue_OpenTicket")</MudButton>
-                    </MudListItem>
+                    <MudText Typo="Typo.body2">@UiText.Get("AIWorkQueue_DispatchNextActionEmpty")</MudText>
                 }
-            </MudList>
-        </MudPaper>
-
-        <MudPaper Class="pa-4 marketing-card h-100" Elevation="0">
-            <MudText Typo="Typo.h6">@UiText.Get("AIWorkQueue_DispatchNextActionTitle")</MudText>
-            @if (PriorityVendorSignal is null)
-            {
-                <MudText Typo="Typo.body2" Class="mt-2">@UiText.Get("AIWorkQueue_DispatchNextActionEmpty")</MudText>
-            }
-            else
-            {
-                <MudText Typo="Typo.subtitle2" Class="mt-2">@PriorityVendorSignal.VendorName</MudText>
-                <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-1">@UiText.Get("AIWorkQueue_DispatchNextActionCaption")</MudText>
-                <MudText Typo="Typo.body2">@UiText.Format("AIWorkQueue_DispatchNextActionSummary", PriorityVendorSignal.Title, PriorityVendorSignal.DispatchStatus, GetSignalRiskLabel(PriorityVendorSignal))</MudText>
-                <MudStack Row="true" Spacing="1" Class="mt-3" Wrap="Wrap.Wrap">
-                    <MudButton Variant="Variant.Outlined" Color="Color.Warning" OnClick='() => OpenMaintenanceTicket(PriorityVendorSignal.MaintenanceRequestId)'>@UiText.Get("AIWorkQueue_OpenTicket")</MudButton>
-                    <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick='() => OpenVendorFollowUp(PriorityVendorSignal.VendorName)'>@UiText.Get("AIWorkQueue_OpenVendorFollowUp")</MudButton>
-                </MudStack>
-            }
-        </MudPaper>
+                else
+                {
+                    <MudText Typo="Typo.subtitle2">@PriorityVendorSignal.VendorName</MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-1">@UiText.Get("AIWorkQueue_DispatchNextActionCaption")</MudText>
+                    <MudText Typo="Typo.body2">@UiText.Format("AIWorkQueue_DispatchNextActionSummary", PriorityVendorSignal.Title, PriorityVendorSignal.DispatchStatus, GetSignalRiskLabel(PriorityVendorSignal))</MudText>
+                    <MudStack Row="true" Spacing="1" Class="mt-3" Wrap="Wrap.Wrap">
+                        <MudButton Variant="Variant.Outlined" Color="Color.Warning" OnClick='() => OpenMaintenanceTicket(PriorityVendorSignal.MaintenanceRequestId)'>@UiText.Get("AIWorkQueue_OpenTicket")</MudButton>
+                        <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick='() => OpenVendorFollowUp(PriorityVendorSignal.VendorName)'>@UiText.Get("AIWorkQueue_OpenVendorFollowUp")</MudButton>
+                    </MudStack>
+                }
+            </MudExpansionPanel>
+        </MudExpansionPanels>
     }
 </MudStack>
 

@@ -27,69 +27,73 @@
 
     @if (!IsDemoCleanView)
     {
-    <MudGrid Spacing="2" Class="align-center-grid">
-        <MudItem xs="12" lg="4">
-            <MudTextField T="string"
-                          Label="@Localizer["Maintenance_SearchLabel"]"
-                          Variant="Variant.Outlined"
-                          Immediate="true"
-                          @bind-Value="_searchText"
-                          Adornment="Adornment.Start"
-                          AdornmentIcon="@Icons.Material.Filled.Search"
-                          Placeholder="@Localizer["Maintenance_SearchPlaceholder"]" />
-        </MudItem>
-        <MudItem xs="12" sm="4" lg="2">
-            <MudSelect T="string" Label="@Localizer["Maintenance_FilterPriority"]" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedPriorityFilter">
-                <MudSelectItem T="string" Value="@string.Empty">@Localizer["Maintenance_FilterAllPriorities"]</MudSelectItem>
-                @foreach (var option in PriorityOptions)
-                {
-                    <MudSelectItem T="string" Value="@option.ToString()">@option</MudSelectItem>
-                }
-            </MudSelect>
-        </MudItem>
-        <MudItem xs="12" sm="4" lg="2">
-            <MudSelect T="string" Label="@Localizer["Maintenance_FilterStatus"]" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedStatusFilter">
-                <MudSelectItem T="string" Value="@string.Empty">@Localizer["Maintenance_FilterAllStatuses"]</MudSelectItem>
-                @foreach (var option in StatusOptions)
-                {
-                    <MudSelectItem T="string" Value="@option">@option</MudSelectItem>
-                }
-            </MudSelect>
-        </MudItem>
-        <MudItem xs="12" sm="4" lg="2">
-            <MudSelect T="string" Label="@UiText.Get("Maintenance_FilterDispatch")" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedDispatchFilter">
-                <MudSelectItem T="string" Value="@string.Empty">@UiText.Get("Maintenance_FilterAllDispatchStatuses")</MudSelectItem>
-                    <MudSelectItem T="string" Value='@("AtRisk")'>@UiText.Get("Maintenance_SlaAtRisk")</MudSelectItem>
-                    <MudSelectItem T="string" Value='@("Blocked")'>@UiText.Get("Dashboard_DispatchBlocked")</MudSelectItem>
-                @foreach (var option in DispatchStatusOptions)
-                {
-                    <MudSelectItem T="string" Value="@option">@GetDispatchLabel(option)</MudSelectItem>
-                }
-            </MudSelect>
-        </MudItem>
-        <MudItem xs="12" sm="4" lg="2">
-            <MudSelect T="string" Label="@Localizer["Maintenance_FilterProperty"]" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedPropertyFilter">
-                <MudSelectItem T="string" Value="@string.Empty">@Localizer["Maintenance_FilterAllProperties"]</MudSelectItem>
-                @foreach (var property in _properties)
-                {
-                    <MudSelectItem T="string" Value="@property.Name">@property.Name</MudSelectItem>
-                }
-            </MudSelect>
-        </MudItem>
-        <MudItem xs="12" lg="2">
-            <MudStack Row="true" Spacing="1" Class="properties-toolbar-actions">
-                @if (HasActiveFilters)
-                {
-                    <MudButton Variant="Variant.Outlined" Color="Color.Default" FullWidth="true" StartIcon="@Icons.Material.Filled.FilterAltOff" OnClick="ClearFilters">@Localizer["Common_Reset"]</MudButton>
-                }
-                @if (CurrentOrganization.CanManageData)
-                {
-                    <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreatePanel">@Localizer["Maintenance_AddRequest"]</MudButton>
-                    <MudButton Variant="Variant.Outlined" Color="Color.Default" FullWidth="true" StartIcon="@Icons.Material.Filled.Download" Href="/export/maintenance/dispatch-journal">@UiText.Get("Maintenance_ExportDispatchJournal")</MudButton>
-                }
-            </MudStack>
-        </MudItem>
-    </MudGrid>
+        <MudExpansionPanels Class="property-detail-panel mb-4" Elevation="0">
+            <MudExpansionPanel Text="@Localizer["Common_Filters"]">
+                <MudGrid Spacing="2" Class="align-center-grid">
+                    <MudItem xs="12" lg="4">
+                        <MudTextField T="string"
+                                      Label="@Localizer["Maintenance_SearchLabel"]"
+                                      Variant="Variant.Outlined"
+                                      Immediate="true"
+                                      @bind-Value="_searchText"
+                                      Adornment="Adornment.Start"
+                                      AdornmentIcon="@Icons.Material.Filled.Search"
+                                      Placeholder="@Localizer["Maintenance_SearchPlaceholder"]" />
+                    </MudItem>
+                    <MudItem xs="12" sm="4" lg="2">
+                        <MudSelect T="string" Label="@Localizer["Maintenance_FilterPriority"]" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedPriorityFilter">
+                            <MudSelectItem T="string" Value="@string.Empty">@Localizer["Maintenance_FilterAllPriorities"]</MudSelectItem>
+                            @foreach (var option in PriorityOptions)
+                            {
+                                <MudSelectItem T="string" Value="@option.ToString()">@option</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" sm="4" lg="2">
+                        <MudSelect T="string" Label="@Localizer["Maintenance_FilterStatus"]" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedStatusFilter">
+                            <MudSelectItem T="string" Value="@string.Empty">@Localizer["Maintenance_FilterAllStatuses"]</MudSelectItem>
+                            @foreach (var option in StatusOptions)
+                            {
+                                <MudSelectItem T="string" Value="@option">@option</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" sm="4" lg="2">
+                        <MudSelect T="string" Label="@UiText.Get("Maintenance_FilterDispatch")" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedDispatchFilter">
+                            <MudSelectItem T="string" Value="@string.Empty">@UiText.Get("Maintenance_FilterAllDispatchStatuses")</MudSelectItem>
+                            <MudSelectItem T="string" Value='@("AtRisk")'>@UiText.Get("Maintenance_SlaAtRisk")</MudSelectItem>
+                            <MudSelectItem T="string" Value='@("Blocked")'>@UiText.Get("Dashboard_DispatchBlocked")</MudSelectItem>
+                            @foreach (var option in DispatchStatusOptions)
+                            {
+                                <MudSelectItem T="string" Value="@option">@GetDispatchLabel(option)</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" sm="4" lg="2">
+                        <MudSelect T="string" Label="@Localizer["Maintenance_FilterProperty"]" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedPropertyFilter">
+                            <MudSelectItem T="string" Value="@string.Empty">@Localizer["Maintenance_FilterAllProperties"]</MudSelectItem>
+                            @foreach (var property in _properties)
+                            {
+                                <MudSelectItem T="string" Value="@property.Name">@property.Name</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" lg="2">
+                        <MudStack Row="true" Spacing="1" Class="properties-toolbar-actions">
+                            @if (HasActiveFilters)
+                            {
+                                <MudButton Variant="Variant.Outlined" Color="Color.Default" FullWidth="true" StartIcon="@Icons.Material.Filled.FilterAltOff" OnClick="ClearFilters">@Localizer["Common_Reset"]</MudButton>
+                            }
+                            @if (CurrentOrganization.CanManageData)
+                            {
+                                <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreatePanel">@Localizer["Maintenance_AddRequest"]</MudButton>
+                                <MudButton Variant="Variant.Outlined" Color="Color.Default" FullWidth="true" StartIcon="@Icons.Material.Filled.Download" Href="/export/maintenance/dispatch-journal">@UiText.Get("Maintenance_ExportDispatchJournal")</MudButton>
+                            }
+                        </MudStack>
+                    </MudItem>
+                </MudGrid>
+            </MudExpansionPanel>
+        </MudExpansionPanels>
     }
 
     <MudGrid Spacing="2">
@@ -126,43 +130,46 @@
 
     @if (!IsDemoCleanView)
     {
-        <MudPaper Class="pa-4 marketing-card" Elevation="0">
-            <MudText Typo="Typo.h6">@UiText.Get("Maintenance_OperationalStoryTitle")</MudText>
-            <MudText Typo="Typo.body2" Class="mt-1">@UiText.Get("Maintenance_OperationalStorySubtitle")</MudText>
-            <MudList T="string" Dense="true" Class="mt-3">
-                <MudListItem T="string">@UiText.Get("Maintenance_OperationalStoryStep1")</MudListItem>
-                <MudListItem T="string">@UiText.Get("Maintenance_OperationalStoryStep2")</MudListItem>
-                <MudListItem T="string">@UiText.Get("Maintenance_OperationalStoryStep3")</MudListItem>
-            </MudList>
-        </MudPaper>
+        <MudExpansionPanels Class="marketing-card mb-4" Elevation="0">
+            <MudExpansionPanel Text="@UiText.Get("Maintenance_OperationalStoryTitle")">
+                <MudText Typo="Typo.body2">@UiText.Get("Maintenance_OperationalStorySubtitle")</MudText>
+                <MudList T="string" Dense="true" Class="mt-3">
+                    <MudListItem T="string">@UiText.Get("Maintenance_OperationalStoryStep1")</MudListItem>
+                    <MudListItem T="string">@UiText.Get("Maintenance_OperationalStoryStep2")</MudListItem>
+                    <MudListItem T="string">@UiText.Get("Maintenance_OperationalStoryStep3")</MudListItem>
+                </MudList>
+            </MudExpansionPanel>
+        </MudExpansionPanels>
     }
 
-    <MudPaper Class="pa-4 marketing-card" Elevation="0">
-        <MudText Typo="Typo.h6">@UiText.Get("Maintenance_DemoStoryTitle")</MudText>
-        <MudText Typo="Typo.body2" Class="mt-1">@UiText.Get("Maintenance_DemoStoryBody")</MudText>
-        <MudList T="string" Dense="true" Class="mt-3">
-            <MudListItem T="string">@UiText.Get("Maintenance_DemoStoryStep1")</MudListItem>
-            <MudListItem T="string">@UiText.Get("Maintenance_DemoStoryStep2")</MudListItem>
-            <MudListItem T="string">@UiText.Get("Maintenance_DemoStoryStep3")</MudListItem>
-        </MudList>
-        <MudStack Row="true" Spacing="1" Class="mt-3" Wrap="Wrap.Wrap">
-            <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="OpenInsightNextActionAsync">@InsightActionLabel</MudButton>
-            <MudButton Variant="Variant.Text" Color="Color.Secondary" OnClick="OpenPriorityConversationAsync">@UiText.Get("Maintenance_OpenCommunications")</MudButton>
-            <MudButton Variant="Variant.Text" Color="Color.Warning" Href="@DocumentsEvidenceRoute">@UiText.Get("Maintenance_OpenEvidenceDesk")</MudButton>
-        </MudStack>
-    </MudPaper>
+    <MudExpansionPanels Class="marketing-card mb-4" Elevation="0">
+        <MudExpansionPanel Text="@UiText.Get("Maintenance_DemoStoryTitle")">
+            <MudText Typo="Typo.body2">@UiText.Get("Maintenance_DemoStoryBody")</MudText>
+            <MudList T="string" Dense="true" Class="mt-3">
+                <MudListItem T="string">@UiText.Get("Maintenance_DemoStoryStep1")</MudListItem>
+                <MudListItem T="string">@UiText.Get("Maintenance_DemoStoryStep2")</MudListItem>
+                <MudListItem T="string">@UiText.Get("Maintenance_DemoStoryStep3")</MudListItem>
+            </MudList>
+            <MudStack Row="true" Spacing="1" Class="mt-3" Wrap="Wrap.Wrap">
+                <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="OpenInsightNextActionAsync">@InsightActionLabel</MudButton>
+                <MudButton Variant="Variant.Text" Color="Color.Secondary" OnClick="OpenPriorityConversationAsync">@UiText.Get("Maintenance_OpenCommunications")</MudButton>
+                <MudButton Variant="Variant.Text" Color="Color.Warning" Href="@DocumentsEvidenceRoute">@UiText.Get("Maintenance_OpenEvidenceDesk")</MudButton>
+            </MudStack>
+        </MudExpansionPanel>
+    </MudExpansionPanels>
 
     @if (!IsDemoCleanView)
     {
-        <MudPaper Class="pa-4 marketing-card" Elevation="0">
-            <MudText Typo="Typo.h6">@UiText.Get("Maintenance_DispatchBoardTitle")</MudText>
-            <MudGrid Spacing="2" Class="mt-1">
-                <MudItem xs="12" sm="6" md="3"><MudChip T="string" Variant="Variant.Filled" Color="Color.Default">@UiText.Get("Maintenance_DispatchUnassigned"): @FilteredRequests.Count(x => string.Equals(x.DispatchStatus, "Unassigned", StringComparison.OrdinalIgnoreCase))</MudChip></MudItem>
-                <MudItem xs="12" sm="6" md="3"><MudChip T="string" Variant="Variant.Filled" Color="Color.Info">@UiText.Get("Maintenance_DispatchRecommended"): @FilteredRequests.Count(x => string.Equals(x.DispatchStatus, "Recommended", StringComparison.OrdinalIgnoreCase))</MudChip></MudItem>
-                <MudItem xs="12" sm="6" md="3"><MudChip T="string" Variant="Variant.Filled" Color="Color.Warning">@UiText.Get("Maintenance_DispatchAssigned"): @FilteredRequests.Count(x => string.Equals(x.DispatchStatus, "Assigned", StringComparison.OrdinalIgnoreCase) || string.Equals(x.DispatchStatus, "Acknowledged", StringComparison.OrdinalIgnoreCase))</MudChip></MudItem>
-                <MudItem xs="12" sm="6" md="3"><MudChip T="string" Variant="Variant.Filled" Color="Color.Success">@UiText.Get("Maintenance_DispatchCompleted"): @FilteredRequests.Count(x => string.Equals(x.DispatchStatus, "Completed", StringComparison.OrdinalIgnoreCase))</MudChip></MudItem>
-            </MudGrid>
-        </MudPaper>
+        <MudExpansionPanels Class="marketing-card mb-4" Elevation="0">
+            <MudExpansionPanel Text="@UiText.Get("Maintenance_DispatchBoardTitle")">
+                <MudGrid Spacing="2">
+                    <MudItem xs="12" sm="6" md="3"><MudChip T="string" Variant="Variant.Filled" Color="Color.Default">@UiText.Get("Maintenance_DispatchUnassigned"): @FilteredRequests.Count(x => string.Equals(x.DispatchStatus, "Unassigned", StringComparison.OrdinalIgnoreCase))</MudChip></MudItem>
+                    <MudItem xs="12" sm="6" md="3"><MudChip T="string" Variant="Variant.Filled" Color="Color.Info">@UiText.Get("Maintenance_DispatchRecommended"): @FilteredRequests.Count(x => string.Equals(x.DispatchStatus, "Recommended", StringComparison.OrdinalIgnoreCase))</MudChip></MudItem>
+                    <MudItem xs="12" sm="6" md="3"><MudChip T="string" Variant="Variant.Filled" Color="Color.Warning">@UiText.Get("Maintenance_DispatchAssigned"): @FilteredRequests.Count(x => string.Equals(x.DispatchStatus, "Assigned", StringComparison.OrdinalIgnoreCase) || string.Equals(x.DispatchStatus, "Acknowledged", StringComparison.OrdinalIgnoreCase))</MudChip></MudItem>
+                    <MudItem xs="12" sm="6" md="3"><MudChip T="string" Variant="Variant.Filled" Color="Color.Success">@UiText.Get("Maintenance_DispatchCompleted"): @FilteredRequests.Count(x => string.Equals(x.DispatchStatus, "Completed", StringComparison.OrdinalIgnoreCase))</MudChip></MudItem>
+                </MudGrid>
+            </MudExpansionPanel>
+        </MudExpansionPanels>
     }
 
     <MudPaper Class="pa-4 marketing-card" Elevation="0">

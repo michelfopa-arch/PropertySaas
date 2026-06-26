@@ -19,57 +19,61 @@
 
     @if (!IsDemoCleanView)
     {
-        <MudGrid Spacing="2" Class="align-center-grid">
-        <MudItem xs="12" lg="4">
-            <MudTextField T="string"
-                          Label="@Localizer["Properties_SearchLabel"]"
-                          Variant="Variant.Outlined"
-                          Immediate="true"
-                          @bind-Value="_searchText"
-                          Adornment="Adornment.Start"
-                          AdornmentIcon="@Icons.Material.Filled.Search"
-                          Placeholder="@Localizer["Properties_SearchPlaceholder"]" />
-        </MudItem>
-        <MudItem xs="12" sm="4" lg="2">
-            <MudSelect T="string" Label="@Localizer["Properties_FilterType"]" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedTypeFilter">
-                <MudSelectItem T="string" Value="@string.Empty">@Localizer["Properties_FilterAllTypes"]</MudSelectItem>
-                @foreach (var propertyType in _propertyTypes)
-                {
-                    <MudSelectItem T="string" Value="@propertyType">@LocalizePropertyType(propertyType)</MudSelectItem>
-                }
-            </MudSelect>
-        </MudItem>
-        <MudItem xs="12" sm="4" lg="2">
-            <MudSelect T="string" Label="@Localizer["Properties_FilterCity"]" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedCityFilter">
-                <MudSelectItem T="string" Value="@string.Empty">@Localizer["Properties_FilterAllCities"]</MudSelectItem>
-                @foreach (var city in _cities)
-                {
-                    <MudSelectItem T="string" Value="@city">@city</MudSelectItem>
-                }
-            </MudSelect>
-        </MudItem>
-        <MudItem xs="12" sm="4" lg="2">
-            <MudSelect T="string" Label="@Localizer["Properties_FilterStage"]" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedStageFilter">
-                <MudSelectItem T="string" Value="@string.Empty">@Localizer["Properties_FilterAllStages"]</MudSelectItem>
-                @foreach (var stage in _assetStages)
-                {
-                    <MudSelectItem T="string" Value="@stage">@LocalizeAssetStage(stage)</MudSelectItem>
-                }
-            </MudSelect>
-        </MudItem>
-        <MudItem xs="12" lg="2">
-            <MudStack Row="true" Spacing="1" Class="properties-toolbar-actions">
-                @if (HasActiveFilters)
-                {
-                    <MudButton Variant="Variant.Outlined" Color="Color.Default" FullWidth="true" StartIcon="@Icons.Material.Filled.FilterAltOff" OnClick="ClearFilters">@Localizer["Common_Reset"]</MudButton>
-                }
-                @if (CurrentOrganization.CanManageData)
-                {
-                    <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreatePanel">@Localizer["Properties_AddProperty"]</MudButton>
-                }
-            </MudStack>
-        </MudItem>
-        </MudGrid>
+        <MudExpansionPanels Class="property-detail-panel mb-4" Elevation="0">
+            <MudExpansionPanel Text="@Localizer["Common_Filters"]">
+                <MudGrid Spacing="2" Class="align-center-grid">
+                    <MudItem xs="12" lg="4">
+                        <MudTextField T="string"
+                                      Label="@Localizer["Properties_SearchLabel"]"
+                                      Variant="Variant.Outlined"
+                                      Immediate="true"
+                                      @bind-Value="_searchText"
+                                      Adornment="Adornment.Start"
+                                      AdornmentIcon="@Icons.Material.Filled.Search"
+                                      Placeholder="@Localizer["Properties_SearchPlaceholder"]" />
+                    </MudItem>
+                    <MudItem xs="12" sm="4" lg="2">
+                        <MudSelect T="string" Label="@Localizer["Properties_FilterType"]" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedTypeFilter">
+                            <MudSelectItem T="string" Value="@string.Empty">@Localizer["Properties_FilterAllTypes"]</MudSelectItem>
+                            @foreach (var propertyType in _propertyTypes)
+                            {
+                                <MudSelectItem T="string" Value="@propertyType">@LocalizePropertyType(propertyType)</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" sm="4" lg="2">
+                        <MudSelect T="string" Label="@Localizer["Properties_FilterCity"]" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedCityFilter">
+                            <MudSelectItem T="string" Value="@string.Empty">@Localizer["Properties_FilterAllCities"]</MudSelectItem>
+                            @foreach (var city in _cities)
+                            {
+                                <MudSelectItem T="string" Value="@city">@city</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" sm="4" lg="2">
+                        <MudSelect T="string" Label="@Localizer["Properties_FilterStage"]" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedStageFilter">
+                            <MudSelectItem T="string" Value="@string.Empty">@Localizer["Properties_FilterAllStages"]</MudSelectItem>
+                            @foreach (var stage in _assetStages)
+                            {
+                                <MudSelectItem T="string" Value="@stage">@LocalizeAssetStage(stage)</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" lg="2">
+                        <MudStack Row="true" Spacing="1" Class="properties-toolbar-actions">
+                            @if (HasActiveFilters)
+                            {
+                                <MudButton Variant="Variant.Outlined" Color="Color.Default" FullWidth="true" StartIcon="@Icons.Material.Filled.FilterAltOff" OnClick="ClearFilters">@Localizer["Common_Reset"]</MudButton>
+                            }
+                            @if (CurrentOrganization.CanManageData)
+                            {
+                                <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreatePanel">@Localizer["Properties_AddProperty"]</MudButton>
+                            }
+                        </MudStack>
+                    </MudItem>
+                </MudGrid>
+            </MudExpansionPanel>
+        </MudExpansionPanels>
     }
 
     <MudGrid Spacing="2">
@@ -106,7 +110,7 @@
 
     @if (!IsDemoCleanView)
     {
-        <MudExpansionPanels>
+        <MudExpansionPanels Class="property-detail-panel mb-4" Elevation="0">
             <MudExpansionPanel Text="@Localizer["Common_BulkImport"]">
                 <MudPaper Class="pa-4" Elevation="0">
                     <MudText Typo="Typo.h6">@Localizer["Common_QuickCsvImport"]</MudText>
