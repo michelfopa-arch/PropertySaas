@@ -910,19 +910,12 @@
         if (string.Equals(Compose, "rent-reminder", StringComparison.OrdinalIgnoreCase))
         {
             OpenCreateMessagePanel();
-            var unitLabel = string.IsNullOrWhiteSpace(_selectedConversation.UnitLabel)
-                ? UiText.Get("TenantCommunications_UnitFallback")
-                : _selectedConversation.UnitLabel;
             var invoiceSummary = _selectedInvoiceForCompose is null
                 ? string.Empty
-                : string.Equals(CurrentOrganization.PreferredLanguage, "fr-CA", StringComparison.OrdinalIgnoreCase)
-                    || string.Equals(CurrentOrganization.PreferredLanguage, "fr", StringComparison.OrdinalIgnoreCase)
+                : IsFrenchDraftLanguage
                         ? $" La facture {_selectedInvoiceForCompose.Number} de {_selectedInvoiceForCompose.Balance:C} arrive à échéance le {_selectedInvoiceForCompose.DueDate}."
                         : $" Invoice {_selectedInvoiceForCompose.Number} for {_selectedInvoiceForCompose.Balance:C} is due on {_selectedInvoiceForCompose.DueDate}.";
-            _newMessage.Body = string.Equals(CurrentOrganization.PreferredLanguage, "fr-CA", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(CurrentOrganization.PreferredLanguage, "fr", StringComparison.OrdinalIgnoreCase)
-                ? $"Bonjour {_selectedConversation.TenantName}, ceci est un rappel amical concernant le solde de loyer actuel pour {unitLabel}.{invoiceSummary} Merci de confirmer votre date prévue de paiement et de nous indiquer si vous souhaitez discuter des prochaines étapes."
-                : $"Hello {_selectedConversation.TenantName}, this is a friendly reminder regarding the current rent balance for {unitLabel}.{invoiceSummary} Please confirm your expected payment date and let us know if you need to discuss the next steps.";
+            _newMessage.Body = BuildTemplateBody("rent-reminder") + invoiceSummary;
             _newMessage.IsAISuggested = true;
             _selectedTemplateKey = "rent-reminder";
             _composeHandled = true;
@@ -930,12 +923,7 @@
         else if (string.Equals(Compose, "maintenance-entry", StringComparison.OrdinalIgnoreCase))
         {
             OpenCreateMessagePanel();
-            var unitLabel = string.IsNullOrWhiteSpace(_selectedConversation.UnitLabel)
-                ? UiText.Get("TenantCommunications_UnitFallback")
-                : _selectedConversation.UnitLabel;
-            _newMessage.Body = IsFrenchDraftLanguage
-                ? $"Bonjour {_selectedConversation.TenantName}, nous coordonnons actuellement l’accès à {unitLabel} concernant « {_selectedConversation.Subject} ». Merci de confirmer vos disponibilités et toute instruction utile pour finaliser l’intervention."
-                : $"Hello {_selectedConversation.TenantName}, we are currently coordinating access to {unitLabel} regarding '{_selectedConversation.Subject}'. Please confirm your availability and any helpful access instructions so we can finalize the service visit.";
+            _newMessage.Body = BuildTemplateBody("maintenance-entry");
             _newMessage.IsAISuggested = true;
             _selectedTemplateKey = "maintenance-entry";
             _composeHandled = true;
@@ -943,12 +931,7 @@
         else if (string.Equals(Compose, "notice-delivery", StringComparison.OrdinalIgnoreCase))
         {
             OpenCreateMessagePanel();
-            var unitLabel = string.IsNullOrWhiteSpace(_selectedConversation.UnitLabel)
-                ? UiText.Get("TenantCommunications_UnitFallback")
-                : _selectedConversation.UnitLabel;
-            _newMessage.Body = IsFrenchDraftLanguage
-                ? $"Bonjour {_selectedConversation.TenantName}, ce message confirme la remise de l’avis lié à {unitLabel}. Merci de répondre pour confirmer la réception et de conserver ce fil pour vos dossiers."
-                : $"Hello {_selectedConversation.TenantName}, this message confirms delivery of the related notice for {unitLabel}. Please reply to confirm receipt and keep this thread for your records.";
+            _newMessage.Body = BuildTemplateBody("notice-delivery");
             _newMessage.IsAISuggested = true;
             _selectedTemplateKey = "notice-delivery";
             _composeHandled = true;
@@ -964,9 +947,7 @@
                 : IsFrenchDraftLanguage
                     ? $" Le solde actuel lié à la facture {_selectedInvoiceForCompose.Number} est de {_selectedInvoiceForCompose.Balance:C} et l’échéance était le {_selectedInvoiceForCompose.DueDate}."
                     : $" The current balance tied to invoice {_selectedInvoiceForCompose.Number} is {_selectedInvoiceForCompose.Balance:C} and the due date was {_selectedInvoiceForCompose.DueDate}.";
-            _newMessage.Body = IsFrenchDraftLanguage
-                ? $"Bonjour {_selectedConversation.TenantName}, nous faisons un suivi du loyer impayé pour {unitLabel}.{invoiceSummary} Merci de nous répondre rapidement afin de confirmer votre calendrier de paiement avant toute étape formelle de type N4."
-                : $"Hello {_selectedConversation.TenantName}, we are following up on the outstanding rent for {unitLabel}.{invoiceSummary} Please reply promptly to confirm your payment timing before any formal N4 notice steps are reviewed.";
+            _newMessage.Body = BuildTemplateBody("n4-prep") + invoiceSummary;
             _newMessage.IsAISuggested = true;
             _selectedTemplateKey = "n4-prep";
             _composeHandled = true;
@@ -1014,13 +995,29 @@
             return;
         }
 
+        _newMessage.Body = BuildTemplateBody(template.Key);
+        _newMessage.IsAISuggested = true;
+    }
+
+    private string BuildTemplateBody(string templateKey)
+    {
+        if (_selectedConversation is null)
+        {
+            return string.Empty;
+        }
+
+        var template = _templates.FirstOrDefault(x => x.Key == templateKey);
+        if (template is null)
+        {
+            return string.Empty;
+        }
+
         var nextStepDate = DateOnly.FromDateTime(DateTime.Today.AddDays(3)).ToString("yyyy-MM-dd");
-        _newMessage.Body = template.BodyTemplate
+        return template.BodyTemplate
             .Replace("{{tenantName}}", _selectedConversation.TenantName, StringComparison.Ordinal)
             .Replace("{{unitLabel}}", string.IsNullOrWhiteSpace(_selectedConversation.UnitLabel) ? UiText.Get("TenantCommunications_UnitFallback") : _selectedConversation.UnitLabel, StringComparison.Ordinal)
             .Replace("{{subject}}", _selectedConversation.Subject, StringComparison.Ordinal)
             .Replace("{{nextStepDate}}", nextStepDate, StringComparison.Ordinal);
-        _newMessage.IsAISuggested = true;
     }
 
     private async Task SaveMessageAsync()
@@ -1088,10 +1085,8 @@
     private string GetOfficialDocumentUrl(string documentType)
         => documentType switch
         {
-            "SignedLease" when string.Equals(CurrentOrganization.Province, "ON", StringComparison.OrdinalIgnoreCase)
-                => string.Equals(CurrentOrganization.PreferredLanguage, "fr-CA", StringComparison.OrdinalIgnoreCase)
-                    ? "/docs/ontario-standard-lease"
-                    : "/docs/ontario-standard-lease",
+            "SignedLease"
+                => "/docs/jurisdiction/lease-package",
             "InsuranceProof" when string.Equals(CurrentOrganization.Province, "ON", StringComparison.OrdinalIgnoreCase)
                 => "https://www.fsrao.ca/consumers/property-and-casualty-insurance",
             _ => string.Empty

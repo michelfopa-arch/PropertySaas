@@ -179,6 +179,9 @@ namespace PropertySaaS.Infrastructure.Services
             return SendSafeAsync(to, subject, html, text, cancellationToken);
         }
 
+        public Task SendInvoiceEmailAsync(string to, string subject, string html, string text, CancellationToken cancellationToken = default)
+            => SendSafeAsync(to, subject, html, text, cancellationToken);
+
         private async Task SendSafeAsync(string recipient, string subject, string html, string text, CancellationToken cancellationToken)
         {
             try

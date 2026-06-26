@@ -81,6 +81,7 @@ builder.Services.AddScoped<CurrentOrganization>(provider =>
             .Where(x => x.UserId == appUser.Id && x.Status == "Active")
             .ToList();
     var isSuperAdmin = appUser is not null && string.Equals(appUser.SystemRole, "SuperAdmin", StringComparison.OrdinalIgnoreCase);
+    var isSupervisor = appUser is not null && string.Equals(appUser.SystemRole, "Supervisor", StringComparison.OrdinalIgnoreCase);
 
     if (appUser is not null && isSuperAdmin && selectedOrganizationId != Guid.Empty)
     {
@@ -125,6 +126,10 @@ builder.Services.AddScoped<CurrentOrganization>(provider =>
                 && org.SubscriptionTier == PropertySaaS.Domain.Enums.SubscriptionTier.Trial
                 && org.TrialEndsUtc.Value < DateTime.UtcNow;
             var subscriptionIsActive = org?.IsActive ?? true;
+            var effectiveRole = isSuperAdmin
+                ? string.IsNullOrWhiteSpace(selectedMembership.Role) ? "Manager" : selectedMembership.Role
+                : isSupervisor && (selectedMembership.Role is "Viewer" or "Pending" or "SupportViewer") ? "Manager"
+                : string.IsNullOrWhiteSpace(selectedMembership.Role) ? "Owner" : selectedMembership.Role;
 
             return new CurrentOrganization
             {
@@ -137,7 +142,7 @@ builder.Services.AddScoped<CurrentOrganization>(provider =>
                 DemoExpiresUtc = org?.DemoExpiresUtc,
                 UserEmail = email,
                 UserFullName = string.IsNullOrWhiteSpace(appUser.FullName) ? email : appUser.FullName,
-                Role = string.IsNullOrWhiteSpace(selectedMembership.Role) ? "Owner" : selectedMembership.Role,
+                Role = effectiveRole,
                 SystemRole = string.IsNullOrWhiteSpace(appUser.SystemRole) ? "User" : appUser.SystemRole,
                 Province = org?.Province ?? "ON",
                 CountryCode = org?.CountryCode ?? "CA",
@@ -290,12 +295,21 @@ app.Use(async (context, next) =>
                     FullName = fullName,
                     ClerkUserId = clerkUserId,
                     Role = "Owner",
-                    SystemRole = "User",
+                    SystemRole = string.Equals(normalizedEmail, "michelfopa@gmail.com", StringComparison.OrdinalIgnoreCase) ? "Supervisor" : "User",
                     PreferredLanguage = ResolvePreferredLanguage(context, null, null, "ON"),
                     IsActive = true,
                     CreatedUtc = DateTime.UtcNow
                 };
                 db.Users.Add(existing);
+                hasChanges = true;
+            }
+
+            var expectedSystemRole = string.Equals(normalizedEmail, "michelfopa@gmail.com", StringComparison.OrdinalIgnoreCase)
+                ? "Supervisor"
+                : existing.SystemRole;
+            if (!string.Equals(existing.SystemRole, expectedSystemRole, StringComparison.OrdinalIgnoreCase))
+            {
+                existing.SystemRole = expectedSystemRole;
                 hasChanges = true;
             }
 
@@ -1391,6 +1405,8 @@ IF COL_LENGTH('TenantMessages', 'DeliveredUtc') IS NULL
     ALTER TABLE [TenantMessages] ADD [DeliveredUtc] datetime2 NULL;
 IF COL_LENGTH('TenantMessages', 'DeliveryProof') IS NULL
     ALTER TABLE [TenantMessages] ADD [DeliveryProof] nvarchar(max) NOT NULL CONSTRAINT [DF_TenantMessages_DeliveryProof] DEFAULT N'';
+IF COL_LENGTH('Invoices', 'LastEmailedUtc') IS NULL
+    ALTER TABLE [Invoices] ADD [LastEmailedUtc] datetime2 NULL;
 IF COL_LENGTH('Vendors', 'DispatchStatus') IS NULL
     ALTER TABLE [Vendors] ADD [DispatchStatus] nvarchar(max) NOT NULL CONSTRAINT [DF_Vendors_DispatchStatus] DEFAULT N'Available';
 IF COL_LENGTH('Vendors', 'PreferredForPriority') IS NULL

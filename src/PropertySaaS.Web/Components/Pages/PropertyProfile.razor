@@ -2,6 +2,7 @@
 @page "/properties/{PropertyId:guid}"
 @inject SaasDataService DataService
 @inject NavigationManager NavigationManager
+@inject PropertySaaS.Application.Common.CurrentOrganization CurrentOrganization
 @inject IStringLocalizer<SharedResource> Localizer
 @using PropertySaaS.Domain.Enums
 @using PropertySaaS.Web.Localization
@@ -157,7 +158,7 @@ else
                                         <MudTh>@Localizer["Leases_FormEndDate"]</MudTh>
                                         <MudTh>@Localizer["Leases_ColumnRent"]</MudTh>
                                         <MudTh>@Localizer["Leases_ColumnStatus"]</MudTh>
-                                        <MudTh>@Localizer["PropertyProfile_OntarioLease"]</MudTh>
+                                        <MudTh>@CurrentOrganization.Jurisdiction.LeasePackageLabel</MudTh>
                                     </HeaderContent>
                                     <RowTemplate>
                                         <MudTd DataLabel="@Localizer["Leases_ColumnUnit"]">@GetUnitLabel(context.UnitId)</MudTd>
@@ -165,7 +166,7 @@ else
                                         <MudTd DataLabel="@Localizer["Leases_FormEndDate"]">@context.EndDate</MudTd>
                                         <MudTd DataLabel="@Localizer["Leases_ColumnRent"]">@context.MonthlyRent.ToString("C")</MudTd>
                                         <MudTd DataLabel="@Localizer["Leases_ColumnStatus"]">@context.Status</MudTd>
-                                        <MudTd DataLabel="@Localizer["PropertyProfile_OntarioLease"]">@(context.StandardOntarioLeaseSigned ? Localizer["Leases_OntarioSigned"] : Localizer["Leases_OntarioMissing"])</MudTd>
+                                        <MudTd DataLabel="@CurrentOrganization.Jurisdiction.LeasePackageLabel">@(context.StandardOntarioLeaseSigned ? JurisdictionLeaseSignedLabel : JurisdictionLeaseMissingLabel)</MudTd>
                                     </RowTemplate>
                                 </MudTable>
                             }
@@ -520,6 +521,10 @@ else
 
     private string GetUnitLabel(Guid unitId)
         => _units.FirstOrDefault(x => x.Id == unitId)?.UnitNumber ?? unitId.ToString()[..8];
+
+    private string JurisdictionLeaseSignedLabel => string.Format(UiText.Get("Leases_JurisdictionLeaseSigned"), CurrentOrganization.Jurisdiction.LeasePackageLabel);
+
+    private string JurisdictionLeaseMissingLabel => string.Format(UiText.Get("Leases_JurisdictionLeaseMissing"), CurrentOrganization.Jurisdiction.LeasePackageLabel);
 
     private string GetPostalCodeOrFallback(Property property)
         => string.IsNullOrWhiteSpace(property.PostalCode) ? Localizer["PropertyProfile_PostalPending"] : property.PostalCode;

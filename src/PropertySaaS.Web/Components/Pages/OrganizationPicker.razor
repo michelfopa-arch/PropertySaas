@@ -47,7 +47,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-        if (CurrentOrganization.HasOrganizationAccess && !CurrentOrganization.IsSuperAdmin)
+        if (CurrentOrganization.HasOrganizationAccess && !CurrentOrganization.IsSuperAdmin && !CurrentOrganization.IsSupervisor)
         {
             NavigationManager.NavigateTo("/dashboard");
             return;
@@ -71,7 +71,7 @@
             _options = await DataService.GetAccessibleOrganizationsAsync();
         }
 
-        if (_options.Count <= 1 && !CurrentOrganization.IsSuperAdmin)
+        if (_options.Count <= 1 && !CurrentOrganization.IsSuperAdmin && !CurrentOrganization.IsSupervisor)
         {
             NavigationManager.NavigateTo("/onboarding");
         }

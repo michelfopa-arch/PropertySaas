@@ -44,6 +44,8 @@ namespace PropertySaaS.Application.Common
         public string DefaultLanguage { get; init; } = "en-CA";
         public IReadOnlyList<string> SupportedLanguages { get; init; } = new[] { "en-CA" };
         public IReadOnlyList<string> NoticeTypes { get; init; } = Array.Empty<string>();
+        public string RentArrearsNoticeLabel { get; init; } = "Rent arrears notice";
+        public string RentIncreaseNoticeLabel { get; init; } = "Rent increase notice";
         public string LeasePackageLabel { get; init; } = "Lease package";
         public IReadOnlyDictionary<string, string> DocumentTemplates { get; init; } = new Dictionary<string, string>();
         public IReadOnlyDictionary<string, string> OfficialDocumentUrls { get; init; } = new Dictionary<string, string>();
@@ -61,6 +63,8 @@ namespace PropertySaaS.Application.Common
                 DefaultLanguage = "en-CA",
                 SupportedLanguages = new[] { "en-CA", "fr-CA" },
                 NoticeTypes = new[] { "N1", "N4", "SOL" },
+                RentArrearsNoticeLabel = "N4 non-payment notice",
+                RentIncreaseNoticeLabel = "N1 rent increase notice",
                 LeasePackageLabel = "Ontario Standard Lease Package",
                 DocumentTemplates = new Dictionary<string, string>
                 {
@@ -89,6 +93,8 @@ namespace PropertySaaS.Application.Common
                 DefaultLanguage = "fr-CA",
                 SupportedLanguages = new[] { "fr-CA", "en-CA" },
                 NoticeTypes = new[] { "TAL", "RentReview", "LeaseRenewal" },
+                RentArrearsNoticeLabel = "Avis de non-paiement / dossier TAL",
+                RentIncreaseNoticeLabel = "Avis d'ajustement de loyer et renouvellement",
                 LeasePackageLabel = "Québec Residential Lease Package",
                 DocumentTemplates = new Dictionary<string, string>
                 {
@@ -110,12 +116,20 @@ namespace PropertySaaS.Application.Common
                 DefaultLanguage = "en-CA",
                 SupportedLanguages = new[] { "en-CA", "fr-CA" },
                 NoticeTypes = new[] { "RentIncrease", "Termination", "Inspection" },
+                RentArrearsNoticeLabel = "Alberta rent arrears notice",
+                RentIncreaseNoticeLabel = "Alberta rent increase notice",
                 LeasePackageLabel = "Alberta Residential Tenancy Package",
                 DocumentTemplates = new Dictionary<string, string>
                 {
                     ["lease-package"] = "Alberta Residential Tenancy Package",
                     ["non-payment-notice"] = "Alberta non-payment notice workflow",
                     ["rent-increase-notice"] = "Alberta rent increase notice"
+                },
+                OfficialDocumentUrls = new Dictionary<string, string>
+                {
+                    ["lease-package"] = "https://www.alberta.ca/system/files/custom_downloaded_images/sa-residential-tenancy-agreement.pdf",
+                    ["non-payment-notice"] = "https://www.alberta.ca/residential-tenancy-dispute-resolution-service",
+                    ["rent-increase-notice"] = "https://www.alberta.ca/information-for-landlords-and-tenants"
                 },
                 ComplianceChecklist = new[]
                 {
@@ -160,7 +174,8 @@ namespace PropertySaaS.Application.Common
         public bool HasOrganizationAccess => OrganizationId != Guid.Empty;
         public bool CanAccessWorkspace => HasOrganizationAccess && (SubscriptionIsActive || !TrialExpired);
         public bool RequiresOrganizationSelection => !HasOrganizationAccess && AccessibleOrganizationCount > 1;
-        public bool CanManageData => Role is "Owner" or "Manager";
+        public bool IsSupervisor => string.Equals(SystemRole, "Supervisor", StringComparison.OrdinalIgnoreCase);
+        public bool CanManageData => Role is "Owner" or "Manager" or "SuperAdmin" or "Supervisor" || IsSuperAdmin || IsSupervisor;
         public bool IsSuperAdmin => string.Equals(SystemRole, "SuperAdmin", StringComparison.OrdinalIgnoreCase);
         public JurisdictionProfile Jurisdiction => JurisdictionCatalog.GetProfile(Province);
     }
@@ -289,6 +304,7 @@ namespace PropertySaaS.Application.Common
         public decimal Balance { get; set; }
         public string Status { get; set; } = string.Empty;
         public DateOnly DueDate { get; set; }
+        public DateTime? LastEmailedUtc { get; set; }
     }
 
     public sealed class LeadSummaryDto
@@ -1139,15 +1155,105 @@ namespace PropertySaaS.Application.Features
                 })
                 .ToList();
         public Task<List<ShowingSummaryDto>> GetShowingsAsync() => _db.Showings.Where(x => x.OrganizationId == _current.OrganizationId).OrderBy(x => x.ScheduledUtc).Select(x => new ShowingSummaryDto { ShowingId = x.Id, ListingId = x.ListingId, LeadId = x.LeadId, ListingTitle = x.Listing != null ? x.Listing.Title : string.Empty, LeadName = x.Lead != null ? x.Lead.FullName : string.Empty, ScheduledUtc = x.ScheduledUtc, Status = x.Status }).ToListAsync();
-        public Task<List<InvoiceSummaryDto>> GetInvoicesAsync() => _db.Invoices.Where(x => x.OrganizationId == _current.OrganizationId).OrderBy(x => x.DueDate).Select(x => new InvoiceSummaryDto { InvoiceId = x.Id, Number = x.Number, TenantName = x.Lease != null && x.Lease.Tenant != null ? x.Lease.Tenant.FullName : string.Empty, UnitLabel = x.Lease != null && x.Lease.Unit != null ? x.Lease.Unit.UnitNumber : string.Empty, Amount = x.Amount, Balance = x.Balance, Status = x.Status.ToString(), DueDate = x.DueDate }).ToListAsync();
+        public Task<List<InvoiceSummaryDto>> GetInvoicesAsync() => _db.Invoices.Where(x => x.OrganizationId == _current.OrganizationId).OrderBy(x => x.DueDate).Select(x => new InvoiceSummaryDto { InvoiceId = x.Id, Number = x.Number, TenantName = x.Lease != null && x.Lease.Tenant != null ? x.Lease.Tenant.FullName : string.Empty, UnitLabel = x.Lease != null && x.Lease.Unit != null ? x.Lease.Unit.UnitNumber : string.Empty, Amount = x.Amount, Balance = x.Balance, Status = x.Status.ToString(), DueDate = x.DueDate, LastEmailedUtc = x.LastEmailedUtc }).ToListAsync();
         public Task<List<PaymentEntrySummaryDto>> GetPaymentEntriesAsync() => _db.PaymentEntries.Where(x => x.OrganizationId == _current.OrganizationId).OrderByDescending(x => x.ReceivedDate).Select(x => new PaymentEntrySummaryDto { PaymentEntryId = x.Id, InvoiceId = x.InvoiceId, InvoiceNumber = x.Invoice != null ? x.Invoice.Number : string.Empty, ReceivedDate = x.ReceivedDate, Amount = x.Amount, Method = x.Method, Reference = x.Reference }).ToListAsync();
         public Task<List<MediaAssetSummaryDto>> GetMediaAssetsAsync() => _db.MediaAssets.Where(x => x.OrganizationId == _current.OrganizationId).OrderByDescending(x => x.IsPrimary).ThenBy(x => x.SortOrder).Select(x => new MediaAssetSummaryDto { MediaAssetId = x.Id, PropertyId = x.PropertyId, UnitId = x.UnitId, ListingId = x.ListingId, LeaseId = x.LeaseId, MaintenanceRequestId = x.MaintenanceRequestId, FileName = x.FileName, BlobPath = x.BlobPath, Caption = x.Caption, Category = x.Category.ToString(), SortOrder = x.SortOrder, CreatedUtc = x.CreatedUtc, IsPrimary = x.IsPrimary, ScopeLabel = x.MaintenanceRequest != null ? x.MaintenanceRequest.Title : x.Lease != null && x.Lease.Unit != null ? $"Lease package - unit {x.Lease.Unit.UnitNumber}" : x.Listing != null ? x.Listing.Title : x.Unit != null ? x.Unit.UnitNumber : x.Property != null ? x.Property.Name : string.Empty }).ToListAsync();
         public Task<List<MediaAssetSummaryDto>> GetMaintenanceMediaAssetsAsync() => _db.MediaAssets.Where(x => x.OrganizationId == _current.OrganizationId && x.MaintenanceRequestId != null).OrderByDescending(x => x.IsPrimary).ThenBy(x => x.SortOrder).Select(x => new MediaAssetSummaryDto { MediaAssetId = x.Id, PropertyId = x.PropertyId, UnitId = x.UnitId, ListingId = x.ListingId, LeaseId = x.LeaseId, MaintenanceRequestId = x.MaintenanceRequestId, FileName = x.FileName, BlobPath = x.BlobPath, Caption = x.Caption, Category = x.Category.ToString(), SortOrder = x.SortOrder, CreatedUtc = x.CreatedUtc, IsPrimary = x.IsPrimary, ScopeLabel = x.MaintenanceRequest != null ? x.MaintenanceRequest.Title : string.Empty }).ToListAsync();
-        public Task<List<LeaseMoveInDocumentDto>> GetLeaseMoveInDocumentsAsync(Guid leaseId) => _db.MediaAssets
-            .Where(x => x.OrganizationId == _current.OrganizationId && x.LeaseId == leaseId && x.Category == MediaAssetCategory.LeaseDocument)
-            .OrderByDescending(x => x.IsPrimary)
-            .ThenBy(x => x.SortOrder)
-            .Select(x => new LeaseMoveInDocumentDto
+        public async Task<bool> SendInvoiceEmailAsync(Guid invoiceId, CancellationToken cancellationToken = default)
+        {
+            EnsureCanManageData();
+
+            var invoice = await _db.Invoices
+                .Where(x => x.Id == invoiceId && x.OrganizationId == _current.OrganizationId)
+                .Select(x => new
+                {
+                    x.Id,
+                    x.Number,
+                    x.DueDate,
+                    x.Amount,
+                    x.Balance,
+                    TenantId = x.Lease != null ? x.Lease.TenantId : Guid.Empty,
+                    TenantName = x.Lease != null && x.Lease.Tenant != null ? x.Lease.Tenant.FullName : string.Empty,
+                    TenantEmail = x.Lease != null && x.Lease.Tenant != null ? x.Lease.Tenant.Email : string.Empty,
+                    LeaseId = x.LeaseId,
+                    UnitLabel = x.Lease != null && x.Lease.Unit != null ? x.Lease.Unit.UnitNumber : string.Empty
+                })
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (invoice is null || invoice.TenantId == Guid.Empty || string.IsNullOrWhiteSpace(invoice.TenantEmail))
+            {
+                return false;
+            }
+
+            var isFrench = string.Equals(_current.PreferredLanguage, "fr-CA", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(_current.PreferredLanguage, "fr", StringComparison.OrdinalIgnoreCase);
+            var subject = isFrench
+                ? $"Facture {invoice.Number} - {invoice.UnitLabel}"
+                : $"Invoice {invoice.Number} - {invoice.UnitLabel}";
+            var html = isFrench
+                ? $"""
+                <h2>Facture {invoice.Number}</h2>
+                <p>Bonjour {invoice.TenantName},</p>
+                <p>Voici votre facture pour {(string.IsNullOrWhiteSpace(invoice.UnitLabel) ? "votre bail" : $"l’unité {invoice.UnitLabel}")}.</p>
+                <p><strong>Montant :</strong> {invoice.Amount:C}</p>
+                <p><strong>Solde actuel :</strong> {invoice.Balance:C}</p>
+                <p><strong>Échéance :</strong> {invoice.DueDate}</p>
+                <p>Merci de nous répondre si vous avez des questions ou si vous souhaitez confirmer la date de paiement.</p>
+                """
+                : $"""
+                <h2>Invoice {invoice.Number}</h2>
+                <p>Hello {invoice.TenantName},</p>
+                <p>Please find your invoice for {(string.IsNullOrWhiteSpace(invoice.UnitLabel) ? "your lease" : $"unit {invoice.UnitLabel}")}.</p>
+                <p><strong>Amount:</strong> {invoice.Amount:C}</p>
+                <p><strong>Current balance:</strong> {invoice.Balance:C}</p>
+                <p><strong>Due date:</strong> {invoice.DueDate}</p>
+                <p>Please reply if you have any questions or would like to confirm your payment date.</p>
+                """;
+            var text = isFrench
+                ? $"Facture {invoice.Number}\nBonjour {invoice.TenantName},\nMontant: {invoice.Amount:C}\nSolde actuel: {invoice.Balance:C}\nÉchéance: {invoice.DueDate}\n"
+                : $"Invoice {invoice.Number}\nHello {invoice.TenantName},\nAmount: {invoice.Amount:C}\nCurrent balance: {invoice.Balance:C}\nDue date: {invoice.DueDate}\n";
+
+            await _notifications.SendInvoiceEmailAsync(invoice.TenantEmail, subject, html, text, cancellationToken);
+
+            var invoiceEntity = await _db.Invoices.FirstOrDefaultAsync(x => x.Id == invoice.Id && x.OrganizationId == _current.OrganizationId, cancellationToken);
+            if (invoiceEntity is null)
+            {
+                return false;
+            }
+
+            invoiceEntity.LastEmailedUtc = DateTime.UtcNow;
+
+            var conversationId = await EnsureInvoiceConversationAsync(invoice.Id);
+            if (conversationId.HasValue)
+            {
+                await AddTenantMessageAsync(new TenantMessage
+                {
+                    TenantConversationId = conversationId.Value,
+                    IsIncoming = false,
+                    Body = isFrench
+                        ? $"Facture {invoice.Number} envoyée par courriel à {invoice.TenantEmail}."
+                        : $"Invoice {invoice.Number} emailed to {invoice.TenantEmail}.",
+                    SentBy = _current.UserEmail,
+                    SentUtc = DateTime.UtcNow,
+                    IsAISuggested = false,
+                    DeliveryMethod = "Email",
+                    DeliveryProof = isFrench
+                        ? $"Facture envoyée à {invoice.TenantEmail} le {DateTime.UtcNow:u}"
+                        : $"Invoice sent to {invoice.TenantEmail} on {DateTime.UtcNow:u}"
+                });
+            }
+
+            return true;
+        }
+        public async Task<List<LeaseMoveInDocumentDto>> GetLeaseMoveInDocumentsAsync(Guid leaseId)
+        {
+            var assets = await _db.MediaAssets
+                .Where(x => x.OrganizationId == _current.OrganizationId && x.LeaseId == leaseId && x.Category == MediaAssetCategory.LeaseDocument)
+                .OrderByDescending(x => x.IsPrimary)
+                .ThenBy(x => x.SortOrder)
+                .ToListAsync();
+
+            return assets.Select(x => new LeaseMoveInDocumentDto
             {
                 MediaAssetId = x.Id,
                 LeaseId = x.LeaseId ?? Guid.Empty,
@@ -1155,17 +1261,11 @@ namespace PropertySaaS.Application.Features
                 BlobPath = x.BlobPath,
                 Caption = x.Caption,
                 DocumentType = x.DocumentType,
-                OfficialUrl = x.DocumentType == "SignedLease" && _current.Province == "ON"
-                    ? (_current.PreferredLanguage == "fr-CA"
-                        ? "https://forms.mgcs.gov.on.ca/dataset/edff7620-980b-455f-9666-643196d8312f/resource/90186613-2e1e-47ed-84e9-8786bf137396/download/2229f.pdf"
-                        : "https://forms.mgcs.gov.on.ca/dataset/edff7620-980b-455f-9666-643196d8312f/resource/05677ea2-3173-4c0e-9a14-7a06cbcb41b9/download/2229e_standard-lease_static.pdf")
-                    : x.DocumentType == "InsuranceProof" && _current.Province == "ON"
-                        ? "https://www.fsrao.ca/consumers/property-and-casualty-insurance"
-                        : string.Empty,
+                OfficialUrl = ResolveOfficialMoveInDocumentUrl(x.DocumentType),
                 CreatedUtc = x.CreatedUtc,
                 IsPrimary = x.IsPrimary
-            })
-            .ToListAsync();
+            }).ToList();
+        }
         public async Task<List<LeaseMoveInRequirementDto>> GetLeaseMoveInRequirementsAsync(Guid leaseId)
         {
             var documents = await _db.MediaAssets
@@ -1381,13 +1481,14 @@ namespace PropertySaaS.Application.Features
         {
             var isFrench = string.Equals(_current.PreferredLanguage, "fr-CA", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(_current.PreferredLanguage, "fr", StringComparison.OrdinalIgnoreCase);
+            var profile = _current.Jurisdiction;
 
             var templates = new List<TenantMessageTemplateDto>
             {
                 new()
                 {
                     Key = "rent-reminder",
-                    Title = isFrench ? "Relance de loyer Ontario" : "Ontario rent reminder",
+                    Title = isFrench ? $"Relance de loyer {profile.ProvinceDisplayName}" : $"{profile.ProvinceDisplayName} rent reminder",
                     BodyTemplate = isFrench
                         ? "Bonjour {{tenantName}}, ceci est un rappel amical concernant le solde de loyer pour {{unitLabel}}. Merci de confirmer votre date prévue de paiement et de nous indiquer si vous souhaitez discuter des prochaines étapes."
                         : "Hello {{tenantName}}, this is a friendly reminder regarding the rent balance for {{unitLabel}}. Please confirm your expected payment date and let us know if you need to discuss the next steps."
@@ -1395,10 +1496,10 @@ namespace PropertySaaS.Application.Features
                 new()
                 {
                     Key = "n4-prep",
-                    Title = isFrench ? "Suivi d’arriérés avant N4" : "Ontario arrears follow-up before N4",
+                    Title = isFrench ? $"Suivi d’arriérés avant {profile.RentArrearsNoticeLabel}" : $"{profile.ProvinceDisplayName} arrears follow-up before {profile.RentArrearsNoticeLabel}",
                     BodyTemplate = isFrench
-                        ? "Bonjour {{tenantName}}, nous faisons un suivi du solde de loyer impayé pour {{unitLabel}}. Merci de nous répondre d’ici {{nextStepDate}} afin de confirmer le moment du paiement avant toute étape formelle en Ontario."
-                        : "Hello {{tenantName}}, we are following up on the outstanding rent for {{unitLabel}}. Please contact us by {{nextStepDate}} to confirm payment timing before formal Ontario notice steps are reviewed."
+                        ? $"Bonjour {{tenantName}}, nous faisons un suivi du solde de loyer impayé pour {{unitLabel}}. Merci de nous répondre d’ici {{nextStepDate}} afin de confirmer le moment du paiement avant toute étape formelle en {profile.ProvinceDisplayName}."
+                        : $"Hello {{tenantName}}, we are following up on the outstanding rent for {{unitLabel}}. Please contact us by {{nextStepDate}} to confirm payment timing before formal {profile.ProvinceDisplayName} notice steps are reviewed."
                 },
                 new()
                 {
@@ -1872,7 +1973,8 @@ namespace PropertySaaS.Application.Features
             lead.ModifiedUtc = DateTime.UtcNow;
 
             _db.AuditLogs.Add(new AuditLog { OrganizationId = _current.OrganizationId, EntityName = nameof(Lead), Action = "Convert", PerformedBy = _current.UserEmail, Details = $"Converted lead {lead.FullName} into tenant and draft lease" });
-            AddAISuggestion(AISuggestionType.WorkQueue, nameof(Lead), lead.Id, $"Prepare lease package for {lead.FullName}", "Send the Ontario lease package, collect signatures and confirm the move-in checklist before handoff.");
+            var jurisdictionLeasePackageLabel = _current.Jurisdiction.LeasePackageLabel;
+            AddAISuggestion(AISuggestionType.WorkQueue, nameof(Lead), lead.Id, $"Prepare lease package for {lead.FullName}", $"Send the {jurisdictionLeasePackageLabel}, collect signatures and confirm the move-in checklist before handoff.");
             await _db.SaveChangesAsync();
             return true;
         }
@@ -2123,6 +2225,30 @@ namespace PropertySaaS.Application.Features
             => GetMoveInRequirementCatalog()
                 .FirstOrDefault(x => string.Equals(x.DocumentType, documentType, StringComparison.OrdinalIgnoreCase)).Label
                 ?? "Lease package";
+
+        private string ResolveOfficialMoveInDocumentUrl(string documentType)
+        {
+            if (string.Equals(documentType, "SignedLease", StringComparison.OrdinalIgnoreCase))
+            {
+                if (string.Equals(_current.PreferredLanguage, "fr-CA", StringComparison.OrdinalIgnoreCase)
+                    && _current.Jurisdiction.OfficialDocumentUrls.TryGetValue("lease-package-fr", out var leasePackageFrenchUrl))
+                {
+                    return leasePackageFrenchUrl;
+                }
+
+                return _current.Jurisdiction.OfficialDocumentUrls.TryGetValue("lease-package", out var leasePackageUrl)
+                    ? leasePackageUrl
+                    : string.Empty;
+            }
+
+            if (string.Equals(documentType, "InsuranceProof", StringComparison.OrdinalIgnoreCase)
+                && string.Equals(_current.Province, "ON", StringComparison.OrdinalIgnoreCase))
+            {
+                return "https://www.fsrao.ca/consumers/property-and-casualty-insurance";
+            }
+
+            return string.Empty;
+        }
 
         private void SeedLeaseMoveInDocumentsFromLead(Lead lead, Lease lease, Guid propertyId)
         {
@@ -2430,7 +2556,7 @@ namespace PropertySaaS.Application.Features
             }
 
             user.OrganizationId = organization.Id;
-            user.Role = "Owner";
+            user.Role = _current.IsSuperAdmin || _current.IsSupervisor ? "Manager" : "Owner";
             user.PreferredLanguage = profile.DefaultLanguage;
 
             _db.OrganizationMemberships.Add(new OrganizationMembership
@@ -2438,7 +2564,7 @@ namespace PropertySaaS.Application.Features
                 Id = Guid.NewGuid(),
                 OrganizationId = organization.Id,
                 UserId = user.Id,
-                Role = "Owner",
+                Role = _current.IsSuperAdmin || _current.IsSupervisor ? "Manager" : "Owner",
                 Status = "Active",
                 CreatedUtc = DateTime.UtcNow
             });
@@ -2962,7 +3088,7 @@ namespace PropertySaaS.Application.Features
 
         public async Task ImportSamplePortfolioAsync()
         {
-            if (!_current.CanManageData) return;
+            if (!_current.CanManageData || !_current.IsDemo) return;
             if (await _db.Properties.AnyAsync(x => x.OrganizationId == _current.OrganizationId)) return;
             await EnsureUnitLimitAsync();
 
@@ -3351,7 +3477,7 @@ namespace PropertySaaS.Application.Features
                 SourceEntityName = nameof(Listing),
                 SourceEntityId = property.Id,
                 PromptSummary = "Prioritize the next leasing and compliance actions for the demo workspace.",
-                SuggestedContent = "Publish the ready listing, confirm the next showing and review the Ontario notice reminder.",
+                SuggestedContent = $"Publish the ready listing, confirm the next showing and review the {profile.ProvinceDisplayName} notice reminder.",
                 ReviewedByHuman = false,
                 ReviewOutcome = string.Empty,
                 CreatedUtc = DateTime.UtcNow

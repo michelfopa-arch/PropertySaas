@@ -59,10 +59,11 @@
         <MudNavLink Href="@WithDemoMode("/subscriptions")" Icon="@Icons.Material.Filled.Subscriptions">@UiText.Get("Nav_Subscriptions")</MudNavLink>
     }
 
-    @if (CurrentOrganization.IsSuperAdmin)
+    @if (CurrentOrganization.IsSuperAdmin || CurrentOrganization.IsSupervisor)
     {
         <MudNavLink Href="@WithDemoMode("/superadmin")" Icon="@Icons.Material.Filled.AdminPanelSettings">@UiText.Get("Nav_SuperAdmin")</MudNavLink>
         <MudNavLink Href="@WithDemoMode("/superadmin/select-organization")" Icon="@Icons.Material.Filled.Domain">@UiText.Get("Nav_SuperAdminOrganizations")</MudNavLink>
+        <MudNavLink Href="/onboarding" Icon="@Icons.Material.Filled.AddBusiness">@UiText.Get("Onboarding_CreateOrganization")</MudNavLink>
     }
 
     @if (CurrentOrganization.IsAuthenticated)

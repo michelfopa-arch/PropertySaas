@@ -26,6 +26,11 @@ else
             <MudText Typo="Typo.body1" Color="Color.Secondary">@UiText.Get("SuperAdmin_Subtitle")</MudText>
         </MudStack>
 
+        <MudStack Row="true" Spacing="2" Wrap="Wrap.Wrap">
+            <MudButton Href="/onboarding" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.AddBusiness">@UiText.Get("Onboarding_CreateOrganization")</MudButton>
+            <MudButton Href="/superadmin/select-organization" Variant="Variant.Outlined" Color="Color.Secondary" StartIcon="@Icons.Material.Filled.Domain">@UiText.Get("Nav_SuperAdminOrganizations")</MudButton>
+        </MudStack>
+
         @if (!string.IsNullOrWhiteSpace(_feedback))
         {
             <MudAlert Severity="@_feedbackSeverity" Variant="Variant.Filled">@_feedback</MudAlert>

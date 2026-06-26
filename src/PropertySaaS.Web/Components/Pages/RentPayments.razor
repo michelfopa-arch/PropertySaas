@@ -26,6 +26,19 @@
     }
     else
     {
+        @if (!string.IsNullOrWhiteSpace(_invoiceEmailStatusMessage))
+        {
+            <MudAlert Severity="@_invoiceEmailStatusSeverity" Dense="true">
+                <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Wrap="Wrap.Wrap">
+                    <MudText Typo="Typo.body2">@_invoiceEmailStatusMessage</MudText>
+                    @if (_invoiceEmailStatusSeverity == Severity.Success && _lastEmailedInvoiceId.HasValue)
+                    {
+                        <MudButton Variant="Variant.Text" Color="Color.Success" Size="Size.Small" OnClick="OpenLastEmailedInvoiceThreadAsync">@UiText.Get("RentPayments_OpenInvoiceThread")</MudButton>
+                    }
+                </MudStack>
+            </MudAlert>
+        }
+
         <MudPaper Class="pa-3 marketing-card" Elevation="0">
             <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Wrap="Wrap.Wrap">
                 <MudText Typo="Typo.subtitle2">@UiText.Get("Common_RecommendedNextStop")</MudText>
@@ -89,6 +102,7 @@
                     <MudTh>@UiText.Get("RentPayments_DueDate")</MudTh>
                     <MudTh>@UiText.Get("RentPayments_Status")</MudTh>
                     <MudTh>@UiText.Get("RentPayments_Balance")</MudTh>
+                    <MudTh>@UiText.Get("RentPayments_LastEmailed")</MudTh>
                     <MudTh></MudTh>
                 </HeaderContent>
                 <RowTemplate>
@@ -98,11 +112,13 @@
                     <MudTd DataLabel="@UiText.Get("RentPayments_DueDate")">@context.DueDate</MudTd>
                     <MudTd DataLabel="@UiText.Get("RentPayments_Status")">@context.Status</MudTd>
                     <MudTd DataLabel="@UiText.Get("RentPayments_Balance")">@context.Balance.ToString("C")</MudTd>
+                    <MudTd DataLabel="@UiText.Get("RentPayments_LastEmailed")">@(context.LastEmailedUtc.HasValue ? context.LastEmailedUtc.Value.ToLocalTime().ToString("g") : UiText.Get("RentPayments_LastEmailedNever"))</MudTd>
                     <MudTd>
                         @if (CurrentOrganization.CanManageData)
                         {
                             <MudStack Row="true" Spacing="1" Wrap="Wrap.Wrap">
                                 <MudButton Variant="Variant.Text" Color="Color.Primary" Size="Size.Small" OnClick="() => OpenInvoiceConversationAsync(context.InvoiceId)">@UiText.Get("TenantCommunications_OpenFromRent")</MudButton>
+                                <MudButton Variant="Variant.Text" Color="Color.Secondary" Size="Size.Small" OnClick="() => SendInvoiceEmailAsync(context.InvoiceId)">@UiText.Get("RentPayments_SendInvoiceEmail")</MudButton>
                                 <MudButton Variant="Variant.Text" Color="Color.Warning" Size="Size.Small" OnClick="() => OpenInvoiceNoticeDraftAsync(context.InvoiceId)">@UiText.Get("RentPayments_PrepareN4Draft")</MudButton>
                             </MudStack>
                         }
@@ -210,6 +226,9 @@
     private bool _isPaymentPanelOpen;
     private bool _isPaymentCreateMode = true;
     private DateTime? _paymentReceivedDate = DateTime.Today;
+    private string? _invoiceEmailStatusMessage;
+    private Severity _invoiceEmailStatusSeverity = Severity.Info;
+    private Guid? _lastEmailedInvoiceId;
     private bool IsDemoCleanView => DemoModeRouteHelper.IsClean(DemoMode);
     private InvoiceSummaryDto? HighestBalanceInvoice => FilteredInvoices.OrderByDescending(x => x.Balance).ThenBy(x => x.DueDate).FirstOrDefault(x => x.Balance > 0);
     private InvoiceSummaryDto? PartialPaymentInvoice => FilteredInvoices.OrderByDescending(x => x.Balance).ThenBy(x => x.DueDate).FirstOrDefault(x => string.Equals(x.Status, "PartiallyPaid", StringComparison.OrdinalIgnoreCase));
@@ -375,6 +394,29 @@
             ? $"/tenant-communications?conversationId={conversationId.Value}&compose=n4-prep&invoiceId={invoiceId}"
             : "/tenant-communications"));
     }
+
+    private async Task SendInvoiceEmailAsync(Guid invoiceId)
+    {
+        var sent = await DataService.SendInvoiceEmailAsync(invoiceId);
+        var invoice = _invoices.FirstOrDefault(x => x.InvoiceId == invoiceId);
+        if (!sent)
+        {
+            _invoiceEmailStatusSeverity = Severity.Warning;
+            _invoiceEmailStatusMessage = UiText.Get("RentPayments_SendInvoiceEmailFailed");
+            _lastEmailedInvoiceId = null;
+            return;
+        }
+
+        await ReloadAsync();
+        _invoiceEmailStatusSeverity = Severity.Success;
+        _invoiceEmailStatusMessage = string.Format(UiText.Get("RentPayments_SendInvoiceEmailSuccess"), invoice?.Number ?? invoiceId.ToString()[..8]);
+        _lastEmailedInvoiceId = invoiceId;
+    }
+
+    private Task OpenLastEmailedInvoiceThreadAsync()
+        => _lastEmailedInvoiceId.HasValue
+            ? OpenInvoiceConversationAsync(_lastEmailedInvoiceId.Value)
+            : Task.CompletedTask;
 
     private async Task OpenPriorityNoticeDraftAsync()
     {

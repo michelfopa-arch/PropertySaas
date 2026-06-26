@@ -268,6 +268,7 @@ namespace PropertySaaS.Domain.Entities
         public decimal Amount { get; set; }
         public decimal Balance { get; set; }
         public PaymentStatus Status { get; set; } = PaymentStatus.Draft;
+        public DateTime? LastEmailedUtc { get; set; }
         public string Notes { get; set; } = string.Empty;
         public Lease? Lease { get; set; }
         public ICollection<PaymentEntry> Payments { get; set; } = new List<PaymentEntry>();

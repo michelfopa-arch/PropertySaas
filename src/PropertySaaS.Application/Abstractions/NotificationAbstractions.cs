@@ -13,5 +13,6 @@ namespace PropertySaaS.Application.Abstractions
         Task SendComplianceDueSoonDigestAsync(CancellationToken cancellationToken = default);
         Task SendSupportAlertAsync(string subject, string message, CancellationToken cancellationToken = default);
         Task SendOrganizationInvitationAsync(string to, string organizationName, string invitedBy, string role, string invitationUrl, DateTime expiresUtc, CancellationToken cancellationToken = default);
+        Task SendInvoiceEmailAsync(string to, string subject, string html, string text, CancellationToken cancellationToken = default);
     }
 }

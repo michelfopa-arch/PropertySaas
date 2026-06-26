@@ -254,6 +254,55 @@ public class UnitTest1
     }
 
     [Fact]
+    public async Task SendInvoiceEmailAsync_Sends_Email_And_Logs_Tenant_Message()
+    {
+        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options;
+
+        await using var db = new ApplicationDbContext(options);
+        db.Database.EnsureCreated();
+
+        var current = new CurrentOrganization
+        {
+            OrganizationId = ApplicationDbSeeder.DemoOrganizationId,
+            OrganizationName = "Maple Leaf Property Group",
+            UserEmail = "owner@mapleleafpm.ca",
+            Role = "Owner",
+            PreferredLanguage = "en-CA"
+        };
+
+        var notifications = new RecordingNotificationService();
+        var property = new Property { Id = Guid.NewGuid(), OrganizationId = current.OrganizationId, Name = "Invoice Email Property", AddressLine1 = "4 Test St", City = "Toronto", Province = "ON" };
+        var unit = new Unit { Id = Guid.NewGuid(), OrganizationId = current.OrganizationId, PropertyId = property.Id, UnitNumber = "1201", MonthlyRent = 2300m, IsOccupied = true };
+        var tenant = new Tenant { Id = Guid.NewGuid(), OrganizationId = current.OrganizationId, FullName = "Invoice Email Tenant", Email = "invoice@test.com", PhoneNumber = "555-1010" };
+        var lease = new Lease { Id = Guid.NewGuid(), OrganizationId = current.OrganizationId, UnitId = unit.Id, TenantId = tenant.Id, StartDate = DateOnly.FromDateTime(DateTime.Today.AddMonths(-2)), EndDate = DateOnly.FromDateTime(DateTime.Today.AddMonths(10)), MonthlyRent = 2300m, Status = LeaseStatus.Active };
+        var invoice = new Invoice { Id = Guid.NewGuid(), OrganizationId = current.OrganizationId, LeaseId = lease.Id, Number = "INV-EMAIL", DueDate = DateOnly.FromDateTime(DateTime.Today.AddDays(7)), Amount = 2300m, Balance = 2300m, Status = PaymentStatus.Sent };
+
+        db.Properties.Add(property);
+        db.Units.Add(unit);
+        db.Tenants.Add(tenant);
+        db.Leases.Add(lease);
+        db.Invoices.Add(invoice);
+        await db.SaveChangesAsync();
+
+        var service = new SaasDataService(db, current, notifications);
+
+        var sent = await service.SendInvoiceEmailAsync(invoice.Id);
+
+        Assert.True(sent);
+        var email = Assert.Single(notifications.InvoiceEmails);
+        Assert.Equal("invoice@test.com", email.To);
+        Assert.Contains("INV-EMAIL", email.Subject);
+        Assert.Contains("Invoice INV-EMAIL", email.Text);
+        Assert.True(db.TenantMessages.Any(x => x.Body.Contains("INV-EMAIL") && x.TenantConversationId != Guid.Empty));
+        var refreshedInvoice = await db.Invoices.FirstAsync(x => x.Id == invoice.Id);
+        Assert.NotNull(refreshedInvoice.LastEmailedUtc);
+        var invoiceSummary = Assert.Single(await service.GetInvoicesAsync(), x => x.InvoiceId == invoice.Id);
+        Assert.NotNull(invoiceSummary.LastEmailedUtc);
+    }
+
+    [Fact]
     public async Task GetTenantMessageTemplatesAsync_Uses_French_When_Organization_Prefers_French()
     {
         var options = new DbContextOptionsBuilder<ApplicationDbContext>()

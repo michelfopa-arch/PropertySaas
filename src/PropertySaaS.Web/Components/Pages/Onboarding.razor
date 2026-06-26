@@ -104,7 +104,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-        if (CurrentOrganization.HasOrganizationAccess)
+        if (CurrentOrganization.HasOrganizationAccess && !CurrentOrganization.IsSuperAdmin && !CurrentOrganization.IsSupervisor)
         {
             NavigationManager.NavigateTo("/dashboard");
             return;
