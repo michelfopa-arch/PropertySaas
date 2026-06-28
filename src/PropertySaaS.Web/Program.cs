@@ -128,8 +128,9 @@ builder.Services.AddScoped<CurrentOrganization>(provider =>
             var subscriptionIsActive = org?.IsActive ?? true;
             var effectiveRole = isSuperAdmin
                 ? string.IsNullOrWhiteSpace(selectedMembership.Role) ? "Manager" : selectedMembership.Role
-                : isSupervisor && (selectedMembership.Role is "Viewer" or "Pending" or "SupportViewer") ? "Manager"
-                : string.IsNullOrWhiteSpace(selectedMembership.Role) ? "Owner" : selectedMembership.Role;
+                : isSupervisor && (selectedMembership.Role is "Viewer" or "Pending" or "SupportViewer")
+                    ? "Manager"
+                    : string.IsNullOrWhiteSpace(selectedMembership.Role) ? "Owner" : selectedMembership.Role;
 
             return new CurrentOrganization
             {
@@ -295,21 +296,12 @@ app.Use(async (context, next) =>
                     FullName = fullName,
                     ClerkUserId = clerkUserId,
                     Role = "Owner",
-                    SystemRole = string.Equals(normalizedEmail, "michelfopa@gmail.com", StringComparison.OrdinalIgnoreCase) ? "Supervisor" : "User",
+                    SystemRole = "User",
                     PreferredLanguage = ResolvePreferredLanguage(context, null, null, "ON"),
                     IsActive = true,
                     CreatedUtc = DateTime.UtcNow
                 };
                 db.Users.Add(existing);
-                hasChanges = true;
-            }
-
-            var expectedSystemRole = string.Equals(normalizedEmail, "michelfopa@gmail.com", StringComparison.OrdinalIgnoreCase)
-                ? "Supervisor"
-                : existing.SystemRole;
-            if (!string.Equals(existing.SystemRole, expectedSystemRole, StringComparison.OrdinalIgnoreCase))
-            {
-                existing.SystemRole = expectedSystemRole;
                 hasChanges = true;
             }
 
@@ -782,6 +774,65 @@ app.MapGet("/export/listings/{listingId:guid}/copy", async (Guid listingId, [Fro
 {
     var text = await dataService.BuildListingExportTextAsync(listingId);
     return Results.File(Encoding.UTF8.GetBytes(text), "text/plain", $"listing-copy-{listingId}.txt");
+}).RequireAuthorization();
+
+app.MapGet("/export/invoices/{invoiceId:guid}/html", async (Guid invoiceId, [FromServices] SaasDataService dataService) =>
+{
+    var invoice = await dataService.GetInvoiceDocumentAsync(invoiceId);
+    if (invoice is null)
+    {
+        return Results.NotFound();
+    }
+
+    static string HtmlEncode(string? value)
+        => System.Net.WebUtility.HtmlEncode(value ?? string.Empty);
+
+    var isFrench = string.Equals(invoice.PreferredLanguage, "fr-CA", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(invoice.PreferredLanguage, "fr", StringComparison.OrdinalIgnoreCase);
+
+    var html = new StringBuilder();
+    html.AppendLine("<!DOCTYPE html>");
+    html.AppendLine("<html lang=\"en\"><head><meta charset=\"utf-8\" /><title>Invoice</title><style>");
+    html.AppendLine("body{font-family:Inter,Segoe UI,Arial,sans-serif;background:#fff;color:#10233f;margin:24px;}h1,h2{margin-bottom:8px;}section{border:1px solid rgba(15,39,71,.12);border-radius:12px;padding:16px;margin-bottom:16px;}p{margin:6px 0;} .muted{color:#5e6b80;}</style></head><body>");
+    html.AppendLine($"<h1>{HtmlEncode(isFrench ? "Facture locative" : "Rental invoice")}</h1>");
+    html.AppendLine($"<p class=\"muted\">{HtmlEncode(invoice.OrganizationName)}</p>");
+    html.AppendLine("<section>");
+    html.AppendLine($"<h2>{HtmlEncode(isFrench ? "Résumé de facture" : "Invoice summary")}</h2>");
+    html.AppendLine($"<p><strong>{HtmlEncode(isFrench ? "Facture" : "Invoice")}:</strong> {HtmlEncode(invoice.Number)}</p>");
+    html.AppendLine($"<p><strong>{HtmlEncode(isFrench ? "Période" : "Period")}:</strong> {HtmlEncode(invoice.BillingPeriodLabel)}</p>");
+    html.AppendLine($"<p><strong>{HtmlEncode(isFrench ? "Locataire" : "Tenant")}:</strong> {HtmlEncode(invoice.TenantName)}</p>");
+    html.AppendLine($"<p><strong>{HtmlEncode(isFrench ? "Courriel" : "Email")}:</strong> {HtmlEncode(invoice.TenantEmail)}</p>");
+    html.AppendLine($"<p><strong>{HtmlEncode(isFrench ? "Bien" : "Property")}:</strong> {HtmlEncode(invoice.PropertyName)}</p>");
+    html.AppendLine($"<p><strong>{HtmlEncode(isFrench ? "Adresse" : "Address")}:</strong> {HtmlEncode(invoice.PropertyAddress)}</p>");
+    html.AppendLine($"<p><strong>{HtmlEncode(isFrench ? "Unité" : "Unit")}:</strong> {HtmlEncode(invoice.UnitLabel)}</p>");
+    html.AppendLine($"<p><strong>{HtmlEncode(isFrench ? "Montant" : "Amount")}:</strong> {HtmlEncode(invoice.Amount.ToString("C"))}</p>");
+    html.AppendLine($"<p><strong>{HtmlEncode(isFrench ? "Solde" : "Balance")}:</strong> {HtmlEncode(invoice.Balance.ToString("C"))}</p>");
+    html.AppendLine($"<p><strong>{HtmlEncode(isFrench ? "Échéance" : "Due date")}:</strong> {HtmlEncode(invoice.DueDate.ToString())}</p>");
+    html.AppendLine($"<p><strong>{HtmlEncode(isFrench ? "Statut" : "Status")}:</strong> {HtmlEncode(invoice.Status)}</p>");
+    if (!string.IsNullOrWhiteSpace(invoice.Notes))
+    {
+        html.AppendLine($"<p><strong>{HtmlEncode(isFrench ? "Notes" : "Notes")}:</strong> {HtmlEncode(invoice.Notes)}</p>");
+    }
+    html.AppendLine("</section>");
+    if (!string.IsNullOrWhiteSpace(invoice.StandardInstructions))
+    {
+        html.AppendLine($"<section><h2>{HtmlEncode(isFrench ? "Prêt pour téléchargement" : "Ready for download")}</h2><p>{HtmlEncode(invoice.StandardInstructions)}</p></section>");
+    }
+    html.AppendLine("</body></html>");
+
+    return Results.File(Encoding.UTF8.GetBytes(html.ToString()), "text/html", $"invoice-{invoice.Number}.html");
+}).RequireAuthorization();
+
+app.MapGet("/export/invoices/{invoiceId:guid}/pdf", async (Guid invoiceId, [FromServices] SaasDataService dataService) =>
+{
+    var invoice = await dataService.GetInvoiceDocumentAsync(invoiceId);
+    if (invoice is null)
+    {
+        return Results.NotFound();
+    }
+
+    var pdf = InvoicePdfBuilder.Build(invoice, DateTime.UtcNow);
+    return Results.File(pdf, "application/pdf", $"invoice-{invoice.Number}.pdf");
 }).RequireAuthorization();
 
 app.MapGet("/export/evidence-pack/{maintenanceRequestId:guid}/html", async (Guid maintenanceRequestId, HttpContext httpContext, [FromServices] CurrentOrganization current, [FromServices] SaasDataService dataService) =>
@@ -1291,6 +1342,8 @@ BEGIN
         [OrganizationId] uniqueidentifier NOT NULL,
         [LeaseId] uniqueidentifier NOT NULL,
         [Number] nvarchar(max) NOT NULL,
+        [BillingPeriodStart] date NULL,
+        [BillingPeriodEnd] date NULL,
         [DueDate] date NOT NULL,
         [Amount] decimal(18,2) NOT NULL,
         [Balance] decimal(18,2) NOT NULL,
@@ -1299,6 +1352,10 @@ BEGIN
         CONSTRAINT [PK_Invoices] PRIMARY KEY ([Id])
     );
 END;
+IF COL_LENGTH('Invoices', 'BillingPeriodStart') IS NULL
+    ALTER TABLE [Invoices] ADD [BillingPeriodStart] date NULL;
+IF COL_LENGTH('Invoices', 'BillingPeriodEnd') IS NULL
+    ALTER TABLE [Invoices] ADD [BillingPeriodEnd] date NULL;
 IF COL_LENGTH('Leases', 'DepositReceived') IS NULL
     ALTER TABLE [Leases] ADD [DepositReceived] bit NOT NULL CONSTRAINT [DF_Leases_DepositReceived] DEFAULT 0;
 IF COL_LENGTH('Leases', 'InsuranceProofReceived') IS NULL
@@ -1405,8 +1462,6 @@ IF COL_LENGTH('TenantMessages', 'DeliveredUtc') IS NULL
     ALTER TABLE [TenantMessages] ADD [DeliveredUtc] datetime2 NULL;
 IF COL_LENGTH('TenantMessages', 'DeliveryProof') IS NULL
     ALTER TABLE [TenantMessages] ADD [DeliveryProof] nvarchar(max) NOT NULL CONSTRAINT [DF_TenantMessages_DeliveryProof] DEFAULT N'';
-IF COL_LENGTH('Invoices', 'LastEmailedUtc') IS NULL
-    ALTER TABLE [Invoices] ADD [LastEmailedUtc] datetime2 NULL;
 IF COL_LENGTH('Vendors', 'DispatchStatus') IS NULL
     ALTER TABLE [Vendors] ADD [DispatchStatus] nvarchar(max) NOT NULL CONSTRAINT [DF_Vendors_DispatchStatus] DEFAULT N'Available';
 IF COL_LENGTH('Vendors', 'PreferredForPriority') IS NULL

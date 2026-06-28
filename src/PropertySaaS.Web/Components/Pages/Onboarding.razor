@@ -69,6 +69,24 @@
             <MudText Typo="Typo.h6">@UiText.Get("Onboarding_JoinTitle")</MudText>
             <MudText Typo="Typo.body2">@UiText.Get("Onboarding_JoinHelp")</MudText>
 
+            @if (_accessibleOrganizations.Count > 0)
+            {
+                <MudList T="string" Dense="true" Class="mt-4">
+                    @foreach (var organization in _accessibleOrganizations)
+                    {
+                        <MudListItem T="string">
+                            <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Wrap="Wrap.Wrap" Class="w-100">
+                                <div>
+                                    <MudText Typo="Typo.body1">@organization.OrganizationName</MudText>
+                                    <MudText Typo="Typo.body2" Color="Color.Secondary">@UiText.Format("Onboarding_ExistingOrganizationRole", organization.Role)</MudText>
+                                </div>
+                                <MudButton Href="@($"/organizations/switch/{organization.OrganizationId}")" Variant="Variant.Outlined" Color="Color.Primary">@UiText.Get("Onboarding_OpenOrganization")</MudButton>
+                            </MudStack>
+                        </MudListItem>
+                    }
+                </MudList>
+            }
+
             @if (_pendingInvitations.Count > 0)
             {
                 <MudList T="string" Dense="true" Class="mt-4">
@@ -101,6 +119,7 @@
     private string? _feedback;
     private Severity _feedbackSeverity = Severity.Success;
     private List<PendingWorkspaceInvitationDto> _pendingInvitations = new();
+    private List<OrganizationAccessOptionDto> _accessibleOrganizations = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -122,6 +141,7 @@
             _feedbackSeverity = Severity.Warning;
         }
 
+        _accessibleOrganizations = await DataService.GetAccessibleOrganizationsAsync();
         _pendingInvitations = await DataService.GetPendingWorkspaceInvitationsAsync();
     }
 

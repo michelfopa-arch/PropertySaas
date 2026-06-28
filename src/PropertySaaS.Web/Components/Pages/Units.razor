@@ -14,6 +14,13 @@
         <MudText Typo="Typo.body2">@Localizer["Units_Subtitle"]</MudText>
     </MudStack>
 
+    @if (IsDemoCleanView && CurrentOrganization.CanManageData)
+    {
+        <MudStack Row="true" Justify="Justify.FlexEnd">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreatePanel">@Localizer["Units_AddUnit"]</MudButton>
+        </MudStack>
+    }
+
     @if (!IsDemoCleanView)
     {
         <MudGrid Spacing="2" Class="align-center-grid">

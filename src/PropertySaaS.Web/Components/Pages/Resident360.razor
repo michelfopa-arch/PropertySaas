@@ -75,7 +75,7 @@ else
                 @if (PrimaryInvoice is not null)
                 {
                     <MudButton Href="@WithDemoMode($"/tenant-communications?tenantId={EffectiveTenantId}&compose=rent-reminder&invoiceId={PrimaryInvoice.InvoiceId}")" Variant="Variant.Outlined" Color="Color.Secondary">@UiText.Get("Resident360_PrepareRentReminder")</MudButton>
-                    <MudButton Variant="Variant.Outlined" Color="Color.Error" OnClick="OpenN4DraftAsync">@CurrentOrganization.Jurisdiction.RentArrearsNoticeLabel</MudButton>
+                    <MudButton Variant="Variant.Outlined" Color="Color.Error" OnClick="OpenN4DraftAsync">@UiText.Get("RentPayments_PrepareN4Draft")</MudButton>
                 }
                 @if (activeLease is not null)
                 {
@@ -417,11 +417,11 @@ else
             if (PrimaryInvoice?.Balance > 0)
             {
                 signals.Add(new ComplianceSignal(
-                    GetRentArrearsComplianceMessage(),
+                    UiText.Get("Resident360_ComplianceN4"),
                     UiText.Get("Resident360_ComplianceRecommended"),
                     Color.Error,
                     OpenN4DraftAsync,
-                    CurrentOrganization.Jurisdiction.RentArrearsNoticeLabel));
+                    UiText.Get("RentPayments_PrepareN4Draft")));
             }
 
             if (_summary?.ActiveLease is not null)
@@ -436,7 +436,7 @@ else
                 if (_summary.ActiveLease.N1IncreaseNoticeScheduled)
                 {
                     signals.Add(new ComplianceSignal(
-                        GetRentIncreaseComplianceMessage(),
+                        UiText.Get("Resident360_ComplianceN1"),
                         UiText.Get("Resident360_ComplianceScheduled"),
                         Color.Warning,
                         null,
@@ -553,7 +553,7 @@ else
 
     private string GetNoticeWorkflowActionLabel()
         => PrimaryInvoice is not null
-            ? CurrentOrganization.Jurisdiction.RentArrearsNoticeLabel
+            ? UiText.Get("RentPayments_PrepareN4Draft")
             : _summary?.ActiveLease is not null
                 ? UiText.Get("Leases_MoveInOpenNoticeDeliveryDraft")
                 : string.Empty;
@@ -622,10 +622,4 @@ else
 
     private string GetUnitLabel(Guid unitId)
         => _summary?.Units.FirstOrDefault(x => x.Id == unitId)?.UnitNumber ?? UiText.Get("TenantCommunications_UnitFallback");
-
-    private string GetRentArrearsComplianceMessage()
-        => string.Format(UiText.Get("Resident360_ComplianceJurisdictionArrears"), CurrentOrganization.Jurisdiction.RentArrearsNoticeLabel);
-
-    private string GetRentIncreaseComplianceMessage()
-        => string.Format(UiText.Get("Resident360_ComplianceJurisdictionIncrease"), CurrentOrganization.Jurisdiction.RentIncreaseNoticeLabel);
 }

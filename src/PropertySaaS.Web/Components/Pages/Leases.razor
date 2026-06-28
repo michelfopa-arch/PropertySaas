@@ -17,6 +17,20 @@
         <MudText Typo="Typo.body2">@Localizer["Leases_Subtitle"]</MudText>
     </MudStack>
 
+    @if (CurrentOrganization.CanManageData && !IsDemoCleanView)
+    {
+        <MudStack Row="true" Justify="Justify.FlexEnd">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreatePanel">@Localizer["Leases_AddLease"]</MudButton>
+        </MudStack>
+    }
+
+    @if (IsDemoCleanView && CurrentOrganization.CanManageData)
+    {
+        <MudStack Row="true" Justify="Justify.FlexEnd">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreatePanel">@Localizer["Leases_AddLease"]</MudButton>
+        </MudStack>
+    }
+
     <DemoJourneyBanner CurrentStepKey="resident" ResidentRoute="@Resident360Route" />
 
     <MudPaper Class="pa-3 marketing-card" Elevation="0">
@@ -53,8 +67,8 @@
                     <MudItem xs="12" sm="4" lg="2">
                         <MudSelect T="string" Label="@Localizer["Leases_FilterJurisdictionLease"]" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="_selectedOntarioFilter">
                             <MudSelectItem T="string" Value="@string.Empty">@Localizer["Leases_FilterAll"]</MudSelectItem>
-                            <MudSelectItem T="string" Value="@JurisdictionLeaseSignedLabel">@JurisdictionLeaseSignedLabel</MudSelectItem>
-                            <MudSelectItem T="string" Value="@JurisdictionLeaseMissingLabel">@JurisdictionLeaseMissingLabel</MudSelectItem>
+                            <MudSelectItem T="string" Value='@Localizer["Leases_OntarioSigned"].Value'>@Localizer["Leases_OntarioSigned"]</MudSelectItem>
+                            <MudSelectItem T="string" Value='@Localizer["Leases_OntarioMissing"].Value'>@Localizer["Leases_OntarioMissing"]</MudSelectItem>
                         </MudSelect>
                     </MudItem>
                     <MudItem xs="12" sm="4" lg="2">
@@ -160,19 +174,13 @@
             <MudDivider Class="my-3" />
             <MudText Typo="Typo.subtitle2">@UiText.Get("Leases_MoveInRequirementsTitle")</MudText>
             <MudText Typo="Typo.body2" Class="mt-2">@UiText.Get("Leases_MoveInAutoloadHint")</MudText>
-            @if (CurrentOrganization.Jurisdiction.OfficialDocumentUrls.Any())
+            @if (string.Equals(CurrentOrganization.Province, "ON", StringComparison.OrdinalIgnoreCase))
             {
                 <MudStack Row="true" Spacing="1" Class="mt-2" Wrap="Wrap.Wrap">
-                    <MudChip T="string" Color="Color.Primary" Variant="Variant.Outlined">@CurrentOrganization.Jurisdiction.LeasePackageLabel</MudChip>
-                    <MudButton Href="/docs/jurisdiction/lease-package" Target="_blank" Variant="Variant.Text" Color="Color.Primary">@CurrentOrganization.Jurisdiction.LeasePackageLabel</MudButton>
-                    @if (CurrentOrganization.Jurisdiction.DocumentTemplates.ContainsKey("rent-increase-notice"))
-                    {
-                        <MudButton Href="/docs/jurisdiction/rent-increase-notice" Target="_blank" Variant="Variant.Text" Color="Color.Default">@CurrentOrganization.Jurisdiction.RentIncreaseNoticeLabel</MudButton>
-                    }
-                    @if (CurrentOrganization.Jurisdiction.DocumentTemplates.ContainsKey("non-payment-notice"))
-                    {
-                        <MudButton Href="/docs/jurisdiction/non-payment-notice" Target="_blank" Variant="Variant.Text" Color="Color.Default">@CurrentOrganization.Jurisdiction.RentArrearsNoticeLabel</MudButton>
-                    }
+                    <MudChip T="string" Color="Color.Primary" Variant="Variant.Outlined">@UiText.Get("Leases_MoveInOfficialOntarioDocs")</MudChip>
+                    <MudButton Href="/docs/ontario-standard-lease" Target="_blank" Variant="Variant.Text" Color="Color.Primary">@UiText.Get("Leases_MoveInOfficialLease")</MudButton>
+                    <MudButton Href="/docs/n1-template" Target="_blank" Variant="Variant.Text" Color="Color.Default">@UiText.Get("Leases_MoveInOfficialN1")</MudButton>
+                    <MudButton Href="/docs/n4-template" Target="_blank" Variant="Variant.Text" Color="Color.Default">@UiText.Get("Leases_MoveInOfficialN4")</MudButton>
                 </MudStack>
             }
             <MudGrid Spacing="2" Class="mt-2">
@@ -301,6 +309,10 @@
                     <MudIcon Icon="@Icons.Material.Filled.Description" Size="Size.Large" Color="Color.Default" />
                     <MudText Typo="Typo.subtitle1">@Localizer["Leases_NoRecordsTitle"]</MudText>
                     <MudText Typo="Typo.body2">@Localizer["Leases_NoRecordsSubtitle"]</MudText>
+                    @if (CurrentOrganization.CanManageData)
+                    {
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreatePanel">@Localizer["Leases_AddLease"]</MudButton>
+                    }
                     @if (HasActiveFilters)
                     {
                         <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="ClearFilters">@Localizer["Common_ResetFilters"]</MudButton>
@@ -419,8 +431,6 @@
     private Lease ActiveLease => _isCreateMode ? _newLease : _editLease;
     private IEnumerable<LeaseStatus> StatusOptions => Enum.GetValues<LeaseStatus>();
     private IEnumerable<string> MoveInDocumentTypeOptions => new[] { "SignedLease", "InsuranceProof", "GovernmentId", "IncomeProof", "DepositReceipt" };
-    private string JurisdictionLeaseSignedLabel => string.Format(UiText.Get("Leases_JurisdictionLeaseSigned"), CurrentOrganization.Jurisdiction.LeasePackageLabel);
-    private string JurisdictionLeaseMissingLabel => string.Format(UiText.Get("Leases_JurisdictionLeaseMissing"), CurrentOrganization.Jurisdiction.LeasePackageLabel);
     private Lease? PriorityMoveInLease => SelectedLease ?? _items.FirstOrDefault(x => x.Status == LeaseStatus.Draft) ?? _items.FirstOrDefault(x => !x.StandardOntarioLeaseSigned);
     private Lease? PriorityNoticeLease => FilteredLeases.FirstOrDefault(x => x.N1IncreaseNoticeScheduled);
     private bool IsDemoCleanView => DemoModeRouteHelper.IsClean(DemoMode);
@@ -637,7 +647,7 @@
 
         if (FilteredLeases.Any(x => !x.StandardOntarioLeaseSigned))
         {
-            _selectedOntarioFilter = JurisdictionLeaseMissingLabel;
+            _selectedOntarioFilter = Localizer["Leases_OntarioMissing"].Value;
             return;
         }
 
@@ -767,7 +777,7 @@
         => $"{unit.UnitNumber} · {GetPropertyName(unit.PropertyId)}";
 
     private string GetOntarioLabel(Lease lease)
-        => lease.StandardOntarioLeaseSigned ? JurisdictionLeaseSignedLabel : JurisdictionLeaseMissingLabel;
+        => lease.StandardOntarioLeaseSigned ? Localizer["Leases_OntarioSigned"].Value : Localizer["Leases_OntarioMissing"].Value;
 
     private string GetWorkflowLabel(Lease lease)
         => lease.N1IncreaseNoticeScheduled ? Localizer["Leases_WorkflowScheduled"].Value : Localizer["Leases_WorkflowNotScheduled"].Value;

@@ -15,6 +15,20 @@
         <MudText Typo="Typo.body2">@Localizer["Properties_Subtitle"]</MudText>
     </MudStack>
 
+    @if (CurrentOrganization.CanManageData && !IsDemoCleanView)
+    {
+        <MudStack Row="true" Justify="Justify.FlexEnd">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreatePanel">@Localizer["Properties_AddProperty"]</MudButton>
+        </MudStack>
+    }
+
+    @if (IsDemoCleanView && CurrentOrganization.CanManageData)
+    {
+        <MudStack Row="true" Justify="Justify.FlexEnd">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreatePanel">@Localizer["Properties_AddProperty"]</MudButton>
+        </MudStack>
+    }
+
     <DemoJourneyBanner CurrentStepKey="properties" UsePortfolioJourney="true" PropertiesRoute="@PropertiesRoute" PropertyProfileRoute="@PropertyProfileRoute" />
 
     @if (!IsDemoCleanView)
@@ -179,6 +193,10 @@
                     <MudIcon Icon="@Icons.Material.Filled.Apartment" Size="Size.Large" Color="Color.Default" />
                     <MudText Typo="Typo.subtitle1">@Localizer["Properties_NoRecordsTitle"]</MudText>
                     <MudText Typo="Typo.body2">@Localizer["Properties_NoRecordsSubtitle"]</MudText>
+                    @if (CurrentOrganization.CanManageData)
+                    {
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreatePanel">@Localizer["Properties_AddProperty"]</MudButton>
+                    }
                     @if (HasActiveFilters)
                     {
                         <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="ClearFilters">@Localizer["Common_ResetFilters"]</MudButton>
@@ -523,6 +541,7 @@
         await DataService.AddPropertyAsync(_newProperty);
         _newProperty = new Property { Province = "ON", City = "Toronto", PropertyType = "Multi-family" };
         ResetNewTemplates();
+        ClearFilters();
         await ReloadAsync();
     }
 

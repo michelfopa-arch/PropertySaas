@@ -254,7 +254,80 @@ public class UnitTest1
     }
 
     [Fact]
-    public async Task SendInvoiceEmailAsync_Sends_Email_And_Logs_Tenant_Message()
+    public async Task InvoiceCrud_Manages_Invoice_And_Removes_Linked_Payments_On_Delete()
+    {
+        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options;
+
+        await using var db = new ApplicationDbContext(options);
+        db.Database.EnsureCreated();
+
+        var current = new CurrentOrganization
+        {
+            OrganizationId = ApplicationDbSeeder.DemoOrganizationId,
+            OrganizationName = "Maple Leaf Property Group",
+            UserEmail = "owner@mapleleafpm.ca",
+            Role = "Owner"
+        };
+
+        var property = new Property { Id = Guid.NewGuid(), OrganizationId = current.OrganizationId, Name = "Invoice CRUD Property", AddressLine1 = "5 Test St", City = "Toronto", Province = "ON" };
+        var unit = new Unit { Id = Guid.NewGuid(), OrganizationId = current.OrganizationId, PropertyId = property.Id, UnitNumber = "1101", MonthlyRent = 2300m, IsOccupied = true };
+        var tenant = new Tenant { Id = Guid.NewGuid(), OrganizationId = current.OrganizationId, FullName = "Invoice CRUD Tenant", Email = "invoicecrud@test.com", PhoneNumber = "555-4545" };
+        var lease = new Lease { Id = Guid.NewGuid(), OrganizationId = current.OrganizationId, UnitId = unit.Id, TenantId = tenant.Id, StartDate = DateOnly.FromDateTime(DateTime.Today.AddMonths(-1)), EndDate = DateOnly.FromDateTime(DateTime.Today.AddMonths(11)), MonthlyRent = 2300m, Status = LeaseStatus.Active };
+
+        db.Properties.Add(property);
+        db.Units.Add(unit);
+        db.Tenants.Add(tenant);
+        db.Leases.Add(lease);
+        await db.SaveChangesAsync();
+
+        var service = new SaasDataService(db, current, new NullNotificationService());
+        var invoice = new Invoice
+        {
+            LeaseId = lease.Id,
+            Number = "INV-CRUD-1",
+            DueDate = DateOnly.FromDateTime(DateTime.Today.AddDays(7)),
+            Amount = 2300m,
+            Notes = "Initial invoice"
+        };
+
+        await service.AddInvoiceAsync(invoice);
+
+        var createdInvoice = Assert.Single(await db.Invoices.Where(x => x.OrganizationId == current.OrganizationId).ToListAsync());
+        Assert.Equal(2300m, createdInvoice.Balance);
+        Assert.Equal(PaymentStatus.Sent, createdInvoice.Status);
+
+        createdInvoice.Number = "INV-CRUD-2";
+        createdInvoice.Amount = 2400m;
+        createdInvoice.DueDate = DateOnly.FromDateTime(DateTime.Today.AddDays(10));
+
+        await service.UpdateInvoiceAsync(createdInvoice);
+
+        var updatedInvoice = Assert.Single(await db.Invoices.Where(x => x.OrganizationId == current.OrganizationId).ToListAsync());
+        Assert.Equal("INV-CRUD-2", updatedInvoice.Number);
+        Assert.Equal(2400m, updatedInvoice.Amount);
+        Assert.Equal(2400m, updatedInvoice.Balance);
+
+        await service.AddPaymentEntryAsync(new PaymentEntry
+        {
+            InvoiceId = updatedInvoice.Id,
+            ReceivedDate = DateOnly.FromDateTime(DateTime.Today),
+            Amount = 400m,
+            Method = "PAD",
+            Reference = "INV-CRUD-PAY"
+        });
+
+        Assert.Single(await db.PaymentEntries.Where(x => x.OrganizationId == current.OrganizationId).ToListAsync());
+
+        await service.DeleteInvoiceAsync(updatedInvoice.Id);
+
+        Assert.Empty(await db.Invoices.Where(x => x.OrganizationId == current.OrganizationId).ToListAsync());
+        Assert.Empty(await db.PaymentEntries.Where(x => x.OrganizationId == current.OrganizationId).ToListAsync());
+    }
+
+    [Fact]
+    public async Task GetInvoiceDocumentAsync_Returns_Download_Ready_Invoice_Context()
     {
         var options = new DbContextOptionsBuilder<ApplicationDbContext>()
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
@@ -269,15 +342,14 @@ public class UnitTest1
             OrganizationName = "Maple Leaf Property Group",
             UserEmail = "owner@mapleleafpm.ca",
             Role = "Owner",
-            PreferredLanguage = "en-CA"
+            PreferredLanguage = "fr-CA"
         };
 
-        var notifications = new RecordingNotificationService();
-        var property = new Property { Id = Guid.NewGuid(), OrganizationId = current.OrganizationId, Name = "Invoice Email Property", AddressLine1 = "4 Test St", City = "Toronto", Province = "ON" };
-        var unit = new Unit { Id = Guid.NewGuid(), OrganizationId = current.OrganizationId, PropertyId = property.Id, UnitNumber = "1201", MonthlyRent = 2300m, IsOccupied = true };
-        var tenant = new Tenant { Id = Guid.NewGuid(), OrganizationId = current.OrganizationId, FullName = "Invoice Email Tenant", Email = "invoice@test.com", PhoneNumber = "555-1010" };
-        var lease = new Lease { Id = Guid.NewGuid(), OrganizationId = current.OrganizationId, UnitId = unit.Id, TenantId = tenant.Id, StartDate = DateOnly.FromDateTime(DateTime.Today.AddMonths(-2)), EndDate = DateOnly.FromDateTime(DateTime.Today.AddMonths(10)), MonthlyRent = 2300m, Status = LeaseStatus.Active };
-        var invoice = new Invoice { Id = Guid.NewGuid(), OrganizationId = current.OrganizationId, LeaseId = lease.Id, Number = "INV-EMAIL", DueDate = DateOnly.FromDateTime(DateTime.Today.AddDays(7)), Amount = 2300m, Balance = 2300m, Status = PaymentStatus.Sent };
+        var property = new Property { Id = Guid.NewGuid(), OrganizationId = current.OrganizationId, Name = "Invoice Export Property", AddressLine1 = "7 Test St", City = "Toronto", Province = "ON" };
+        var unit = new Unit { Id = Guid.NewGuid(), OrganizationId = current.OrganizationId, PropertyId = property.Id, UnitNumber = "1208", MonthlyRent = 2550m, IsOccupied = true };
+        var tenant = new Tenant { Id = Guid.NewGuid(), OrganizationId = current.OrganizationId, FullName = "Invoice Export Tenant", Email = "invoice-export@test.com", PhoneNumber = "555-8989" };
+        var lease = new Lease { Id = Guid.NewGuid(), OrganizationId = current.OrganizationId, UnitId = unit.Id, TenantId = tenant.Id, StartDate = DateOnly.FromDateTime(DateTime.Today.AddMonths(-2)), EndDate = DateOnly.FromDateTime(DateTime.Today.AddMonths(10)), MonthlyRent = 2550m, Status = LeaseStatus.Active };
+        var invoice = new Invoice { Id = Guid.NewGuid(), OrganizationId = current.OrganizationId, LeaseId = lease.Id, Number = "INV-DOC", DueDate = DateOnly.FromDateTime(DateTime.Today.AddDays(8)), Amount = 2550m, Balance = 2550m, Status = PaymentStatus.Sent, Notes = "PDF/email ready" };
 
         db.Properties.Add(property);
         db.Units.Add(unit);
@@ -286,20 +358,106 @@ public class UnitTest1
         db.Invoices.Add(invoice);
         await db.SaveChangesAsync();
 
-        var service = new SaasDataService(db, current, notifications);
+        var service = new SaasDataService(db, current, new NullNotificationService());
+        var document = await service.GetInvoiceDocumentAsync(invoice.Id);
 
-        var sent = await service.SendInvoiceEmailAsync(invoice.Id);
+        Assert.NotNull(document);
+        Assert.Equal("INV-DOC", document!.Number);
+        Assert.Equal("Maple Leaf Property Group", document.OrganizationName);
+        Assert.Equal("Invoice Export Tenant", document.TenantName);
+        Assert.Equal("invoice-export@test.com", document.TenantEmail);
+        Assert.Equal("1208", document.UnitLabel);
+        Assert.Equal("Invoice Export Property", document.PropertyName);
+        Assert.Equal("7 Test St, Toronto, ON", document.PropertyAddress);
+        var expectedPeriodStart = new DateOnly(invoice.DueDate.Year, invoice.DueDate.Month, 1);
+        var expectedPeriodEnd = expectedPeriodStart.AddMonths(1).AddDays(-1);
+        Assert.Equal($"{expectedPeriodStart:dd/MM/yyyy} au {expectedPeriodEnd:dd/MM/yyyy}", document.BillingPeriodLabel);
+        Assert.Equal("PDF/email ready", document.Notes);
+        Assert.Equal("fr-CA", document.PreferredLanguage);
+    }
 
-        Assert.True(sent);
-        var email = Assert.Single(notifications.InvoiceEmails);
-        Assert.Equal("invoice@test.com", email.To);
-        Assert.Contains("INV-EMAIL", email.Subject);
-        Assert.Contains("Invoice INV-EMAIL", email.Text);
-        Assert.True(db.TenantMessages.Any(x => x.Body.Contains("INV-EMAIL") && x.TenantConversationId != Guid.Empty));
-        var refreshedInvoice = await db.Invoices.FirstAsync(x => x.Id == invoice.Id);
-        Assert.NotNull(refreshedInvoice.LastEmailedUtc);
-        var invoiceSummary = Assert.Single(await service.GetInvoicesAsync(), x => x.InvoiceId == invoice.Id);
-        Assert.NotNull(invoiceSummary.LastEmailedUtc);
+    [Fact]
+    public async Task GenerateNextMonthlyInvoiceAsync_Creates_Next_Period_Only_Once()
+    {
+        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options;
+
+        await using var db = new ApplicationDbContext(options);
+        db.Database.EnsureCreated();
+
+        var current = new CurrentOrganization
+        {
+            OrganizationId = ApplicationDbSeeder.DemoOrganizationId,
+            OrganizationName = "Maple Leaf Property Group",
+            UserEmail = "owner@mapleleafpm.ca",
+            Role = "Owner",
+            PreferredLanguage = "fr-CA"
+        };
+
+        var property = new Property { Id = Guid.NewGuid(), OrganizationId = current.OrganizationId, Name = "Monthly Rent Property", AddressLine1 = "8 Test St", City = "Toronto", Province = "ON" };
+        var unit = new Unit { Id = Guid.NewGuid(), OrganizationId = current.OrganizationId, PropertyId = property.Id, UnitNumber = "904", MonthlyRent = 2100m, IsOccupied = true };
+        var tenant = new Tenant { Id = Guid.NewGuid(), OrganizationId = current.OrganizationId, FullName = "Monthly Rent Tenant", Email = "monthly@test.com", PhoneNumber = "555-3131" };
+        var lease = new Lease { Id = Guid.NewGuid(), OrganizationId = current.OrganizationId, UnitId = unit.Id, TenantId = tenant.Id, StartDate = DateOnly.FromDateTime(DateTime.Today.AddMonths(-3)), EndDate = DateOnly.FromDateTime(DateTime.Today.AddMonths(9)), MonthlyRent = 2100m, Status = LeaseStatus.Active };
+        var januaryStart = new DateOnly(2027, 1, 1);
+        var januaryEnd = januaryStart.AddMonths(1).AddDays(-1);
+        var januaryInvoice = new Invoice { Id = Guid.NewGuid(), OrganizationId = current.OrganizationId, LeaseId = lease.Id, Number = "INV-202701-AAAAAA", BillingPeriodStart = januaryStart, BillingPeriodEnd = januaryEnd, DueDate = januaryStart, Amount = 2100m, Balance = 2100m, Status = PaymentStatus.Sent };
+
+        db.Properties.Add(property);
+        db.Units.Add(unit);
+        db.Tenants.Add(tenant);
+        db.Leases.Add(lease);
+        db.Invoices.Add(januaryInvoice);
+        await db.SaveChangesAsync();
+
+        var service = new SaasDataService(db, current, new NullNotificationService());
+
+        var generated = await service.GenerateNextMonthlyInvoiceAsync(lease.Id);
+        var secondGenerated = await service.GenerateNextMonthlyInvoiceAsync(lease.Id);
+
+        Assert.NotNull(generated);
+        Assert.NotNull(secondGenerated);
+
+        var invoices = await db.Invoices.Where(x => x.OrganizationId == current.OrganizationId).OrderBy(x => x.DueDate).ToListAsync();
+        Assert.Equal(3, invoices.Count);
+        var februaryInvoice = Assert.Single(invoices, x => x.Id == generated!.Id);
+        var marchInvoice = Assert.Single(invoices, x => x.Id == secondGenerated!.Id);
+        Assert.Equal(new DateOnly(2027, 2, 1), februaryInvoice.BillingPeriodStart);
+        Assert.Equal(new DateOnly(2027, 2, 28), februaryInvoice.BillingPeriodEnd);
+        Assert.Equal(2100m, februaryInvoice.Amount);
+        Assert.Equal(new DateOnly(2027, 2, 1), februaryInvoice.DueDate);
+        Assert.Equal(new DateOnly(2027, 3, 1), marchInvoice.BillingPeriodStart);
+        Assert.Equal(new DateOnly(2027, 3, 31), marchInvoice.BillingPeriodEnd);
+    }
+
+    [Fact]
+    public async Task InvoiceStandardInstructions_Can_Be_Cleared()
+    {
+        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options;
+
+        await using var db = new ApplicationDbContext(options);
+        db.Database.EnsureCreated();
+
+        var current = new CurrentOrganization
+        {
+            OrganizationId = ApplicationDbSeeder.DemoOrganizationId,
+            OrganizationName = "Maple Leaf Property Group",
+            UserEmail = "owner@mapleleafpm.ca",
+            Role = "Owner",
+            PreferredLanguage = "fr-CA",
+            Province = "AB"
+        };
+
+        var service = new SaasDataService(db, current, new NullNotificationService());
+
+        await service.UpdateInvoiceStandardInstructionsAsync("Texte à retirer");
+        Assert.Equal("Texte à retirer", await service.GetInvoiceStandardInstructionsAsync());
+
+        await service.UpdateInvoiceStandardInstructionsAsync(string.Empty);
+
+        Assert.Equal(string.Empty, await service.GetInvoiceStandardInstructionsAsync());
     }
 
     [Fact]

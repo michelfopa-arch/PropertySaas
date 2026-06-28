@@ -16,6 +16,13 @@
         <MudText Typo="Typo.body2">@Localizer["Maintenance_Subtitle"]</MudText>
     </MudStack>
 
+    @if (IsDemoCleanView && CurrentOrganization.CanManageData)
+    {
+        <MudStack Row="true" Justify="Justify.FlexEnd">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreatePanel">@Localizer["Maintenance_AddRequest"]</MudButton>
+        </MudStack>
+    }
+
     <DemoJourneyBanner CurrentStepKey="maintenance" ResidentRoute="@Resident360Route" />
 
     <MudPaper Class="pa-3 marketing-card" Elevation="0">

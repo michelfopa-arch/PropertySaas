@@ -264,12 +264,14 @@ namespace PropertySaaS.Domain.Entities
     {
         public Guid LeaseId { get; set; }
         public string Number { get; set; } = string.Empty;
+        public DateOnly? BillingPeriodStart { get; set; }
+        public DateOnly? BillingPeriodEnd { get; set; }
         public DateOnly DueDate { get; set; }
         public decimal Amount { get; set; }
         public decimal Balance { get; set; }
         public PaymentStatus Status { get; set; } = PaymentStatus.Draft;
-        public DateTime? LastEmailedUtc { get; set; }
         public string Notes { get; set; } = string.Empty;
+        public DateTime? LastEmailedUtc { get; set; }
         public Lease? Lease { get; set; }
         public ICollection<PaymentEntry> Payments { get; set; } = new List<PaymentEntry>();
     }

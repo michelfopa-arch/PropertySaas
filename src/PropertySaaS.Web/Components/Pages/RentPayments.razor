@@ -15,6 +15,27 @@
         <MudText Typo="Typo.body2">@UiText.Get("RentPayments_Subtitle")</MudText>
     </MudStack>
 
+    @if (CurrentOrganization.CanManageData)
+    {
+        <MudStack Row="true" Justify="Justify.FlexEnd" Spacing="1" Wrap="Wrap.Wrap">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreateInvoicePanel" Disabled="@(_leases.Count == 0)">@UiText.Get("RentPayments_AddInvoice")</MudButton>
+            <MudButton Variant="Variant.Outlined" Color="Color.Secondary" StartIcon="@Icons.Material.Filled.Autorenew" OnClick="GenerateNextMonthlyInvoiceAsync" Disabled="@(_leases.Count == 0)">@UiText.Get("RentPayments_GenerateNextMonthlyInvoice")</MudButton>
+        </MudStack>
+    }
+
+    @if (CurrentOrganization.CanManageData)
+    {
+        <MudPaper Class="pa-4 marketing-card" Elevation="0">
+            <MudStack Spacing="2">
+                <MudText Typo="Typo.h6">@UiText.Get("RentPayments_StandardInstructions")</MudText>
+                <MudTextField Lines="3" Variant="Variant.Outlined" @bind-Value="_invoiceStandardInstructions" FullWidth="true" />
+                <MudStack Row="true" Justify="Justify.FlexEnd">
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveInvoiceStandardInstructionsAsync">@UiText.Get("Common_SaveChanges")</MudButton>
+                </MudStack>
+            </MudStack>
+        </MudPaper>
+    }
+
     <DemoJourneyBanner CurrentStepKey="resident" ResidentRoute="@Resident360Route" />
 
     @if (_invoices.Count == 0)
@@ -26,19 +47,6 @@
     }
     else
     {
-        @if (!string.IsNullOrWhiteSpace(_invoiceEmailStatusMessage))
-        {
-            <MudAlert Severity="@_invoiceEmailStatusSeverity" Dense="true">
-                <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Wrap="Wrap.Wrap">
-                    <MudText Typo="Typo.body2">@_invoiceEmailStatusMessage</MudText>
-                    @if (_invoiceEmailStatusSeverity == Severity.Success && _lastEmailedInvoiceId.HasValue)
-                    {
-                        <MudButton Variant="Variant.Text" Color="Color.Success" Size="Size.Small" OnClick="OpenLastEmailedInvoiceThreadAsync">@UiText.Get("RentPayments_OpenInvoiceThread")</MudButton>
-                    }
-                </MudStack>
-            </MudAlert>
-        }
-
         <MudPaper Class="pa-3 marketing-card" Elevation="0">
             <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Wrap="Wrap.Wrap">
                 <MudText Typo="Typo.subtitle2">@UiText.Get("Common_RecommendedNextStop")</MudText>
@@ -102,7 +110,7 @@
                     <MudTh>@UiText.Get("RentPayments_DueDate")</MudTh>
                     <MudTh>@UiText.Get("RentPayments_Status")</MudTh>
                     <MudTh>@UiText.Get("RentPayments_Balance")</MudTh>
-                    <MudTh>@UiText.Get("RentPayments_LastEmailed")</MudTh>
+                    <MudTh>@UiText.Get("RentPayments_BillingPeriod")</MudTh>
                     <MudTh></MudTh>
                 </HeaderContent>
                 <RowTemplate>
@@ -112,14 +120,18 @@
                     <MudTd DataLabel="@UiText.Get("RentPayments_DueDate")">@context.DueDate</MudTd>
                     <MudTd DataLabel="@UiText.Get("RentPayments_Status")">@context.Status</MudTd>
                     <MudTd DataLabel="@UiText.Get("RentPayments_Balance")">@context.Balance.ToString("C")</MudTd>
-                    <MudTd DataLabel="@UiText.Get("RentPayments_LastEmailed")">@(context.LastEmailedUtc.HasValue ? context.LastEmailedUtc.Value.ToLocalTime().ToString("g") : UiText.Get("RentPayments_LastEmailedNever"))</MudTd>
+                    <MudTd DataLabel="@UiText.Get("RentPayments_BillingPeriod")">@GetBillingPeriodLabel(context)</MudTd>
                     <MudTd>
                         @if (CurrentOrganization.CanManageData)
                         {
                             <MudStack Row="true" Spacing="1" Wrap="Wrap.Wrap">
+                                <MudButton Href="@GetInvoiceHtmlExportHref(context.InvoiceId)" Target="_blank" Variant="Variant.Text" Color="Color.Secondary" Size="Size.Small">@UiText.Get("RentPayments_PreviewInvoice")</MudButton>
+                                <MudButton Href="@GetInvoicePdfExportHref(context.InvoiceId)" Target="_blank" Variant="Variant.Text" Color="Color.Default" Size="Size.Small">@UiText.Get("RentPayments_DownloadInvoice")</MudButton>
+                                <MudButton Variant="Variant.Text" Color="Color.Success" Size="Size.Small" OnClick="() => SendInvoiceEmailAsync(context.InvoiceId)">@UiText.Get("RentPayments_EmailInvoice")</MudButton>
                                 <MudButton Variant="Variant.Text" Color="Color.Primary" Size="Size.Small" OnClick="() => OpenInvoiceConversationAsync(context.InvoiceId)">@UiText.Get("TenantCommunications_OpenFromRent")</MudButton>
-                                <MudButton Variant="Variant.Text" Color="Color.Secondary" Size="Size.Small" OnClick="() => SendInvoiceEmailAsync(context.InvoiceId)">@UiText.Get("RentPayments_SendInvoiceEmail")</MudButton>
                                 <MudButton Variant="Variant.Text" Color="Color.Warning" Size="Size.Small" OnClick="() => OpenInvoiceNoticeDraftAsync(context.InvoiceId)">@UiText.Get("RentPayments_PrepareN4Draft")</MudButton>
+                                <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Secondary" OnClick="() => OpenEditInvoicePanel(context)" />
+                                <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="() => DeleteInvoiceAsync(context.InvoiceId)" />
                             </MudStack>
                         }
                     </MudTd>
@@ -213,6 +225,45 @@
             </div>
         }
     }
+
+    @if (_isInvoicePanelOpen)
+    {
+        <div class="property-form-backdrop" @onclick="CloseInvoicePanel">
+            <MudPaper Class="pa-5 property-form-drawer" Elevation="0" @onclick:stopPropagation="true">
+                <MudStack Spacing="3">
+                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                        <MudText Typo="Typo.h5">@(_isInvoiceCreateMode ? UiText.Get("RentPayments_AddInvoice") : UiText.Get("RentPayments_EditInvoice"))</MudText>
+                        <MudIconButton Icon="@Icons.Material.Filled.Close" Color="Color.Default" OnClick="CloseInvoicePanel" />
+                    </MudStack>
+
+                    <EditForm Model="ActiveInvoice" OnValidSubmit="SaveInvoiceAsync">
+                        <MudGrid Spacing="2">
+                            <MudItem xs="12" md="6">
+                                <MudSelect T="Guid?" Label="@UiText.Get("RentPayments_SelectLease")" Variant="Variant.Outlined" ShrinkLabel="true" @bind-Value="FormLeaseId">
+                                    <MudSelectItem T="Guid?" Value="@((Guid?)null)">@UiText.Get("RentPayments_SelectLease")</MudSelectItem>
+                                    @foreach (var lease in _leases)
+                                    {
+                                        <MudSelectItem T="Guid?" Value="@((Guid?)lease.Id)">@GetLeaseOptionLabel(lease)</MudSelectItem>
+                                    }
+                                </MudSelect>
+                            </MudItem>
+                            <MudItem xs="12" md="6"><MudTextField Label="@UiText.Get("RentPayments_InvoiceNumber")" Variant="Variant.Outlined" @bind-Value="ActiveInvoice.Number" /></MudItem>
+                            <MudItem xs="12" md="6"><MudDatePicker Label="@UiText.Get("RentPayments_BillingPeriodStart")" Variant="Variant.Outlined" @bind-Date="_invoicePeriodStartDate" Editable="true" /></MudItem>
+                            <MudItem xs="12" md="6"><MudDatePicker Label="@UiText.Get("RentPayments_BillingPeriodEnd")" Variant="Variant.Outlined" @bind-Date="_invoicePeriodEndDate" Editable="true" /></MudItem>
+                            <MudItem xs="12" md="6"><MudDatePicker Label="@UiText.Get("RentPayments_DueDate")" Variant="Variant.Outlined" @bind-Date="_invoiceDueDate" Editable="true" /></MudItem>
+                            <MudItem xs="12" md="6"><MudNumericField T="decimal" Label="@UiText.Get("RentPayments_Amount")" Variant="Variant.Outlined" Adornment="Adornment.Start" AdornmentText="$" @bind-Value="ActiveInvoice.Amount" /></MudItem>
+                            <MudItem xs="12"><MudTextField Label="@UiText.Get("RentPayments_InvoiceNotes")" Variant="Variant.Outlined" Lines="3" @bind-Value="ActiveInvoice.Notes" /></MudItem>
+                        </MudGrid>
+
+                        <MudStack Row="true" Spacing="2" Class="mt-4" Justify="Justify.FlexEnd">
+                            <MudButton Variant="Variant.Text" Color="Color.Default" OnClick="CloseInvoicePanel">@UiText.Get("Common_Cancel")</MudButton>
+                            <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary">@(_isInvoiceCreateMode ? UiText.Get("Common_Create") : UiText.Get("Common_SaveChanges"))</MudButton>
+                        </MudStack>
+                    </EditForm>
+                </MudStack>
+            </MudPaper>
+        </div>
+    }
 </MudStack>
 
 @code {
@@ -221,14 +272,20 @@
 
     private List<InvoiceSummaryDto> _invoices = new();
     private List<PaymentEntrySummaryDto> _payments = new();
+    private List<Lease> _leases = new();
+    private Invoice _newInvoice = new() { Status = PropertySaaS.Domain.Enums.PaymentStatus.Sent };
+    private Invoice _editInvoice = new() { Status = PropertySaaS.Domain.Enums.PaymentStatus.Sent };
     private PaymentEntry _newPayment = new();
     private PaymentEntry _editPayment = new();
+    private bool _isInvoicePanelOpen;
+    private bool _isInvoiceCreateMode = true;
     private bool _isPaymentPanelOpen;
     private bool _isPaymentCreateMode = true;
+    private DateTime? _invoicePeriodStartDate = DateTime.Today;
+    private DateTime? _invoicePeriodEndDate = DateTime.Today.AddMonths(1).AddDays(-1);
+    private DateTime? _invoiceDueDate = DateTime.Today;
     private DateTime? _paymentReceivedDate = DateTime.Today;
-    private string? _invoiceEmailStatusMessage;
-    private Severity _invoiceEmailStatusSeverity = Severity.Info;
-    private Guid? _lastEmailedInvoiceId;
+    private string _invoiceStandardInstructions = string.Empty;
     private bool IsDemoCleanView => DemoModeRouteHelper.IsClean(DemoMode);
     private InvoiceSummaryDto? HighestBalanceInvoice => FilteredInvoices.OrderByDescending(x => x.Balance).ThenBy(x => x.DueDate).FirstOrDefault(x => x.Balance > 0);
     private InvoiceSummaryDto? PartialPaymentInvoice => FilteredInvoices.OrderByDescending(x => x.Balance).ThenBy(x => x.DueDate).FirstOrDefault(x => string.Equals(x.Status, "PartiallyPaid", StringComparison.OrdinalIgnoreCase));
@@ -289,9 +346,13 @@
 
     private string Resident360Route => TenantId.HasValue ? $"/resident-360?tenantId={TenantId.Value}" : "/resident-360";
 
+    private string GetInvoiceHtmlExportHref(Guid invoiceId) => WithDemoMode($"/export/invoices/{invoiceId}/html");
+    private string GetInvoicePdfExportHref(Guid invoiceId) => WithDemoMode($"/export/invoices/{invoiceId}/pdf");
+
     private Dictionary<Guid, string> _tenantLookup = new();
 
     private PaymentEntry ActivePayment => _isPaymentCreateMode ? _newPayment : _editPayment;
+    private Invoice ActiveInvoice => _isInvoiceCreateMode ? _newInvoice : _editInvoice;
 
     private InvoiceSummaryDto? PriorityCollectionsInvoice => HighestBalanceInvoice ?? PartialPaymentInvoice;
 
@@ -309,6 +370,12 @@
         set => ActivePayment.InvoiceId = value ?? Guid.Empty;
     }
 
+    private Guid? FormLeaseId
+    {
+        get => ActiveInvoice.LeaseId == Guid.Empty ? null : ActiveInvoice.LeaseId;
+        set => ActiveInvoice.LeaseId = value ?? Guid.Empty;
+    }
+
     protected override async Task OnInitializedAsync()
     {
         await ReloadAsync();
@@ -318,8 +385,116 @@
     {
         _invoices = await DataService.GetInvoicesAsync();
         _payments = await DataService.GetPaymentEntriesAsync();
+        _leases = await DataService.GetLeasesAsync();
         _tenantLookup = (await DataService.GetTenantsAsync()).ToDictionary(x => x.Id, x => x.FullName);
+        _invoiceStandardInstructions = await DataService.GetInvoiceStandardInstructionsAsync();
     }
+
+    private void OpenCreateInvoicePanel()
+    {
+        _isInvoiceCreateMode = true;
+        var start = new DateOnly(DateTime.Today.Year, DateTime.Today.Month, 1);
+        var end = start.AddMonths(1).AddDays(-1);
+        _newInvoice = new Invoice { Status = PropertySaaS.Domain.Enums.PaymentStatus.Sent, BillingPeriodStart = start, BillingPeriodEnd = end, DueDate = start, Number = $"INV-{DateTime.UtcNow:yyyyMMddHHmmss}" };
+        _invoicePeriodStartDate = start.ToDateTime(TimeOnly.MinValue);
+        _invoicePeriodEndDate = end.ToDateTime(TimeOnly.MinValue);
+        _invoiceDueDate = start.ToDateTime(TimeOnly.MinValue);
+        _isInvoicePanelOpen = true;
+    }
+
+    private void OpenEditInvoicePanel(InvoiceSummaryDto invoice)
+    {
+        _isInvoiceCreateMode = false;
+        _editInvoice = new Invoice
+        {
+            Id = invoice.InvoiceId,
+            LeaseId = invoice.LeaseId,
+            Number = invoice.Number,
+            BillingPeriodStart = invoice.BillingPeriodStart,
+            BillingPeriodEnd = invoice.BillingPeriodEnd,
+            DueDate = invoice.DueDate,
+            Amount = invoice.Amount,
+            Balance = invoice.Balance,
+            Status = Enum.TryParse<PropertySaaS.Domain.Enums.PaymentStatus>(invoice.Status, out var status) ? status : PropertySaaS.Domain.Enums.PaymentStatus.Sent
+        };
+        _invoicePeriodStartDate = (invoice.BillingPeriodStart ?? new DateOnly(invoice.DueDate.Year, invoice.DueDate.Month, 1)).ToDateTime(TimeOnly.MinValue);
+        _invoicePeriodEndDate = (invoice.BillingPeriodEnd ?? (invoice.BillingPeriodStart ?? new DateOnly(invoice.DueDate.Year, invoice.DueDate.Month, 1)).AddMonths(1).AddDays(-1)).ToDateTime(TimeOnly.MinValue);
+        _invoiceDueDate = invoice.DueDate.ToDateTime(TimeOnly.MinValue);
+        _isInvoicePanelOpen = true;
+    }
+
+    private void CloseInvoicePanel()
+    {
+        _isInvoicePanelOpen = false;
+        _isInvoiceCreateMode = true;
+    }
+
+    private async Task SaveInvoiceAsync()
+    {
+        if (ActiveInvoice.LeaseId == Guid.Empty || ActiveInvoice.Amount <= 0 || string.IsNullOrWhiteSpace(ActiveInvoice.Number))
+        {
+            return;
+        }
+
+        ActiveInvoice.BillingPeriodStart = DateOnly.FromDateTime(_invoicePeriodStartDate ?? _invoiceDueDate ?? DateTime.Today);
+        ActiveInvoice.BillingPeriodEnd = DateOnly.FromDateTime(_invoicePeriodEndDate ?? (_invoicePeriodStartDate ?? DateTime.Today).AddMonths(1).AddDays(-1));
+        ActiveInvoice.DueDate = DateOnly.FromDateTime(_invoiceDueDate ?? DateTime.Today);
+
+        if (_isInvoiceCreateMode)
+        {
+            await DataService.AddInvoiceAsync(_newInvoice);
+        }
+        else
+        {
+            await DataService.UpdateInvoiceAsync(_editInvoice);
+        }
+
+        await ReloadAsync();
+        CloseInvoicePanel();
+    }
+
+    private async Task DeleteInvoiceAsync(Guid id)
+    {
+        await DataService.DeleteInvoiceAsync(id);
+        await ReloadAsync();
+    }
+
+    private async Task SendInvoiceEmailAsync(Guid invoiceId)
+    {
+        await DataService.SendInvoiceEmailAsync(invoiceId);
+        await ReloadAsync();
+    }
+
+    private async Task GenerateNextMonthlyInvoiceAsync()
+    {
+        var targetLeaseId = TenantId.HasValue
+            ? _leases.Where(x => x.TenantId == TenantId.Value).OrderByDescending(x => x.StartDate).Select(x => x.Id).FirstOrDefault()
+            : _leases.OrderByDescending(x => x.StartDate).Select(x => x.Id).FirstOrDefault();
+
+        if (targetLeaseId == Guid.Empty)
+        {
+            return;
+        }
+
+        await DataService.GenerateNextMonthlyInvoiceAsync(targetLeaseId);
+        await ReloadAsync();
+    }
+
+    private async Task SaveInvoiceStandardInstructionsAsync()
+    {
+        await DataService.UpdateInvoiceStandardInstructionsAsync(_invoiceStandardInstructions);
+        await ReloadAsync();
+    }
+
+    private string GetBillingPeriodLabel(InvoiceSummaryDto invoice)
+    {
+        var start = invoice.BillingPeriodStart ?? new DateOnly(invoice.DueDate.Year, invoice.DueDate.Month, 1);
+        var end = invoice.BillingPeriodEnd ?? start.AddMonths(1).AddDays(-1);
+        return $"{start:dd/MM/yyyy} - {end:dd/MM/yyyy}";
+    }
+
+    private string GetLeaseOptionLabel(Lease lease)
+        => $"{(_tenantLookup.TryGetValue(lease.TenantId, out var tenantName) ? tenantName : lease.TenantId.ToString())} · {lease.MonthlyRent:C}";
 
     private void OpenCreatePaymentPanel()
     {
@@ -394,29 +569,6 @@
             ? $"/tenant-communications?conversationId={conversationId.Value}&compose=n4-prep&invoiceId={invoiceId}"
             : "/tenant-communications"));
     }
-
-    private async Task SendInvoiceEmailAsync(Guid invoiceId)
-    {
-        var sent = await DataService.SendInvoiceEmailAsync(invoiceId);
-        var invoice = _invoices.FirstOrDefault(x => x.InvoiceId == invoiceId);
-        if (!sent)
-        {
-            _invoiceEmailStatusSeverity = Severity.Warning;
-            _invoiceEmailStatusMessage = UiText.Get("RentPayments_SendInvoiceEmailFailed");
-            _lastEmailedInvoiceId = null;
-            return;
-        }
-
-        await ReloadAsync();
-        _invoiceEmailStatusSeverity = Severity.Success;
-        _invoiceEmailStatusMessage = string.Format(UiText.Get("RentPayments_SendInvoiceEmailSuccess"), invoice?.Number ?? invoiceId.ToString()[..8]);
-        _lastEmailedInvoiceId = invoiceId;
-    }
-
-    private Task OpenLastEmailedInvoiceThreadAsync()
-        => _lastEmailedInvoiceId.HasValue
-            ? OpenInvoiceConversationAsync(_lastEmailedInvoiceId.Value)
-            : Task.CompletedTask;
 
     private async Task OpenPriorityNoticeDraftAsync()
     {

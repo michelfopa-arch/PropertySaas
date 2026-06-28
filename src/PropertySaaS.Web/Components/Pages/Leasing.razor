@@ -16,6 +16,14 @@
         <MudText Typo="Typo.body2">@UiText.Get("Leasing_Subtitle")</MudText>
     </MudStack>
 
+    @if (CurrentOrganization.CanManageData)
+    {
+        <MudStack Row="true" Justify="Justify.FlexEnd" Spacing="1" Wrap="Wrap.Wrap">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreateLeadPanel" Disabled="@(_listings.Count == 0)">@UiText.Get("Leasing_AddLead")</MudButton>
+            <MudButton Variant="Variant.Outlined" Color="Color.Secondary" StartIcon="@Icons.Material.Filled.Event" OnClick="OpenCreateShowingPanel" Disabled="@(_listings.Count == 0)">@UiText.Get("Leasing_AddShowing")</MudButton>
+        </MudStack>
+    }
+
     <DemoJourneyBanner CurrentStepKey="leasing" UsePortfolioJourney="true" PropertiesRoute="@PropertiesRoute" PropertyProfileRoute="@PropertyProfileRoute" />
 
     @if (_listings.Count == 0)

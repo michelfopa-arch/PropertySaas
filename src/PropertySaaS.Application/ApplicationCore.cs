@@ -297,6 +297,7 @@ namespace PropertySaaS.Application.Common
     public sealed class InvoiceSummaryDto
     {
         public Guid InvoiceId { get; set; }
+        public Guid LeaseId { get; set; }
         public string Number { get; set; } = string.Empty;
         public string TenantName { get; set; } = string.Empty;
         public string UnitLabel { get; set; } = string.Empty;
@@ -305,6 +306,36 @@ namespace PropertySaaS.Application.Common
         public string Status { get; set; } = string.Empty;
         public DateOnly DueDate { get; set; }
         public DateTime? LastEmailedUtc { get; set; }
+        public DateOnly? BillingPeriodStart { get; set; }
+        public DateOnly? BillingPeriodEnd { get; set; }
+    }
+
+    public sealed class InvoiceDocumentDto
+    {
+        public Guid InvoiceId { get; set; }
+        public Guid LeaseId { get; set; }
+        public string Number { get; set; } = string.Empty;
+        public string OrganizationName { get; set; } = string.Empty;
+        public string TenantName { get; set; } = string.Empty;
+        public string TenantEmail { get; set; } = string.Empty;
+        public string UnitLabel { get; set; } = string.Empty;
+        public string PropertyName { get; set; } = string.Empty;
+        public string PropertyAddress { get; set; } = string.Empty;
+        public decimal Amount { get; set; }
+        public decimal Balance { get; set; }
+        public string Status { get; set; } = string.Empty;
+        public DateOnly DueDate { get; set; }
+        public DateTime? LastEmailedUtc { get; set; }
+        public string Notes { get; set; } = string.Empty;
+        public string StandardInstructions { get; set; } = string.Empty;
+        public string PreferredLanguage { get; set; } = "en-CA";
+        public string BillingPeriodLabel { get; set; } = string.Empty;
+        public DateOnly? BillingPeriodStart { get; set; }
+        public DateOnly? BillingPeriodEnd { get; set; }
+        internal string PropertyAddressLine1 { get; set; } = string.Empty;
+        internal string PropertyCity { get; set; } = string.Empty;
+        internal string PropertyProvince { get; set; } = string.Empty;
+        internal string PropertyPostalCode { get; set; } = string.Empty;
     }
 
     public sealed class LeadSummaryDto
@@ -1104,6 +1135,60 @@ namespace PropertySaaS.Application.Features
         public Task<List<MaintenanceRequest>> GetMaintenanceAsync() => _db.MaintenanceRequests.Where(x => x.OrganizationId == _current.OrganizationId).OrderByDescending(x => x.RequestedDate).ThenBy(x => x.DispatchStatus).ToListAsync();
         public Task<List<ComplianceReminder>> GetComplianceAsync() => _db.ComplianceReminders.Where(x => x.OrganizationId == _current.OrganizationId).OrderBy(x => x.DueDate).ToListAsync();
         public Task<List<DocumentTemplate>> GetTemplatesAsync() => _db.DocumentTemplates.Where(x => x.OrganizationId == _current.OrganizationId).OrderBy(x => x.Name).ToListAsync();
+        public async Task<string> GetInvoiceStandardInstructionsAsync()
+        {
+            var template = await _db.DocumentTemplates
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.OrganizationId == _current.OrganizationId && x.Category == "InvoiceInstruction" && x.Province == _current.Province);
+
+            if (template is not null)
+            {
+                return template.Description ?? string.Empty;
+            }
+
+            return string.Equals(_current.PreferredLanguage, "fr-CA", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(_current.PreferredLanguage, "fr", StringComparison.OrdinalIgnoreCase)
+                    ? "Utilisez ce document comme facture prête à être téléchargée, partagée ou envoyée par courriel depuis le parcours d’encaissement."
+                    : "Use this document as a download-ready invoice that can be shared or emailed from the rent workflow.";
+        }
+
+        public async Task UpdateInvoiceStandardInstructionsAsync(string instructions)
+        {
+            EnsureCanManageData();
+
+            var normalized = instructions?.Trim() ?? string.Empty;
+
+            var template = await _db.DocumentTemplates
+                .FirstOrDefaultAsync(x => x.OrganizationId == _current.OrganizationId && x.Category == "InvoiceInstruction" && x.Province == _current.Province);
+
+            if (template is null)
+            {
+                template = new DocumentTemplate
+                {
+                    Id = Guid.NewGuid(),
+                    OrganizationId = _current.OrganizationId,
+                    Name = "Invoice standard instructions",
+                    Category = "InvoiceInstruction",
+                    Province = _current.Province,
+                    CreatedUtc = DateTime.UtcNow
+                };
+                _db.DocumentTemplates.Add(template);
+            }
+
+            template.Description = normalized;
+            template.ModifiedUtc = DateTime.UtcNow;
+
+            _db.AuditLogs.Add(new AuditLog
+            {
+                OrganizationId = _current.OrganizationId,
+                EntityName = nameof(DocumentTemplate),
+                Action = "Update",
+                PerformedBy = _current.UserEmail,
+                Details = "Updated invoice standard instructions"
+            });
+
+            await _db.SaveChangesAsync();
+        }
         public Task<List<AuditLog>> GetAuditLogsAsync() => _db.AuditLogs.Where(x => x.OrganizationId == _current.OrganizationId).OrderByDescending(x => x.CreatedUtc).ToListAsync();
         public Task<List<VendorSummaryDto>> GetVendorsAsync() => _db.Vendors.Where(x => x.OrganizationId == _current.OrganizationId).OrderByDescending(x => x.IsPreferred).ThenBy(x => x.Name).Select(x => new VendorSummaryDto { VendorId = x.Id, Name = x.Name, Trade = x.Trade, ServiceArea = x.ServiceArea, IsPreferred = x.IsPreferred, Email = x.Email, PhoneNumber = x.PhoneNumber, DispatchStatus = x.DispatchStatus, PreferredForPriority = x.PreferredForPriority, TypicalResponseHours = x.TypicalResponseHours, LinkedOpenRequests = _db.MaintenanceRequests.Count(request => request.OrganizationId == _current.OrganizationId && request.VendorName == x.Name && request.Status != "Closed") }).ToListAsync();
         public async Task<List<ListingSummaryDto>> GetListingsAsync()
@@ -1155,38 +1240,79 @@ namespace PropertySaaS.Application.Features
                 })
                 .ToList();
         public Task<List<ShowingSummaryDto>> GetShowingsAsync() => _db.Showings.Where(x => x.OrganizationId == _current.OrganizationId).OrderBy(x => x.ScheduledUtc).Select(x => new ShowingSummaryDto { ShowingId = x.Id, ListingId = x.ListingId, LeadId = x.LeadId, ListingTitle = x.Listing != null ? x.Listing.Title : string.Empty, LeadName = x.Lead != null ? x.Lead.FullName : string.Empty, ScheduledUtc = x.ScheduledUtc, Status = x.Status }).ToListAsync();
-        public Task<List<InvoiceSummaryDto>> GetInvoicesAsync() => _db.Invoices.Where(x => x.OrganizationId == _current.OrganizationId).OrderBy(x => x.DueDate).Select(x => new InvoiceSummaryDto { InvoiceId = x.Id, Number = x.Number, TenantName = x.Lease != null && x.Lease.Tenant != null ? x.Lease.Tenant.FullName : string.Empty, UnitLabel = x.Lease != null && x.Lease.Unit != null ? x.Lease.Unit.UnitNumber : string.Empty, Amount = x.Amount, Balance = x.Balance, Status = x.Status.ToString(), DueDate = x.DueDate, LastEmailedUtc = x.LastEmailedUtc }).ToListAsync();
+        public Task<List<InvoiceSummaryDto>> GetInvoicesAsync() => _db.Invoices.Where(x => x.OrganizationId == _current.OrganizationId).OrderBy(x => x.DueDate).Select(x => new InvoiceSummaryDto { InvoiceId = x.Id, LeaseId = x.LeaseId, Number = x.Number, TenantName = x.Lease != null && x.Lease.Tenant != null ? x.Lease.Tenant.FullName : string.Empty, UnitLabel = x.Lease != null && x.Lease.Unit != null ? x.Lease.Unit.UnitNumber : string.Empty, Amount = x.Amount, Balance = x.Balance, Status = x.Status.ToString(), DueDate = x.DueDate, LastEmailedUtc = x.LastEmailedUtc, BillingPeriodStart = x.BillingPeriodStart, BillingPeriodEnd = x.BillingPeriodEnd }).ToListAsync();
         public Task<List<PaymentEntrySummaryDto>> GetPaymentEntriesAsync() => _db.PaymentEntries.Where(x => x.OrganizationId == _current.OrganizationId).OrderByDescending(x => x.ReceivedDate).Select(x => new PaymentEntrySummaryDto { PaymentEntryId = x.Id, InvoiceId = x.InvoiceId, InvoiceNumber = x.Invoice != null ? x.Invoice.Number : string.Empty, ReceivedDate = x.ReceivedDate, Amount = x.Amount, Method = x.Method, Reference = x.Reference }).ToListAsync();
         public Task<List<MediaAssetSummaryDto>> GetMediaAssetsAsync() => _db.MediaAssets.Where(x => x.OrganizationId == _current.OrganizationId).OrderByDescending(x => x.IsPrimary).ThenBy(x => x.SortOrder).Select(x => new MediaAssetSummaryDto { MediaAssetId = x.Id, PropertyId = x.PropertyId, UnitId = x.UnitId, ListingId = x.ListingId, LeaseId = x.LeaseId, MaintenanceRequestId = x.MaintenanceRequestId, FileName = x.FileName, BlobPath = x.BlobPath, Caption = x.Caption, Category = x.Category.ToString(), SortOrder = x.SortOrder, CreatedUtc = x.CreatedUtc, IsPrimary = x.IsPrimary, ScopeLabel = x.MaintenanceRequest != null ? x.MaintenanceRequest.Title : x.Lease != null && x.Lease.Unit != null ? $"Lease package - unit {x.Lease.Unit.UnitNumber}" : x.Listing != null ? x.Listing.Title : x.Unit != null ? x.Unit.UnitNumber : x.Property != null ? x.Property.Name : string.Empty }).ToListAsync();
         public Task<List<MediaAssetSummaryDto>> GetMaintenanceMediaAssetsAsync() => _db.MediaAssets.Where(x => x.OrganizationId == _current.OrganizationId && x.MaintenanceRequestId != null).OrderByDescending(x => x.IsPrimary).ThenBy(x => x.SortOrder).Select(x => new MediaAssetSummaryDto { MediaAssetId = x.Id, PropertyId = x.PropertyId, UnitId = x.UnitId, ListingId = x.ListingId, LeaseId = x.LeaseId, MaintenanceRequestId = x.MaintenanceRequestId, FileName = x.FileName, BlobPath = x.BlobPath, Caption = x.Caption, Category = x.Category.ToString(), SortOrder = x.SortOrder, CreatedUtc = x.CreatedUtc, IsPrimary = x.IsPrimary, ScopeLabel = x.MaintenanceRequest != null ? x.MaintenanceRequest.Title : string.Empty }).ToListAsync();
+        public async Task<InvoiceDocumentDto?> GetInvoiceDocumentAsync(Guid invoiceId, CancellationToken cancellationToken = default)
+        {
+            var invoice = await _db.Invoices
+                .AsNoTracking()
+                .Where(x => x.Id == invoiceId && x.OrganizationId == _current.OrganizationId)
+                .Select(x => new InvoiceDocumentDto
+                {
+                    InvoiceId = x.Id,
+                    LeaseId = x.LeaseId,
+                    Number = x.Number,
+                    DueDate = x.DueDate,
+                    Amount = x.Amount,
+                    Balance = x.Balance,
+                    BillingPeriodStart = x.BillingPeriodStart,
+                    BillingPeriodEnd = x.BillingPeriodEnd,
+                    TenantName = x.Lease != null && x.Lease.Tenant != null ? x.Lease.Tenant.FullName : string.Empty,
+                    TenantEmail = x.Lease != null && x.Lease.Tenant != null ? x.Lease.Tenant.Email : string.Empty,
+                    UnitLabel = x.Lease != null && x.Lease.Unit != null ? x.Lease.Unit.UnitNumber : string.Empty,
+                    PropertyName = x.Lease != null && x.Lease.Unit != null && x.Lease.Unit.Property != null ? x.Lease.Unit.Property.Name : string.Empty,
+                    PropertyAddressLine1 = x.Lease != null && x.Lease.Unit != null && x.Lease.Unit.Property != null ? x.Lease.Unit.Property.AddressLine1 : string.Empty,
+                    PropertyCity = x.Lease != null && x.Lease.Unit != null && x.Lease.Unit.Property != null ? x.Lease.Unit.Property.City : string.Empty,
+                    PropertyProvince = x.Lease != null && x.Lease.Unit != null && x.Lease.Unit.Property != null ? x.Lease.Unit.Property.Province : string.Empty,
+                    PropertyPostalCode = x.Lease != null && x.Lease.Unit != null && x.Lease.Unit.Property != null ? x.Lease.Unit.Property.PostalCode : string.Empty,
+                    Status = x.Status.ToString(),
+                    LastEmailedUtc = x.LastEmailedUtc,
+                    Notes = x.Notes,
+                    OrganizationName = _current.OrganizationName,
+                    PreferredLanguage = _current.PreferredLanguage,
+                    BillingPeriodLabel = string.Empty
+                })
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (invoice is not null)
+            {
+                invoice.PropertyAddress = string.Join(", ", new[]
+                {
+                    invoice.PropertyAddressLine1,
+                    invoice.PropertyCity,
+                    invoice.PropertyProvince,
+                    invoice.PropertyPostalCode
+                }.Where(part => !string.IsNullOrWhiteSpace(part)));
+
+                var periodStart = invoice.BillingPeriodStart ?? new DateOnly(invoice.DueDate.Year, invoice.DueDate.Month, 1);
+                var periodEnd = invoice.BillingPeriodEnd ?? periodStart.AddMonths(1).AddDays(-1);
+                invoice.BillingPeriodStart = periodStart;
+                invoice.BillingPeriodEnd = periodEnd;
+                invoice.BillingPeriodLabel = string.Equals(invoice.PreferredLanguage, "fr-CA", StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(invoice.PreferredLanguage, "fr", StringComparison.OrdinalIgnoreCase)
+                    ? $"{periodStart:dd/MM/yyyy} au {periodEnd:dd/MM/yyyy}"
+                    : $"{periodStart:yyyy-MM-dd} to {periodEnd:yyyy-MM-dd}";
+                invoice.StandardInstructions = await GetInvoiceStandardInstructionsAsync();
+            }
+
+            return invoice;
+        }
+
         public async Task<bool> SendInvoiceEmailAsync(Guid invoiceId, CancellationToken cancellationToken = default)
         {
             EnsureCanManageData();
 
-            var invoice = await _db.Invoices
-                .Where(x => x.Id == invoiceId && x.OrganizationId == _current.OrganizationId)
-                .Select(x => new
-                {
-                    x.Id,
-                    x.Number,
-                    x.DueDate,
-                    x.Amount,
-                    x.Balance,
-                    TenantId = x.Lease != null ? x.Lease.TenantId : Guid.Empty,
-                    TenantName = x.Lease != null && x.Lease.Tenant != null ? x.Lease.Tenant.FullName : string.Empty,
-                    TenantEmail = x.Lease != null && x.Lease.Tenant != null ? x.Lease.Tenant.Email : string.Empty,
-                    LeaseId = x.LeaseId,
-                    UnitLabel = x.Lease != null && x.Lease.Unit != null ? x.Lease.Unit.UnitNumber : string.Empty
-                })
-                .FirstOrDefaultAsync(cancellationToken);
+            var invoice = await GetInvoiceDocumentAsync(invoiceId, cancellationToken);
 
-            if (invoice is null || invoice.TenantId == Guid.Empty || string.IsNullOrWhiteSpace(invoice.TenantEmail))
+            if (invoice is null || string.IsNullOrWhiteSpace(invoice.TenantEmail))
             {
                 return false;
             }
 
-            var isFrench = string.Equals(_current.PreferredLanguage, "fr-CA", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(_current.PreferredLanguage, "fr", StringComparison.OrdinalIgnoreCase);
+            var isFrench = string.Equals(invoice.PreferredLanguage, "fr-CA", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(invoice.PreferredLanguage, "fr", StringComparison.OrdinalIgnoreCase);
             var subject = isFrench
                 ? $"Facture {invoice.Number} - {invoice.UnitLabel}"
                 : $"Invoice {invoice.Number} - {invoice.UnitLabel}";
@@ -1215,7 +1341,7 @@ namespace PropertySaaS.Application.Features
 
             await _notifications.SendInvoiceEmailAsync(invoice.TenantEmail, subject, html, text, cancellationToken);
 
-            var invoiceEntity = await _db.Invoices.FirstOrDefaultAsync(x => x.Id == invoice.Id && x.OrganizationId == _current.OrganizationId, cancellationToken);
+            var invoiceEntity = await _db.Invoices.FirstOrDefaultAsync(x => x.Id == invoice.InvoiceId && x.OrganizationId == _current.OrganizationId, cancellationToken);
             if (invoiceEntity is null)
             {
                 return false;
@@ -1223,7 +1349,7 @@ namespace PropertySaaS.Application.Features
 
             invoiceEntity.LastEmailedUtc = DateTime.UtcNow;
 
-            var conversationId = await EnsureInvoiceConversationAsync(invoice.Id);
+            var conversationId = await EnsureInvoiceConversationAsync(invoice.InvoiceId);
             if (conversationId.HasValue)
             {
                 await AddTenantMessageAsync(new TenantMessage
@@ -2389,6 +2515,111 @@ namespace PropertySaaS.Application.Features
             await RecalculateInvoiceAsync(invoiceId);
             _db.AuditLogs.Add(new AuditLog { OrganizationId = _current.OrganizationId, EntityName = nameof(PaymentEntry), Action = "Delete", PerformedBy = _current.UserEmail, Details = $"Deleted payment {entity.Reference}" });
             await _db.SaveChangesAsync();
+        }
+
+        public async Task AddInvoiceAsync(Invoice invoice)
+        {
+            EnsureCanManageData();
+            invoice.Id = Guid.NewGuid();
+            invoice.OrganizationId = _current.OrganizationId;
+            invoice.CreatedUtc = DateTime.UtcNow;
+            if (!invoice.BillingPeriodStart.HasValue)
+            {
+                invoice.BillingPeriodStart = new DateOnly(invoice.DueDate.Year, invoice.DueDate.Month, 1);
+            }
+            if (!invoice.BillingPeriodEnd.HasValue)
+            {
+                invoice.BillingPeriodEnd = invoice.BillingPeriodStart.Value.AddMonths(1).AddDays(-1);
+            }
+            invoice.Balance = invoice.Amount;
+            invoice.Status = invoice.Balance <= 0 ? PaymentStatus.Paid : PaymentStatus.Sent;
+            _db.Invoices.Add(invoice);
+            _db.AuditLogs.Add(new AuditLog { OrganizationId = _current.OrganizationId, EntityName = nameof(Invoice), Action = "Create", PerformedBy = _current.UserEmail, Details = $"Created invoice {invoice.Number}" });
+            await _db.SaveChangesAsync();
+        }
+
+        public async Task UpdateInvoiceAsync(Invoice invoice)
+        {
+            EnsureCanManageData();
+            var entity = await _db.Invoices.FirstOrDefaultAsync(x => x.Id == invoice.Id && x.OrganizationId == _current.OrganizationId);
+            if (entity is null) return;
+
+            entity.LeaseId = invoice.LeaseId;
+            entity.Number = invoice.Number;
+            entity.BillingPeriodStart = invoice.BillingPeriodStart ?? new DateOnly(invoice.DueDate.Year, invoice.DueDate.Month, 1);
+            entity.BillingPeriodEnd = invoice.BillingPeriodEnd ?? entity.BillingPeriodStart.Value.AddMonths(1).AddDays(-1);
+            entity.DueDate = invoice.DueDate;
+            entity.Amount = invoice.Amount;
+            entity.Notes = invoice.Notes;
+
+            await RecalculateInvoiceAsync(entity.Id);
+            _db.AuditLogs.Add(new AuditLog { OrganizationId = _current.OrganizationId, EntityName = nameof(Invoice), Action = "Update", PerformedBy = _current.UserEmail, Details = $"Updated invoice {invoice.Number}" });
+            await _db.SaveChangesAsync();
+        }
+
+        public async Task DeleteInvoiceAsync(Guid id)
+        {
+            EnsureCanManageData();
+            var entity = await _db.Invoices.FirstOrDefaultAsync(x => x.Id == id && x.OrganizationId == _current.OrganizationId);
+            if (entity is null) return;
+
+            var payments = await _db.PaymentEntries.Where(x => x.OrganizationId == _current.OrganizationId && x.InvoiceId == entity.Id).ToListAsync();
+            if (payments.Count > 0)
+            {
+                _db.PaymentEntries.RemoveRange(payments);
+            }
+
+            _db.Invoices.Remove(entity);
+            _db.AuditLogs.Add(new AuditLog { OrganizationId = _current.OrganizationId, EntityName = nameof(Invoice), Action = "Delete", PerformedBy = _current.UserEmail, Details = $"Deleted invoice {entity.Number}" });
+            await _db.SaveChangesAsync();
+        }
+
+        public async Task<Invoice?> GenerateNextMonthlyInvoiceAsync(Guid leaseId)
+        {
+            EnsureCanManageData();
+
+            var lease = await _db.Leases.FirstOrDefaultAsync(x => x.Id == leaseId && x.OrganizationId == _current.OrganizationId);
+            if (lease is null)
+            {
+                return null;
+            }
+
+            var latestInvoice = await _db.Invoices
+                .Where(x => x.OrganizationId == _current.OrganizationId && x.LeaseId == leaseId)
+                .OrderByDescending(x => x.BillingPeriodEnd ?? x.DueDate)
+                .ThenByDescending(x => x.DueDate)
+                .FirstOrDefaultAsync();
+
+            var nextPeriodStart = latestInvoice?.BillingPeriodEnd?.AddDays(1)
+                ?? latestInvoice?.DueDate.AddDays(1 - latestInvoice.DueDate.Day)
+                ?? new DateOnly(DateTime.Today.Year, DateTime.Today.Month, 1);
+            var normalizedStart = new DateOnly(nextPeriodStart.Year, nextPeriodStart.Month, 1);
+            var normalizedEnd = normalizedStart.AddMonths(1).AddDays(-1);
+
+            var exists = await _db.Invoices.AnyAsync(x => x.OrganizationId == _current.OrganizationId
+                && x.LeaseId == leaseId
+                && x.BillingPeriodStart == normalizedStart
+                && x.BillingPeriodEnd == normalizedEnd);
+            if (exists)
+            {
+                return null;
+            }
+
+            var invoice = new Invoice
+            {
+                LeaseId = leaseId,
+                Number = $"INV-{normalizedStart:yyyyMM}-{leaseId.ToString()[..6].ToUpperInvariant()}",
+                BillingPeriodStart = normalizedStart,
+                BillingPeriodEnd = normalizedEnd,
+                DueDate = normalizedStart,
+                Amount = lease.MonthlyRent,
+                Notes = string.Equals(_current.PreferredLanguage, "fr-CA", StringComparison.OrdinalIgnoreCase) || string.Equals(_current.PreferredLanguage, "fr", StringComparison.OrdinalIgnoreCase)
+                    ? $"Loyer pour la période du {normalizedStart:dd/MM/yyyy} au {normalizedEnd:dd/MM/yyyy}"
+                    : $"Rent for the billing period {normalizedStart:yyyy-MM-dd} to {normalizedEnd:yyyy-MM-dd}"
+            };
+
+            await AddInvoiceAsync(invoice);
+            return invoice;
         }
 
         public async Task AddPropertyAsync(Property property)
