@@ -1,14 +1,20 @@
-# Runtira.Web transition
+# Runtira.Web
 
-Ce projet est le nouveau point d'entrée de la refonte Runtira.
+Ce projet est maintenant le point d'entrée principal de l'application Runtira.
 
-Objectif immédiat:
-- déplacer progressivement le shell AI-first, le routage tenant, l'onboarding et le workspace
-- conserver uniquement les fondations utiles du repo actuel
-- supprimer ensuite le legacy PropertySaaS une fois le parcours Runtira stabilisé
+## Orientation produit
+- workspace AI-first multi-tenant
+- support leads, emails, imports IA et facturation
+- moteur juridictionnel extensible
+- support multilingue et multi-pays évolutif
 
-Ordre recommandé:
-1. migrer Program.cs et la config minimale
-2. migrer le shell Blazor (App, Routes, Layout, pages Runtira)
-3. brancher Application/Infrastructure Runtira
-4. retirer les derniers liens legacy
+## Stack actuelle
+- Blazor Web App
+- Runtira.Application
+- Runtira.Infrastructure
+- Runtira.Domain
+- Clerk, Stripe, Resend, Microsoft 365
+
+## Documentation utile
+- `docs/Runtira-Roadmap.md`
+- `docs/Runtira-New-Machine-Onboarding.md`

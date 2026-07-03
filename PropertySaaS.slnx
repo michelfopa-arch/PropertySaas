@@ -1,15 +1,8 @@
 <Solution>
   <Folder Name="/src/">
-    <Project Path="src/PropertySaaS.Application/PropertySaaS.Application.csproj" />
-    <Project Path="src/PropertySaaS.Domain/PropertySaaS.Domain.csproj" />
-    <Project Path="src/PropertySaaS.Infrastructure/PropertySaaS.Infrastructure.csproj" />
-    <Project Path="src/PropertySaaS.Web/PropertySaaS.Web.csproj" />
     <Project Path="src/Runtira.Application/Runtira.Application.csproj" />
     <Project Path="src/Runtira.Domain/Runtira.Domain.csproj" />
     <Project Path="src/Runtira.Infrastructure/Runtira.Infrastructure.csproj" />
     <Project Path="src/Runtira.Web/Runtira.Web.csproj" />
-  </Folder>
-  <Folder Name="/tests/">
-    <Project Path="tests/PropertySaaS.Tests/PropertySaaS.Tests.csproj" />
   </Folder>
 </Solution>

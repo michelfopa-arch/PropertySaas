@@ -32,3 +32,4 @@ appsettings.*.local.json
 *.publishsettings
 
 node_modules/
+docs-local/

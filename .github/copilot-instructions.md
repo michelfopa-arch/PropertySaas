@@ -8,3 +8,4 @@
 - Toutes les tables métier doivent porter un TenantId avec filtre global EF pour isoler les données; minimiser les données stockées en SQL par tenant et rendre les quotas/maximums raisonnables configurables.
 - Les activités, actions détaillées, archives et historiques volumineux peuvent être stockés en JSON dans Blob, avec seulement les métadonnées et états utiles en base SQL.
 - L'application doit permettre des commandes en langage naturel métier, poser automatiquement les questions obligatoires selon la juridiction applicable, puis exécuter ou proposer l'action.
+- Le produit Runtira doit être vendable rapidement, couvrir le maximum de juridictions possible, et être conçu dès maintenant pour s’étendre facilement à davantage de langues et de pays à l’avenir.
