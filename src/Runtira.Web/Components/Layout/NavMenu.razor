@@ -1,0 +1,16 @@
+﻿@using Runtira.Application.Common
+@inject CurrentOrganization CurrentOrganization
+
+<nav class="top-nav">
+    <NavLink class="top-nav-link" href="" Match="NavLinkMatch.All">@RuntiraText.Get("Nav_Workspace", CurrentOrganization.PreferredLanguage)</NavLink>
+    <NavLink class="top-nav-link" href="/sign-in">@RuntiraText.Get("Nav_SignIn", CurrentOrganization.PreferredLanguage)</NavLink>
+    <NavLink class="top-nav-link" href="/sign-up">@RuntiraText.Get("Nav_SignUp", CurrentOrganization.PreferredLanguage)</NavLink>
+    <NavLink class="top-nav-link" href="/account">@RuntiraText.Get("Nav_Account", CurrentOrganization.PreferredLanguage)</NavLink>
+    @if (!string.IsNullOrWhiteSpace(CurrentOrganization.OrganizationSlug))
+    {
+        <NavLink class="top-nav-link" href="@($"/{CurrentOrganization.OrganizationSlug}/invoice-composer")">@RuntiraText.Get("Nav_LocalBilling", CurrentOrganization.PreferredLanguage)</NavLink>
+        <NavLink class="top-nav-link" href="@($"/{CurrentOrganization.OrganizationSlug}/billing")">@RuntiraText.Get("Nav_Billing", CurrentOrganization.PreferredLanguage)</NavLink>
+        <NavLink class="top-nav-link" href="@($"/{CurrentOrganization.OrganizationSlug}/legislation")">@RuntiraText.Get("Nav_LocalFramework", CurrentOrganization.PreferredLanguage)</NavLink>
+    }
+</nav>
+

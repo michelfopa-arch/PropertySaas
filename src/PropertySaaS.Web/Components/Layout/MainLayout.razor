@@ -1,6 +1,6 @@
 @inherits LayoutComponentBase
 @inject PropertySaaS.Application.Common.CurrentOrganization CurrentOrganization
-@inject SaasDataService DataService
+@inject RuntiraTenantAccessService TenantAccessService
 @inject NavigationManager NavigationManager
 @using PropertySaaS.Web.Localization
 
@@ -8,7 +8,7 @@
     <MudDrawer Open="true" Elevation="1" Variant="DrawerVariant.Responsive" Class="app-drawer">
         <MudStack Spacing="3" Class="pa-4">
             <MudStack Spacing="0">
-                <MudText Typo="Typo.h5" Class="brand-title">PropertySaaS</MudText>
+                <MudText Typo="Typo.h5" Class="brand-title">Runtira</MudText>
                 <MudText Typo="Typo.body2" Class="brand-subtitle">@UiText.Format("Layout_BrandSubtitle", CurrentOrganization.Jurisdiction.ProvinceDisplayName)</MudText>
                 @if (CurrentOrganization.HasOrganizationAccess && CurrentOrganization.CanAccessWorkspace)
                 {
@@ -33,9 +33,9 @@
                          </MudStack>
                         @if (_organizationOptions.Count > 1 || CurrentOrganization.IsSuperAdmin)
                         {
-                            <form method="get" action="/organizations/select" class="mt-3">
+                            <form method="get" action="/tenants/select" class="mt-3">
                                 <MudText Typo="Typo.caption" Class="mb-1 d-block">@UiText.Get("Layout_OrganizationSwitcher")</MudText>
-                                <select name="organizationId" class="mud-input-slot mud-input-root mud-input-root-outlined mud-select-input" style="width:100%;padding:12px;border-radius:4px;">
+                                <select name="tenantId" class="mud-input-slot mud-input-root mud-input-root-outlined mud-select-input" style="width:100%;padding:12px;border-radius:4px;">
                                     @foreach (var option in _organizationOptions)
                                     {
                                          <option value="@option.OrganizationId" selected="@(option.OrganizationId == CurrentOrganization.OrganizationId)">@option.OrganizationName@(option.IsDemo ? $" [{UiText.Get("Layout_DemoOptionSuffix")}]" : string.Empty) (@option.Role)</option>
@@ -117,10 +117,10 @@
     {
         if (CurrentOrganization.UserId != Guid.Empty)
         {
-            _organizationOptions = await DataService.GetAccessibleOrganizationsAsync();
+            _organizationOptions = await TenantAccessService.GetAccessibleTenantsAsync();
             if (CurrentOrganization.IsSuperAdmin)
             {
-                var superAdminOptions = await DataService.GetSuperAdminOrganizationsAsync();
+                var superAdminOptions = await TenantAccessService.GetAllTenantsForSuperAdminAsync();
                 _organizationOptions = superAdminOptions
                     .Select(option => new OrganizationAccessOptionDto
                     {

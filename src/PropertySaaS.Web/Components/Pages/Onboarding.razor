@@ -1,6 +1,6 @@
 @attribute [Authorize]
 @page "/onboarding"
-@inject SaasDataService DataService
+@inject RuntiraTenantAccessService TenantAccessService
 @inject CurrentOrganization CurrentOrganization
 @inject NavigationManager NavigationManager
 @using PropertySaaS.Web.Localization
@@ -80,30 +80,13 @@
                                     <MudText Typo="Typo.body1">@organization.OrganizationName</MudText>
                                     <MudText Typo="Typo.body2" Color="Color.Secondary">@UiText.Format("Onboarding_ExistingOrganizationRole", organization.Role)</MudText>
                                 </div>
-                                <MudButton Href="@($"/organizations/switch/{organization.OrganizationId}")" Variant="Variant.Outlined" Color="Color.Primary">@UiText.Get("Onboarding_OpenOrganization")</MudButton>
+                                <MudButton Href="@($"/tenants/switch/{organization.OrganizationId}")" Variant="Variant.Outlined" Color="Color.Primary">@UiText.Get("Onboarding_OpenOrganization")</MudButton>
                             </MudStack>
                         </MudListItem>
                     }
                 </MudList>
             }
 
-            @if (_pendingInvitations.Count > 0)
-            {
-                <MudList T="string" Dense="true" Class="mt-4">
-                    @foreach (var invitation in _pendingInvitations)
-                    {
-                        <MudListItem T="string">
-                            <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Wrap="Wrap.Wrap" Class="w-100">
-                                <div>
-                                    <MudText Typo="Typo.body1">@UiText.Format("Onboarding_PendingInviteOrganization", invitation.OrganizationName)</MudText>
-                                    <MudText Typo="Typo.body2" Color="Color.Secondary">@UiText.Format("Onboarding_PendingInviteRole", invitation.Role)</MudText>
-                                </div>
-                                <MudButton Href="@($"/invitations/accept?token={Uri.EscapeDataString(invitation.Token)}")" Variant="Variant.Filled" Color="Color.Primary">@UiText.Get("Onboarding_AcceptInvite")</MudButton>
-                            </MudStack>
-                        </MudListItem>
-                    }
-                </MudList>
-            }
         </MudPaper>
     </MudStack>
 </MudContainer>
@@ -118,14 +101,13 @@
     private bool _isLoadingDemo;
     private string? _feedback;
     private Severity _feedbackSeverity = Severity.Success;
-    private List<PendingWorkspaceInvitationDto> _pendingInvitations = new();
     private List<OrganizationAccessOptionDto> _accessibleOrganizations = new();
 
     protected override async Task OnInitializedAsync()
     {
         if (CurrentOrganization.HasOrganizationAccess && !CurrentOrganization.IsSuperAdmin && !CurrentOrganization.IsSupervisor)
         {
-            NavigationManager.NavigateTo("/dashboard");
+            NavigationManager.NavigateTo("/workspace");
             return;
         }
 
@@ -141,8 +123,7 @@
             _feedbackSeverity = Severity.Warning;
         }
 
-        _accessibleOrganizations = await DataService.GetAccessibleOrganizationsAsync();
-        _pendingInvitations = await DataService.GetPendingWorkspaceInvitationsAsync();
+        _accessibleOrganizations = await TenantAccessService.GetAccessibleTenantsAsync();
     }
 
     private async Task LoadDemoAsync()
@@ -155,8 +136,8 @@
             var displayName = string.IsNullOrWhiteSpace(CurrentOrganization.UserFullName) || CurrentOrganization.UserFullName.Contains('@')
                 ? UiText.Get("Onboarding_DefaultDemoWorkspaceName")
                 : $"{CurrentOrganization.UserFullName} Demo Workspace";
-            var organization = await DataService.CreateOrganizationAsync(displayName, _province, loadDemoData: true);
-            NavigationManager.NavigateTo($"/organizations/switch/{organization!.Id}", forceLoad: true);
+            var tenant = await TenantAccessService.CreateTenantAsync(displayName, _province, loadDemoData: true);
+            NavigationManager.NavigateTo($"/tenants/switch/{tenant.TenantId}", forceLoad: true);
         }
         catch (Exception ex)
         {
@@ -176,8 +157,8 @@
 
         try
         {
-            var organization = await DataService.CreateOrganizationAsync(_organizationName, _province);
-            NavigationManager.NavigateTo($"/organizations/switch/{organization!.Id}", forceLoad: true);
+            var tenant = await TenantAccessService.CreateTenantAsync(_organizationName, _province);
+            NavigationManager.NavigateTo($"/tenants/switch/{tenant.TenantId}", forceLoad: true);
         }
         catch (Exception ex)
         {

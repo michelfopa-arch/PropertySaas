@@ -4,18 +4,35 @@
 
 <PageTitle>@UiText.Get("Auth_SignInPageTitle")</PageTitle>
 
-<MudContainer MaxWidth="MaxWidth.Small" Class="py-8">
-    <MudPaper Class="pa-6 marketing-card" Elevation="0">
-        <MudStack Spacing="3">
-            <MudText Typo="Typo.h4">@UiText.Get("Auth_SignInTitle")</MudText>
-            <MudText Typo="Typo.body1" Color="Color.Secondary">@UiText.Get("Auth_SignInSubtitle")</MudText>
-            <MudStack Spacing="2">
-                <MudButton Href="@LoginHref" Variant="Variant.Filled" Color="Color.Primary" FullWidth="true">@UiText.Get("Auth_ContinueWithClerk")</MudButton>
-                <MudButton Href="@SignUpHref" Variant="Variant.Outlined" Color="Color.Default" FullWidth="true">@UiText.Get("Auth_CreateAccount")</MudButton>
-                <MudButton Href="/forgot-password" Variant="Variant.Text" Color="Color.Secondary" FullWidth="true">@UiText.Get("Auth_ForgotPassword")</MudButton>
-            </MudStack>
-        </MudStack>
-    </MudPaper>
+<MudContainer MaxWidth="MaxWidth.Medium" Class="py-8">
+    <MudGrid Spacing="3">
+        <MudItem xs="12" md="6">
+            <MudPaper Class="pa-6 marketing-card h-100" Elevation="0">
+                <MudStack Spacing="3">
+                    <MudText Typo="Typo.h4">@UiText.Get("Auth_SignInTitle")</MudText>
+                    <MudText Typo="Typo.body1" Color="Color.Secondary">@UiText.Get("Auth_SignInSubtitle")</MudText>
+                    <MudStack Spacing="2">
+                        <MudButton Href="@LoginHref" Variant="Variant.Filled" Color="Color.Primary" FullWidth="true">@UiText.Get("Auth_ContinueWithClerk")</MudButton>
+                        <MudButton Href="@SignUpHref" Variant="Variant.Outlined" Color="Color.Default" FullWidth="true">@UiText.Get("Auth_CreateAccount")</MudButton>
+                        <MudButton Href="/forgot-password" Variant="Variant.Text" Color="Color.Secondary" FullWidth="true">@UiText.Get("Auth_ForgotPassword")</MudButton>
+                    </MudStack>
+                </MudStack>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" md="6">
+            <MudPaper Class="pa-6 marketing-panel h-100" Elevation="0">
+                <MudStack Spacing="2">
+                    <MudText Typo="Typo.h5">Runtira</MudText>
+                    <MudText Typo="Typo.body1">AI-first workflow for assets, invoices, support inboxes and jurisdiction-aware execution.</MudText>
+                    <MudList T="string" Dense="true">
+                        <MudListItem T="string">North America ready from day 1</MudListItem>
+                        <MudListItem T="string">One organization context per session</MudListItem>
+                        <MudListItem T="string">Chat, documents and email in a single operating shell</MudListItem>
+                    </MudList>
+                </MudStack>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
 </MudContainer>
 
 @code {

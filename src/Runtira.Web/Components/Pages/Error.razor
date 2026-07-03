@@ -1,0 +1,33 @@
+﻿@page "/Error"
+@using System.Diagnostics
+
+<PageTitle>@RuntiraText.Get("Error_PageTitle")</PageTitle>
+
+<h1 class="text-danger">@RuntiraText.Get("Error_Title")</h1>
+<h2 class="text-danger">@RuntiraText.Get("Error_Subtitle")</h2>
+
+@if (ShowRequestId)
+{
+    <p>
+        <strong>@RuntiraText.Get("Error_RequestId")</strong> <code>@RequestId</code>
+    </p>
+}
+
+<h3>@RuntiraText.Get("Error_DevelopmentTitle")</h3>
+<p>
+    @((MarkupString)RuntiraText.Get("Error_DevelopmentBody1"))
+</p>
+<p>
+    @((MarkupString)RuntiraText.Get("Error_DevelopmentBody2"))
+</p>
+
+@code{
+    [CascadingParameter]
+    private HttpContext? HttpContext { get; set; }
+
+    private string? RequestId { get; set; }
+    private bool ShowRequestId => !string.IsNullOrEmpty(RequestId);
+
+    protected override void OnInitialized() =>
+        RequestId = Activity.Current?.Id ?? HttpContext?.TraceIdentifier;
+}

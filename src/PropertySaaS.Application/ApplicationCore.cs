@@ -30,6 +30,16 @@ namespace PropertySaaS.Application.Abstractions
         DbSet<AISuggestionLog> AISuggestionLogs { get; }
         DbSet<TenantConversation> TenantConversations { get; }
         DbSet<TenantMessage> TenantMessages { get; }
+        DbSet<RuntiraOrganization> RuntiraOrganizations { get; }
+        DbSet<RuntiraUser> RuntiraUsers { get; }
+        DbSet<RuntiraMembership> RuntiraMemberships { get; }
+        DbSet<RuntiraAsset> RuntiraAssets { get; }
+        DbSet<RuntiraConversation> RuntiraConversations { get; }
+        DbSet<RuntiraMessage> RuntiraMessages { get; }
+        DbSet<RuntiraWorkflowTemplate> RuntiraWorkflowTemplates { get; }
+        DbSet<RuntiraBlobArchive> RuntiraBlobArchives { get; }
+        DbSet<RuntiraJurisdictionProfile> RuntiraJurisdictionProfiles { get; }
+        DbSet<RuntiraQuotaPolicy> RuntiraQuotaPolicies { get; }
         Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     }
 }
@@ -61,7 +71,7 @@ namespace PropertySaaS.Application.Common
                 ProvinceCode = "ON",
                 ProvinceDisplayName = "Ontario",
                 DefaultLanguage = "en-CA",
-                SupportedLanguages = new[] { "en-CA", "fr-CA" },
+                SupportedLanguages = new[] { "en-CA", "fr-CA", "es-MX" },
                 NoticeTypes = new[] { "N1", "N4", "SOL" },
                 RentArrearsNoticeLabel = "N4 non-payment notice",
                 RentIncreaseNoticeLabel = "N1 rent increase notice",
@@ -91,7 +101,7 @@ namespace PropertySaaS.Application.Common
                 ProvinceCode = "QC",
                 ProvinceDisplayName = "Québec",
                 DefaultLanguage = "fr-CA",
-                SupportedLanguages = new[] { "fr-CA", "en-CA" },
+                SupportedLanguages = new[] { "fr-CA", "en-CA", "es-MX" },
                 NoticeTypes = new[] { "TAL", "RentReview", "LeaseRenewal" },
                 RentArrearsNoticeLabel = "Avis de non-paiement / dossier TAL",
                 RentIncreaseNoticeLabel = "Avis d'ajustement de loyer et renouvellement",
@@ -114,7 +124,7 @@ namespace PropertySaaS.Application.Common
                 ProvinceCode = "AB",
                 ProvinceDisplayName = "Alberta",
                 DefaultLanguage = "en-CA",
-                SupportedLanguages = new[] { "en-CA", "fr-CA" },
+                SupportedLanguages = new[] { "en-CA", "fr-CA", "es-MX" },
                 NoticeTypes = new[] { "RentIncrease", "Termination", "Inspection" },
                 RentArrearsNoticeLabel = "Alberta rent arrears notice",
                 RentIncreaseNoticeLabel = "Alberta rent increase notice",
@@ -159,6 +169,7 @@ namespace PropertySaaS.Application.Common
         public int AccessibleOrganizationCount { get; set; }
         public bool HasSuperAdminOrganizationSelection { get; set; }
         public string OrganizationName { get; set; } = string.Empty;
+        public string OrganizationSlug { get; set; } = string.Empty;
         public bool IsDemo { get; set; }
         public DateTime? DemoExpiresUtc { get; set; }
         public string UserEmail { get; set; } = string.Empty;
@@ -173,7 +184,7 @@ namespace PropertySaaS.Application.Common
         public bool IsAuthenticated => !string.IsNullOrWhiteSpace(UserEmail);
         public bool HasOrganizationAccess => OrganizationId != Guid.Empty;
         public bool CanAccessWorkspace => HasOrganizationAccess && (SubscriptionIsActive || !TrialExpired);
-        public bool RequiresOrganizationSelection => !HasOrganizationAccess && AccessibleOrganizationCount > 1;
+        public bool RequiresOrganizationSelection => !HasOrganizationAccess && (AccessibleOrganizationCount > 1 || HasSuperAdminOrganizationSelection);
         public bool IsSupervisor => string.Equals(SystemRole, "Supervisor", StringComparison.OrdinalIgnoreCase);
         public bool CanManageData => Role is "Owner" or "Manager" or "SuperAdmin" or "Supervisor" || IsSuperAdmin || IsSupervisor;
         public bool IsSuperAdmin => string.Equals(SystemRole, "SuperAdmin", StringComparison.OrdinalIgnoreCase);
@@ -3768,6 +3779,13 @@ namespace PropertySaaS.Application.Dashboard
         public static IServiceCollection AddApplicationServices(this IServiceCollection services)
         {
             services.AddTransient<SaasDataService>();
+            services.AddTransient<RuntiraWorkspaceService>();
+            services.AddTransient<RuntiraTenantAccessService>();
+            services.AddScoped<PropertySaaS.Application.Abstractions.ITenantContextAccessor>(_ => new TenantContext
+            {
+                TenantId = null,
+                BypassTenantFilter = false
+            });
             services.AddScoped(_ => new CurrentOrganization
             {
                 UserId = Guid.Parse("66666666-6666-6666-6666-666666666666"),

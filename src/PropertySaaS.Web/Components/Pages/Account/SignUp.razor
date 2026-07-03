@@ -4,17 +4,34 @@
 
 <PageTitle>@UiText.Get("Auth_SignUpPageTitle")</PageTitle>
 
-<MudContainer MaxWidth="MaxWidth.Small" Class="py-8">
-    <MudPaper Class="pa-6 marketing-card" Elevation="0">
-        <MudStack Spacing="3">
-            <MudText Typo="Typo.h4">@UiText.Get("Auth_SignUpTitle")</MudText>
-            <MudText Typo="Typo.body1" Color="Color.Secondary">@UiText.Get("Auth_SignUpSubtitle")</MudText>
-            <MudStack Spacing="2">
-                <MudButton Href="@SignUpHref" Variant="Variant.Filled" Color="Color.Primary" FullWidth="true">@UiText.Get("Auth_StartFree")</MudButton>
-                <MudButton Href="@SignInHref" Variant="Variant.Outlined" Color="Color.Default" FullWidth="true">@UiText.Get("Auth_AlreadyHaveAccount")</MudButton>
-            </MudStack>
-        </MudStack>
-    </MudPaper>
+<MudContainer MaxWidth="MaxWidth.Medium" Class="py-8">
+    <MudGrid Spacing="3">
+        <MudItem xs="12" md="6">
+            <MudPaper Class="pa-6 marketing-card h-100" Elevation="0">
+                <MudStack Spacing="3">
+                    <MudText Typo="Typo.h4">@UiText.Get("Auth_SignUpTitle")</MudText>
+                    <MudText Typo="Typo.body1" Color="Color.Secondary">@UiText.Get("Auth_SignUpSubtitle")</MudText>
+                    <MudStack Spacing="2">
+                        <MudButton Href="@SignUpHref" Variant="Variant.Filled" Color="Color.Primary" FullWidth="true">@UiText.Get("Auth_StartFree")</MudButton>
+                        <MudButton Href="@SignInHref" Variant="Variant.Outlined" Color="Color.Default" FullWidth="true">@UiText.Get("Auth_AlreadyHaveAccount")</MudButton>
+                    </MudStack>
+                </MudStack>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" md="6">
+            <MudPaper Class="pa-6 marketing-panel h-100" Elevation="0">
+                <MudStack Spacing="2">
+                    <MudText Typo="Typo.h5">Runtira</MudText>
+                    <MudText Typo="Typo.body1">Launch an AI-guided organization workspace with clean operations, multilingual support and jurisdiction-aware workflows.</MudText>
+                    <MudList T="string" Dense="true">
+                        <MudListItem T="string">Clerk authentication</MudListItem>
+                        <MudListItem T="string">Azure SQL + Blob foundation</MudListItem>
+                        <MudListItem T="string">Microsoft 365 support inbox pipeline</MudListItem>
+                    </MudList>
+                </MudStack>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
 </MudContainer>
 
 @code {

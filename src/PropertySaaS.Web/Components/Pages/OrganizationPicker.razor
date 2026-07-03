@@ -1,7 +1,7 @@
 @attribute [Authorize]
 @page "/onboarding/organization-picker"
 @page "/superadmin/select-organization"
-@inject SaasDataService DataService
+@inject RuntiraTenantAccessService TenantAccessService
 @inject CurrentOrganization CurrentOrganization
 @inject NavigationManager NavigationManager
 @using PropertySaaS.Web.Localization
@@ -23,8 +23,8 @@
                         <MudText Typo="Typo.h6">@option.OrganizationName</MudText>
                         <MudText Typo="Typo.body2" Color="Color.Secondary">@option.Role</MudText>
                     </div>
-                    <form method="get" action="/organizations/select">
-                        <input type="hidden" name="organizationId" value="@option.OrganizationId" />
+                    <form method="get" action="/tenants/select">
+                        <input type="hidden" name="tenantId" value="@option.OrganizationId" />
                         <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary">@UiText.Get("OrganizationPicker_Continue")</MudButton>
                     </form>
                 </MudStack>
@@ -49,13 +49,13 @@
     {
         if (CurrentOrganization.HasOrganizationAccess && !CurrentOrganization.IsSuperAdmin)
         {
-            NavigationManager.NavigateTo("/dashboard");
+            NavigationManager.NavigateTo("/workspace");
             return;
         }
 
         if (CurrentOrganization.IsSuperAdmin)
         {
-            _options = (await DataService.GetSuperAdminOrganizationsAsync())
+            _options = (await TenantAccessService.GetAllTenantsForSuperAdminAsync())
                 .Select(option => new OrganizationAccessOptionDto
                 {
                     OrganizationId = option.OrganizationId,
@@ -68,7 +68,7 @@
         }
         else
         {
-            _options = await DataService.GetAccessibleOrganizationsAsync();
+            _options = await TenantAccessService.GetAccessibleTenantsAsync();
         }
 
         if (_options.Count <= 1 && !CurrentOrganization.IsSuperAdmin)

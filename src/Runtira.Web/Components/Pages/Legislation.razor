@@ -1,0 +1,93 @@
+@page "/{tenantSlug}/legislation"
+@using Runtira.Application.Common
+@using Runtira.Application.Features
+@inject CurrentOrganization CurrentOrganization
+@inject RuntiraWorkspaceService WorkspaceService
+
+<PageTitle>@RuntiraText.Get("Nav_LocalFramework", CurrentOrganization.PreferredLanguage)</PageTitle>
+
+<div class="hero-shell">
+    <section class="hero-card">
+        <div class="hero-badge">@RuntiraText.Get("Legislation_Badge", CurrentOrganization.PreferredLanguage)</div>
+        <h1>@RuntiraText.Get("Legislation_Title", CurrentOrganization.PreferredLanguage)</h1>
+        <p class="hero-copy">
+            @RuntiraText.Get("Legislation_Subtitle", CurrentOrganization.PreferredLanguage)
+        </p>
+
+        @if (_experience is not null)
+        {
+            <div class="tenant-summary">
+                <div>
+                    <span class="summary-label">@RuntiraText.Get("Legislation_Summary_ActiveJurisdiction", CurrentOrganization.PreferredLanguage)</span>
+                    <strong>@_experience.DisplayName</strong>
+                </div>
+                <div>
+                    <span class="summary-label">@RuntiraText.Get("Legislation_Summary_Code", CurrentOrganization.PreferredLanguage)</span>
+                    <strong>@_experience.JurisdictionCode</strong>
+                </div>
+                <div>
+                    <span class="summary-label">@RuntiraText.Get("Legislation_Summary_PreferredLanguage", CurrentOrganization.PreferredLanguage)</span>
+                    <strong>@_experience.PreferredLanguage</strong>
+                </div>
+                <div>
+                    <span class="summary-label">@RuntiraText.Get("Legislation_Summary_SupportedLanguages", CurrentOrganization.PreferredLanguage)</span>
+                    <strong>@string.Join(", ", _experience.SupportedLanguages)</strong>
+                </div>
+            </div>
+
+            <div class="localized-section">
+                <div class="prompt-title">@RuntiraText.Get("Legislation_QuestionsTitle", CurrentOrganization.PreferredLanguage)</div>
+                <div class="option-list">
+                    @foreach (var question in _experience.RequiredQuestions)
+                    {
+                        <span class="option-pill">@question</span>
+                    }
+                </div>
+            </div>
+
+            <div class="localized-section">
+                <div class="prompt-title">@RuntiraText.Get("Legislation_ExpansionTitle", CurrentOrganization.PreferredLanguage)</div>
+                <div class="option-list">
+                    <span class="option-pill option-pill-accent">@RuntiraText.Get("Legislation_ExpansionSupported", CurrentOrganization.PreferredLanguage)</span>
+                    <span class="option-pill">@RuntiraText.Get("Legislation_ExpansionActivation", CurrentOrganization.PreferredLanguage)</span>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="empty-state">
+                <strong>@RuntiraText.Get("Legislation_MissingTitle", CurrentOrganization.PreferredLanguage)</strong>
+                <p>@RuntiraText.Get("Legislation_MissingBody", CurrentOrganization.PreferredLanguage)</p>
+            </div>
+        }
+    </section>
+
+    <section class="workspace-card">
+        <div class="workspace-header">
+            <h2>@RuntiraText.Get("Legislation_AllowedOptions", CurrentOrganization.PreferredLanguage)</h2>
+            <span class="workspace-state">@RuntiraText.Get("Common_Localized", CurrentOrganization.PreferredLanguage)</span>
+        </div>
+
+        @if (_experience is not null)
+        {
+            <div class="option-list">
+                @foreach (var option in _experience.VisibleInvoiceOptions)
+                {
+                    <span class="option-pill option-pill-accent">@option</span>
+                }
+            </div>
+        }
+    </section>
+</div>
+
+@code {
+    [Parameter]
+    public string? TenantSlug { get; set; }
+
+    private RuntiraLegislationExperienceDto? _experience;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _experience = await WorkspaceService.GetLegislationExperienceAsync();
+    }
+}

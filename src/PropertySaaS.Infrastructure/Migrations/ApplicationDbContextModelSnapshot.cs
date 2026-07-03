@@ -22,6 +22,51 @@ namespace PropertySaaS.Infrastructure.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("PropertySaaS.Domain.Entities.AISuggestionLog", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("ModifiedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("OrganizationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("PromptSummary")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ReviewOutcome")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("ReviewedByHuman")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid?>("SourceEntityId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("SourceEntityName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("SuggestedContent")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("SuggestionType")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("AISuggestionLogs");
+                });
+
             modelBuilder.Entity("PropertySaaS.Domain.Entities.AppUser", b =>
                 {
                     b.Property<Guid>("Id")
@@ -49,10 +94,18 @@ namespace PropertySaaS.Infrastructure.Migrations
                     b.Property<DateTime?>("ModifiedUtc")
                         .HasColumnType("datetime2");
 
-                    b.Property<Guid>("OrganizationId")
+                    b.Property<Guid?>("OrganizationId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("PreferredLanguage")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Role")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("SystemRole")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
@@ -72,7 +125,9 @@ namespace PropertySaaS.Infrastructure.Migrations
                             FullName = "Morgan Chen",
                             IsActive = true,
                             OrganizationId = new Guid("11111111-1111-1111-1111-111111111111"),
-                            Role = "Owner"
+                            PreferredLanguage = "en-CA",
+                            Role = "Owner",
+                            SystemRole = "User"
                         });
                 });
 
@@ -149,6 +204,10 @@ namespace PropertySaaS.Infrastructure.Migrations
                     b.Property<Guid>("OrganizationId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("Province")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Reference")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -170,6 +229,7 @@ namespace PropertySaaS.Infrastructure.Migrations
                             IsCompleted = false,
                             NoticeType = "N1",
                             OrganizationId = new Guid("11111111-1111-1111-1111-111111111111"),
+                            Province = "ON",
                             Reference = "90 days notice recommended workflow",
                             Title = "N1 rent increase notice window"
                         },
@@ -181,6 +241,7 @@ namespace PropertySaaS.Infrastructure.Migrations
                             IsCompleted = false,
                             NoticeType = "SOL",
                             OrganizationId = new Guid("11111111-1111-1111-1111-111111111111"),
+                            Province = "ON",
                             Reference = "Ensure latest government template is attached",
                             Title = "Standard Ontario Lease review"
                         });
@@ -244,6 +305,129 @@ namespace PropertySaaS.Infrastructure.Migrations
                         });
                 });
 
+            modelBuilder.Entity("PropertySaaS.Domain.Entities.Invoice", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("Balance")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateOnly?>("BillingPeriodEnd")
+                        .HasColumnType("date");
+
+                    b.Property<DateOnly?>("BillingPeriodStart")
+                        .HasColumnType("date");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateOnly>("DueDate")
+                        .HasColumnType("date");
+
+                    b.Property<DateTime?>("LastEmailedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("LeaseId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("ModifiedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Notes")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Number")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("OrganizationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LeaseId");
+
+                    b.ToTable("Invoices");
+                });
+
+            modelBuilder.Entity("PropertySaaS.Domain.Entities.Lead", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("ConsentToScreening")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("CreditScore")
+                        .HasColumnType("int");
+
+                    b.Property<DateOnly?>("DesiredMoveInDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FullName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("HasPets")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid>("ListingId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("ModifiedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<decimal>("MonthlyIncome")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Notes")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("OccupantCount")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("OrganizationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("PhoneNumber")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ListingId");
+
+                    b.ToTable("Leads");
+                });
+
             modelBuilder.Entity("PropertySaaS.Domain.Entities.Lease", b =>
                 {
                     b.Property<Guid>("Id")
@@ -253,8 +437,14 @@ namespace PropertySaaS.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedUtc")
                         .HasColumnType("datetime2");
 
+                    b.Property<bool>("DepositReceived")
+                        .HasColumnType("bit");
+
                     b.Property<DateOnly>("EndDate")
                         .HasColumnType("date");
+
+                    b.Property<bool>("InsuranceProofReceived")
+                        .HasColumnType("bit");
 
                     b.Property<DateTime?>("ModifiedUtc")
                         .HasColumnType("datetime2");
@@ -262,6 +452,13 @@ namespace PropertySaaS.Infrastructure.Migrations
                     b.Property<decimal>("MonthlyRent")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<bool>("MoveInChecklistCompleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("MoveInNotes")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("N1IncreaseNoticeScheduled")
                         .HasColumnType("bit");
@@ -297,8 +494,12 @@ namespace PropertySaaS.Infrastructure.Migrations
                         {
                             Id = new Guid("55555555-5555-5555-5555-555555555555"),
                             CreatedUtc = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DepositReceived = true,
                             EndDate = new DateOnly(2026, 12, 31),
+                            InsuranceProofReceived = true,
                             MonthlyRent = 2895m,
+                            MoveInChecklistCompleted = true,
+                            MoveInNotes = "Demo move-in package completed and ready for resident handoff.",
                             N1IncreaseNoticeScheduled = true,
                             OrganizationId = new Guid("11111111-1111-1111-1111-111111111111"),
                             StandardOntarioLeaseSigned = true,
@@ -307,6 +508,58 @@ namespace PropertySaaS.Infrastructure.Migrations
                             TenantId = new Guid("44444444-4444-4444-4444-444444444444"),
                             UnitId = new Guid("33333333-3333-3333-3333-333333333333")
                         });
+                });
+
+            modelBuilder.Entity("PropertySaaS.Domain.Entities.Listing", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("AskingRent")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("ModifiedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("OrganizationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("PropertyId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("PublishTargets")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("PublishedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid?>("UnitId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PropertyId");
+
+                    b.HasIndex("UnitId");
+
+                    b.ToTable("Listings");
                 });
 
             modelBuilder.Entity("PropertySaaS.Domain.Entities.MaintenanceRequest", b =>
@@ -321,6 +574,12 @@ namespace PropertySaaS.Infrastructure.Migrations
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("DispatchStatus")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("nvarchar(max)")
+                        .HasDefaultValue("Unassigned");
 
                     b.Property<decimal>("EstimatedCost")
                         .HasPrecision(18, 2)
@@ -366,6 +625,7 @@ namespace PropertySaaS.Infrastructure.Migrations
                             Id = new Guid("77777777-7777-7777-7777-777777777777"),
                             CreatedUtc = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Ontario compliance inspection and battery replacement.",
+                            DispatchStatus = "Assigned",
                             EstimatedCost = 180m,
                             OrganizationId = new Guid("11111111-1111-1111-1111-111111111111"),
                             Priority = 2,
@@ -378,22 +638,149 @@ namespace PropertySaaS.Infrastructure.Migrations
                         });
                 });
 
+            modelBuilder.Entity("PropertySaaS.Domain.Entities.MediaAsset", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("BlobPath")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Caption")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Category")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DocumentType")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("nvarchar(max)")
+                        .HasDefaultValue("");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsPrimary")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid?>("LeaseId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("ListingId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("MaintenanceRequestId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("ModifiedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("OrganizationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("PropertyId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int");
+
+                    b.Property<Guid?>("UnitId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LeaseId");
+
+                    b.HasIndex("ListingId");
+
+                    b.HasIndex("MaintenanceRequestId");
+
+                    b.HasIndex("PropertyId");
+
+                    b.HasIndex("UnitId");
+
+                    b.ToTable("MediaAssets");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("12121212-1212-1212-1212-121212121212"),
+                            BlobPath = "/demo/lease-package/ontario-standard-lease.pdf",
+                            Caption = "Signed standard lease ready for tenant welcome package.",
+                            Category = 3,
+                            CreatedUtc = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DocumentType = "SignedLease",
+                            FileName = "Ontario Standard Lease.pdf",
+                            IsPrimary = true,
+                            LeaseId = new Guid("55555555-5555-5555-5555-555555555555"),
+                            OrganizationId = new Guid("11111111-1111-1111-1111-111111111111"),
+                            PropertyId = new Guid("22222222-2222-2222-2222-222222222222"),
+                            SortOrder = 1,
+                            UnitId = new Guid("33333333-3333-3333-3333-333333333333")
+                        },
+                        new
+                        {
+                            Id = new Guid("34343434-3434-3434-3434-343434343434"),
+                            BlobPath = "/demo/lease-package/insurance-certificate.pdf",
+                            Caption = "Tenant insurance proof collected before move-in.",
+                            Category = 3,
+                            CreatedUtc = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DocumentType = "InsuranceProof",
+                            FileName = "Insurance Certificate.pdf",
+                            IsPrimary = false,
+                            LeaseId = new Guid("55555555-5555-5555-5555-555555555555"),
+                            OrganizationId = new Guid("11111111-1111-1111-1111-111111111111"),
+                            PropertyId = new Guid("22222222-2222-2222-2222-222222222222"),
+                            SortOrder = 2,
+                            UnitId = new Guid("33333333-3333-3333-3333-333333333333")
+                        });
+                });
+
             modelBuilder.Entity("PropertySaaS.Domain.Entities.Organization", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("CountryCode")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<DateTime>("CreatedUtc")
                         .HasColumnType("datetime2");
 
+                    b.Property<DateTime?>("DemoExpiresUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DemoResetAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DemoTemplate")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDemo")
                         .HasColumnType("bit");
 
                     b.Property<DateTime?>("ModifiedUtc")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PreferredLanguage")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
@@ -420,6 +807,9 @@ namespace PropertySaaS.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<DateTime?>("TrialEndsUtc")
+                        .HasColumnType("datetime2");
+
                     b.HasKey("Id");
 
                     b.HasIndex("Slug")
@@ -431,16 +821,166 @@ namespace PropertySaaS.Infrastructure.Migrations
                         new
                         {
                             Id = new Guid("11111111-1111-1111-1111-111111111111"),
+                            CountryCode = "CA",
                             CreatedUtc = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DemoTemplate = "",
                             IsActive = true,
+                            IsDemo = false,
                             Name = "Maple Leaf Property Group",
+                            PreferredLanguage = "en-CA",
                             Province = "ON",
                             Slug = "maple-leaf",
                             StripeCustomerId = "cus_demo_mapleleaf",
                             StripeSubscriptionId = "sub_demo_mapleleaf",
                             SubscriptionTier = 2,
-                            TimeZone = "America/Toronto"
+                            TimeZone = "America/Toronto",
+                            TrialEndsUtc = new DateTime(2026, 1, 15, 0, 0, 0, 0, DateTimeKind.Utc)
                         });
+                });
+
+            modelBuilder.Entity("PropertySaaS.Domain.Entities.OrganizationInvitation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("AcceptedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("ExpiresUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("InvitedBy")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("ModifiedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("OrganizationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("RevokedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Token")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrganizationId");
+
+                    b.HasIndex("Token")
+                        .IsUnique();
+
+                    b.ToTable("OrganizationInvitations");
+                });
+
+            modelBuilder.Entity("PropertySaaS.Domain.Entities.OrganizationMembership", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("ModifiedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("OrganizationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("OrganizationId", "UserId")
+                        .IsUnique();
+
+                    b.ToTable("OrganizationMemberships");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("dddddddd-dddd-dddd-dddd-dddddddddddd"),
+                            CreatedUtc = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            OrganizationId = new Guid("11111111-1111-1111-1111-111111111111"),
+                            Role = "Owner",
+                            Status = "Active",
+                            UserId = new Guid("66666666-6666-6666-6666-666666666666")
+                        });
+                });
+
+            modelBuilder.Entity("PropertySaaS.Domain.Entities.PaymentEntry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("InvoiceId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Method")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("ModifiedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Notes")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("OrganizationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateOnly>("ReceivedDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("Reference")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("InvoiceId");
+
+                    b.ToTable("PaymentEntries");
                 });
 
             modelBuilder.Entity("PropertySaaS.Domain.Entities.Property", b =>
@@ -532,6 +1072,674 @@ namespace PropertySaaS.Infrastructure.Migrations
                         });
                 });
 
+            modelBuilder.Entity("PropertySaaS.Domain.Entities.RuntiraAsset", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("AdditionalDataJson")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("AddressLine1")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("AssetType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("City")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("CountryCode")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("LegalProfileJson")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("ModifiedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("RegionCode")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("UnitCount")
+                        .HasColumnType("int");
+
+                    b.Property<string>("WorkflowSummaryJson")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId");
+
+                    b.ToTable("RuntiraAssets");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("11111111-aaaa-bbbb-cccc-222222222222"),
+                            AdditionalDataJson = "{\"source\":\"seed\"}",
+                            AddressLine1 = "100 King Street West",
+                            AssetType = "Property",
+                            City = "Toronto",
+                            CountryCode = "CA",
+                            CreatedUtc = new DateTime(2026, 7, 2, 0, 0, 0, 0, DateTimeKind.Utc),
+                            LegalProfileJson = "{\"requiredQuestions\":[\"address\",\"unitCount\",\"rentSchedule\"]}",
+                            Name = "Runtira AI Asset",
+                            RegionCode = "ON",
+                            TenantId = new Guid("aaaaaaaa-1111-2222-3333-bbbbbbbbbbbb"),
+                            UnitCount = 3,
+                            WorkflowSummaryJson = "{\"status\":\"ready\"}"
+                        });
+                });
+
+            modelBuilder.Entity("PropertySaaS.Domain.Entities.RuntiraBlobArchive", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("BlobPath")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Hash")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("MetadataJson")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("ModifiedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<long>("SizeBytes")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("SourceSystem")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("RuntiraBlobArchives");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("99999999-aaaa-bbbb-cccc-000000000000"),
+                            BlobPath = "demo/activity/2026/07/02/create-asset.json",
+                            Category = "Activity",
+                            ContentType = "application/json",
+                            CreatedUtc = new DateTime(2026, 7, 2, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Hash = "seed-demo-activity",
+                            MetadataJson = "{\"intent\":\"CreateAsset\"}",
+                            SizeBytes = 256L,
+                            SourceSystem = "seed",
+                            TenantId = new Guid("aaaaaaaa-1111-2222-3333-bbbbbbbbbbbb")
+                        });
+                });
+
+            modelBuilder.Entity("PropertySaaS.Domain.Entities.RuntiraConversation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Channel")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Intent")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("JurisdictionCode")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("LastMessageUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Locale")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("ModifiedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Subject")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("SummaryJson")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("RuntiraConversations");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("33333333-aaaa-bbbb-cccc-444444444444"),
+                            Channel = "Chat",
+                            CreatedUtc = new DateTime(2026, 7, 2, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Intent = "CreateAsset",
+                            JurisdictionCode = "CA-ON",
+                            LastMessageUtc = new DateTime(2026, 7, 2, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Locale = "en",
+                            Status = "Open",
+                            Subject = "Create a 3-unit property",
+                            SummaryJson = "{\"nextQuestion\":\"What is the full property address?\"}",
+                            TenantId = new Guid("aaaaaaaa-1111-2222-3333-bbbbbbbbbbbb")
+                        });
+                });
+
+            modelBuilder.Entity("PropertySaaS.Domain.Entities.RuntiraJurisdictionProfile", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("AssetRulesJson")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("CountryCode")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("InvoiceRulesJson")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("MaintenanceRulesJson")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("ModifiedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("RegionCode")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("RequiredQuestionsJson")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("SupportedLanguagesJson")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ValidationRulesJson")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("RuntiraJurisdictionProfiles");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("12121212-aaaa-bbbb-cccc-343434343434"),
+                            AssetRulesJson = "{\"supportsMultiUnit\":true}",
+                            CountryCode = "CA",
+                            CreatedUtc = new DateTime(2026, 7, 2, 0, 0, 0, 0, DateTimeKind.Utc),
+                            InvoiceRulesJson = "{\"supportsMonthlyInvoice\":true}",
+                            MaintenanceRulesJson = "{\"supportInboxClassification\":true}",
+                            RegionCode = "ON",
+                            RequiredQuestionsJson = "[\"address\",\"unitCount\",\"ownerName\",\"leaseTemplate\"]",
+                            SupportedLanguagesJson = "[\"en\",\"fr\",\"es\"]",
+                            TenantId = new Guid("aaaaaaaa-1111-2222-3333-bbbbbbbbbbbb"),
+                            ValidationRulesJson = "{\"unitCount\":{\"required\":true,\"min\":1}}"
+                        });
+                });
+
+            modelBuilder.Entity("PropertySaaS.Domain.Entities.RuntiraMembership", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("LastSelectedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("ModifiedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("RuntiraMemberships");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("eeeeeeee-1111-2222-3333-ffffffffffff"),
+                            CreatedUtc = new DateTime(2026, 7, 2, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Role = "Owner",
+                            Status = "Active",
+                            TenantId = new Guid("aaaaaaaa-1111-2222-3333-bbbbbbbbbbbb"),
+                            UserId = new Guid("cccccccc-1111-2222-3333-dddddddddddd")
+                        });
+                });
+
+            modelBuilder.Entity("PropertySaaS.Domain.Entities.RuntiraMessage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("AuthorType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("ConversationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("CreatedByEmail")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Direction")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("ModifiedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("RequiresAction")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("StructuredPayloadJson")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ConversationId");
+
+                    b.ToTable("RuntiraMessages");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("55555555-aaaa-bbbb-cccc-666666666666"),
+                            AuthorType = "User",
+                            Content = "I want to create a property with 3 units.",
+                            ConversationId = new Guid("33333333-aaaa-bbbb-cccc-444444444444"),
+                            CreatedByEmail = "michelfopa@gmail.com",
+                            CreatedUtc = new DateTime(2026, 7, 2, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Direction = "Incoming",
+                            RequiresAction = true,
+                            StructuredPayloadJson = "{\"intent\":\"CreateAsset\"}",
+                            TenantId = new Guid("aaaaaaaa-1111-2222-3333-bbbbbbbbbbbb")
+                        });
+                });
+
+            modelBuilder.Entity("PropertySaaS.Domain.Entities.RuntiraOrganization", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("AdditionalSettingsJson")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("CountryCode")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DefaultLocale")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("LegalProfileJson")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("ModifiedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("OwnerEmail")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("RegionCode")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Slug")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("TimeZone")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("RuntiraOrganizations");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("aaaaaaaa-1111-2222-3333-bbbbbbbbbbbb"),
+                            AdditionalSettingsJson = "{\"tenantMode\":\"subdomain\",\"archive\":\"blob\"}",
+                            CountryCode = "CA",
+                            CreatedUtc = new DateTime(2026, 7, 2, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DefaultLocale = "en",
+                            IsActive = true,
+                            LegalProfileJson = "{\"jurisdiction\":\"ON\",\"supports\":[\"en\",\"fr\",\"es\"]}",
+                            Name = "Runtira Demo Org",
+                            OwnerEmail = "michelfopa@gmail.com",
+                            RegionCode = "ON",
+                            Slug = "demo",
+                            TimeZone = "America/Toronto"
+                        });
+                });
+
+            modelBuilder.Entity("PropertySaaS.Domain.Entities.RuntiraQuotaPolicy", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("EnforceHardLimit")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("MaxActiveWorkflows")
+                        .HasColumnType("int");
+
+                    b.Property<int>("MaxAssets")
+                        .HasColumnType("int");
+
+                    b.Property<int>("MaxBlobStorageMb")
+                        .HasColumnType("int");
+
+                    b.Property<int>("MaxDocuments")
+                        .HasColumnType("int");
+
+                    b.Property<int>("MaxMonthlyAiRequests")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("ModifiedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("RuntiraQuotaPolicies");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("56565656-aaaa-bbbb-cccc-787878787878"),
+                            CreatedUtc = new DateTime(2026, 7, 2, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EnforceHardLimit = true,
+                            MaxActiveWorkflows = 50,
+                            MaxAssets = 100,
+                            MaxBlobStorageMb = 2048,
+                            MaxDocuments = 1000,
+                            MaxMonthlyAiRequests = 5000,
+                            TenantId = new Guid("aaaaaaaa-1111-2222-3333-bbbbbbbbbbbb")
+                        });
+                });
+
+            modelBuilder.Entity("PropertySaaS.Domain.Entities.RuntiraUser", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ClerkUserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FullName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsSuperAdmin")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("ModifiedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("PreferredLanguage")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("RuntiraUsers");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("cccccccc-1111-2222-3333-dddddddddddd"),
+                            ClerkUserId = "runtira_demo_owner",
+                            CreatedUtc = new DateTime(2026, 7, 2, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Email = "michelfopa@gmail.com",
+                            FullName = "Michel Fopa",
+                            IsActive = true,
+                            IsSuperAdmin = true,
+                            PreferredLanguage = "fr"
+                        });
+                });
+
+            modelBuilder.Entity("PropertySaaS.Domain.Entities.RuntiraWorkflowTemplate", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("ModifiedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PromptTemplate")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("RequiredQuestionsJson")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("TriggerType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ValidationSchemaJson")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("RuntiraWorkflowTemplates");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("77777777-aaaa-bbbb-cccc-888888888888"),
+                            CreatedUtc = new DateTime(2026, 7, 2, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Guides the user through mandatory jurisdiction-aware asset questions.",
+                            IsActive = true,
+                            Name = "Create asset from natural language",
+                            PromptTemplate = "Ask only for missing required fields and confirm before creation.",
+                            RequiredQuestionsJson = "[\"address\",\"unitCount\",\"jurisdiction\",\"rentSchedule\"]",
+                            TenantId = new Guid("aaaaaaaa-1111-2222-3333-bbbbbbbbbbbb"),
+                            TriggerType = "CreateAsset",
+                            ValidationSchemaJson = "{\"unitCount\":{\"min\":1}}"
+                        });
+                });
+
+            modelBuilder.Entity("PropertySaaS.Domain.Entities.Showing", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("LeadId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ListingId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("ModifiedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Notes")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("OrganizationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("ScheduledUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LeadId");
+
+                    b.HasIndex("ListingId");
+
+                    b.ToTable("Showings");
+                });
+
             modelBuilder.Entity("PropertySaaS.Domain.Entities.Tenant", b =>
                 {
                     b.Property<Guid>("Id")
@@ -586,6 +1794,112 @@ namespace PropertySaaS.Infrastructure.Migrations
                             ScreeningCompleted = true,
                             ScreeningProvider = "SingleKey"
                         });
+                });
+
+            modelBuilder.Entity("PropertySaaS.Domain.Entities.TenantConversation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Channel")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("LastContactUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("LeaseId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("MaintenanceRequestId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("ModifiedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("OrganizationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Subject")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LeaseId");
+
+                    b.HasIndex("MaintenanceRequestId");
+
+                    b.HasIndex("TenantId");
+
+                    b.ToTable("TenantConversations");
+                });
+
+            modelBuilder.Entity("PropertySaaS.Domain.Entities.TenantMessage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DeliveredUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DeliveryMethod")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("nvarchar(max)")
+                        .HasDefaultValue("");
+
+                    b.Property<string>("DeliveryProof")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("nvarchar(max)")
+                        .HasDefaultValue("");
+
+                    b.Property<bool>("IsAISuggested")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsIncoming")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("ModifiedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("OrganizationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("SentBy")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("SentUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("TenantConversationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantConversationId");
+
+                    b.ToTable("TenantMessages");
                 });
 
             modelBuilder.Entity("PropertySaaS.Domain.Entities.Unit", b =>
@@ -644,15 +1958,101 @@ namespace PropertySaaS.Infrastructure.Migrations
                         });
                 });
 
+            modelBuilder.Entity("PropertySaaS.Domain.Entities.Vendor", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DispatchStatus")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("nvarchar(max)")
+                        .HasDefaultValue("Available");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsPreferred")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("ModifiedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Notes")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("OrganizationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("PhoneNumber")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PreferredForPriority")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("nvarchar(max)")
+                        .HasDefaultValue("");
+
+                    b.Property<string>("ServiceArea")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Trade")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("TypicalResponseHours")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Vendors");
+                });
+
             modelBuilder.Entity("PropertySaaS.Domain.Entities.AppUser", b =>
                 {
                     b.HasOne("PropertySaaS.Domain.Entities.Organization", "Organization")
                         .WithMany("Users")
                         .HasForeignKey("OrganizationId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Organization");
+                });
+
+            modelBuilder.Entity("PropertySaaS.Domain.Entities.Invoice", b =>
+                {
+                    b.HasOne("PropertySaaS.Domain.Entities.Lease", "Lease")
+                        .WithMany("Invoices")
+                        .HasForeignKey("LeaseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Lease");
+                });
+
+            modelBuilder.Entity("PropertySaaS.Domain.Entities.Lead", b =>
+                {
+                    b.HasOne("PropertySaaS.Domain.Entities.Listing", "Listing")
+                        .WithMany("Leads")
+                        .HasForeignKey("ListingId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Listing");
                 });
 
             modelBuilder.Entity("PropertySaaS.Domain.Entities.Lease", b =>
@@ -674,6 +2074,103 @@ namespace PropertySaaS.Infrastructure.Migrations
                     b.Navigation("Unit");
                 });
 
+            modelBuilder.Entity("PropertySaaS.Domain.Entities.Listing", b =>
+                {
+                    b.HasOne("PropertySaaS.Domain.Entities.Property", "Property")
+                        .WithMany("Listings")
+                        .HasForeignKey("PropertyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("PropertySaaS.Domain.Entities.Unit", "Unit")
+                        .WithMany("Listings")
+                        .HasForeignKey("UnitId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Property");
+
+                    b.Navigation("Unit");
+                });
+
+            modelBuilder.Entity("PropertySaaS.Domain.Entities.MediaAsset", b =>
+                {
+                    b.HasOne("PropertySaaS.Domain.Entities.Lease", "Lease")
+                        .WithMany("MediaAssets")
+                        .HasForeignKey("LeaseId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PropertySaaS.Domain.Entities.Listing", "Listing")
+                        .WithMany("MediaAssets")
+                        .HasForeignKey("ListingId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PropertySaaS.Domain.Entities.MaintenanceRequest", "MaintenanceRequest")
+                        .WithMany()
+                        .HasForeignKey("MaintenanceRequestId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PropertySaaS.Domain.Entities.Property", "Property")
+                        .WithMany("MediaAssets")
+                        .HasForeignKey("PropertyId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PropertySaaS.Domain.Entities.Unit", "Unit")
+                        .WithMany("MediaAssets")
+                        .HasForeignKey("UnitId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Lease");
+
+                    b.Navigation("Listing");
+
+                    b.Navigation("MaintenanceRequest");
+
+                    b.Navigation("Property");
+
+                    b.Navigation("Unit");
+                });
+
+            modelBuilder.Entity("PropertySaaS.Domain.Entities.OrganizationInvitation", b =>
+                {
+                    b.HasOne("PropertySaaS.Domain.Entities.Organization", "Organization")
+                        .WithMany("Invitations")
+                        .HasForeignKey("OrganizationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Organization");
+                });
+
+            modelBuilder.Entity("PropertySaaS.Domain.Entities.OrganizationMembership", b =>
+                {
+                    b.HasOne("PropertySaaS.Domain.Entities.Organization", "Organization")
+                        .WithMany("Memberships")
+                        .HasForeignKey("OrganizationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("PropertySaaS.Domain.Entities.AppUser", "User")
+                        .WithMany("Memberships")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Organization");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("PropertySaaS.Domain.Entities.PaymentEntry", b =>
+                {
+                    b.HasOne("PropertySaaS.Domain.Entities.Invoice", "Invoice")
+                        .WithMany("Payments")
+                        .HasForeignKey("InvoiceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Invoice");
+                });
+
             modelBuilder.Entity("PropertySaaS.Domain.Entities.Property", b =>
                 {
                     b.HasOne("PropertySaaS.Domain.Entities.Organization", null)
@@ -681,6 +2178,101 @@ namespace PropertySaaS.Infrastructure.Migrations
                         .HasForeignKey("OrganizationId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("PropertySaaS.Domain.Entities.RuntiraAsset", b =>
+                {
+                    b.HasOne("PropertySaaS.Domain.Entities.RuntiraOrganization", "Tenant")
+                        .WithMany("Assets")
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Tenant");
+                });
+
+            modelBuilder.Entity("PropertySaaS.Domain.Entities.RuntiraMembership", b =>
+                {
+                    b.HasOne("PropertySaaS.Domain.Entities.RuntiraOrganization", "Tenant")
+                        .WithMany("Memberships")
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("PropertySaaS.Domain.Entities.RuntiraUser", "User")
+                        .WithMany("Memberships")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Tenant");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("PropertySaaS.Domain.Entities.RuntiraMessage", b =>
+                {
+                    b.HasOne("PropertySaaS.Domain.Entities.RuntiraConversation", "Conversation")
+                        .WithMany("Messages")
+                        .HasForeignKey("ConversationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Conversation");
+                });
+
+            modelBuilder.Entity("PropertySaaS.Domain.Entities.Showing", b =>
+                {
+                    b.HasOne("PropertySaaS.Domain.Entities.Lead", "Lead")
+                        .WithMany("Showings")
+                        .HasForeignKey("LeadId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PropertySaaS.Domain.Entities.Listing", "Listing")
+                        .WithMany()
+                        .HasForeignKey("ListingId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Lead");
+
+                    b.Navigation("Listing");
+                });
+
+            modelBuilder.Entity("PropertySaaS.Domain.Entities.TenantConversation", b =>
+                {
+                    b.HasOne("PropertySaaS.Domain.Entities.Lease", "Lease")
+                        .WithMany()
+                        .HasForeignKey("LeaseId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PropertySaaS.Domain.Entities.MaintenanceRequest", "MaintenanceRequest")
+                        .WithMany()
+                        .HasForeignKey("MaintenanceRequestId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PropertySaaS.Domain.Entities.Tenant", "Tenant")
+                        .WithMany("Conversations")
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Lease");
+
+                    b.Navigation("MaintenanceRequest");
+
+                    b.Navigation("Tenant");
+                });
+
+            modelBuilder.Entity("PropertySaaS.Domain.Entities.TenantMessage", b =>
+                {
+                    b.HasOne("PropertySaaS.Domain.Entities.TenantConversation", "Conversation")
+                        .WithMany("Messages")
+                        .HasForeignKey("TenantConversationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Conversation");
                 });
 
             modelBuilder.Entity("PropertySaaS.Domain.Entities.Unit", b =>
@@ -694,8 +2286,41 @@ namespace PropertySaaS.Infrastructure.Migrations
                     b.Navigation("Property");
                 });
 
+            modelBuilder.Entity("PropertySaaS.Domain.Entities.AppUser", b =>
+                {
+                    b.Navigation("Memberships");
+                });
+
+            modelBuilder.Entity("PropertySaaS.Domain.Entities.Invoice", b =>
+                {
+                    b.Navigation("Payments");
+                });
+
+            modelBuilder.Entity("PropertySaaS.Domain.Entities.Lead", b =>
+                {
+                    b.Navigation("Showings");
+                });
+
+            modelBuilder.Entity("PropertySaaS.Domain.Entities.Lease", b =>
+                {
+                    b.Navigation("Invoices");
+
+                    b.Navigation("MediaAssets");
+                });
+
+            modelBuilder.Entity("PropertySaaS.Domain.Entities.Listing", b =>
+                {
+                    b.Navigation("Leads");
+
+                    b.Navigation("MediaAssets");
+                });
+
             modelBuilder.Entity("PropertySaaS.Domain.Entities.Organization", b =>
                 {
+                    b.Navigation("Invitations");
+
+                    b.Navigation("Memberships");
+
                     b.Navigation("Properties");
 
                     b.Navigation("Users");
@@ -703,17 +2328,49 @@ namespace PropertySaaS.Infrastructure.Migrations
 
             modelBuilder.Entity("PropertySaaS.Domain.Entities.Property", b =>
                 {
+                    b.Navigation("Listings");
+
+                    b.Navigation("MediaAssets");
+
                     b.Navigation("Units");
+                });
+
+            modelBuilder.Entity("PropertySaaS.Domain.Entities.RuntiraConversation", b =>
+                {
+                    b.Navigation("Messages");
+                });
+
+            modelBuilder.Entity("PropertySaaS.Domain.Entities.RuntiraOrganization", b =>
+                {
+                    b.Navigation("Assets");
+
+                    b.Navigation("Memberships");
+                });
+
+            modelBuilder.Entity("PropertySaaS.Domain.Entities.RuntiraUser", b =>
+                {
+                    b.Navigation("Memberships");
                 });
 
             modelBuilder.Entity("PropertySaaS.Domain.Entities.Tenant", b =>
                 {
+                    b.Navigation("Conversations");
+
                     b.Navigation("Leases");
+                });
+
+            modelBuilder.Entity("PropertySaaS.Domain.Entities.TenantConversation", b =>
+                {
+                    b.Navigation("Messages");
                 });
 
             modelBuilder.Entity("PropertySaaS.Domain.Entities.Unit", b =>
                 {
                     b.Navigation("Leases");
+
+                    b.Navigation("Listings");
+
+                    b.Navigation("MediaAssets");
                 });
 #pragma warning restore 612, 618
         }

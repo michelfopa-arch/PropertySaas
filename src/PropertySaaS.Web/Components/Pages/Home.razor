@@ -1,52 +1,28 @@
 @page "/"
 @inject CurrentOrganization CurrentOrganization
-@inject SaasDataService DataService
 @using PropertySaaS.Web.Localization
 
 <PageTitle>@UiText.Get("Home_PageTitle")</PageTitle>
 
 <MudStack Spacing="4">
-    @if (_pendingInvitations.Count > 0)
-    {
-        <MudAlert Severity="Severity.Info" Variant="Variant.Filled">
-            <MudStack Spacing="1">
-                <MudText Typo="Typo.subtitle1">@UiText.Get("Home_PendingInviteTitle")</MudText>
-                @foreach (var invitation in _pendingInvitations)
-                {
-                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Wrap="Wrap.Wrap">
-                        <MudText Typo="Typo.body2">@UiText.Format("Home_PendingInviteBody", invitation.OrganizationName, invitation.Role)</MudText>
-                        <MudButton Href="/onboarding" Variant="Variant.Outlined" Color="Color.Inherit" Size="Size.Small">@UiText.Get("Home_PendingInviteCta")</MudButton>
-                    </MudStack>
-                }
-            </MudStack>
-        </MudAlert>
-    }
-
     <MudPaper Class="hero pa-8">
         <MudGrid Spacing="4" Class="align-center-grid">
             <MudItem xs="12" lg="7">
                 <MudText Typo="Typo.h3">@UiText.Get("Home_HeroTitle")</MudText>
                 <MudText Typo="Typo.h6" Class="mt-4 hero-copy">@UiText.Get("Home_HeroCopy")</MudText>
+                <MudStack Row="true" Spacing="1" Class="mt-4" Wrap="Wrap.Wrap">
+                    <MudChip T="string" Color="Color.Primary" Variant="Variant.Filled">FR</MudChip>
+                    <MudChip T="string" Color="Color.Secondary" Variant="Variant.Outlined">EN</MudChip>
+                    <MudChip T="string" Color="Color.Tertiary" Variant="Variant.Outlined">ES</MudChip>
+                </MudStack>
                 <MudStack Row="true" Spacing="2" Class="mt-6" Wrap="Wrap.Wrap">
                     <MudButton Href="/sign-up" Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large">@UiText.Get("Home_StartFreeTrial")</MudButton>
                     <MudButton Href="/sign-in" Variant="Variant.Outlined" Color="Color.Inherit" Size="Size.Large">@UiText.Get("Home_SignInCta")</MudButton>
                     <MudButton Href="/account" Variant="Variant.Text" Color="Color.Inherit" Size="Size.Large">@UiText.Get("Home_ManageAccountCta")</MudButton>
                     <MudButton Href="@(CurrentOrganization.IsAuthenticated ? "/onboarding" : "/sign-up")" Variant="Variant.Filled" Color="Color.Inherit" Size="Size.Large" Class="hero-primary-action">@UiText.Get("Home_OpenDemo")</MudButton>
                     <MudButton Href="/pricing" Variant="Variant.Outlined" Color="Color.Inherit" Size="Size.Large">@UiText.Get("Home_SeePricing")</MudButton>
-                    <MudButton Href="@(CurrentOrganization.HasOrganizationAccess ? "/properties" : "/onboarding")" Variant="Variant.Filled" Color="Color.Warning" Size="Size.Large">@UiText.Get("Home_SeeProductFlow")</MudButton>
+                    <MudButton Href="@(CurrentOrganization.HasOrganizationAccess ? "/workspace" : "/onboarding")" Variant="Variant.Filled" Color="Color.Warning" Size="Size.Large">@UiText.Get("Home_SeeProductFlow")</MudButton>
                 </MudStack>
-
-@code {
-    private List<PendingWorkspaceInvitationDto> _pendingInvitations = new();
-
-    protected override async Task OnInitializedAsync()
-    {
-        if (CurrentOrganization.IsAuthenticated && !CurrentOrganization.HasOrganizationAccess)
-        {
-            _pendingInvitations = await DataService.GetPendingWorkspaceInvitationsAsync();
-        }
-    }
-}
             </MudItem>
 
             <MudItem xs="12" lg="5">

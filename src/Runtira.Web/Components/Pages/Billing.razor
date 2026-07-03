@@ -1,0 +1,107 @@
+@page "/{tenantSlug}/billing"
+@using Runtira.Application.Common
+@using Runtira.Application.Features
+@inject CurrentOrganization CurrentOrganization
+@inject RuntiraWorkspaceService WorkspaceService
+@inject Runtira.Infrastructure.Services.StripeBillingService StripeBillingService
+
+<PageTitle>@RuntiraText.Get("Nav_Billing", CurrentOrganization.PreferredLanguage)</PageTitle>
+
+<div class="hero-shell">
+    <section class="hero-card">
+        <div class="hero-badge">@RuntiraText.Get("Billing_Badge", CurrentOrganization.PreferredLanguage)</div>
+        <h1>@GetBillingTitle()</h1>
+        <p class="hero-copy">
+            @GetBillingCopy()
+        </p>
+
+        @if (_summary is not null)
+        {
+            <div class="tenant-summary">
+                <div>
+                    <span class="summary-label">@RuntiraText.Get("Billing_Summary_Organization", CurrentOrganization.PreferredLanguage)</span>
+                    <strong>@_summary.OrganizationName</strong>
+                </div>
+                <div>
+                    <span class="summary-label">@RuntiraText.Get("Billing_Summary_CurrentPlan", CurrentOrganization.PreferredLanguage)</span>
+                    <strong>@_summary.BillingPlan</strong>
+                </div>
+                <div>
+                    <span class="summary-label">@RuntiraText.Get("Billing_Summary_ActiveRegion", CurrentOrganization.PreferredLanguage)</span>
+                    <strong>@CurrentOrganization.CountryCode-@CurrentOrganization.Province</strong>
+                </div>
+                <div>
+                    <span class="summary-label">@RuntiraText.Get("Billing_Summary_ActiveLanguage", CurrentOrganization.PreferredLanguage)</span>
+                    <strong>@CurrentOrganization.PreferredLanguage</strong>
+                </div>
+                <div>
+                    <span class="summary-label">@RuntiraText.Get("Billing_Summary_StripeAccount", CurrentOrganization.PreferredLanguage)</span>
+                    <strong>@(string.IsNullOrWhiteSpace(_stripeCustomerDisplay) ? RuntiraText.Get("Billing_StripeAccountMissing", CurrentOrganization.PreferredLanguage) : _stripeCustomerDisplay)</strong>
+                </div>
+                <div>
+                    <span class="summary-label">@RuntiraText.Get("Billing_TransactionalEmails", CurrentOrganization.PreferredLanguage)</span>
+                    <strong>@RuntiraText.Get("Billing_ResendReady", CurrentOrganization.PreferredLanguage)</strong>
+                </div>
+            </div>
+        }
+
+        <div class="stats-grid">
+            @foreach (var plan in _planPrices)
+            {
+                <div class="stat-card">
+                    <span>@plan.Plan</span>
+                    <strong>@plan.DisplayPrice</strong>
+                    <a class="prompt-chip prompt-link mt-3" href="@($"/{CurrentOrganization.OrganizationSlug}/billing/checkout/{plan.Plan.ToLowerInvariant()}")">@RuntiraText.Get("Billing_ChoosePlan", CurrentOrganization.PreferredLanguage)</a>
+                </div>
+            }
+        </div>
+    </section>
+
+    <section class="workspace-card">
+        <div class="workspace-header">
+            <h2>@RuntiraText.Get("Billing_ManagementTitle", CurrentOrganization.PreferredLanguage)</h2>
+            <span class="workspace-state">@RuntiraText.Get("Billing_WorkspaceState", CurrentOrganization.PreferredLanguage)</span>
+        </div>
+
+        <div class="prompt-box">
+            <a class="prompt-chip prompt-link" href="@($"/{CurrentOrganization.OrganizationSlug}/billing/portal")">@RuntiraText.Get("Billing_OpenPortal", CurrentOrganization.PreferredLanguage)</a>
+            <a class="prompt-chip prompt-link" href="/account">@RuntiraText.Get("Billing_BackAccount", CurrentOrganization.PreferredLanguage)</a>
+            <button type="button" class="prompt-chip">@RuntiraText.Get("Billing_AppProducts", CurrentOrganization.PreferredLanguage)</button>
+            <button type="button" class="prompt-chip">@RuntiraText.Get("Billing_SimplePrices", CurrentOrganization.PreferredLanguage)</button>
+            <button type="button" class="prompt-chip">@RuntiraText.Get("Billing_LegacyStripe", CurrentOrganization.PreferredLanguage)</button>
+            <button type="button" class="prompt-chip">@RuntiraText.Get("Billing_ResendNotifications", CurrentOrganization.PreferredLanguage)</button>
+        </div>
+    </section>
+</div>
+
+@code {
+    [Parameter]
+    public string? TenantSlug { get; set; }
+
+    private RuntiraWorkspaceSummaryDto? _summary;
+    private List<Runtira.Infrastructure.Services.StripePlanPriceDto> _planPrices = new();
+    private string _stripeCustomerDisplay = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _summary = await WorkspaceService.GetWorkspaceSummaryAsync();
+        _planPrices = await StripeBillingService.GetPlanPricesAsync();
+        _stripeCustomerDisplay = string.IsNullOrWhiteSpace(CurrentOrganization.OrganizationSlug) ? string.Empty : _summary?.BillingPlan ?? string.Empty;
+    }
+
+    private string GetBillingTitle()
+        => CurrentOrganization.CountryCode switch
+        {
+            "US" => RuntiraText.Get("Billing_Title_US", CurrentOrganization.PreferredLanguage),
+            "CA" => RuntiraText.Get("Billing_Title_Canada", CurrentOrganization.PreferredLanguage),
+            _ => RuntiraText.Get("Billing_Title_Default", CurrentOrganization.PreferredLanguage)
+        };
+
+    private string GetBillingCopy()
+        => CurrentOrganization.CountryCode switch
+        {
+            "US" => RuntiraText.Get("Billing_Copy_US", CurrentOrganization.PreferredLanguage),
+            "CA" => RuntiraText.Get("Billing_Copy_Canada", CurrentOrganization.PreferredLanguage),
+            _ => RuntiraText.Get("Billing_Copy_Default", CurrentOrganization.PreferredLanguage)
+        };
+}

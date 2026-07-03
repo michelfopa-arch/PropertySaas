@@ -1,0 +1,102 @@
+@page "/account"
+@inject IConfiguration Configuration
+@inject HttpClient Http
+@using Runtira.Infrastructure.Options
+@using Runtira.Application.Common
+@inject CurrentOrganization CurrentOrganization
+
+<PageTitle>@RuntiraText.Get("Nav_Account", CurrentOrganization.PreferredLanguage)</PageTitle>
+
+<div class="hero-shell auth-shell">
+    <section class="hero-card">
+        <div class="hero-badge">@RuntiraText.Get("Badge_Account", CurrentOrganization.PreferredLanguage)</div>
+        <h1>@RuntiraText.Get("Account_Title", CurrentOrganization.PreferredLanguage)</h1>
+        <p class="hero-copy">
+            @RuntiraText.Get("Account_Subtitle", CurrentOrganization.PreferredLanguage)
+        </p>
+
+        <div class="tenant-summary">
+            <div>
+                <span class="summary-label">@RuntiraText.Get("Account_Summary_User", CurrentOrganization.PreferredLanguage)</span>
+                <strong>@(string.IsNullOrWhiteSpace(CurrentOrganization.UserEmail) ? RuntiraText.Get("Account_Guest", CurrentOrganization.PreferredLanguage) : CurrentOrganization.UserEmail)</strong>
+            </div>
+            <div>
+                <span class="summary-label">@RuntiraText.Get("Account_Summary_SystemRole", CurrentOrganization.PreferredLanguage)</span>
+                <strong>@CurrentOrganization.SystemRole</strong>
+            </div>
+            <div>
+                <span class="summary-label">@RuntiraText.Get("Account_Summary_Organizations", CurrentOrganization.PreferredLanguage)</span>
+                <strong>@CurrentOrganization.AccessibleOrganizationCount</strong>
+            </div>
+            <div>
+                <span class="summary-label">@RuntiraText.Get("Account_Summary_ActiveOrganization", CurrentOrganization.PreferredLanguage)</span>
+                <strong>@(string.IsNullOrWhiteSpace(CurrentOrganization.OrganizationName) ? RuntiraText.Get("Account_None", CurrentOrganization.PreferredLanguage) : CurrentOrganization.OrganizationName)</strong>
+            </div>
+            <div>
+                <span class="summary-label">@RuntiraText.Get("Account_Summary_DetectedMarket", CurrentOrganization.PreferredLanguage)</span>
+                <strong>@CurrentOrganization.CountryCode-@CurrentOrganization.Province · @CurrentOrganization.PreferredLanguage</strong>
+            </div>
+        </div>
+
+        <div class="prompt-box">
+            <a class="prompt-chip prompt-link" href="@HostedUserProfileUrl">@RuntiraText.Get("Account_OpenClerk", CurrentOrganization.PreferredLanguage)</a>
+            @if (!string.IsNullOrWhiteSpace(CurrentOrganization.OrganizationSlug))
+            {
+                <a class="prompt-chip prompt-link" href="@($"/{CurrentOrganization.OrganizationSlug}/billing")">@RuntiraText.Get("Account_OpenStripe", CurrentOrganization.PreferredLanguage)</a>
+            }
+            <button type="button" class="prompt-chip" @onclick="SendResendProbeAsync">@RuntiraText.Get("Account_TestResend", CurrentOrganization.PreferredLanguage)</button>
+            <a class="prompt-chip prompt-link" href="/">@RuntiraText.Get("Account_BackWorkspace", CurrentOrganization.PreferredLanguage)</a>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(_resendStatus))
+        {
+            <div class="empty-state mt-3">
+                <strong>@RuntiraText.Get("Account_ResendTitle", CurrentOrganization.PreferredLanguage)</strong>
+                <p>@_resendStatus</p>
+            </div>
+        }
+    </section>
+
+    <section class="workspace-card">
+        <div class="workspace-header">
+            <h2>@RuntiraText.Get("Account_ProviderStatus", CurrentOrganization.PreferredLanguage)</h2>
+            <span class="workspace-state">@RuntiraText.Get("Common_Integrated", CurrentOrganization.PreferredLanguage)</span>
+        </div>
+
+        <div class="option-list">
+            <span class="option-pill option-pill-accent">@RuntiraText.Get("Provider_Clerk", CurrentOrganization.PreferredLanguage)</span>
+            <span class="option-pill option-pill-accent">@RuntiraText.Get("Provider_TenantMembership", CurrentOrganization.PreferredLanguage)</span>
+            <span class="option-pill option-pill-accent">@RuntiraText.Get("Provider_LocaleClaims", CurrentOrganization.PreferredLanguage)</span>
+            <span class="option-pill option-pill-accent">@RuntiraText.Get("Provider_Resend", CurrentOrganization.PreferredLanguage)</span>
+            <span class="option-pill option-pill-accent">@RuntiraText.Get("Provider_LocalOptimization", CurrentOrganization.PreferredLanguage)</span>
+        </div>
+    </section>
+</div>
+
+@code {
+    private string _resendStatus = string.Empty;
+
+    private string HostedUserProfileUrl => GetClerkOptions().UserProfileUrl;
+
+    private async Task SendResendProbeAsync()
+    {
+        try
+        {
+            var response = await Http.PostAsync("/api/providers/resend/test", content: null);
+            _resendStatus = response.IsSuccessStatusCode
+                ? RuntiraText.Format("Account_ResendSuccess", CurrentOrganization.PreferredLanguage, CurrentOrganization.PreferredLanguage, CurrentOrganization.CountryCode, CurrentOrganization.Province)
+                : RuntiraText.Get("Account_ResendFailure", CurrentOrganization.PreferredLanguage);
+        }
+        catch
+        {
+            _resendStatus = RuntiraText.Get("Account_ResendUnavailable", CurrentOrganization.PreferredLanguage);
+        }
+    }
+
+    private ClerkOptions GetClerkOptions()
+    {
+        var options = new ClerkOptions();
+        Configuration.GetSection("Clerk").Bind(options);
+        return options;
+    }
+}

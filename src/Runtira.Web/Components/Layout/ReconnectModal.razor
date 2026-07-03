@@ -1,0 +1,31 @@
+﻿<script type="module" src="@Assets["Components/Layout/ReconnectModal.razor.js"]"></script>
+
+<dialog id="components-reconnect-modal" data-nosnippet>
+    <div class="components-reconnect-container">
+        <div class="components-rejoining-animation" aria-hidden="true">
+            <div></div>
+            <div></div>
+        </div>
+        <p class="components-reconnect-first-attempt-visible">
+            @RuntiraText.Get("Reconnect_Rejoining")
+        </p>
+        <p class="components-reconnect-repeated-attempt-visible">
+            @((MarkupString)RuntiraText.Get("Reconnect_RejoinFailed"))
+        </p>
+        <p class="components-reconnect-failed-visible">
+            @((MarkupString)RuntiraText.Get("Reconnect_Failed"))
+        </p>
+        <button id="components-reconnect-button" class="components-reconnect-failed-visible">
+            @RuntiraText.Get("Reconnect_Retry")
+        </button>
+        <p class="components-pause-visible">
+            @RuntiraText.Get("Reconnect_Paused")
+        </p>
+        <p class="components-resume-failed-visible">
+            @((MarkupString)RuntiraText.Get("Reconnect_ResumeFailed"))
+        </p>
+        <button id="components-resume-button" class="components-pause-visible components-resume-failed-visible">
+            @RuntiraText.Get("Reconnect_Resume")
+        </button>
+    </div>
+</dialog>

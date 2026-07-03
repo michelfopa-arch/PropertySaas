@@ -3,7 +3,7 @@
 @inject NavigationManager NavigationManager
 
 <MudNavMenu Class="material-nav-menu">
-    <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Campaign">@UiText.Get("Nav_Marketing")</MudNavLink>
+    <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.AutoAwesome">@UiText.Get("Nav_Marketing")</MudNavLink>
     @if (!CurrentOrganization.IsAuthenticated)
     {
         <MudNavLink Href="/sign-up" Icon="@Icons.Material.Filled.PersonAdd">@UiText.Get("Nav_SignUp")</MudNavLink>
@@ -18,51 +18,20 @@
 
     @if (CurrentOrganization.HasOrganizationAccess && CurrentOrganization.CanAccessWorkspace)
     {
-        <MudNavLink Href="@WithDemoMode("/dashboard")" Icon="@Icons.Material.Filled.SpaceDashboard">@UiText.Get("Nav_Overview")</MudNavLink>
-        <MudNavLink Href="@WithDemoMode("/ai-work-queue")" Icon="@Icons.Material.Filled.AutoAwesome">@UiText.Get("Nav_AIWorkQueue")</MudNavLink>
-        <MudNavGroup Title="@UiText.Get("Nav_GuidedDemo")" Expanded="true" Icon="@Icons.Material.Filled.PlayCircle">
-            <MudNavLink Href="@WithDemoMode("/dashboard")" Icon="@Icons.Material.Filled.Flag">@UiText.Get("Nav_Overview")</MudNavLink>
-            <MudNavLink Href="@WithDemoMode("/leasing")" Icon="@Icons.Material.Filled.Campaign">@UiText.Get("Nav_Leasing")</MudNavLink>
-            <MudNavLink Href="@WithDemoMode("/resident-360")" Icon="@Icons.Material.Filled.PersonSearch">@UiText.Get("Nav_Resident360")</MudNavLink>
-            <MudNavLink Href="@WithDemoMode("/maintenance")" Icon="@Icons.Material.Filled.Build">@UiText.Get("Nav_Maintenance")</MudNavLink>
-            <MudNavLink Href="@WithDemoMode("/documents-evidence")" Icon="@Icons.Material.Filled.FolderShared">@UiText.Get("Nav_DocumentsEvidence")</MudNavLink>
-        </MudNavGroup>
-        <MudNavGroup Title="@UiText.Get("Nav_Portfolio")" Expanded="true" Icon="@Icons.Material.Filled.Domain">
-            <MudNavLink Href="@WithDemoMode("/properties")" Icon="@Icons.Material.Filled.Apartment">@UiText.Get("Nav_Properties")</MudNavLink>
-            <MudNavLink Href="@WithDemoMode("/units")" Icon="@Icons.Material.Filled.MeetingRoom">@UiText.Get("Nav_Units")</MudNavLink>
-            <MudNavLink Href="@WithDemoMode("/tenants")" Icon="@Icons.Material.Filled.Groups">@UiText.Get("Nav_Tenants")</MudNavLink>
-            <MudNavLink Href="@WithDemoMode("/leases")" Icon="@Icons.Material.Filled.Description">@UiText.Get("Nav_Leases")</MudNavLink>
-        </MudNavGroup>
-        <MudNavGroup Title="@UiText.Get("Nav_RevenueLeasing")" Expanded="true" Icon="@Icons.Material.Filled.TrendingUp">
-            <MudNavLink Href="@WithDemoMode("/leasing")" Icon="@Icons.Material.Filled.Campaign">@UiText.Get("Nav_Leasing")</MudNavLink>
-            <MudNavLink Href="@WithDemoMode("/rent-payments")" Icon="@Icons.Material.Filled.ReceiptLong">@UiText.Get("Nav_RentPayments")</MudNavLink>
-        </MudNavGroup>
-        <MudNavGroup Title="@UiText.Get("Nav_Operations")" Expanded="false" Icon="@Icons.Material.Filled.BuildCircle">
-            <MudNavLink Href="@WithDemoMode("/maintenance")" Icon="@Icons.Material.Filled.Build">@UiText.Get("Nav_Maintenance")</MudNavLink>
-            <MudNavLink Href="@WithDemoMode("/tenant-communications")" Icon="@Icons.Material.Filled.Forum">@UiText.Get("Nav_TenantCommunications")</MudNavLink>
-            <MudNavLink Href="@WithDemoMode("/resident-360")" Icon="@Icons.Material.Filled.PersonSearch">@UiText.Get("Nav_Resident360")</MudNavLink>
-            <MudNavLink Href="@WithDemoMode("/vendors")" Icon="@Icons.Material.Filled.Handyman">@UiText.Get("Nav_Vendors")</MudNavLink>
-            <MudNavLink Href="@WithDemoMode("/documents-evidence")" Icon="@Icons.Material.Filled.FolderShared">@UiText.Get("Nav_DocumentsEvidence")</MudNavLink>
-        </MudNavGroup>
-        <MudNavGroup Title="@UiText.Get("Nav_ComplianceWorkspace")" Expanded="false" Icon="@Icons.Material.Filled.Gavel">
-            <MudNavLink Href="@WithDemoMode("/compliance")" Icon="@Icons.Material.Filled.Gavel">@UiText.Get("Nav_OntarioCompliance")</MudNavLink>
-            <MudNavLink Href="@WithDemoMode("/ai-import")" Icon="@Icons.Material.Filled.FileUpload">@UiText.Get("Nav_AIImport")</MudNavLink>
-            <MudNavLink Href="@WithDemoMode("/profile")" Icon="@Icons.Material.Filled.Group">@UiText.Get("Nav_TeamAccess")</MudNavLink>
-        </MudNavGroup>
-        <MudNavLink Href="@WithDemoMode("/subscriptions")" Icon="@Icons.Material.Filled.Subscriptions">@UiText.Get("Nav_Subscriptions")</MudNavLink>
+        <MudNavLink Href="/workspace" Icon="@Icons.Material.Filled.AutoAwesome">@UiText.Get("Nav_RuntiraWorkspace")</MudNavLink>
+        <MudNavLink Href="/profile" Icon="@Icons.Material.Filled.Group">@UiText.Get("Nav_TeamAccess")</MudNavLink>
         <MudDivider Class="my-2" />
     }
 
     @if (CurrentOrganization.HasOrganizationAccess && !CurrentOrganization.CanAccessWorkspace)
     {
-        <MudNavLink Href="@WithDemoMode("/subscriptions/expired")" Icon="@Icons.Material.Filled.WarningAmber">@UiText.Get("Nav_RenewAccess")</MudNavLink>
-        <MudNavLink Href="@WithDemoMode("/subscriptions")" Icon="@Icons.Material.Filled.Subscriptions">@UiText.Get("Nav_Subscriptions")</MudNavLink>
+        <MudNavLink Href="/subscriptions/expired" Icon="@Icons.Material.Filled.WarningAmber">@UiText.Get("Nav_RenewAccess")</MudNavLink>
+        <MudNavLink Href="/subscriptions" Icon="@Icons.Material.Filled.Subscriptions">@UiText.Get("Nav_Subscriptions")</MudNavLink>
     }
 
     @if (CurrentOrganization.IsSuperAdmin)
     {
-        <MudNavLink Href="@WithDemoMode("/superadmin")" Icon="@Icons.Material.Filled.AdminPanelSettings">@UiText.Get("Nav_SuperAdmin")</MudNavLink>
-        <MudNavLink Href="@WithDemoMode("/superadmin/select-organization")" Icon="@Icons.Material.Filled.Domain">@UiText.Get("Nav_SuperAdminOrganizations")</MudNavLink>
+        <MudNavLink Href="/superadmin/select-organization" Icon="@Icons.Material.Filled.Domain">@UiText.Get("Nav_SuperAdminOrganizations")</MudNavLink>
     }
 
     @if (CurrentOrganization.IsAuthenticated)
@@ -74,8 +43,4 @@
 </MudNavMenu>
 
 @code {
-    private bool IsDemoCleanView => DemoModeRouteHelper.IsCleanUri(NavigationManager.Uri);
-
-    private string WithDemoMode(string route)
-        => DemoModeRouteHelper.Apply(route, IsDemoCleanView);
 }

@@ -21,6 +21,10 @@ using PropertySaaS.Web.Components;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.WebHost.UseStaticWebAssets();
+builder.Configuration
+    .AddJsonFile(Path.Combine(AppContext.BaseDirectory, "appsettings.json"), optional: true, reloadOnChange: false)
+    .AddJsonFile(Path.Combine(AppContext.BaseDirectory, $"appsettings.{builder.Environment.EnvironmentName}.json"), optional: true, reloadOnChange: false)
+    .AddUserSecrets<Program>(optional: true, reloadOnChange: false);
 var useLocalDevelopmentAuth = builder.Environment.IsDevelopment()
     && builder.Configuration.GetValue("Authentication:UseLocalDevelopmentAuth", true);
 
@@ -42,16 +46,34 @@ var authenticationBuilder = builder.Services.AddAuthentication(options =>
 builder.Services.AddScoped<CurrentOrganization>(provider =>
 {
     var httpContextAccessor = provider.GetRequiredService<IHttpContextAccessor>();
+    var httpContext = httpContextAccessor.HttpContext;
+
+    if (httpContext is null)
+    {
+        return new CurrentOrganization
+        {
+            UserId = Guid.Empty,
+            OrganizationId = Guid.Empty,
+            OrganizationName = "Startup",
+            IsDemo = false,
+            UserEmail = string.Empty,
+            UserFullName = string.Empty,
+            Role = "Guest",
+            SystemRole = "Guest",
+            Province = "ON",
+            CountryCode = "CA",
+            PreferredLanguage = "en-CA"
+        };
+    }
+
     var db = provider.GetRequiredService<ApplicationDbContext>();
-    var user = httpContextAccessor.HttpContext?.User;
+    var user = httpContext?.User;
     var isAuthenticated = user?.Identity?.IsAuthenticated == true;
     var email = user?.Claims.FirstOrDefault(c => c.Type.Contains("email", StringComparison.OrdinalIgnoreCase))?.Value
         ?? user?.Identity?.Name
         ?? string.Empty;
-    var selectedOrganizationId = httpContextAccessor.HttpContext?.Request.Cookies.TryGetValue("psaas_org", out var cookieValue) == true
-        && Guid.TryParse(cookieValue, out var parsedOrgId)
-        ? parsedOrgId
-        : Guid.Empty;
+    var selectedRuntiraTenantId = TryGetSelectedRuntiraTenantId(httpContext);
+    var requestedRuntiraTenantSlug = ExtractRequestedTenantSlug(httpContext);
 
     if (!isAuthenticated)
     {
@@ -67,110 +89,145 @@ builder.Services.AddScoped<CurrentOrganization>(provider =>
             SystemRole = "Guest",
             Province = "ON",
             CountryCode = "CA",
-            PreferredLanguage = ResolvePreferredLanguage(httpContextAccessor.HttpContext, null, null, "ON")
+            PreferredLanguage = ResolvePreferredLanguage(httpContext, null, null, "ON")
         };
     }
 
-    var appUser = string.IsNullOrWhiteSpace(email)
-        ? db.Users.AsNoTracking().FirstOrDefault()
-        : db.Users.AsNoTracking().FirstOrDefault(x => x.Email == email);
-    var memberships = appUser is null
-        ? new List<OrganizationMembership>()
-        : db.OrganizationMemberships
-            .AsNoTracking()
-            .Where(x => x.UserId == appUser.Id && x.Status == "Active")
-            .ToList();
-    var isSuperAdmin = appUser is not null && string.Equals(appUser.SystemRole, "SuperAdmin", StringComparison.OrdinalIgnoreCase);
-    var isSupervisor = appUser is not null && string.Equals(appUser.SystemRole, "Supervisor", StringComparison.OrdinalIgnoreCase);
+    var runtiraUser = string.IsNullOrWhiteSpace(email)
+        ? db.RuntiraUsers.AsNoTracking().FirstOrDefault()
+        : db.RuntiraUsers.AsNoTracking().FirstOrDefault(x => x.Email == email);
 
-    if (appUser is not null && isSuperAdmin && selectedOrganizationId != Guid.Empty)
+    if (runtiraUser is not null)
     {
-        var selectedOrganization = db.Organizations.AsNoTracking().FirstOrDefault(x => x.Id == selectedOrganizationId);
-        if (selectedOrganization is not null)
-        {
-            var trialExpired = selectedOrganization.TrialEndsUtc.HasValue
-                && selectedOrganization.SubscriptionTier == PropertySaaS.Domain.Enums.SubscriptionTier.Trial
-                && selectedOrganization.TrialEndsUtc.Value < DateTime.UtcNow;
+        var runtiraMemberships = db.RuntiraMemberships
+            .AsNoTracking()
+            .Where(x => x.UserId == runtiraUser.Id && x.Status == "Active")
+            .ToList();
 
+        var requestedTenant = selectedRuntiraTenantId.HasValue
+            ? db.RuntiraOrganizations.AsNoTracking().FirstOrDefault(x => x.Id == selectedRuntiraTenantId.Value)
+            : !string.IsNullOrWhiteSpace(requestedRuntiraTenantSlug)
+                ? db.RuntiraOrganizations.AsNoTracking().FirstOrDefault(x => x.Slug == requestedRuntiraTenantSlug)
+                : null;
+
+        if (requestedTenant is null && runtiraMemberships.Count > 1)
+        {
             return new CurrentOrganization
             {
-                UserId = appUser.Id,
-                OrganizationId = selectedOrganization.Id,
-                AccessibleOrganizationCount = memberships.Count,
-                HasSuperAdminOrganizationSelection = true,
-                OrganizationName = selectedOrganization.Name,
-                IsDemo = selectedOrganization.IsDemo,
-                DemoExpiresUtc = selectedOrganization.DemoExpiresUtc,
+                UserId = runtiraUser.Id,
+                OrganizationId = Guid.Empty,
+                AccessibleOrganizationCount = runtiraMemberships.Count,
+                HasSuperAdminOrganizationSelection = runtiraUser.IsSuperAdmin,
+                OrganizationName = "Select workspace",
+                OrganizationSlug = string.Empty,
+                IsDemo = false,
                 UserEmail = email,
-                UserFullName = string.IsNullOrWhiteSpace(appUser.FullName) ? email : appUser.FullName,
-                Role = "SuperAdmin",
-                SystemRole = appUser.SystemRole,
-                Province = selectedOrganization.Province,
-                CountryCode = selectedOrganization.CountryCode,
-                PreferredLanguage = ResolvePreferredLanguage(httpContextAccessor.HttpContext, appUser.PreferredLanguage, selectedOrganization.PreferredLanguage, selectedOrganization.Province),
-                SubscriptionIsActive = selectedOrganization.IsActive,
-                TrialExpired = trialExpired
+                UserFullName = string.IsNullOrWhiteSpace(runtiraUser.FullName) ? email : runtiraUser.FullName,
+                Role = "Pending",
+                SystemRole = runtiraUser.IsSuperAdmin ? "SuperAdmin" : "User",
+                Province = "ON",
+                CountryCode = "CA",
+                PreferredLanguage = ResolvePreferredLanguage(httpContext, MapLocaleToCulture(runtiraUser.PreferredLanguage), null, "ON"),
+                SubscriptionIsActive = true,
+                TrialExpired = false
             };
         }
-    }
 
-    if (appUser is not null)
-    {
-        var selectedMembership = memberships.FirstOrDefault(x => x.OrganizationId == selectedOrganizationId)
-            ?? memberships.FirstOrDefault();
+        if (requestedTenant is null && runtiraMemberships.Count == 0 && runtiraUser.IsSuperAdmin)
+        {
+            return new CurrentOrganization
+            {
+                UserId = runtiraUser.Id,
+                OrganizationId = Guid.Empty,
+                AccessibleOrganizationCount = 0,
+                HasSuperAdminOrganizationSelection = true,
+                OrganizationName = "Select workspace",
+                OrganizationSlug = string.Empty,
+                IsDemo = false,
+                UserEmail = email,
+                UserFullName = string.IsNullOrWhiteSpace(runtiraUser.FullName) ? email : runtiraUser.FullName,
+                Role = "Pending",
+                SystemRole = "SuperAdmin",
+                Province = "ON",
+                CountryCode = "CA",
+                PreferredLanguage = ResolvePreferredLanguage(httpContext, MapLocaleToCulture(runtiraUser.PreferredLanguage), null, "ON"),
+                SubscriptionIsActive = true,
+                TrialExpired = false
+            };
+        }
+
+        var selectedMembership = requestedTenant is not null
+            ? runtiraMemberships.FirstOrDefault(x => x.TenantId == requestedTenant.Id)
+            : runtiraMemberships.FirstOrDefault();
 
         if (selectedMembership is not null)
         {
-            var org = db.Organizations.AsNoTracking().FirstOrDefault(x => x.Id == selectedMembership.OrganizationId);
-            var trialExpired = org?.TrialEndsUtc.HasValue == true
-                && org.SubscriptionTier == PropertySaaS.Domain.Enums.SubscriptionTier.Trial
-                && org.TrialEndsUtc.Value < DateTime.UtcNow;
-            var subscriptionIsActive = org?.IsActive ?? true;
-            var effectiveRole = isSuperAdmin
-                ? string.IsNullOrWhiteSpace(selectedMembership.Role) ? "Manager" : selectedMembership.Role
-                : isSupervisor && (selectedMembership.Role is "Viewer" or "Pending" or "SupportViewer")
-                    ? "Manager"
-                    : string.IsNullOrWhiteSpace(selectedMembership.Role) ? "Owner" : selectedMembership.Role;
+            var tenant = requestedTenant ?? db.RuntiraOrganizations.AsNoTracking().FirstOrDefault(x => x.Id == selectedMembership.TenantId);
+            if (tenant is not null)
+            {
+                return new CurrentOrganization
+                {
+                    UserId = runtiraUser.Id,
+                    OrganizationId = tenant.Id,
+                    AccessibleOrganizationCount = runtiraMemberships.Count,
+                    HasSuperAdminOrganizationSelection = runtiraUser.IsSuperAdmin,
+                    OrganizationName = tenant.Name,
+                    OrganizationSlug = tenant.Slug,
+                    IsDemo = false,
+                    UserEmail = email,
+                    UserFullName = string.IsNullOrWhiteSpace(runtiraUser.FullName) ? email : runtiraUser.FullName,
+                    Role = string.IsNullOrWhiteSpace(selectedMembership.Role) ? "Manager" : selectedMembership.Role,
+                    SystemRole = runtiraUser.IsSuperAdmin ? "SuperAdmin" : "User",
+                    Province = string.IsNullOrWhiteSpace(tenant.RegionCode) ? "ON" : tenant.RegionCode,
+                    CountryCode = string.IsNullOrWhiteSpace(tenant.CountryCode) ? "CA" : tenant.CountryCode,
+                    PreferredLanguage = ResolvePreferredLanguage(httpContext, MapLocaleToCulture(runtiraUser.PreferredLanguage), MapLocaleToCulture(tenant.DefaultLocale), tenant.RegionCode),
+                    SubscriptionIsActive = tenant.IsActive,
+                    TrialExpired = false
+                };
+            }
+        }
 
+        if (requestedTenant is not null && runtiraUser.IsSuperAdmin)
+        {
             return new CurrentOrganization
             {
-                UserId = appUser.Id,
-                OrganizationId = selectedMembership.OrganizationId,
-                AccessibleOrganizationCount = memberships.Count,
-                HasSuperAdminOrganizationSelection = false,
-                OrganizationName = org?.Name ?? "Maple Leaf Property Group",
-                IsDemo = org?.IsDemo ?? false,
-                DemoExpiresUtc = org?.DemoExpiresUtc,
+                UserId = runtiraUser.Id,
+                OrganizationId = requestedTenant.Id,
+                AccessibleOrganizationCount = runtiraMemberships.Count,
+                HasSuperAdminOrganizationSelection = true,
+                OrganizationName = requestedTenant.Name,
+                OrganizationSlug = requestedTenant.Slug,
+                IsDemo = false,
                 UserEmail = email,
-                UserFullName = string.IsNullOrWhiteSpace(appUser.FullName) ? email : appUser.FullName,
-                Role = effectiveRole,
-                SystemRole = string.IsNullOrWhiteSpace(appUser.SystemRole) ? "User" : appUser.SystemRole,
-                Province = org?.Province ?? "ON",
-                CountryCode = org?.CountryCode ?? "CA",
-                PreferredLanguage = ResolvePreferredLanguage(httpContextAccessor.HttpContext, appUser.PreferredLanguage, org?.PreferredLanguage, org?.Province),
-                SubscriptionIsActive = subscriptionIsActive,
-                TrialExpired = trialExpired
+                UserFullName = string.IsNullOrWhiteSpace(runtiraUser.FullName) ? email : runtiraUser.FullName,
+                Role = "SuperAdmin",
+                SystemRole = "SuperAdmin",
+                Province = string.IsNullOrWhiteSpace(requestedTenant.RegionCode) ? "ON" : requestedTenant.RegionCode,
+                CountryCode = string.IsNullOrWhiteSpace(requestedTenant.CountryCode) ? "CA" : requestedTenant.CountryCode,
+                PreferredLanguage = ResolvePreferredLanguage(httpContext, MapLocaleToCulture(runtiraUser.PreferredLanguage), MapLocaleToCulture(requestedTenant.DefaultLocale), requestedTenant.RegionCode),
+                SubscriptionIsActive = requestedTenant.IsActive,
+                TrialExpired = false
             };
         }
-    }
 
-    if (appUser is not null)
-    {
         return new CurrentOrganization
         {
-            UserId = appUser.Id,
+            UserId = runtiraUser.Id,
             OrganizationId = Guid.Empty,
-            AccessibleOrganizationCount = memberships.Count,
-            HasSuperAdminOrganizationSelection = false,
+            AccessibleOrganizationCount = runtiraMemberships.Count,
+            HasSuperAdminOrganizationSelection = runtiraUser.IsSuperAdmin,
             OrganizationName = "Pending access",
+            OrganizationSlug = string.Empty,
             IsDemo = false,
             UserEmail = email,
-            UserFullName = string.IsNullOrWhiteSpace(appUser.FullName) ? email : appUser.FullName,
+            UserFullName = string.IsNullOrWhiteSpace(runtiraUser.FullName) ? email : runtiraUser.FullName,
             Role = "Pending",
-            SystemRole = string.IsNullOrWhiteSpace(appUser.SystemRole) ? "User" : appUser.SystemRole,
+            SystemRole = runtiraUser.IsSuperAdmin ? "SuperAdmin" : "User",
             Province = "ON",
             CountryCode = "CA",
-            PreferredLanguage = ResolvePreferredLanguage(httpContextAccessor.HttpContext, appUser.PreferredLanguage, null, "ON")
+            PreferredLanguage = ResolvePreferredLanguage(httpContext, MapLocaleToCulture(runtiraUser.PreferredLanguage), null, "ON"),
+            SubscriptionIsActive = true,
+            TrialExpired = false
         };
     }
 
@@ -180,6 +237,7 @@ builder.Services.AddScoped<CurrentOrganization>(provider =>
         OrganizationId = Guid.Empty,
         AccessibleOrganizationCount = 0,
         OrganizationName = "Pending access",
+        OrganizationSlug = string.Empty,
         IsDemo = false,
         UserEmail = email,
         UserFullName = user?.Claims.FirstOrDefault(c => c.Type.Contains("name", StringComparison.OrdinalIgnoreCase))?.Value ?? email,
@@ -188,6 +246,18 @@ builder.Services.AddScoped<CurrentOrganization>(provider =>
         Province = "ON",
         CountryCode = "CA",
         PreferredLanguage = ResolvePreferredLanguage(httpContextAccessor.HttpContext, null, null, "ON")
+    };
+});
+
+builder.Services.AddScoped<ITenantContextAccessor>(provider =>
+{
+    var currentOrganization = provider.GetRequiredService<CurrentOrganization>();
+    return new TenantContext
+    {
+        TenantId = currentOrganization.OrganizationId == Guid.Empty ? null : currentOrganization.OrganizationId,
+        BypassTenantFilter = currentOrganization.IsSuperAdmin,
+        TenantSlug = currentOrganization.OrganizationSlug,
+        UserEmail = currentOrganization.UserEmail
     };
 });
 
@@ -237,7 +307,7 @@ app.UseRequestLocalization(new RequestLocalizationOptions
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    db.Database.EnsureCreated();
+    db.Database.Migrate();
     EnsureSchemaUpgrades(db);
     PurgeExpiredDemoOrganizations(db);
 }
@@ -260,8 +330,8 @@ app.Use(async (context, next) =>
             var claims = new[]
             {
                 new Claim(ClaimTypes.NameIdentifier, "local-dev-user"),
-                new Claim(ClaimTypes.Name, "owner@mapleleafpm.ca"),
-                new Claim(ClaimTypes.Email, "owner@mapleleafpm.ca"),
+                new Claim(ClaimTypes.Name, "michelfopa@gmail.com"),
+                new Claim(ClaimTypes.Email, "michelfopa@gmail.com"),
                 new Claim(ClaimTypes.Role, "Owner")
             };
 
@@ -282,89 +352,67 @@ app.Use(async (context, next) =>
         {
             var db = context.RequestServices.GetRequiredService<ApplicationDbContext>();
             var normalizedEmail = email.Trim().ToLowerInvariant();
-            var existing = await db.Users.FirstOrDefaultAsync(x => x.Email == normalizedEmail);
+            var runtiraUser = await db.RuntiraUsers.FirstOrDefaultAsync(x => x.Email == normalizedEmail);
             var fullName = ResolveUserFullName(context.User, email);
             var clerkUserId = context.User.Claims.FirstOrDefault(c => c.Type == "sub")?.Value ?? string.Empty;
+            var preferredLanguage = ResolvePreferredLanguage(context, null, null, "ON");
+            var preferredLocale = preferredLanguage.Split('-', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).FirstOrDefault()?.ToLowerInvariant() ?? "en";
             var hasChanges = false;
 
-            if (existing is null)
+            if (runtiraUser is null)
             {
-                existing = new AppUser
+                runtiraUser = new RuntiraUser
                 {
                     Id = Guid.NewGuid(),
+                    ClerkUserId = clerkUserId,
                     Email = normalizedEmail,
                     FullName = fullName,
-                    ClerkUserId = clerkUserId,
-                    Role = "Owner",
-                    SystemRole = "User",
-                    PreferredLanguage = ResolvePreferredLanguage(context, null, null, "ON"),
+                    PreferredLanguage = preferredLocale,
+                    IsSuperAdmin = string.Equals(normalizedEmail, "michelfopa@gmail.com", StringComparison.OrdinalIgnoreCase),
                     IsActive = true,
                     CreatedUtc = DateTime.UtcNow
                 };
-                db.Users.Add(existing);
+                db.RuntiraUsers.Add(runtiraUser);
                 hasChanges = true;
             }
-
-            if (!string.Equals(existing.Email, normalizedEmail, StringComparison.Ordinal))
+            else
             {
-                existing.Email = normalizedEmail;
-                hasChanges = true;
-            }
-
-            if (ShouldUpdateDisplayName(existing.FullName, fullName, normalizedEmail))
-            {
-                existing.FullName = fullName;
-                hasChanges = true;
-            }
-
-            if (string.IsNullOrWhiteSpace(existing.ClerkUserId) && !string.IsNullOrWhiteSpace(clerkUserId))
-            {
-                existing.ClerkUserId = clerkUserId;
-                hasChanges = true;
-            }
-
-            if (!existing.IsActive)
-            {
-                existing.IsActive = true;
-                hasChanges = true;
-            }
-
-            var primaryMembership = await db.OrganizationMemberships
-                .FirstOrDefaultAsync(x => x.UserId == existing.Id && x.Status == "Active");
-
-            if (existing.OrganizationId.HasValue && existing.OrganizationId.Value != Guid.Empty)
-            {
-                var legacyMembership = await db.OrganizationMemberships.FirstOrDefaultAsync(x => x.UserId == existing.Id && x.OrganizationId == existing.OrganizationId.Value);
-                if (legacyMembership is null)
+                if (!string.Equals(runtiraUser.Email, normalizedEmail, StringComparison.Ordinal))
                 {
-                    db.OrganizationMemberships.Add(new OrganizationMembership
-                    {
-                        Id = Guid.NewGuid(),
-                        OrganizationId = existing.OrganizationId.Value,
-                        UserId = existing.Id,
-                        Role = NormalizeOrganizationRole(existing.Role),
-                        Status = "Active",
-                        CreatedUtc = DateTime.UtcNow
-                    });
+                    runtiraUser.Email = normalizedEmail;
                     hasChanges = true;
                 }
-                else if (!string.Equals(legacyMembership.Status, "Active", StringComparison.OrdinalIgnoreCase))
+
+                if (ShouldUpdateDisplayName(runtiraUser.FullName, fullName, normalizedEmail))
                 {
-                    legacyMembership.Status = "Active";
-                    legacyMembership.Role = NormalizeOrganizationRole(string.IsNullOrWhiteSpace(legacyMembership.Role) ? existing.Role : legacyMembership.Role);
+                    runtiraUser.FullName = fullName;
                     hasChanges = true;
                 }
-            }
-            else if (primaryMembership is not null)
-            {
-                existing.OrganizationId = primaryMembership.OrganizationId;
-                existing.Role = NormalizeOrganizationRole(primaryMembership.Role);
-                hasChanges = true;
-            }
-            else if (string.IsNullOrWhiteSpace(existing.Role))
-            {
-                existing.Role = "Owner";
-                hasChanges = true;
+
+                if (string.IsNullOrWhiteSpace(runtiraUser.ClerkUserId) && !string.IsNullOrWhiteSpace(clerkUserId))
+                {
+                    runtiraUser.ClerkUserId = clerkUserId;
+                    hasChanges = true;
+                }
+
+                if (!string.Equals(runtiraUser.PreferredLanguage, preferredLocale, StringComparison.OrdinalIgnoreCase))
+                {
+                    runtiraUser.PreferredLanguage = preferredLocale;
+                    hasChanges = true;
+                }
+
+                var shouldBeSuperAdmin = string.Equals(normalizedEmail, "michelfopa@gmail.com", StringComparison.OrdinalIgnoreCase);
+                if (runtiraUser.IsSuperAdmin != shouldBeSuperAdmin)
+                {
+                    runtiraUser.IsSuperAdmin = shouldBeSuperAdmin;
+                    hasChanges = true;
+                }
+
+                if (!runtiraUser.IsActive)
+                {
+                    runtiraUser.IsActive = true;
+                    hasChanges = true;
+                }
             }
 
             if (hasChanges)
@@ -468,7 +516,9 @@ app.MapGet("/account/manage", (HttpContext httpContext, [FromServices] ClerkOpti
     return Results.LocalRedirect("/account");
 });
 
-app.MapPost("/organizations/select", async ([FromForm] Guid organizationId, HttpContext httpContext, [FromServices] ApplicationDbContext db) =>
+app.MapGet("/tenants/select", (Guid tenantId) => Results.LocalRedirect($"/tenants/switch/{tenantId}"));
+
+app.MapGet("/tenants/switch/{tenantId:guid}", async (Guid tenantId, HttpContext httpContext, [FromServices] ApplicationDbContext db) =>
 {
     if (httpContext.User?.Identity?.IsAuthenticated != true)
     {
@@ -481,20 +531,19 @@ app.MapPost("/organizations/select", async ([FromForm] Guid organizationId, Http
         return Results.Unauthorized();
     }
 
-    var user = await db.Users.AsNoTracking().FirstOrDefaultAsync(x => x.Email == email);
+    var user = await db.RuntiraUsers.AsNoTracking().FirstOrDefaultAsync(x => x.Email == email);
     if (user is null)
     {
         return Results.Unauthorized();
     }
 
-    var allowed = await db.OrganizationMemberships.AsNoTracking().AnyAsync(x => x.UserId == user.Id && x.OrganizationId == organizationId && x.Status == "Active");
-    var isSuperAdmin = string.Equals(user.SystemRole, "SuperAdmin", StringComparison.OrdinalIgnoreCase);
-    if (!allowed && !isSuperAdmin)
+    var allowed = await db.RuntiraMemberships.AsNoTracking().AnyAsync(x => x.UserId == user.Id && x.TenantId == tenantId && x.Status == "Active");
+    if (!allowed && !user.IsSuperAdmin)
     {
         return Results.Forbid();
     }
 
-    httpContext.Response.Cookies.Append("psaas_org", organizationId.ToString(), new CookieOptions
+    httpContext.Response.Cookies.Append("runtira_tenant", tenantId.ToString(), new CookieOptions
     {
         Expires = DateTimeOffset.UtcNow.AddYears(1),
         HttpOnly = true,
@@ -502,16 +551,15 @@ app.MapPost("/organizations/select", async ([FromForm] Guid organizationId, Http
         SameSite = SameSiteMode.Lax
     });
 
-    return Results.LocalRedirect("/");
+    var tenant = await db.RuntiraOrganizations.AsNoTracking().FirstOrDefaultAsync(x => x.Id == tenantId);
+    return Results.LocalRedirect(!string.IsNullOrWhiteSpace(tenant?.Slug) ? $"/t/{tenant.Slug}" : "/workspace");
 }).RequireAuthorization();
 
-app.MapGet("/organizations/select", (Guid organizationId) => Results.LocalRedirect($"/organizations/switch/{organizationId}"));
-
-app.MapGet("/organizations/switch/{organizationId:guid}", async (Guid organizationId, HttpContext httpContext, [FromServices] ApplicationDbContext db) =>
+app.MapGet("/t/{tenantSlug}", async (string tenantSlug, HttpContext httpContext, [FromServices] ApplicationDbContext db) =>
 {
     if (httpContext.User?.Identity?.IsAuthenticated != true)
     {
-        return Results.Unauthorized();
+        return Results.Redirect($"/sign-in?tenant={Uri.EscapeDataString(tenantSlug)}");
     }
 
     var email = httpContext.User.Claims.FirstOrDefault(c => c.Type.Contains("email", StringComparison.OrdinalIgnoreCase))?.Value;
@@ -520,20 +568,20 @@ app.MapGet("/organizations/switch/{organizationId:guid}", async (Guid organizati
         return Results.Unauthorized();
     }
 
-    var user = await db.Users.AsNoTracking().FirstOrDefaultAsync(x => x.Email == email);
-    if (user is null)
+    var user = await db.RuntiraUsers.AsNoTracking().FirstOrDefaultAsync(x => x.Email == email);
+    var tenant = await db.RuntiraOrganizations.AsNoTracking().FirstOrDefaultAsync(x => x.Slug == tenantSlug);
+    if (user is null || tenant is null)
     {
-        return Results.Unauthorized();
+        return Results.NotFound();
     }
 
-    var allowed = await db.OrganizationMemberships.AsNoTracking().AnyAsync(x => x.UserId == user.Id && x.OrganizationId == organizationId && x.Status == "Active");
-    var isSuperAdmin = string.Equals(user.SystemRole, "SuperAdmin", StringComparison.OrdinalIgnoreCase);
-    if (!allowed && !isSuperAdmin)
+    var allowed = await db.RuntiraMemberships.AsNoTracking().AnyAsync(x => x.UserId == user.Id && x.TenantId == tenant.Id && x.Status == "Active");
+    if (!allowed && !user.IsSuperAdmin)
     {
         return Results.Forbid();
     }
 
-    httpContext.Response.Cookies.Append("psaas_org", organizationId.ToString(), new CookieOptions
+    httpContext.Response.Cookies.Append("runtira_tenant", tenant.Id.ToString(), new CookieOptions
     {
         Expires = DateTimeOffset.UtcNow.AddYears(1),
         HttpOnly = true,
@@ -541,70 +589,27 @@ app.MapGet("/organizations/switch/{organizationId:guid}", async (Guid organizati
         SameSite = SameSiteMode.Lax
     });
 
-    return Results.LocalRedirect("/dashboard");
+    return Results.LocalRedirect("/workspace");
 }).RequireAuthorization();
-
-app.MapGet("/invitations/accept", async (string token, HttpContext httpContext, [FromServices] SaasDataService dataService) =>
-{
-    if (httpContext.User?.Identity?.IsAuthenticated != true)
-    {
-        return Results.Redirect($"/account/login?invitation={Uri.EscapeDataString(token)}");
-    }
-
-    var email = httpContext.User.Claims.FirstOrDefault(c => c.Type.Contains("email", StringComparison.OrdinalIgnoreCase))?.Value;
-    var clerkUserId = httpContext.User.Claims.FirstOrDefault(c => c.Type == "sub")?.Value ?? string.Empty;
-    if (string.IsNullOrWhiteSpace(email))
-    {
-        return Results.Redirect("/");
-    }
-
-    try
-    {
-        var organizationId = await dataService.AcceptInvitationAsync(token, email, clerkUserId, ResolveUserFullName(httpContext.User, email));
-        return Results.LocalRedirect($"/organizations/switch/{organizationId}");
-    }
-    catch (InvalidOperationException)
-    {
-        return Results.LocalRedirect("/onboarding?invite=expired");
-    }
-});
 
 app.MapGet("/account/logout", async (HttpContext httpContext) =>
 {
     httpContext.Response.Cookies.Delete("psaas_org");
+    httpContext.Response.Cookies.Delete("runtira_tenant");
     await AuthenticationHttpContextExtensions.SignOutAsync(httpContext, CookieAuthenticationDefaults.AuthenticationScheme, new AuthenticationProperties());
     httpContext.Response.Redirect("/");
 });
 
-app.MapGet("/account/post-login", async (string? invitation, HttpContext httpContext, [FromServices] CurrentOrganization current, [FromServices] SaasDataService dataService) =>
+app.MapGet("/account/post-login", ([FromServices] CurrentOrganization current) =>
 {
     if (!current.IsAuthenticated)
     {
         return Results.LocalRedirect("/");
     }
 
-    if (!string.IsNullOrWhiteSpace(invitation))
-    {
-        var email = httpContext.User.Claims.FirstOrDefault(c => c.Type.Contains("email", StringComparison.OrdinalIgnoreCase))?.Value;
-        var clerkUserId = httpContext.User.Claims.FirstOrDefault(c => c.Type == "sub")?.Value ?? string.Empty;
-
-        if (!string.IsNullOrWhiteSpace(email))
-        {
-            try
-            {
-                var organizationId = await dataService.AcceptInvitationAsync(invitation, email, clerkUserId, ResolveUserFullName(httpContext.User, email));
-                return Results.LocalRedirect($"/organizations/switch/{organizationId}");
-            }
-            catch (InvalidOperationException)
-            {
-                return Results.LocalRedirect("/onboarding?invite=expired");
-            }
-        }
-    }
-
     if (current.HasOrganizationAccess)
     {
-        return Results.LocalRedirect(current.RequiresOrganizationSelection ? "/onboarding/organization-picker" : "/dashboard");
+        return Results.LocalRedirect(current.RequiresOrganizationSelection ? "/onboarding/organization-picker" : "/workspace");
     }
 
     if (current.RequiresOrganizationSelection)
@@ -692,7 +697,7 @@ app.MapGet("/subscriptions/expired", ([FromServices] CurrentOrganization current
 
     if (current.CanAccessWorkspace)
     {
-        return Results.Redirect("/dashboard");
+        return Results.Redirect("/workspace");
     }
 
     return Results.Redirect("/subscriptions/expired-view");
@@ -704,6 +709,48 @@ app.MapPost("/support/grant", async ([FromBody] SupportGrantRequest? request, [F
     {
         return Results.BadRequest();
     }
+
+static Guid? TryGetSelectedRuntiraTenantId(HttpContext? httpContext)
+    => httpContext?.Request.Cookies.TryGetValue("runtira_tenant", out var cookieValue) == true
+        && Guid.TryParse(cookieValue, out var parsedTenantId)
+            ? parsedTenantId
+            : null;
+
+static string ExtractRequestedTenantSlug(HttpContext? httpContext)
+{
+    if (httpContext is null)
+    {
+        return string.Empty;
+    }
+
+    var host = httpContext.Request.Host.Host;
+    if (!string.IsNullOrWhiteSpace(host)
+        && !host.Equals("localhost", StringComparison.OrdinalIgnoreCase)
+        && host.Contains('.', StringComparison.Ordinal))
+    {
+        var firstLabel = host.Split('.', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
+        if (!string.IsNullOrWhiteSpace(firstLabel)
+            && !firstLabel.Equals("www", StringComparison.OrdinalIgnoreCase)
+            && !firstLabel.Equals("runtira", StringComparison.OrdinalIgnoreCase))
+        {
+            return firstLabel;
+        }
+    }
+
+    var segments = httpContext.Request.Path.Value?.Split('/', StringSplitOptions.RemoveEmptyEntries) ?? [];
+    return segments.Length >= 2 && segments[0].Equals("t", StringComparison.OrdinalIgnoreCase)
+        ? segments[1]
+        : string.Empty;
+}
+
+static string? MapLocaleToCulture(string? locale)
+    => locale?.Trim().ToLowerInvariant() switch
+    {
+        "fr" => "fr-CA",
+        "es" => "es-MX",
+        "en" => "en-CA",
+        _ => locale
+    };
 
     var session = await dataService.GrantSupportAccessAsync(request.OrganizationId, request.Reason ?? "Support review");
     return Results.Ok(session);
@@ -1519,6 +1566,48 @@ static void PurgeExpiredDemoOrganizations(ApplicationDbContext db)
     db.SaveChanges();
     db.Organizations.Where(x => expiredDemoIds.Contains(x.Id)).ExecuteDelete();
 }
+
+static Guid? TryGetSelectedRuntiraTenantId(HttpContext? httpContext)
+    => httpContext?.Request.Cookies.TryGetValue("runtira_tenant", out var cookieValue) == true
+        && Guid.TryParse(cookieValue, out var parsedTenantId)
+            ? parsedTenantId
+            : null;
+
+static string ExtractRequestedTenantSlug(HttpContext? httpContext)
+{
+    if (httpContext is null)
+    {
+        return string.Empty;
+    }
+
+    var host = httpContext.Request.Host.Host;
+    if (!string.IsNullOrWhiteSpace(host)
+        && !host.Equals("localhost", StringComparison.OrdinalIgnoreCase)
+        && host.Contains('.', StringComparison.Ordinal))
+    {
+        var firstLabel = host.Split('.', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
+        if (!string.IsNullOrWhiteSpace(firstLabel)
+            && !firstLabel.Equals("www", StringComparison.OrdinalIgnoreCase)
+            && !firstLabel.Equals("runtira", StringComparison.OrdinalIgnoreCase))
+        {
+            return firstLabel;
+        }
+    }
+
+    var segments = httpContext.Request.Path.Value?.Split('/', StringSplitOptions.RemoveEmptyEntries) ?? [];
+    return segments.Length >= 2 && segments[0].Equals("t", StringComparison.OrdinalIgnoreCase)
+        ? segments[1]
+        : string.Empty;
+}
+
+static string? MapLocaleToCulture(string? locale)
+    => locale?.Trim().ToLowerInvariant() switch
+    {
+        "fr" => "fr-CA",
+        "es" => "es-MX",
+        "en" => "en-CA",
+        _ => locale
+    };
 
 app.MapStaticAssets();
 app.MapRazorComponents<App>()

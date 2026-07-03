@@ -1,0 +1,43 @@
+﻿@inherits LayoutComponentBase
+@using Runtira.Application.Common
+@inject CurrentOrganization CurrentOrganization
+
+<div class="page">
+    <main>
+        <div class="top-row px-4">
+            <div class="brand-block">
+                <span class="brand-mark">R</span>
+                <div>
+                    <strong>Runtira</strong>
+                    <div class="brand-subtitle">@RuntiraText.Get("Brand_Subtitle", CurrentOrganization.PreferredLanguage)</div>
+                </div>
+            </div>
+
+            <div class="top-row-actions">
+                <NavMenu />
+                <AuthorizeView>
+                    <Authorized>
+                        <a class="top-nav-link provider-link" href="/account">@RuntiraText.Get("Nav_Account", CurrentOrganization.PreferredLanguage)</a>
+                    </Authorized>
+                    <NotAuthorized>
+                        <a class="top-nav-link provider-link" href="/sign-in">@RuntiraText.Get("Nav_SignIn", CurrentOrganization.PreferredLanguage)</a>
+                    </NotAuthorized>
+                </AuthorizeView>
+                @if (!string.IsNullOrWhiteSpace(CurrentOrganization.OrganizationSlug))
+                {
+                    <a class="top-nav-link provider-link" href="@($"/{CurrentOrganization.OrganizationSlug}/billing")">@RuntiraText.Get("Provider_Stripe", CurrentOrganization.PreferredLanguage)</a>
+                }
+            </div>
+        </div>
+
+        <article class="content-shell px-4">
+            @Body
+        </article>
+    </main>
+</div>
+
+<div id="blazor-error-ui" data-nosnippet>
+    @RuntiraText.Get("Error_Subtitle", CurrentOrganization.PreferredLanguage)
+    <a href="." class="reload">@RuntiraText.Get("Reconnect_Retry", CurrentOrganization.PreferredLanguage)</a>
+    <span class="dismiss">🗙</span>
+</div>

@@ -1,0 +1,109 @@
+@page "/{tenantSlug}/invoice-composer"
+
+<PageTitle>@GetTitle()</PageTitle>
+
+<div class="hero-shell">
+    <section class="hero-card">
+        <div class="hero-badge">@RuntiraText.Get("Invoice_Badge", CurrentOrganization.PreferredLanguage)</div>
+        <h1>@GetTitle()</h1>
+        <p class="hero-copy">@GetCopy()</p>
+
+        @if (_invoice == null)
+        {
+            <div class="empty-state">
+                <strong>@RuntiraText.Get("Invoice_MissingTitle", CurrentOrganization.PreferredLanguage)</strong>
+                <p>@RuntiraText.Get("Invoice_MissingBody", CurrentOrganization.PreferredLanguage)</p>
+            </div>
+        }
+        else
+        {
+            <EditForm Model="_invoice" class="invoice-form">
+                <div class="form-grid">
+                    <label>
+                        <span class="summary-label">@RuntiraText.Get("Invoice_Organization", CurrentOrganization.PreferredLanguage)</span>
+                        <input value="@_invoice.OrganizationName" readonly />
+                    </label>
+                    <label>
+                        <span class="summary-label">@RuntiraText.Get("Invoice_Jurisdiction", CurrentOrganization.PreferredLanguage)</span>
+                        <input value="@_invoice.JurisdictionDisplayName" readonly />
+                    </label>
+                    <label>
+                        <span class="summary-label">@RuntiraText.Get("Invoice_DetectedLanguage", CurrentOrganization.PreferredLanguage)</span>
+                        <input value="@CurrentOrganization.PreferredLanguage" readonly />
+                    </label>
+
+                    @if (ShouldShowPropertyAddress())
+                    {
+                        <label>
+                            <span class="summary-label">@RuntiraText.Get("Invoice_PropertyAddress", CurrentOrganization.PreferredLanguage)</span>
+                            <input @bind="_invoice.PropertyAddress" />
+                        </label>
+                    }
+
+                    @if (ShouldShowBillingPeriod())
+                    {
+                        <label>
+                            <span class="summary-label">@RuntiraText.Get("Invoice_Period", CurrentOrganization.PreferredLanguage)</span>
+                            <input @bind="_invoice.BillingPeriod" />
+                        </label>
+                    }
+
+                    @if (ShouldShowMonthlyRent())
+                    {
+                        <label>
+                            <span class="summary-label">@RuntiraText.Get("Invoice_MonthlyRent", CurrentOrganization.PreferredLanguage)</span>
+                            <input type="number" step="0.01" @bind="_invoice.MonthlyRent" />
+                        </label>
+                    }
+
+                    @if (ShouldShowGeneratePdf())
+                    {
+                        <label>
+                            <span class="summary-label">@RuntiraText.Get("Invoice_SendablePdf", CurrentOrganization.PreferredLanguage)</span>
+                            <input value="@GetBooleanLabel(_invoice.GeneratePdf)" readonly />
+                        </label>
+                    }
+
+                    <label>
+                        <span class="summary-label">@RuntiraText.Get("Invoice_AutomaticTax", CurrentOrganization.PreferredLanguage)</span>
+                        <input value="@GetBooleanLabel(_invoice.AddAutomaticGst)" readonly />
+                    </label>
+                    <label>
+                        <span class="summary-label">@RuntiraText.Get("Invoice_SupportedLanguages", CurrentOrganization.PreferredLanguage)</span>
+                        <input value="@_invoice.SupportedLanguagesJson" readonly />
+                    </label>
+                </div>
+            </EditForm>
+
+            <div class="prompt-box">
+                <div class="prompt-title">@RuntiraText.Get("Invoice_SuggestedPrompt", CurrentOrganization.PreferredLanguage)</div>
+                <div class="draft-box">@_invoice.SuggestedPrompt</div>
+                <div class="prompt-title">@RuntiraText.Get("Invoice_Rules", CurrentOrganization.PreferredLanguage)</div>
+                <div class="draft-box">@_invoice.InvoiceRulesJson</div>
+                <div class="prompt-title">@RuntiraText.Get("Invoice_RequiredQuestions", CurrentOrganization.PreferredLanguage)</div>
+                <div class="draft-box">@_invoice.RequiredQuestionsJson</div>
+                @if (!string.IsNullOrWhiteSpace(_draftEmailStatus))
+                {
+                    <div class="empty-state mt-3">
+                        <p>@_draftEmailStatus</p>
+                    </div>
+                }
+            </div>
+        }
+    </section>
+
+    <section class="workspace-card">
+        <div class="workspace-header">
+            <h2>@RuntiraText.Get("Invoice_ChecklistTitle", CurrentOrganization.PreferredLanguage)</h2>
+            <span class="workspace-state">@RuntiraText.Get("Common_Preview", CurrentOrganization.PreferredLanguage)</span>
+        </div>
+
+        <div class="prompt-box">
+            <button type="button" class="prompt-chip">@RuntiraText.Get("Invoice_ReadRules", CurrentOrganization.PreferredLanguage)</button>
+            <button type="button" class="prompt-chip">@RuntiraText.Get("Invoice_AskAllowedQuestions", CurrentOrganization.PreferredLanguage)</button>
+            <button type="button" class="prompt-chip">@RuntiraText.Get("Invoice_IncludeLocalFields", CurrentOrganization.PreferredLanguage)</button>
+            <button type="button" class="prompt-chip">@RuntiraText.Get("Invoice_PreparePdf", CurrentOrganization.PreferredLanguage)</button>
+            <button type="button" class="prompt-chip" @onclick="SendDraftEmailAsync">@RuntiraText.Get("Invoice_SendDraftEmail", CurrentOrganization.PreferredLanguage)</button>
+        </div>
+    </section>
+</div>

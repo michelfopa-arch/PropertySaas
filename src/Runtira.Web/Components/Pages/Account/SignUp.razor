@@ -1,0 +1,51 @@
+@page "/sign-up"
+@inject NavigationManager NavigationManager
+
+<PageTitle>@RuntiraText.Get("Nav_SignUp")</PageTitle>
+
+<div class="hero-shell auth-shell">
+    <section class="hero-card">
+        <div class="hero-badge">@RuntiraText.Get("Badge_Clerk")</div>
+        <h1>@RuntiraText.Get("SignUp_Title")</h1>
+        <p class="hero-copy">
+            @RuntiraText.Get("SignUp_Subtitle")
+        </p>
+
+        <div class="prompt-box">
+            <a class="prompt-chip prompt-link" href="@SignUpHref">@RuntiraText.Get("SignUp_Action")</a>
+            <a class="prompt-chip prompt-link" href="@SignInHref">@RuntiraText.Get("SignUp_HaveAccount")</a>
+            <a class="prompt-chip prompt-link" href="/">@RuntiraText.Get("SignUp_BackHome")</a>
+        </div>
+    </section>
+
+    <section class="workspace-card">
+        <div class="workspace-header">
+            <h2>@RuntiraText.Get("SignUp_StackTitle")</h2>
+            <span class="workspace-state">@RuntiraText.Get("Common_Ready")</span>
+        </div>
+
+        <div class="option-list">
+            <span class="option-pill">@RuntiraText.Get("Provider_Clerk")</span>
+            <span class="option-pill">@RuntiraText.Get("Provider_Stripe")</span>
+            <span class="option-pill">@RuntiraText.Get("Provider_Resend")</span>
+            <span class="option-pill">@RuntiraText.Get("Provider_Azure")</span>
+        </div>
+    </section>
+</div>
+
+@code {
+    private string SignUpHref => BuildHref("/account/sign-up");
+    private string SignInHref => BuildHref("/sign-in");
+
+    private string BuildHref(string basePath)
+    {
+        var uri = new Uri(NavigationManager.Uri);
+        var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query);
+        if (!query.TryGetValue("invitation", out var invitation) || string.IsNullOrWhiteSpace(invitation))
+        {
+            return basePath;
+        }
+
+        return $"{basePath}?invitation={Uri.EscapeDataString(invitation!)}";
+    }
+}

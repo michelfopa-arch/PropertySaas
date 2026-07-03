@@ -1,6 +1,5 @@
 @attribute [Authorize]
 @page "/profile"
-@inject SaasDataService DataService
 @inject CurrentOrganization CurrentOrganization
 @inject IHttpClientFactory HttpClientFactory
 @inject NavigationManager NavigationManager
@@ -87,34 +86,6 @@
                             </MudForm>
                         </MudPaper>
 
-                        @if (CurrentOrganization.IsDemo && CurrentOrganization.CanManageData)
-                        {
-                            <MudPaper Class="pa-4 profile-settings-shell" Elevation="0">
-                                <MudText Typo="Typo.h6" GutterBottom="true">@UiText.Get("Profile_DemoTitle")</MudText>
-                                <MudText Typo="Typo.body2" Class="mb-4" Color="Color.Secondary">@UiText.Get("Profile_DemoHelp")</MudText>
-
-                                @if (CurrentOrganization.DemoExpiresUtc.HasValue)
-                                {
-                                    <MudAlert Severity="Severity.Info" Variant="Variant.Outlined" Dense="true" Class="mb-4">
-                                        @UiText.Format("Profile_DemoExpires", CurrentOrganization.DemoExpiresUtc.Value.ToString("yyyy-MM-dd HH:mm", System.Globalization.CultureInfo.InvariantCulture))
-                                    </MudAlert>
-                                }
-
-                                @if (!string.IsNullOrWhiteSpace(_demoFeedback))
-                                {
-                                    <MudAlert Severity="@_demoFeedbackSeverity" Variant="Variant.Filled" Dense="true" Class="mb-4">@_demoFeedback</MudAlert>
-                                }
-
-                                <MudButton Variant="Variant.Filled" Color="Color.Warning" OnClick="ResetDemoAsync" Disabled="_isResettingDemo">
-                                    @if (_isResettingDemo)
-                                    {
-                                        <MudProgressCircular Size="Size.Small" Color="Color.Inherit" Indeterminate="true" Class="mr-2" />
-                                    }
-                                    @UiText.Get("Profile_DemoReset")
-                                </MudButton>
-                            </MudPaper>
-                        }
-
                         <MudPaper Class="pa-4 profile-settings-shell" Elevation="0">
                             <MudText Typo="Typo.h6" GutterBottom="true">@UiText.Get("Profile_SupportTitle")</MudText>
                             <MudText Typo="Typo.body2" Class="mb-4" Color="Color.Secondary">@UiText.Get("Profile_SupportHelp")</MudText>
@@ -144,62 +115,6 @@
                             </MudStack>
                         </MudPaper>
 
-                        @if (!string.IsNullOrWhiteSpace(_teamFeedback))
-                        {
-                            <MudAlert Severity="@_teamFeedbackSeverity" Variant="Variant.Filled" Dense="true">@_teamFeedback</MudAlert>
-                        }
-
-                        @if (CurrentOrganization.CanManageData)
-                        {
-                            <MudPaper Class="pa-4 profile-settings-shell" Elevation="0">
-                                <MudText Typo="Typo.h6" GutterBottom="true">@UiText.Get("Profile_TeamTitle")</MudText>
-                                <MudText Typo="Typo.body2" Class="mb-4" Color="Color.Secondary">@UiText.Get("Profile_TeamHelp")</MudText>
-
-                                <MudGrid Spacing="2">
-                                    <MudItem xs="12" md="6">
-                                        <MudTextField T="string" Label="@UiText.Get("Profile_InviteEmail")" @bind-Value="_inviteEmail" Variant="Variant.Outlined" />
-                                    </MudItem>
-                                    <MudItem xs="12" md="3">
-                                        <MudSelect T="string" Label="@UiText.Get("Profile_InviteRole")" @bind-Value="_inviteRole" Variant="Variant.Outlined">
-                                            <MudSelectItem T="string" Value='@("Manager")'>Manager</MudSelectItem>
-                                            <MudSelectItem T="string" Value='@("Agent")'>Agent</MudSelectItem>
-                                            <MudSelectItem T="string" Value='@("Viewer")'>Viewer</MudSelectItem>
-                                        </MudSelect>
-                                    </MudItem>
-                                    <MudItem xs="12" md="3">
-                                        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="InviteUserAsync" Disabled="_isInviting || string.IsNullOrWhiteSpace(_inviteEmail)">
-                                            @UiText.Get("Profile_SendInvite")
-                                        </MudButton>
-                                    </MudItem>
-                                </MudGrid>
-
-                                <MudDivider Class="my-4" />
-
-                                <MudText Typo="Typo.subtitle1">@UiText.Get("Profile_MembersTitle")</MudText>
-                                <MudList T="string" Dense="true" Class="mt-2">
-                                    @foreach (var member in _members)
-                                    {
-                                        <MudListItem T="string">@member.FullName - @member.Email - @member.Role</MudListItem>
-                                    }
-                                </MudList>
-
-                                <MudText Typo="Typo.subtitle1" Class="mt-4">@UiText.Get("Profile_InvitationsTitle")</MudText>
-                                <MudList T="string" Dense="true" Class="mt-2">
-                                    @foreach (var invitation in _invitations)
-                                    {
-                                        <MudListItem T="string">
-                                            <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Wrap="Wrap.Wrap" Class="w-100">
-                                                <MudText Typo="Typo.body2">@invitation.Email - @invitation.Role - @invitation.Status</MudText>
-                                                @if (invitation.Status == "Pending")
-                                                {
-                                                    <MudButton Variant="Variant.Text" Color="Color.Error" OnClick="() => RevokeInvitationAsync(invitation.InvitationId)">@UiText.Get("Profile_RevokeInvite")</MudButton>
-                                                }
-                                            </MudStack>
-                                        </MudListItem>
-                                    }
-                                </MudList>
-                            </MudPaper>
-                        }
                     </MudStack>
                 </MudItem>
             </MudGrid>
@@ -219,17 +134,6 @@
     private string _supportMessage = string.Empty;
     private string? _supportFeedback;
     private Severity _supportFeedbackSeverity = Severity.Success;
-    private bool _isInviting;
-    private bool _isResettingDemo;
-    private string _inviteEmail = string.Empty;
-    private string _inviteRole = "Viewer";
-    private string? _teamFeedback;
-    private Severity _teamFeedbackSeverity = Severity.Success;
-    private string? _demoFeedback;
-    private Severity _demoFeedbackSeverity = Severity.Success;
-    private string? _latestInvitationUrl;
-    private List<MemberSummaryDto> _members = new();
-    private List<InvitationSummaryDto> _invitations = new();
 
     private string Initials => string.Join(string.Empty, (_profile.FullName ?? string.Empty)
         .Split(' ', StringSplitOptions.RemoveEmptyEntries)
@@ -250,11 +154,10 @@
         _isLoading = true;
         _message = null;
 
-        var profile = await DataService.GetCurrentUserProfileAsync();
-        _profile = profile ?? new AppUser
+        _profile = new AppUser
         {
             Email = CurrentOrganization.UserEmail,
-            FullName = CurrentOrganization.UserEmail,
+            FullName = string.IsNullOrWhiteSpace(CurrentOrganization.UserFullName) ? CurrentOrganization.UserEmail : CurrentOrganization.UserFullName,
             Role = CurrentOrganization.Role,
             PreferredLanguage = CurrentOrganization.PreferredLanguage
         };
@@ -263,12 +166,6 @@
             ? CurrentOrganization.PreferredLanguage
             : _profile.PreferredLanguage;
 
-        if (CurrentOrganization.CanManageData)
-        {
-            _members = await DataService.GetMembersAsync();
-            _invitations = await DataService.GetInvitationsAsync();
-        }
-
         _isLoading = false;
     }
 
@@ -276,8 +173,6 @@
     {
         _isSaving = true;
         _message = null;
-
-        await DataService.UpdateCurrentUserPreferredLanguageAsync(_preferredLanguage);
 
         _message = UiText.Get("Profile_SaveSuccess");
         _messageSeverity = Severity.Success;
@@ -330,28 +225,6 @@
         }
     }
 
-    private async Task ResetDemoAsync()
-    {
-        _isResettingDemo = true;
-        _demoFeedback = null;
-
-        try
-        {
-            await DataService.ResetCurrentDemoWorkspaceAsync();
-            _demoFeedback = UiText.Get("Profile_DemoResetSuccess");
-            _demoFeedbackSeverity = Severity.Success;
-        }
-        catch (Exception ex)
-        {
-            _demoFeedback = ex.Message;
-            _demoFeedbackSeverity = Severity.Error;
-        }
-        finally
-        {
-            _isResettingDemo = false;
-        }
-    }
-
     private static string GetLanguageLabel(string code) => code switch
     {
         "fr-CA" => "Français (Canada)",
@@ -360,51 +233,4 @@
         "fr-FR" => "Français (France)",
         _ => code
     };
-
-    private async Task InviteUserAsync()
-    {
-        _isInviting = true;
-        _teamFeedback = null;
-
-        try
-        {
-            var result = await DataService.InviteUserAsync(_inviteEmail, _inviteRole, NavigationManager.BaseUri.TrimEnd('/'));
-            _inviteEmail = string.Empty;
-            _inviteRole = "Viewer";
-            _teamFeedback = UiText.Get("Profile_InviteSuccess");
-            _teamFeedbackSeverity = Severity.Success;
-            _latestInvitationUrl = result.InvitationUrl;
-            _members = await DataService.GetMembersAsync();
-            _invitations = await DataService.GetInvitationsAsync();
-        }
-        catch (Exception ex)
-        {
-            _teamFeedback = ex.Message;
-            _teamFeedbackSeverity = Severity.Error;
-        }
-        finally
-        {
-            _isInviting = false;
-        }
-    }
-
-    private async Task RevokeInvitationAsync(Guid invitationId)
-    {
-        await DataService.RevokeInvitationAsync(invitationId);
-        _invitations = await DataService.GetInvitationsAsync();
-        _teamFeedback = UiText.Get("Profile_RevokeSuccess");
-        _teamFeedbackSeverity = Severity.Success;
-    }
-
-    private async Task ResendInvitationAsync(Guid invitationId)
-    {
-        var result = await DataService.ResendInvitationAsync(invitationId, NavigationManager.BaseUri.TrimEnd('/'));
-        _latestInvitationUrl = result.InvitationUrl;
-        _invitations = await DataService.GetInvitationsAsync();
-        _teamFeedback = UiText.Get("Profile_ResendSuccess");
-        _teamFeedbackSeverity = Severity.Success;
-    }
-
-    private string BuildInvitationUrl(string token)
-        => $"{NavigationManager.BaseUri.TrimEnd('/')}/invitations/accept?token={Uri.EscapeDataString(token)}";
 }

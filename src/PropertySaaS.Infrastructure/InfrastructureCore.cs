@@ -9,6 +9,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Configuration;
@@ -42,13 +43,44 @@ namespace PropertySaaS.Infrastructure.Options
         public string GrowthPriceId { get; set; } = string.Empty;
         public string ProPriceId { get; set; } = string.Empty;
     }
+
+    public sealed class AzureBlobOptions
+    {
+        public string ConnectionString { get; set; } = string.Empty;
+        public string TenantArchiveContainer { get; set; } = "tenant-archive";
+    }
+
+    public sealed class Microsoft365Options
+    {
+        public string TenantId { get; set; } = string.Empty;
+        public string ClientId { get; set; } = string.Empty;
+        public string ClientSecret { get; set; } = string.Empty;
+        public string SupportMailbox { get; set; } = "support@runtira.com";
+    }
+
+    public sealed class AiOptions
+    {
+        public string Provider { get; set; } = "MicrosoftAgentFramework";
+        public string ModelFast { get; set; } = "gpt-4.1-mini";
+        public string ModelReasoning { get; set; } = "gpt-4.1";
+    }
 }
 
 namespace PropertySaaS.Infrastructure.Data
 {
     public class ApplicationDbContext : DbContext, IApplicationDbContext
     {
+        private readonly Guid? _tenantId;
+        private readonly bool _bypassTenantFilter;
+
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
+
+        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options, ITenantContextAccessor tenantContextAccessor) : base(options)
+        {
+            _tenantId = tenantContextAccessor.TenantId;
+            _bypassTenantFilter = tenantContextAccessor.BypassTenantFilter;
+        }
+
         public DbSet<Organization> Organizations => Set<Organization>();
         public DbSet<AppUser> Users => Set<AppUser>();
         public DbSet<OrganizationMembership> OrganizationMemberships => Set<OrganizationMembership>();
@@ -71,6 +103,16 @@ namespace PropertySaaS.Infrastructure.Data
         public DbSet<AISuggestionLog> AISuggestionLogs => Set<AISuggestionLog>();
         public DbSet<TenantConversation> TenantConversations => Set<TenantConversation>();
         public DbSet<TenantMessage> TenantMessages => Set<TenantMessage>();
+        public DbSet<RuntiraOrganization> RuntiraOrganizations => Set<RuntiraOrganization>();
+        public DbSet<RuntiraUser> RuntiraUsers => Set<RuntiraUser>();
+        public DbSet<RuntiraMembership> RuntiraMemberships => Set<RuntiraMembership>();
+        public DbSet<RuntiraAsset> RuntiraAssets => Set<RuntiraAsset>();
+        public DbSet<RuntiraConversation> RuntiraConversations => Set<RuntiraConversation>();
+        public DbSet<RuntiraMessage> RuntiraMessages => Set<RuntiraMessage>();
+        public DbSet<RuntiraWorkflowTemplate> RuntiraWorkflowTemplates => Set<RuntiraWorkflowTemplate>();
+        public DbSet<RuntiraBlobArchive> RuntiraBlobArchives => Set<RuntiraBlobArchive>();
+        public DbSet<RuntiraJurisdictionProfile> RuntiraJurisdictionProfiles => Set<RuntiraJurisdictionProfile>();
+        public DbSet<RuntiraQuotaPolicy> RuntiraQuotaPolicies => Set<RuntiraQuotaPolicy>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -115,6 +157,136 @@ namespace PropertySaaS.Infrastructure.Data
             modelBuilder.Entity<MediaAsset>().HasOne(x => x.Listing).WithMany(x => x.MediaAssets).HasForeignKey(x => x.ListingId).OnDelete(DeleteBehavior.Restrict);
             modelBuilder.Entity<MediaAsset>().HasOne(x => x.Lease).WithMany(x => x.MediaAssets).HasForeignKey(x => x.LeaseId).OnDelete(DeleteBehavior.Restrict);
             modelBuilder.Entity<MediaAsset>().HasOne(x => x.MaintenanceRequest).WithMany().HasForeignKey(x => x.MaintenanceRequestId).OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<RuntiraOrganization>().HasData(new RuntiraOrganization
+            {
+                Id = Guid.Parse("aaaaaaaa-1111-2222-3333-bbbbbbbbbbbb"),
+                Name = "Runtira Demo Org",
+                Slug = "demo",
+                OwnerEmail = "michelfopa@gmail.com",
+                DefaultLocale = "en",
+                CountryCode = "CA",
+                RegionCode = "ON",
+                TimeZone = "America/Toronto",
+                LegalProfileJson = "{\"jurisdiction\":\"ON\",\"supports\":[\"en\",\"fr\",\"es\"]}",
+                AdditionalSettingsJson = "{\"tenantMode\":\"subdomain\",\"archive\":\"blob\"}",
+                IsActive = true,
+                CreatedUtc = new DateTime(2026, 7, 2, 0, 0, 0, DateTimeKind.Utc)
+            });
+            modelBuilder.Entity<RuntiraUser>().HasData(new RuntiraUser
+            {
+                Id = Guid.Parse("cccccccc-1111-2222-3333-dddddddddddd"),
+                ClerkUserId = "runtira_demo_owner",
+                Email = "michelfopa@gmail.com",
+                FullName = "Michel Fopa",
+                PreferredLanguage = "fr",
+                IsSuperAdmin = true,
+                IsActive = true,
+                CreatedUtc = new DateTime(2026, 7, 2, 0, 0, 0, DateTimeKind.Utc)
+            });
+            modelBuilder.Entity<RuntiraMembership>().HasData(new RuntiraMembership
+            {
+                Id = Guid.Parse("eeeeeeee-1111-2222-3333-ffffffffffff"),
+                TenantId = Guid.Parse("aaaaaaaa-1111-2222-3333-bbbbbbbbbbbb"),
+                UserId = Guid.Parse("cccccccc-1111-2222-3333-dddddddddddd"),
+                Role = "Owner",
+                Status = "Active",
+                CreatedUtc = new DateTime(2026, 7, 2, 0, 0, 0, DateTimeKind.Utc)
+            });
+            modelBuilder.Entity<RuntiraAsset>().HasData(new RuntiraAsset
+            {
+                Id = Guid.Parse("11111111-aaaa-bbbb-cccc-222222222222"),
+                TenantId = Guid.Parse("aaaaaaaa-1111-2222-3333-bbbbbbbbbbbb"),
+                Name = "Runtira AI Asset",
+                AssetType = "Property",
+                AddressLine1 = "100 King Street West",
+                City = "Toronto",
+                RegionCode = "ON",
+                CountryCode = "CA",
+                UnitCount = 3,
+                LegalProfileJson = "{\"requiredQuestions\":[\"address\",\"unitCount\",\"rentSchedule\"]}",
+                AdditionalDataJson = "{\"source\":\"seed\"}",
+                WorkflowSummaryJson = "{\"status\":\"ready\"}",
+                CreatedUtc = new DateTime(2026, 7, 2, 0, 0, 0, DateTimeKind.Utc)
+            });
+            modelBuilder.Entity<RuntiraConversation>().HasData(new RuntiraConversation
+            {
+                Id = Guid.Parse("33333333-aaaa-bbbb-cccc-444444444444"),
+                TenantId = Guid.Parse("aaaaaaaa-1111-2222-3333-bbbbbbbbbbbb"),
+                Channel = "Chat",
+                Subject = "Create a 3-unit property",
+                Locale = "en",
+                Status = "Open",
+                Intent = "CreateAsset",
+                JurisdictionCode = "CA-ON",
+                LastMessageUtc = new DateTime(2026, 7, 2, 0, 0, 0, DateTimeKind.Utc),
+                SummaryJson = "{\"nextQuestion\":\"What is the full property address?\"}",
+                CreatedUtc = new DateTime(2026, 7, 2, 0, 0, 0, DateTimeKind.Utc)
+            });
+            modelBuilder.Entity<RuntiraMessage>().HasData(new RuntiraMessage
+            {
+                Id = Guid.Parse("55555555-aaaa-bbbb-cccc-666666666666"),
+                TenantId = Guid.Parse("aaaaaaaa-1111-2222-3333-bbbbbbbbbbbb"),
+                ConversationId = Guid.Parse("33333333-aaaa-bbbb-cccc-444444444444"),
+                Direction = "Incoming",
+                AuthorType = "User",
+                Content = "I want to create a property with 3 units.",
+                StructuredPayloadJson = "{\"intent\":\"CreateAsset\"}",
+                RequiresAction = true,
+                CreatedByEmail = "michelfopa@gmail.com",
+                CreatedUtc = new DateTime(2026, 7, 2, 0, 0, 0, DateTimeKind.Utc)
+            });
+            modelBuilder.Entity<RuntiraWorkflowTemplate>().HasData(new RuntiraWorkflowTemplate
+            {
+                Id = Guid.Parse("77777777-aaaa-bbbb-cccc-888888888888"),
+                TenantId = Guid.Parse("aaaaaaaa-1111-2222-3333-bbbbbbbbbbbb"),
+                Name = "Create asset from natural language",
+                TriggerType = "CreateAsset",
+                Description = "Guides the user through mandatory jurisdiction-aware asset questions.",
+                PromptTemplate = "Ask only for missing required fields and confirm before creation.",
+                RequiredQuestionsJson = "[\"address\",\"unitCount\",\"jurisdiction\",\"rentSchedule\"]",
+                ValidationSchemaJson = "{\"unitCount\":{\"min\":1}}",
+                IsActive = true,
+                CreatedUtc = new DateTime(2026, 7, 2, 0, 0, 0, DateTimeKind.Utc)
+            });
+            modelBuilder.Entity<RuntiraBlobArchive>().HasData(new RuntiraBlobArchive
+            {
+                Id = Guid.Parse("99999999-aaaa-bbbb-cccc-000000000000"),
+                TenantId = Guid.Parse("aaaaaaaa-1111-2222-3333-bbbbbbbbbbbb"),
+                BlobPath = "demo/activity/2026/07/02/create-asset.json",
+                ContentType = "application/json",
+                Category = "Activity",
+                MetadataJson = "{\"intent\":\"CreateAsset\"}",
+                SizeBytes = 256,
+                SourceSystem = "seed",
+                Hash = "seed-demo-activity",
+                CreatedUtc = new DateTime(2026, 7, 2, 0, 0, 0, DateTimeKind.Utc)
+            });
+            modelBuilder.Entity<RuntiraJurisdictionProfile>().HasData(new RuntiraJurisdictionProfile
+            {
+                Id = Guid.Parse("12121212-aaaa-bbbb-cccc-343434343434"),
+                TenantId = Guid.Parse("aaaaaaaa-1111-2222-3333-bbbbbbbbbbbb"),
+                CountryCode = "CA",
+                RegionCode = "ON",
+                SupportedLanguagesJson = "[\"en\",\"fr\",\"es\"]",
+                RequiredQuestionsJson = "[\"address\",\"unitCount\",\"ownerName\",\"leaseTemplate\"]",
+                ValidationRulesJson = "{\"unitCount\":{\"required\":true,\"min\":1}}",
+                InvoiceRulesJson = "{\"supportsMonthlyInvoice\":true}",
+                AssetRulesJson = "{\"supportsMultiUnit\":true}",
+                MaintenanceRulesJson = "{\"supportInboxClassification\":true}",
+                CreatedUtc = new DateTime(2026, 7, 2, 0, 0, 0, DateTimeKind.Utc)
+            });
+            modelBuilder.Entity<RuntiraQuotaPolicy>().HasData(new RuntiraQuotaPolicy
+            {
+                Id = Guid.Parse("56565656-aaaa-bbbb-cccc-787878787878"),
+                TenantId = Guid.Parse("aaaaaaaa-1111-2222-3333-bbbbbbbbbbbb"),
+                MaxAssets = 100,
+                MaxDocuments = 1000,
+                MaxMonthlyAiRequests = 5000,
+                MaxBlobStorageMb = 2048,
+                MaxActiveWorkflows = 50,
+                EnforceHardLimit = true,
+                CreatedUtc = new DateTime(2026, 7, 2, 0, 0, 0, DateTimeKind.Utc)
+            });
             ApplicationDbSeeder.Seed(modelBuilder);
             base.OnModelCreating(modelBuilder);
         }
@@ -165,9 +337,46 @@ namespace PropertySaaS.Infrastructure.Data
     {
         public ApplicationDbContext CreateDbContext(string[] args)
         {
+            var environmentName = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production";
+            var configuration = new ConfigurationBuilder()
+                .SetBasePath(Directory.GetCurrentDirectory())
+                .AddJsonFile("appsettings.json", optional: true)
+                .AddJsonFile($"appsettings.{environmentName}.json", optional: true)
+                .AddUserSecrets<ApplicationDbContext>(optional: true)
+                .AddEnvironmentVariables()
+                .Build();
+
             var optionsBuilder = new DbContextOptionsBuilder<ApplicationDbContext>();
-            optionsBuilder.UseSqlServer("Data Source=WIN-QVV1GR7G0KH\\SQLEXPRESS;Initial Catalog=PropertyDB;Integrated Security=True;Persist Security Info=False;Pooling=False;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=True;Application Name=PropertySaaS");
+            optionsBuilder.UseSqlServer(SqlConnectionStringResolver.Resolve(configuration), sqlOptions => sqlOptions.EnableRetryOnFailure());
             return new ApplicationDbContext(optionsBuilder.Options);
+        }
+    }
+
+    internal static class SqlConnectionStringResolver
+    {
+        private const string ConnectionStringName = "PropertyDb";
+        private const string PasswordConfigurationKey = "ConnectionStrings:PropertyDbPassword";
+
+        public static string Resolve(IConfiguration configuration)
+        {
+            var configuredConnectionString = configuration.GetConnectionString(ConnectionStringName);
+            if (string.IsNullOrWhiteSpace(configuredConnectionString))
+            {
+                throw new InvalidOperationException($"Connection string '{ConnectionStringName}' is not configured.");
+            }
+
+            var builder = new SqlConnectionStringBuilder(configuredConnectionString);
+            var password = configuration[PasswordConfigurationKey];
+
+            if (!string.IsNullOrWhiteSpace(password))
+            {
+                builder.Password = password;
+            }
+
+            builder.Encrypt = true;
+            builder.TrustServerCertificate = false;
+
+            return builder.ConnectionString;
         }
     }
 }
@@ -189,12 +398,25 @@ namespace PropertySaaS.Infrastructure.Services
             configuration.GetSection("Stripe").Bind(stripeOptions);
             services.AddSingleton(stripeOptions);
 
+            var blobOptions = new AzureBlobOptions();
+            configuration.GetSection("AzureBlob").Bind(blobOptions);
+            services.AddSingleton(blobOptions);
+
+            var microsoft365Options = new Microsoft365Options();
+            configuration.GetSection("Microsoft365").Bind(microsoft365Options);
+            services.AddSingleton(microsoft365Options);
+
+            var aiOptions = new AiOptions();
+            configuration.GetSection("AI").Bind(aiOptions);
+            services.AddSingleton(aiOptions);
+
             services.Configure<ResendOptions>(configuration.GetSection("Resend"));
             services.AddHttpClient<IEmailService, ResendEmailService>(client => client.BaseAddress = new Uri("https://api.resend.com/"));
             services.AddScoped<INotificationService, NotificationService>();
             services.AddHttpClient<StripeBillingService>(client => client.BaseAddress = new Uri("https://api.stripe.com/v1/"));
 
-            services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(configuration.GetConnectionString("PropertyDb")), ServiceLifetime.Transient, ServiceLifetime.Transient);
+            var connectionString = SqlConnectionStringResolver.Resolve(configuration);
+            services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(connectionString, sqlOptions => sqlOptions.EnableRetryOnFailure()), ServiceLifetime.Transient, ServiceLifetime.Transient);
             services.AddTransient<IApplicationDbContext>(provider => provider.GetRequiredService<ApplicationDbContext>());
 
             return services;

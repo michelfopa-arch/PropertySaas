@@ -1,0 +1,14 @@
+{
+  "jurisdictionCode": "US-TX",
+  "displayName": "Texas, United States",
+  "countryCode": "US",
+  "regionCode": "TX",
+  "supportedLanguagesJson": "[\"en-US\",\"es-MX\"]",
+  "requiredQuestionsJson": "[\"propertyAddress\",\"billingPeriod\",\"monthlyRent\",\"ownerName\"]",
+  "validationRulesJson": "{\"billingPeriod\":{\"required\":true},\"ownerName\":{\"required\":true}}",
+  "invoiceRulesJson": "{\"generatePdf\":true,\"addAutomaticSalesTax\":false,\"includePropertyAddress\":true,\"includeBillingPeriod\":true}",
+  "assetRulesJson": "{\"supportsMultiUnit\":true}",
+  "maintenanceRulesJson": "{\"supportInboxClassification\":true}",
+  "generatePdf": true,
+  "addAutomaticSalesTax": false
+}

@@ -1,5 +1,10 @@
 html, body { font-family: Inter, Segoe UI, Arial, sans-serif; background:#f5f7fb; color:#10233f; }
 body { margin:0; }
+.brand-title { letter-spacing:-0.03em; }
+.brand-subtitle { color:#5e6b80; }
+.tenant-context { background:linear-gradient(180deg, rgba(255,255,255,.98) 0%, rgba(247,250,255,.94) 100%); border:1px solid rgba(15,39,71,.08); border-radius:20px; }
+.content-shell { padding:1.5rem; }
+.h-100 { height:100%; }
 a, button, [role="button"], .mud-button-root, .mud-chip, .mud-icon-button {
     transition: box-shadow .18s ease, transform .18s ease, background-color .18s ease;
 }
@@ -17,7 +22,7 @@ button:focus-visible,
     outline-offset:2px;
     box-shadow:0 0 0 4px rgba(39,104,181,.12);
 }
-.hero { background: linear-gradient(135deg, #0f3d75 0%, #2768b5 100%); color:white; padding:4rem 0; border-radius:1.5rem; }
+.hero { background: linear-gradient(135deg, #09111f 0%, #10233f 45%, #2768b5 100%); color:white; padding:4rem 0; border-radius:1.5rem; }
 .card-soft { border:none; border-radius:1rem; box-shadow:0 12px 30px rgba(16,35,63,.08); }
 .metric { font-size:2rem; font-weight:700; }
 .section-title { font-weight:700; margin-bottom:1rem; }

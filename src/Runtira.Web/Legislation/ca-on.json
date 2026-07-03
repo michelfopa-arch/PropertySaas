@@ -1,0 +1,14 @@
+{
+  "jurisdictionCode": "CA-ON",
+  "displayName": "Ontario, Canada",
+  "countryCode": "CA",
+  "regionCode": "ON",
+  "supportedLanguagesJson": "[\"en-CA\",\"fr-CA\"]",
+  "requiredQuestionsJson": "[\"propertyAddress\",\"billingPeriod\",\"tenantName\",\"monthlyRent\"]",
+  "validationRulesJson": "{\"billingPeriod\":{\"required\":true},\"tenantName\":{\"required\":true}}",
+  "invoiceRulesJson": "{\"generatePdf\":true,\"addAutomaticSalesTax\":false,\"includePropertyAddress\":true,\"includeBillingPeriod\":true}",
+  "assetRulesJson": "{\"supportsMultiUnit\":true}",
+  "maintenanceRulesJson": "{\"supportInboxClassification\":true}",
+  "generatePdf": true,
+  "addAutomaticSalesTax": false
+}

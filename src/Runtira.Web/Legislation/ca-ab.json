@@ -1,0 +1,14 @@
+{
+  "jurisdictionCode": "CA-AB",
+  "displayName": "Alberta, Canada",
+  "countryCode": "CA",
+  "regionCode": "AB",
+  "supportedLanguagesJson": "[\"fr-CA\",\"en-CA\",\"es-MX\"]",
+  "requiredQuestionsJson": "[\"propertyAddress\",\"billingPeriod\",\"monthlyRent\"]",
+  "validationRulesJson": "{\"billingPeriod\":{\"required\":true}}",
+  "invoiceRulesJson": "{\"generatePdf\":true,\"addAutomaticSalesTax\":false,\"includePropertyAddress\":true,\"includeBillingPeriod\":true}",
+  "assetRulesJson": "{\"supportsMultiUnit\":true}",
+  "maintenanceRulesJson": "{\"supportInboxClassification\":true}",
+  "generatePdf": true,
+  "addAutomaticSalesTax": false
+}

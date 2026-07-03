@@ -20,6 +20,7 @@ public static class UiText
         ["Nav_OntarioCompliance"] = "Ontario Compliance",
         ["Nav_RentPayments"] = "Rent & Payments",
         ["Nav_AIImport"] = "AI Import",
+        ["Nav_RuntiraWorkspace"] = "AI Workspace",
         ["Nav_DocumentsEvidence"] = "Documents & Evidence",
         ["Nav_TeamAccess"] = "Team & Access",
         ["Nav_Resident360"] = "Resident 360",
@@ -907,6 +908,43 @@ public static class UiText
         ["Auth_SignUpSubtitle"] = "Start with a secure Clerk signup flow designed for fast onboarding and better conversion from marketing to product.",
         ["Auth_StartFree"] = "Start free",
         ["Auth_AlreadyHaveAccount"] = "Already have an account? Sign in",
+        ["RuntiraWorkspace_PageTitle"] = "Runtira | AI Workspace",
+        ["RuntiraWorkspace_Badge"] = "AI-first workspace",
+        ["RuntiraWorkspace_Title"] = "Operate {0} through one Runtira workspace",
+        ["RuntiraWorkspace_Subtitle"] = "Ask for an action, upload a document or route a support email. Runtira reads the tenant context, checks the jurisdiction and asks only the mandatory questions before execution.",
+        ["RuntiraWorkspace_ContextTitle"] = "Current operating context",
+        ["RuntiraWorkspace_ContextTenant"] = "Tenant slug: {0}",
+        ["RuntiraWorkspace_ContextLocale"] = "Default locale: {0}",
+        ["RuntiraWorkspace_ContextAssets"] = "Assets: {0}/{1}",
+        ["RuntiraWorkspace_ContextAi"] = "Active AI threads: {0} / monthly limit {1}",
+        ["RuntiraWorkspace_Assets"] = "Assets",
+        ["RuntiraWorkspace_AssetsCaption"] = "Structured tenant assets",
+        ["RuntiraWorkspace_Conversations"] = "Conversations",
+        ["RuntiraWorkspace_ConversationsCaption"] = "Active AI threads",
+        ["RuntiraWorkspace_Workflows"] = "Workflows",
+        ["RuntiraWorkspace_WorkflowsCaption"] = "Jurisdiction-aware templates",
+        ["RuntiraWorkspace_Archives"] = "Archives",
+        ["RuntiraWorkspace_ArchivesCaption"] = "Blob-backed activity history",
+        ["RuntiraWorkspace_ChatTitle"] = "Chat-driven execution",
+        ["RuntiraWorkspace_ChatBody"] = "This shell becomes the main place to create assets, generate invoices and classify support inbox activity through guided AI workflows.",
+        ["RuntiraWorkspace_PromptLabel"] = "Selected prompt",
+        ["RuntiraWorkspace_RequiredQuestionsTitle"] = "Mandatory questions loaded from jurisdiction profile",
+        ["RuntiraWorkspace_Jurisdiction"] = "Jurisdiction: {0}-{1}",
+        ["RuntiraWorkspace_ExamplesTitle"] = "Example prompts",
+        ["RuntiraWorkspace_Example1"] = "Create a property with 3 units and ask me only what Ontario requires.",
+        ["RuntiraWorkspace_Example2"] = "Generate this month invoice for Jean Paul in French.",
+        ["RuntiraWorkspace_Example3"] = "Classify the forwarded support email and create a maintenance request if needed.",
+        ["RuntiraWorkspace_InboxTitle"] = "Support inbox pipeline",
+        ["RuntiraWorkspace_InboxBody"] = "Microsoft 365 emails will be ingested, classified by AI and archived to Blob with SQL metadata kept minimal.",
+        ["RuntiraWorkspace_DefaultPrompt"] = "I want to create a property with 3 units. Ask me only the required questions.",
+        ["RuntiraWorkspace_InvoicePrompt"] = "Generate this month invoice for Jean Paul and ask for any mandatory missing information.",
+        ["RuntiraWorkspace_SupportPrompt"] = "Classify the support email and decide if it is a maintenance request, invoice question or another workflow.",
+        ["RuntiraWorkspace_CreateAsset"] = "Create asset workflow",
+        ["RuntiraWorkspace_CreateInvoice"] = "Create invoice workflow",
+        ["RuntiraWorkspace_ClassifyInbox"] = "Classify inbox workflow",
+        ["RuntiraWorkspace_EmptyTitle"] = "No Runtira workspace is connected yet",
+        ["RuntiraWorkspace_EmptyBody"] = "Create or select an organization to load the AI-first workspace.",
+        ["RuntiraWorkspace_OpenOnboarding"] = "Open onboarding",
         ["Auth_ForgotPasswordPageTitle"] = "Forgot password",
         ["Auth_ForgotPasswordTitle"] = "Recover account access",
         ["Auth_ForgotPasswordSubtitle"] = "Use Clerk account recovery to reset your password and get back to your portfolio quickly.",
@@ -1141,6 +1179,86 @@ public static class UiText
         ["SuperAdmin_GrantSupport"] = "Grant read-only support access",
         ["SuperAdmin_SupportGranted"] = "Support access granted and audited.",
         ["SuperAdmin_SupportGrantError"] = "Unable to grant support access right now."
+    };
+
+    private static readonly IReadOnlyDictionary<string, string> Spanish = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+    {
+        ["Nav_Marketing"] = "Runtira",
+        ["Nav_SignIn"] = "Iniciar sesión",
+        ["Nav_SignUp"] = "Crear cuenta",
+        ["Nav_Pricing"] = "Planes",
+        ["Nav_ManageAccount"] = "Gestionar cuenta",
+        ["Nav_SignOut"] = "Cerrar sesión",
+        ["Layout_BrandSubtitle"] = "Flujo operativo impulsado por IA para {0}",
+        ["Layout_PortfolioOperations"] = "Centro operativo IA",
+        ["Layout_TopBarDefault"] = "Opera propiedades, documentos y decisiones con una experiencia limpia, guiada por IA.",
+        ["Layout_PublicWorkspace"] = "Espacio público",
+        ["Layout_PublicWorkspaceHelp"] = "Runtira combina marketing, acceso y un espacio de trabajo guiado por IA.",
+        ["Layout_Guest"] = "Invitado",
+        ["Home_PageTitle"] = "Runtira | AI-first property operations",
+        ["Home_HeroTitle"] = "Runtira es la capa operativa impulsada por IA para propiedades en Norteamérica",
+        ["Home_HeroCopy"] = "Haz una pregunta, importa un documento o reenvía un email. Runtira clasifica, formula las preguntas obligatorias por jurisdicción y guía a cada organización hacia la siguiente acción correcta.",
+        ["Home_StartFreeTrial"] = "Continuar con Clerk",
+        ["Home_SignInCta"] = "Iniciar sesión",
+        ["Home_ManageAccountCta"] = "Gestionar cuenta",
+        ["Home_OpenDemo"] = "Abrir espacio IA",
+        ["Home_SeePricing"] = "Ver enfoque",
+        ["Home_SeeProductFlow"] = "Ver flujo IA",
+        ["Home_ProspectsTitle"] = "Lo que distingue a Runtira",
+        ["Home_ProspectsItem1"] = "Workspace conversacional limpio tipo ChatGPT",
+        ["Home_ProspectsItem2"] = "Preguntas obligatorias guiadas por jurisdicción",
+        ["Home_ProspectsItem3"] = "Flujos impulsados por IA para {0} y más allá",
+        ["Home_ProspectsItem4"] = "Entrada única por chat, documentos y email",
+        ["Home_ProspectsItem5"] = "Aislamiento multi-tenant con contexto por organización",
+        ["Home_ProspectsItem6"] = "Archivo JSON en Blob con base SQL mínima y limpia",
+        ["Home_PositioningTitle"] = "Cómo se posiciona Runtira",
+        ["Home_PositioningCard1Title"] = "AI operating inbox",
+        ["Home_PositioningCard1Body"] = "La operación comienza con una intención, no con menús pesados. El usuario pregunta y la IA guía la ejecución.",
+        ["Home_PositioningCard2Title"] = "Jurisdicción primero",
+        ["Home_PositioningCard2Body"] = "Las reglas, campos obligatorios y validaciones se modelan por país y región mediante JSON extensible.",
+        ["Home_PositioningCard3Title"] = "Entrada omnicanal",
+        ["Home_PositioningCard3Body"] = "Chat, importación documental y correos reenviados convergen hacia el mismo motor de clasificación y acción.",
+        ["Home_SwitchTitle"] = "Por qué esto crea ventaja competitiva",
+        ["Home_TypicalTitle"] = "Herramientas típicas",
+        ["Home_Typical1"] = "Pantallas CRUD densas y fragmentadas",
+        ["Home_Typical2"] = "Reglas operativas escondidas en procesos manuales",
+        ["Home_Typical3"] = "Baja reutilización de contexto por tenant y jurisdicción",
+        ["Home_Typical4"] = "Poca automatización real desde email y documentos",
+        ["Home_AdvantageTitle"] = "Ventaja Runtira",
+        ["Home_Advantage1"] = "Un solo workspace IA para preguntar, clasificar y actuar",
+        ["Home_Advantage2"] = "Preguntas mínimas pero obligatorias según legislación",
+        ["Home_Advantage3"] = "Subdominio por organización y sesión unificada",
+        ["Home_Advantage4"] = "Soporte FR/EN/ES desde el día 1",
+        ["Home_DemoTitle"] = "Qué mostrará el nuevo producto",
+        ["Home_DemoPropertiesTitle"] = "Assets guiados por IA",
+        ["Home_DemoPropertiesBody"] = "Crear propiedades, unidades y workflows con preguntas contextuelles.",
+        ["Home_DemoUnitsLeasesTitle"] = "Facturación y documentos",
+        ["Home_DemoUnitsLeasesBody"] = "Generación de invoice, archivos y validaciones con estructura limpia.",
+        ["Home_DemoTenantsMaintenanceTitle"] = "Inbox y soporte",
+        ["Home_DemoTenantsMaintenanceBody"] = "Clasificación de emails entrants, maintenance requests y otras intenciones métier.",
+        ["Home_DemoComplianceTitle"] = "Legislación configurable",
+        ["Home_DemoComplianceBody"] = "Reglas, champs et validations versionnés par juridiction via JSON.",
+        ["Home_FinalCtaTitle"] = "Entra en Runtira y opera con una IA que conoce tu tenant",
+        ["Home_FinalCtaBody"] = "Autenticación Clerk, contexto de organización, Azure SQL, Blob y Microsoft 365 convergen dans un seul shell AI-first.",
+        ["Home_PendingInviteTitle"] = "Tienes una invitación pendiente.",
+        ["Home_PendingInviteBody"] = "{0} te invitó como {1}.",
+        ["Home_PendingInviteCta"] = "Revisar invitación",
+        ["Routes_AuthenticationRequired"] = "Autenticación requerida",
+        ["Routes_AuthenticationDescription"] = "Inicia sesión para abrir tu workspace Runtira.",
+        ["Routes_SignIn"] = "Iniciar sesión",
+        ["Routes_AccessPendingTitle"] = "Acceso pendiente",
+        ["Routes_AccessPendingDescription"] = "Tu cuenta existe, pero aún no está conectada a una organización.",
+        ["Auth_SignInPageTitle"] = "Iniciar sesión",
+        ["Auth_SignInTitle"] = "Inicia sesión en Runtira",
+        ["Auth_SignInSubtitle"] = "Accede a un workspace AI-first para operaciones inmobiliarias, soporte y cumplimiento en Norteamérica.",
+        ["Auth_ContinueWithClerk"] = "Continuar con Clerk",
+        ["Auth_CreateAccount"] = "Crear cuenta",
+        ["Auth_ForgotPassword"] = "¿Olvidaste tu contraseña?",
+        ["Auth_SignUpPageTitle"] = "Crear cuenta",
+        ["Auth_SignUpTitle"] = "Crea tu cuenta Runtira",
+        ["Auth_SignUpSubtitle"] = "Comienza con una experiencia limpia para activar tu organización, tu inbox y tus workflows IA.",
+        ["Auth_StartFree"] = "Comenzar",
+        ["Auth_AlreadyHaveAccount"] = "¿Ya tienes cuenta? Inicia sesión"
     };
 
     private static readonly IReadOnlyDictionary<string, string> French = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
@@ -2072,6 +2190,44 @@ public static class UiText
         ["Auth_SignUpSubtitle"] = "Démarrez avec un parcours d’inscription Clerk sécurisé conçu pour accélérer l’intégration et la conversion entre marketing et produit.",
         ["Auth_StartFree"] = "Commencer gratuitement",
         ["Auth_AlreadyHaveAccount"] = "Vous avez déjà un compte ? Connectez-vous",
+        ["Nav_RuntiraWorkspace"] = "Espace IA",
+        ["RuntiraWorkspace_PageTitle"] = "Runtira | Espace IA",
+        ["RuntiraWorkspace_Badge"] = "Workspace AI-first",
+        ["RuntiraWorkspace_Title"] = "Pilotez {0} depuis un seul espace Runtira",
+        ["RuntiraWorkspace_Subtitle"] = "Demandez une action, importez un document ou routez un email support. Runtira lit le contexte du tenant, vérifie la juridiction et ne pose que les questions obligatoires avant exécution.",
+        ["RuntiraWorkspace_ContextTitle"] = "Contexte opérationnel actuel",
+        ["RuntiraWorkspace_ContextTenant"] = "Slug tenant : {0}",
+        ["RuntiraWorkspace_ContextLocale"] = "Langue par défaut : {0}",
+        ["RuntiraWorkspace_ContextAssets"] = "Actifs : {0}/{1}",
+        ["RuntiraWorkspace_ContextAi"] = "Threads IA actifs : {0} / limite mensuelle {1}",
+        ["RuntiraWorkspace_Assets"] = "Actifs",
+        ["RuntiraWorkspace_AssetsCaption"] = "Actifs structurés par tenant",
+        ["RuntiraWorkspace_Conversations"] = "Conversations",
+        ["RuntiraWorkspace_ConversationsCaption"] = "Threads IA actifs",
+        ["RuntiraWorkspace_Workflows"] = "Workflows",
+        ["RuntiraWorkspace_WorkflowsCaption"] = "Templates guidés par juridiction",
+        ["RuntiraWorkspace_Archives"] = "Archives",
+        ["RuntiraWorkspace_ArchivesCaption"] = "Historique Blob avec métadonnées SQL",
+        ["RuntiraWorkspace_ChatTitle"] = "Exécution pilotée par chat",
+        ["RuntiraWorkspace_ChatBody"] = "Ce shell devient l’endroit principal pour créer des actifs, générer des invoices et classer les emails support via des workflows IA guidés.",
+        ["RuntiraWorkspace_PromptLabel"] = "Prompt sélectionné",
+        ["RuntiraWorkspace_RequiredQuestionsTitle"] = "Questions obligatoires chargées depuis le profil de juridiction",
+        ["RuntiraWorkspace_Jurisdiction"] = "Juridiction : {0}-{1}",
+        ["RuntiraWorkspace_ExamplesTitle"] = "Exemples de prompts",
+        ["RuntiraWorkspace_Example1"] = "Crée une propriété de 3 unités et pose-moi seulement les questions obligatoires en Ontario.",
+        ["RuntiraWorkspace_Example2"] = "Génère l’invoice du mois pour Jean Paul en français.",
+        ["RuntiraWorkspace_Example3"] = "Classe l’email support transféré et crée une maintenance request si nécessaire.",
+        ["RuntiraWorkspace_InboxTitle"] = "Pipeline inbox support",
+        ["RuntiraWorkspace_InboxBody"] = "Les emails Microsoft 365 seront ingérés, classés par IA et archivés dans Blob avec un minimum de métadonnées SQL.",
+        ["RuntiraWorkspace_DefaultPrompt"] = "Je veux créer une propriété de 3 unités. Pose-moi seulement les questions obligatoires.",
+        ["RuntiraWorkspace_InvoicePrompt"] = "Génère l’invoice de ce mois pour Jean Paul et demande les informations obligatoires manquantes.",
+        ["RuntiraWorkspace_SupportPrompt"] = "Classe l’email support et décide s’il s’agit d’une maintenance request, d’une question de facture ou d’un autre workflow.",
+        ["RuntiraWorkspace_CreateAsset"] = "Créer un workflow actif",
+        ["RuntiraWorkspace_CreateInvoice"] = "Créer un workflow invoice",
+        ["RuntiraWorkspace_ClassifyInbox"] = "Classer la inbox",
+        ["RuntiraWorkspace_EmptyTitle"] = "Aucun espace Runtira n’est encore connecté",
+        ["RuntiraWorkspace_EmptyBody"] = "Créez ou sélectionnez une organisation pour charger l’espace AI-first.",
+        ["RuntiraWorkspace_OpenOnboarding"] = "Ouvrir l’onboarding",
         ["Auth_ForgotPasswordPageTitle"] = "Mot de passe oublié",
         ["Auth_ForgotPasswordTitle"] = "Récupérer l’accès au compte",
         ["Auth_ForgotPasswordSubtitle"] = "Utilisez la récupération de compte Clerk pour réinitialiser votre mot de passe et revenir rapidement sur votre portefeuille.",
@@ -2302,7 +2458,7 @@ public static class UiText
 
     public static string Get(string key)
     {
-        var catalog = IsFrench() ? French : English;
+        var catalog = GetCatalog();
         return catalog.TryGetValue(key, out var value)
             ? value
             : English.TryGetValue(key, out var fallback)
@@ -2312,6 +2468,22 @@ public static class UiText
 
     public static string Format(string key, params object[] args)
         => string.Format(Get(key), args);
+
+    private static IReadOnlyDictionary<string, string> GetCatalog()
+    {
+        var language = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
+        if (language.Equals("fr", StringComparison.OrdinalIgnoreCase))
+        {
+            return French;
+        }
+
+        if (language.Equals("es", StringComparison.OrdinalIgnoreCase))
+        {
+            return Spanish;
+        }
+
+        return English;
+    }
 
     private static bool IsFrench()
         => CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.Equals("fr", StringComparison.OrdinalIgnoreCase);
