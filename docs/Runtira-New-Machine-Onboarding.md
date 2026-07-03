@@ -1,4 +1,4 @@
-# Onboarding nouvel ordinateur — Runtira / PropertySaaS
+# Onboarding nouvel ordinateur — Runtira
 
 ## Important
 Ne pas stocker les mots de passe, clés API ou chaînes de connexion en clair dans le dépôt Git.
@@ -44,12 +44,11 @@ dotnet build
 
 ---
 
-## 4. Projets web à configurer
+## 4. Projet web à configurer
 Les secrets locaux doivent être configurés au minimum pour :
-- `src\PropertySaaS.Web\PropertySaaS.Web.csproj`
 - `src\Runtira.Web\Runtira.Web.csproj`
 
-Les deux projets utilisent le même ensemble logique de providers :
+Le projet utilise le même ensemble logique de providers :
 - Clerk
 - Stripe
 - Resend
@@ -103,11 +102,6 @@ Les deux projets utilisent le même ensemble logique de providers :
 ## 6. Vérifier les secrets existants sur une ancienne machine
 Sur l’ancienne machine :
 
-### PropertySaaS.Web
-```powershell
-dotnet user-secrets list --project "C:\Users\miche\source\repos\PropertySaaS\src\PropertySaaS.Web\PropertySaaS.Web.csproj"
-```
-
 ### Runtira.Web
 ```powershell
 dotnet user-secrets list --project "C:\Users\miche\source\repos\PropertySaaS\src\Runtira.Web\Runtira.Web.csproj"
@@ -119,17 +113,6 @@ Copier les valeurs dans un coffre-fort sécurisé, pas dans Git.
 
 ## 7. Restaurer les secrets sur un nouveau poste
 Exemples :
-
-### PropertySaaS.Web
-```powershell
-dotnet user-secrets set --project "C:\Users\miche\source\repos\PropertySaaS\src\PropertySaaS.Web\PropertySaaS.Web.csproj" "Clerk:Authority" "<valeur>"
-dotnet user-secrets set --project "C:\Users\miche\source\repos\PropertySaaS\src\PropertySaaS.Web\PropertySaaS.Web.csproj" "Clerk:ClientId" "<valeur>"
-dotnet user-secrets set --project "C:\Users\miche\source\repos\PropertySaaS\src\PropertySaaS.Web\PropertySaaS.Web.csproj" "Clerk:ClientSecret" "<valeur>"
-dotnet user-secrets set --project "C:\Users\miche\source\repos\PropertySaaS\src\PropertySaaS.Web\PropertySaaS.Web.csproj" "Resend:ApiKey" "<valeur>"
-dotnet user-secrets set --project "C:\Users\miche\source\repos\PropertySaaS\src\PropertySaaS.Web\PropertySaaS.Web.csproj" "AzureBlob:ConnectionString" "<valeur>"
-dotnet user-secrets set --project "C:\Users\miche\source\repos\PropertySaaS\src\PropertySaaS.Web\PropertySaaS.Web.csproj" "ConnectionStrings:PropertyDbPassword" "<valeur>"
-dotnet user-secrets set --project "C:\Users\miche\source\repos\PropertySaaS\src\PropertySaaS.Web\PropertySaaS.Web.csproj" "ConnectionStrings:RuntiraDbPassword" "<valeur>"
-```
 
 ### Runtira.Web
 ```powershell
@@ -148,18 +131,12 @@ dotnet user-secrets set --project "C:\Users\miche\source\repos\PropertySaaS\src\
 Vérifier que les secrets sont présents :
 
 ```powershell
-dotnet user-secrets list --project "C:\Users\miche\source\repos\PropertySaaS\src\PropertySaaS.Web\PropertySaaS.Web.csproj"
 dotnet user-secrets list --project "C:\Users\miche\source\repos\PropertySaaS\src\Runtira.Web\Runtira.Web.csproj"
 ```
 
 Builder :
 ```powershell
 dotnet build
-```
-
-Lancer le legacy :
-```powershell
-dotnet run --project "C:\Users\miche\source\repos\PropertySaaS\src\PropertySaaS.Web\PropertySaaS.Web.csproj"
 ```
 
 Lancer Runtira :
@@ -170,12 +147,11 @@ dotnet run --project "C:\Users\miche\source\repos\PropertySaaS\src\Runtira.Web\R
 ---
 
 ## 9. Ports locaux
-Ports alignés avec le legacy :
+Ports locaux Runtira :
 - HTTP : `5166`
 - HTTPS : `7087`
 
-Attention : un seul projet peut écouter ce port à la fois.
-Si le port est déjà utilisé, arrêter l’autre application ou la session Visual Studio en cours.
+Si le port est déjà utilisé, arrêter la session Visual Studio ou le process déjà en cours.
 
 ---
 
@@ -233,7 +209,6 @@ Ne pas :
 - [ ] secret Azure Blob restauré
 - [ ] secrets SQL restaurés
 - [ ] secrets Microsoft 365 restaurés
-- [ ] PropertySaaS.Web démarre
 - [ ] Runtira.Web démarre
 - [ ] Clerk login fonctionne
 - [ ] Resend fonctionne

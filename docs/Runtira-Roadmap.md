@@ -21,7 +21,7 @@ Runtira se vend comme :
 - Expérience AI-first, simple, guidée, orientée questions/réponses
 - Support multilingue dès le départ
 - Support multi-juridiction piloté par configuration
-- Providers partagés avec le legacy quand possible
+- Providers alignés sur la configuration Runtira active et réutilisables selon l’environnement
 - Archivage JSON local compatible Azure Blob
 - Extensibilité future par configuration plutôt que par code dur
 
@@ -147,14 +147,14 @@ Objectif : rendre la plateforme fiable et cohérente.
   - redirections
 - valider Resend
   - email test
-  - expéditeur partagé avec legacy
+	- expéditeur validé pour l’environnement actif
   - messages d’erreur UI
 - valider Stripe
   - checkout
   - portail
   - webhook
 - stabiliser la configuration
-  - mêmes secrets/config que le legacy
+	- secrets/config centralisés pour Runtira
   - même port local
   - retrait des secrets versionnés
 - stabiliser la base Runtira
