@@ -43,12 +43,18 @@
                     <strong>@RuntiraText.Get("Billing_ResendReady", CurrentOrganization.PreferredLanguage)</strong>
                 </div>
             </div>
+
+            <SectionToolbar Hint="@RuntiraText.Get("Billing_ResultsHint", CurrentOrganization.PreferredLanguage)">
+                <Actions>
+                    <a class="ghost-button" href="@($"/{CurrentOrganization.OrganizationSlug}")">@RuntiraText.Get("Billing_BackHome", CurrentOrganization.PreferredLanguage)</a>
+                </Actions>
+            </SectionToolbar>
         }
 
-        <div class="stats-grid">
+        <div class="stats-grid stats-grid-priority">
             @foreach (var plan in _planPrices)
             {
-                <div class="stat-card">
+                <div class="stat-card stat-card-priority">
                     <span>@plan.Plan</span>
                     <strong>@plan.DisplayPrice</strong>
                     <a class="prompt-chip prompt-link mt-3" href="@($"/{CurrentOrganization.OrganizationSlug}/billing/checkout/{plan.Plan.ToLowerInvariant()}")">@RuntiraText.Get("Billing_ChoosePlan", CurrentOrganization.PreferredLanguage)</a>
@@ -63,7 +69,7 @@
             <span class="workspace-state">@RuntiraText.Get("Billing_WorkspaceState", CurrentOrganization.PreferredLanguage)</span>
         </div>
 
-        <div class="prompt-box">
+        <div class="prompt-box prompt-box-soft">
             <a class="prompt-chip prompt-link" href="@($"/{CurrentOrganization.OrganizationSlug}/billing/portal")">@RuntiraText.Get("Billing_OpenPortal", CurrentOrganization.PreferredLanguage)</a>
             <a class="prompt-chip prompt-link" href="/account">@RuntiraText.Get("Billing_BackAccount", CurrentOrganization.PreferredLanguage)</a>
             <button type="button" class="prompt-chip">@RuntiraText.Get("Billing_AppProducts", CurrentOrganization.PreferredLanguage)</button>
@@ -81,9 +87,17 @@
     private RuntiraWorkspaceSummaryDto? _summary;
     private List<Runtira.Infrastructure.Services.StripePlanPriceDto> _planPrices = new();
     private string _stripeCustomerDisplay = string.Empty;
+    private bool _hasInitialized;
 
     protected override async Task OnInitializedAsync()
     {
+        if (_hasInitialized)
+        {
+            return;
+        }
+
+        _hasInitialized = true;
+
         _summary = await WorkspaceService.GetWorkspaceSummaryAsync();
         _planPrices = await StripeBillingService.GetPlanPricesAsync();
         _stripeCustomerDisplay = string.IsNullOrWhiteSpace(CurrentOrganization.OrganizationSlug) ? string.Empty : _summary?.BillingPlan ?? string.Empty;

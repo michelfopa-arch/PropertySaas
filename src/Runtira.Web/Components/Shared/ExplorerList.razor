@@ -1,0 +1,11 @@
+@if (ItemsContent is not null)
+{
+    <div class="explorer-list">
+        @ItemsContent
+    </div>
+}
+
+@code {
+    [Parameter]
+    public RenderFragment? ItemsContent { get; set; }
+}

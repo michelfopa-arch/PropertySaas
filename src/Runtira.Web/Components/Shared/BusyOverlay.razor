@@ -1,0 +1,24 @@
+@if (IsVisible)
+{
+    <div class="busy-overlay" role="status" aria-live="polite" aria-busy="true">
+        <div class="busy-overlay-card">
+            <div class="busy-overlay-spinner"></div>
+            <strong>@Label</strong>
+            @if (!string.IsNullOrWhiteSpace(Message))
+            {
+                <span>@Message</span>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public bool IsVisible { get; set; }
+
+    [Parameter]
+    public string Label { get; set; } = string.Empty;
+
+    [Parameter]
+    public string? Message { get; set; }
+}

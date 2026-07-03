@@ -5,13 +5,13 @@
 <div class="page">
     <main>
         <div class="top-row px-4">
-            <div class="brand-block">
+            <a class="brand-block brand-link" href="@GetWorkspaceHomeHref()">
                 <span class="brand-mark">R</span>
                 <div>
                     <strong>Runtira</strong>
                     <div class="brand-subtitle">@RuntiraText.Get("Brand_Subtitle", CurrentOrganization.PreferredLanguage)</div>
                 </div>
-            </div>
+            </a>
 
             <div class="top-row-actions">
                 <NavMenu />
@@ -41,3 +41,10 @@
     <a href="." class="reload">@RuntiraText.Get("Reconnect_Retry", CurrentOrganization.PreferredLanguage)</a>
     <span class="dismiss">🗙</span>
 </div>
+
+@code {
+    private string GetWorkspaceHomeHref()
+        => string.IsNullOrWhiteSpace(CurrentOrganization.OrganizationSlug)
+            ? "/"
+            : $"/{CurrentOrganization.OrganizationSlug}";
+}

@@ -55,10 +55,8 @@
         }
         else
         {
-            <div class="empty-state">
-                <strong>@RuntiraText.Get("Legislation_MissingTitle", CurrentOrganization.PreferredLanguage)</strong>
-                <p>@RuntiraText.Get("Legislation_MissingBody", CurrentOrganization.PreferredLanguage)</p>
-            </div>
+            <PageEmptyState Title="@RuntiraText.Get("Legislation_MissingTitle", CurrentOrganization.PreferredLanguage)"
+                            Message="@RuntiraText.Get("Legislation_MissingBody", CurrentOrganization.PreferredLanguage)" />
         }
     </section>
 
@@ -85,9 +83,17 @@
     public string? TenantSlug { get; set; }
 
     private RuntiraLegislationExperienceDto? _experience;
+    private bool _hasInitialized;
 
     protected override async Task OnInitializedAsync()
     {
+        if (_hasInitialized)
+        {
+            return;
+        }
+
+        _hasInitialized = true;
+
         _experience = await WorkspaceService.GetLegislationExperienceAsync();
     }
 }

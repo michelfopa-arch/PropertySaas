@@ -1,0 +1,51 @@
+@using System.Collections.Generic
+
+@if (HasContent)
+{
+    <div class="localized-section">
+        @if (!string.IsNullOrWhiteSpace(Title))
+        {
+            <div class="prompt-title">@Title</div>
+        }
+
+        @if (SummaryItems.Count > 0)
+        {
+            <div class="tenant-summary">
+                @foreach (var item in SummaryItems)
+                {
+                    <div>
+                        <span class="summary-label">@item.Label</span>
+                        <strong>@DisplayValue(item.Value)</strong>
+                    </div>
+                }
+            </div>
+        }
+
+        @if ((Fields?.Count ?? 0) > 0)
+        {
+            <div class="prompt-box">
+                @foreach (var entry in Fields!)
+                {
+                    <span class="prompt-chip">@entry.Key: @entry.Value</span>
+                }
+            </div>
+        }
+    </div>
+}
+
+@code {
+    [Parameter]
+    public string? Title { get; set; }
+
+    [Parameter]
+    public IReadOnlyList<FlexibleContextSummaryItem> SummaryItems { get; set; } = Array.Empty<FlexibleContextSummaryItem>();
+
+    [Parameter]
+    public IReadOnlyDictionary<string, string>? Fields { get; set; }
+
+    private bool HasContent => SummaryItems.Count > 0 || (Fields?.Count ?? 0) > 0;
+
+    private static string DisplayValue(string? value)
+        => string.IsNullOrWhiteSpace(value) ? "—" : value;
+
+}

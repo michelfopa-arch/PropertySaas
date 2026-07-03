@@ -1,0 +1,57 @@
+<div class="unit-explorer-bar">
+    <label class="unit-search-shell">
+        <span class="summary-label">@Label</span>
+        <input value="@Value"
+               @oninput="OnInput"
+               @onkeydown="OnKeyDown"
+               placeholder="@Placeholder" />
+
+        @if (ShowAutocomplete)
+        {
+            <div class="explorer-autocomplete-panel">
+                @if (!string.IsNullOrWhiteSpace(AutocompleteTitle))
+                {
+                    <div class="explorer-autocomplete-title">@AutocompleteTitle</div>
+                }
+
+                @AutocompleteContent
+            </div>
+        }
+    </label>
+
+    @if (MetaContent is not null)
+    {
+        <div class="unit-explorer-meta">
+            @MetaContent
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public string Label { get; set; } = string.Empty;
+
+    [Parameter]
+    public string Placeholder { get; set; } = string.Empty;
+
+    [Parameter]
+    public string Value { get; set; } = string.Empty;
+
+    [Parameter]
+    public string? AutocompleteTitle { get; set; }
+
+    [Parameter]
+    public bool ShowAutocomplete { get; set; }
+
+    [Parameter]
+    public EventCallback<ChangeEventArgs> OnInput { get; set; }
+
+    [Parameter]
+    public EventCallback<KeyboardEventArgs> OnKeyDown { get; set; }
+
+    [Parameter]
+    public RenderFragment? MetaContent { get; set; }
+
+    [Parameter]
+    public RenderFragment? AutocompleteContent { get; set; }
+}

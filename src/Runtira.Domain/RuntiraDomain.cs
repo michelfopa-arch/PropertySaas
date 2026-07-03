@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations.Schema;
+
 namespace Runtira.Domain.Common
 {
     public abstract class BaseEntity
@@ -34,6 +36,7 @@ namespace Runtira.Domain.Entities
         public bool IsActive { get; set; } = true;
         public ICollection<RuntiraMembership> Memberships { get; set; } = new List<RuntiraMembership>();
         public ICollection<RuntiraAsset> Assets { get; set; } = new List<RuntiraAsset>();
+        public ICollection<RuntiraLead> Leads { get; set; } = new List<RuntiraLead>();
     }
 
     public sealed class RuntiraUser : BaseEntity
@@ -69,7 +72,106 @@ namespace Runtira.Domain.Entities
         public string LegalProfileJson { get; set; } = "{}";
         public string AdditionalDataJson { get; set; } = "{}";
         public string WorkflowSummaryJson { get; set; } = "{}";
+        [NotMapped]
+        public string LocalRulesDataJson
+        {
+            get => LegalProfileJson;
+            set => LegalProfileJson = value;
+        }
+
+        [NotMapped]
+        public string ContextDataJson
+        {
+            get => AdditionalDataJson;
+            set => AdditionalDataJson = value;
+        }
+
         public RuntiraOrganization? Tenant { get; set; }
+        public ICollection<RuntiraUnit> Units { get; set; } = new List<RuntiraUnit>();
+        public ICollection<RuntiraLease> Leases { get; set; } = new List<RuntiraLease>();
+        public ICollection<RuntiraLead> Leads { get; set; } = new List<RuntiraLead>();
+    }
+
+    public sealed class RuntiraUnit : RuntiraTenantEntity
+    {
+        public Guid AssetId { get; set; }
+        public string UnitCode { get; set; } = string.Empty;
+        public string UnitType { get; set; } = "Residential";
+        public string Status { get; set; } = "Available";
+        public decimal MarketRent { get; set; }
+        public string AdditionalDataJson { get; set; } = "{}";
+        [NotMapped]
+        public string ContextDataJson
+        {
+            get => AdditionalDataJson;
+            set => AdditionalDataJson = value;
+        }
+
+        public RuntiraAsset? Asset { get; set; }
+        public ICollection<RuntiraLease> Leases { get; set; } = new List<RuntiraLease>();
+    }
+
+    public sealed class RuntiraResident : RuntiraTenantEntity
+    {
+        public string FullName { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string PhoneNumber { get; set; } = string.Empty;
+        public string PreferredLanguage { get; set; } = "en-CA";
+        public string Status { get; set; } = "Active";
+        public string NotesJson { get; set; } = "{}";
+        [NotMapped]
+        public string ProfileDataJson
+        {
+            get => NotesJson;
+            set => NotesJson = value;
+        }
+
+        public ICollection<RuntiraLease> Leases { get; set; } = new List<RuntiraLease>();
+    }
+
+    public sealed class RuntiraLease : RuntiraTenantEntity
+    {
+        public Guid AssetId { get; set; }
+        public Guid UnitId { get; set; }
+        public Guid ResidentId { get; set; }
+        public DateTime LeaseStartUtc { get; set; }
+        public DateTime? LeaseEndUtc { get; set; }
+        public decimal MonthlyRent { get; set; }
+        public string BillingPeriod { get; set; } = "Monthly";
+        public string Status { get; set; } = "Active";
+        public string TermsJson { get; set; } = "{}";
+        [NotMapped]
+        public string ComplianceDataJson
+        {
+            get => TermsJson;
+            set => TermsJson = value;
+        }
+
+        public RuntiraAsset? Asset { get; set; }
+        public RuntiraUnit? Unit { get; set; }
+        public RuntiraResident? Resident { get; set; }
+    }
+
+    public sealed class RuntiraLead : RuntiraTenantEntity
+    {
+        public Guid? AssetId { get; set; }
+        public string FullName { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string PhoneNumber { get; set; } = string.Empty;
+        public string Source { get; set; } = "Manual";
+        public string Status { get; set; } = "New";
+        public string PreferredLanguage { get; set; } = "en-CA";
+        public int QualificationScore { get; set; }
+        public string Summary { get; set; } = string.Empty;
+        public string NotesJson { get; set; } = "{}";
+        [NotMapped]
+        public string ContextDataJson
+        {
+            get => NotesJson;
+            set => NotesJson = value;
+        }
+
+        public RuntiraAsset? Asset { get; set; }
     }
 
     public sealed class RuntiraConversation : RuntiraTenantEntity
@@ -117,6 +219,35 @@ namespace Runtira.Domain.Entities
         public long SizeBytes { get; set; }
         public string SourceSystem { get; set; } = string.Empty;
         public string Hash { get; set; } = string.Empty;
+    }
+
+    public sealed class RuntiraInboxMessage : RuntiraTenantEntity
+    {
+        public string ExternalMessageId { get; set; } = string.Empty;
+        public string Provider { get; set; } = "MockMicrosoft365";
+        public string FromEmail { get; set; } = string.Empty;
+        public string Subject { get; set; } = string.Empty;
+        public string PreviewText { get; set; } = string.Empty;
+        public DateTime ReceivedUtc { get; set; }
+        public string Status { get; set; } = "New";
+        public string Category { get; set; } = "Unclassified";
+        public string RelatedEntityType { get; set; } = string.Empty;
+        public Guid? RelatedEntityId { get; set; }
+        public bool HasAttachments { get; set; }
+        public string ClassificationJson { get; set; } = "{}";
+        public ICollection<RuntiraAttachment> Attachments { get; set; } = new List<RuntiraAttachment>();
+    }
+
+    public sealed class RuntiraAttachment : RuntiraTenantEntity
+    {
+        public Guid? InboxMessageId { get; set; }
+        public Guid? BlobArchiveId { get; set; }
+        public string FileName { get; set; } = string.Empty;
+        public string ContentType { get; set; } = string.Empty;
+        public long SizeBytes { get; set; }
+        public string Category { get; set; } = string.Empty;
+        public string MetadataJson { get; set; } = "{}";
+        public RuntiraInboxMessage? InboxMessage { get; set; }
     }
 
     public sealed class RuntiraJurisdictionProfile : RuntiraTenantEntity

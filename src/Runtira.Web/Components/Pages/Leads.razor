@@ -1,0 +1,519 @@
+@page "/{tenantSlug}/leads"
+@using Runtira.Application.Common
+@using Runtira.Application.Features
+@inject CurrentOrganization CurrentOrganization
+@inject RuntiraWorkspaceService WorkspaceService
+
+<PageTitle>@RuntiraText.Get("Nav_Leads", CurrentOrganization.PreferredLanguage)</PageTitle>
+
+<div class="hero-shell">
+    <section class="hero-card">
+        <div class="hero-badge hero-badge-secondary">@RuntiraText.Get("Leads_Badge", CurrentOrganization.PreferredLanguage)</div>
+        <h1>@RuntiraText.Get("Leads_Title", CurrentOrganization.PreferredLanguage)</h1>
+        <p class="hero-copy">@RuntiraText.Get("Leads_Subtitle", CurrentOrganization.PreferredLanguage)</p>
+
+        <BusyOverlay IsVisible="@IsBusy"
+                     Label="@RuntiraText.Get("Common_BusyTitle", CurrentOrganization.PreferredLanguage)"
+                     Message="@RuntiraText.Get("Common_BusyMessage", CurrentOrganization.PreferredLanguage)" />
+
+        @if (!string.IsNullOrWhiteSpace(_statusMessage))
+        {
+            <PageEmptyState Title="@_statusMessage" CssClass="inline-status" />
+        }
+
+        @if (_leads.Count > 0)
+        {
+            <div class="tenant-summary">
+                <div>
+                    <span class="summary-label">@RuntiraText.Get("Leads_Summary_Total", CurrentOrganization.PreferredLanguage)</span>
+                    <strong>@_leads.Count</strong>
+                </div>
+                <div>
+                    <span class="summary-label">@RuntiraText.Get("Leads_Summary_Qualified", CurrentOrganization.PreferredLanguage)</span>
+                    <strong>@_leads.Count(x => string.Equals(x.Status, "Qualified", StringComparison.OrdinalIgnoreCase))</strong>
+                </div>
+                <div>
+                    <span class="summary-label">@RuntiraText.Get("Leads_Summary_TopSource", CurrentOrganization.PreferredLanguage)</span>
+                    <strong>@GetTopSource()</strong>
+                </div>
+                <div>
+                    <span class="summary-label">@RuntiraText.Get("Leads_Summary_Language", CurrentOrganization.PreferredLanguage)</span>
+                    <strong>@CurrentOrganization.PreferredLanguage</strong>
+                </div>
+            </div>
+
+            <div class="stats-grid">
+                @foreach (var lead in _leads)
+                {
+                    <div class="stat-card">
+                        <div class="card-header-inline">
+                            <div>
+                                <span>@RuntiraText.Get("Leads_Table_Name", CurrentOrganization.PreferredLanguage)</span>
+                                <strong>@lead.FullName</strong>
+                            </div>
+
+                            @if (CurrentOrganization.CanManageData)
+                            {
+                                <StandardActionMenu MenuLabel="@RuntiraText.Get("Common_Actions", CurrentOrganization.PreferredLanguage)"
+                                                    Title="@lead.FullName"
+                                                    Items="@GetLeadActionItems(lead)"
+                                                    IsBusy="@IsBusy"
+                                                    OnAction='@((action) => HandleLeadActionAsync(lead.Id, action))' />
+                            }
+                        </div>
+
+                        <span>@RuntiraText.Get("Leads_Table_Status", CurrentOrganization.PreferredLanguage) · @lead.Status</span>
+                        <span>@RuntiraText.Get("Leads_Table_Source", CurrentOrganization.PreferredLanguage) · @lead.Source</span>
+                        <span>@RuntiraText.Get("Leads_Table_Asset", CurrentOrganization.PreferredLanguage) · @(string.IsNullOrWhiteSpace(lead.AssetName) ? "—" : lead.AssetName)</span>
+                        <span>@RuntiraText.Get("Leads_Table_Language", CurrentOrganization.PreferredLanguage) · @lead.PreferredLanguage</span>
+                        <span>@RuntiraText.Get("Leads_Table_Score", CurrentOrganization.PreferredLanguage) · @lead.QualificationScore</span>
+                        <p class="hero-copy">@lead.Summary</p>
+
+                        @if (lead.ContextData is not null)
+                        {
+                            <FlexibleContextCard Title="@RuntiraText.Get("Leads_ContextTitle", CurrentOrganization.PreferredLanguage)"
+                                                 SummaryItems="@GetLeadContextSummaryItems(lead)"
+                                                 Fields="@lead.ContextData.Fields" />
+                        }
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <PageEmptyState Title="@RuntiraText.Get("Leads_EmptyTitle", CurrentOrganization.PreferredLanguage)"
+                            Message="@RuntiraText.Get("Leads_EmptyBody", CurrentOrganization.PreferredLanguage)" />
+        }
+
+        @if (_formContext is not null && CurrentOrganization.CanManageData)
+        {
+            <div class="localized-section">
+                <div class="prompt-title">@RuntiraText.Get("Leads_FormTitle", CurrentOrganization.PreferredLanguage)</div>
+                <p class="hero-copy form-intro-copy">@RuntiraText.Get("Leads_FormSupportCopy", CurrentOrganization.PreferredLanguage)</p>
+                <div class="tenant-summary">
+                    <div>
+                        <span class="summary-label">@RuntiraText.Get("Leads_FormJurisdiction", CurrentOrganization.PreferredLanguage)</span>
+                        <strong>@_formContext.JurisdictionDisplayName</strong>
+                    </div>
+                    <div>
+                        <span class="summary-label">@RuntiraText.Get("Leads_FormSupportedLanguages", CurrentOrganization.PreferredLanguage)</span>
+                        <strong>@string.Join(" · ", _formContext.SupportedLanguages)</strong>
+                    </div>
+                </div>
+
+                <EditForm Model="_createLeadRequest" FormName="lead-create" OnValidSubmit="CreateLeadAsync" class="invoice-form">
+                    <div class="form-shell form-shell-secondary">
+                        <div class="form-shell-header">
+                            <div>
+                                <span class="summary-label">@RuntiraText.Get("Leads_FormSupportBadge", CurrentOrganization.PreferredLanguage)</span>
+                                <h3>@RuntiraText.Get("Leads_FormSupportTitle", CurrentOrganization.PreferredLanguage)</h3>
+                            </div>
+                            <span class="workspace-state workspace-state-secondary">@RuntiraText.Get("Leads_FormSupportState", CurrentOrganization.PreferredLanguage)</span>
+                        </div>
+
+                        <div class="form-grid form-grid-elevated">
+                        @foreach (var field in _formContext.Fields)
+                        {
+                            <label>
+                                <span class="summary-label">@(field.Required ? $"{GetFieldLabel(field.Key)} *" : GetFieldLabel(field.Key))</span>
+
+                                @if (field.Key == "fullName")
+                                {
+                                    <input @bind="_createLeadRequest.FullName" />
+                                }
+                                else if (field.Key == "email")
+                                {
+                                    <input @bind="_createLeadRequest.Email" />
+                                }
+                                else if (field.Key == "phoneNumber")
+                                {
+                                    <input @bind="_createLeadRequest.PhoneNumber" />
+                                }
+                                else if (field.Key == "preferredLanguage")
+                                {
+                                    <select @bind="_createLeadRequest.PreferredLanguage">
+                                        @foreach (var language in _formContext.SupportedLanguages)
+                                        {
+                                            <option value="@language">@language</option>
+                                        }
+                                    </select>
+                                }
+                                else if (field.Key == "targetAsset")
+                                {
+                                    <select value="@(_createLeadRequest.AssetId?.ToString() ?? string.Empty)" @onchange="OnAssetChanged">
+                                        <option value=""></option>
+                                        @foreach (var asset in _formContext.Assets)
+                                        {
+                                            <option value="@asset.Id">@asset.Name</option>
+                                        }
+                                    </select>
+                                }
+                                else if (field.Key == "summary")
+                                {
+                                    <textarea @bind="_createLeadRequest.Summary"></textarea>
+                                }
+                                else
+                                {
+                                    <input value="@GetDynamicValue(field.Key)" @onchange="@(e => SetDynamicValue(field.Key, e.Value?.ToString()))" />
+                                }
+                            </label>
+                        }
+                        </div>
+                    </div>
+
+                    <div class="prompt-box">
+                        <BusyActionButton Type="submit"
+                                          CssClass="prompt-chip"
+                                          IsBusy="@_isSubmittingCreateLead"
+                                          Label="@RuntiraText.Get("Leads_FormCreateButton", CurrentOrganization.PreferredLanguage)" />
+                    </div>
+                </EditForm>
+            </div>
+        }
+    </section>
+
+    <section class="workspace-card">
+        <div class="workspace-header">
+            <h2>@RuntiraText.Get("Leads_WorkspaceTitle", CurrentOrganization.PreferredLanguage)</h2>
+            <span class="workspace-state">@RuntiraText.Get("Common_Mvp", CurrentOrganization.PreferredLanguage)</span>
+        </div>
+
+        @if (_conversionCandidates.Count > 0)
+        {
+            <div class="localized-section">
+                <div class="prompt-title">@RuntiraText.Get("Leads_ConversionTitle", CurrentOrganization.PreferredLanguage)</div>
+                <p class="hero-copy form-intro-copy">@RuntiraText.Get("Leads_ConversionSupportCopy", CurrentOrganization.PreferredLanguage)</p>
+                <div class="stats-grid">
+                    @foreach (var candidate in _conversionCandidates)
+                    {
+                        <div class="stat-card">
+                            <span>@RuntiraText.Get("Leads_Table_Name", CurrentOrganization.PreferredLanguage)</span>
+                            <strong>@candidate.LeadName</strong>
+                            <span>@RuntiraText.Get("Leads_Table_Asset", CurrentOrganization.PreferredLanguage) · @candidate.AssetName</span>
+                            <span>@RuntiraText.Get("Leads_ConversionResident", CurrentOrganization.PreferredLanguage) · @candidate.ResidentName</span>
+                            <span>@RuntiraText.Get("Leads_ConversionUnit", CurrentOrganization.PreferredLanguage) · @candidate.SuggestedUnitCode</span>
+                            <span>@RuntiraText.Get("Leads_ConversionRent", CurrentOrganization.PreferredLanguage) · @candidate.SuggestedRent</span>
+                            <span>@RuntiraText.Get("Leads_ConversionNextAction", CurrentOrganization.PreferredLanguage) · @GetNextActionLabel(candidate.NextAction)</span>
+                            @if (CurrentOrganization.CanManageData)
+                            {
+                                <BusyActionButton CssClass="prompt-chip"
+                                                  IsBusy="@_isSubmittingConversion"
+                                                  OnClick='@(() => OnConvertLead(candidate.LeadId))'
+                                                  Label="@RuntiraText.Get("Leads_ConvertButton", CurrentOrganization.PreferredLanguage)" />
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+
+            @if (_leaseFormContext is not null && CurrentOrganization.CanManageData)
+            {
+                <div class="localized-section">
+                    <div class="prompt-title">@RuntiraText.Get("Leads_LeaseFormTitle", CurrentOrganization.PreferredLanguage)</div>
+                    <div class="tenant-summary">
+                        <div>
+                            <span class="summary-label">@RuntiraText.Get("Leads_Table_Name", CurrentOrganization.PreferredLanguage)</span>
+                            <strong>@_leaseFormContext.LeadName</strong>
+                        </div>
+                        <div>
+                            <span class="summary-label">@RuntiraText.Get("Leads_FormJurisdiction", CurrentOrganization.PreferredLanguage)</span>
+                            <strong>@_leaseFormContext.JurisdictionDisplayName</strong>
+                        </div>
+                    </div>
+
+                    <EditForm Model="_leaseConversionFields" FormName="lead-convert" OnValidSubmit="ConvertSelectedLeadAsync" class="invoice-form">
+                        <div class="form-shell form-shell-secondary">
+                            <div class="form-shell-header">
+                                <div>
+                                    <span class="summary-label">@RuntiraText.Get("Leads_LeaseFormSupportBadge", CurrentOrganization.PreferredLanguage)</span>
+                                    <h3>@RuntiraText.Get("Leads_LeaseFormSupportTitle", CurrentOrganization.PreferredLanguage)</h3>
+                                </div>
+                                <span class="workspace-state workspace-state-secondary">@RuntiraText.Get("Leads_FormSupportState", CurrentOrganization.PreferredLanguage)</span>
+                            </div>
+
+                            <div class="form-grid form-grid-elevated">
+                            @foreach (var field in _leaseFormContext.Fields)
+                            {
+                                <label>
+                                    <span class="summary-label">@(field.Required ? $"{GetFieldLabel(field.Key)} *" : GetFieldLabel(field.Key))</span>
+                                    <input value="@GetLeaseFieldValue(field.Key)" @onchange="@(e => SetLeaseFieldValue(field.Key, e.Value?.ToString()))" />
+                                </label>
+                            }
+                            </div>
+                        </div>
+
+                        <div class="prompt-box">
+                            <BusyActionButton Type="submit"
+                                              CssClass="prompt-chip"
+                                              IsBusy="@_isSubmittingConversion"
+                                              Label="@RuntiraText.Get("Leads_LeaseFormButton", CurrentOrganization.PreferredLanguage)" />
+                        </div>
+                    </EditForm>
+                </div>
+            }
+        }
+
+        <div class="prompt-box">
+            <button type="button" class="prompt-chip">@RuntiraText.Get("Leads_Action_Import", CurrentOrganization.PreferredLanguage)</button>
+            <button type="button" class="prompt-chip">@RuntiraText.Get("Leads_Action_Inbox", CurrentOrganization.PreferredLanguage)</button>
+            <button type="button" class="prompt-chip">@RuntiraText.Get("Leads_Action_Qualify", CurrentOrganization.PreferredLanguage)</button>
+            <button type="button" class="prompt-chip">@RuntiraText.Get("Leads_Action_Convert", CurrentOrganization.PreferredLanguage)</button>
+        </div>
+    </section>
+</div>
+
+@code {
+    [Parameter]
+    public string? TenantSlug { get; set; }
+
+    private IReadOnlyList<RuntiraLeadSummaryDto> _leads = Array.Empty<RuntiraLeadSummaryDto>();
+    private IReadOnlyList<RuntiraLeadConversionCandidateDto> _conversionCandidates = Array.Empty<RuntiraLeadConversionCandidateDto>();
+    private string? _statusMessage;
+    private RuntiraLeadFormContextDto? _formContext;
+    private RuntiraCreateLeadRequestDto _createLeadRequest = new();
+    private RuntiraLeaseConversionFormContextDto? _leaseFormContext;
+    private Dictionary<string, string> _leaseConversionFields = new(StringComparer.OrdinalIgnoreCase);
+    private bool _isLoading = true;
+    private bool _hasInitialized;
+    private bool _isSubmittingCreateLead;
+    private bool _isSubmittingConversion;
+    private bool _isSubmittingLeadAction;
+
+    private bool IsBusy => _isLoading || _isSubmittingCreateLead || _isSubmittingConversion || _isSubmittingLeadAction;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (_hasInitialized)
+        {
+            return;
+        }
+
+        _hasInitialized = true;
+
+        await ReloadAsync();
+    }
+
+    private string GetTopSource()
+        => _leads
+            .GroupBy(x => x.Source)
+            .OrderByDescending(x => x.Count())
+            .Select(x => x.Key)
+            .FirstOrDefault() ?? "—";
+
+    private IReadOnlyList<FlexibleContextSummaryItem> GetLeadContextSummaryItems(RuntiraLeadSummaryDto lead)
+        => lead.ContextData is null
+            ? Array.Empty<FlexibleContextSummaryItem>()
+            : new[]
+            {
+                new FlexibleContextSummaryItem(RuntiraText.Get("Leads_ContextMarket", CurrentOrganization.PreferredLanguage), lead.ContextData.Market),
+                new FlexibleContextSummaryItem(RuntiraText.Get("Leads_ContextSource", CurrentOrganization.PreferredLanguage), lead.ContextData.Source),
+                new FlexibleContextSummaryItem(RuntiraText.Get("Leads_ContextLanguage", CurrentOrganization.PreferredLanguage), lead.ContextData.Language)
+            };
+
+    private async Task ReloadAsync()
+    {
+        _isLoading = true;
+
+        try
+        {
+            _leads = await WorkspaceService.GetLeadsAsync();
+            _conversionCandidates = await WorkspaceService.GetLeadConversionCandidatesAsync();
+            _formContext = await WorkspaceService.GetLeadFormContextAsync();
+            _leaseFormContext = _conversionCandidates.Count > 0 ? await WorkspaceService.GetLeaseConversionFormContextAsync(_conversionCandidates[0].LeadId) : null;
+
+            if (_formContext is not null)
+            {
+                _createLeadRequest ??= new RuntiraCreateLeadRequestDto();
+                _createLeadRequest.PreferredLanguage = string.IsNullOrWhiteSpace(_createLeadRequest.PreferredLanguage)
+                    ? _formContext.PreferredLanguage
+                    : _createLeadRequest.PreferredLanguage;
+            }
+
+            if (_leaseFormContext is not null && _leaseConversionFields.Count == 0)
+            {
+                _leaseConversionFields = _leaseFormContext.Fields.ToDictionary(x => x.Key, x => x.SuggestedValue ?? string.Empty, StringComparer.OrdinalIgnoreCase);
+            }
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task CreateLeadAsync()
+    {
+        if (_isSubmittingCreateLead)
+        {
+            return;
+        }
+
+        _isSubmittingCreateLead = true;
+        _statusMessage = string.Empty;
+
+        try
+        {
+            foreach (var field in _formContext?.Fields ?? Array.Empty<RuntiraLeadFormFieldDto>())
+            {
+                if (_createLeadRequest.DynamicFields.ContainsKey(field.Key))
+                {
+                    _createLeadRequest.DynamicFields[field.Key] = _createLeadRequest.DynamicFields[field.Key]?.Trim() ?? string.Empty;
+                }
+            }
+
+            var result = await WorkspaceService.CreateLeadAsync(_createLeadRequest);
+            _statusMessage = result.ResultCode switch
+            {
+                "Created" => RuntiraText.Format("Leads_CreateSuccess", CurrentOrganization.PreferredLanguage, result.LeadName),
+                "InvalidAsset" => RuntiraText.Get("Leads_CreateInvalidAsset", CurrentOrganization.PreferredLanguage),
+                "MissingRequiredField" => RuntiraText.Format("Leads_CreateMissingField", CurrentOrganization.PreferredLanguage, GetFieldLabel(result.FieldKey)),
+                _ => RuntiraText.Get("Leads_CreateUnavailable", CurrentOrganization.PreferredLanguage)
+            };
+
+            if (string.Equals(result.ResultCode, "Created", StringComparison.OrdinalIgnoreCase))
+            {
+                _createLeadRequest = new RuntiraCreateLeadRequestDto
+                {
+                    PreferredLanguage = _formContext?.PreferredLanguage ?? CurrentOrganization.PreferredLanguage
+                };
+            }
+
+            await ReloadAsync();
+        }
+        finally
+        {
+            _isSubmittingCreateLead = false;
+        }
+    }
+
+    private async Task ConvertLeadAsync(Guid leadId)
+    {
+        if (_isSubmittingConversion)
+        {
+            return;
+        }
+
+        _isSubmittingConversion = true;
+        _statusMessage = string.Empty;
+
+        try
+        {
+            var result = await WorkspaceService.ConvertLeadAsync(leadId, _leaseConversionFields);
+            _statusMessage = result.ResultCode switch
+            {
+                "Converted" => RuntiraText.Format("Leads_ConvertSuccess", CurrentOrganization.PreferredLanguage, result.LeadName, result.ResidentName, result.UnitCode, result.LeaseStatus),
+                "MissingRequiredField" => RuntiraText.Format("Leads_ConvertMissingField", CurrentOrganization.PreferredLanguage, GetFieldLabel(result.UnitCode)),
+                "LeadNotFound" => RuntiraText.Get("Leads_ConvertLeadNotFound", CurrentOrganization.PreferredLanguage),
+                "AlreadyConverted" => RuntiraText.Get("Leads_ConvertAlreadyConverted", CurrentOrganization.PreferredLanguage),
+                "UnitNotFound" => RuntiraText.Get("Leads_ConvertUnitNotFound", CurrentOrganization.PreferredLanguage),
+                _ => RuntiraText.Get("Leads_ConvertUnavailable", CurrentOrganization.PreferredLanguage)
+            };
+
+            _leaseConversionFields.Clear();
+            await ReloadAsync();
+        }
+        finally
+        {
+            _isSubmittingConversion = false;
+        }
+    }
+
+    private Task ConvertSelectedLeadAsync()
+        => _leaseFormContext is null ? Task.CompletedTask : ConvertLeadAsync(_leaseFormContext.LeadId);
+
+    private Task OnConvertLead(Guid leadId)
+        => ConvertLeadAsync(leadId);
+
+    private IReadOnlyList<StandardActionMenuItem> GetLeadActionItems(RuntiraLeadSummaryDto lead)
+        =>
+        [
+            new StandardActionMenuItem(
+                "archive",
+                RuntiraText.Get("Leads_Action_ArchiveLead", CurrentOrganization.PreferredLanguage),
+                string.Equals(lead.Status, "Archived", StringComparison.OrdinalIgnoreCase),
+                RuntiraText.Get("Leads_Action_ArchiveHint", CurrentOrganization.PreferredLanguage)),
+            new StandardActionMenuItem(
+                "delete",
+                RuntiraText.Get("Leads_Action_DeleteLead", CurrentOrganization.PreferredLanguage),
+                false,
+                RuntiraText.Get("Leads_Action_DeleteHint", CurrentOrganization.PreferredLanguage),
+                true)
+        ];
+
+    private async Task HandleLeadActionAsync(Guid leadId, string action)
+    {
+        if (_isSubmittingLeadAction)
+        {
+            return;
+        }
+
+        _isSubmittingLeadAction = true;
+        _statusMessage = string.Empty;
+
+        try
+        {
+            var result = string.Equals(action, "delete", StringComparison.OrdinalIgnoreCase)
+                ? await WorkspaceService.DeleteLeadAsync(leadId)
+                : await WorkspaceService.ArchiveLeadAsync(leadId);
+
+            _statusMessage = result.ResultCode switch
+            {
+                "Archived" => RuntiraText.Format("Leads_ArchiveSuccess", CurrentOrganization.PreferredLanguage, result.LeadName),
+                "AlreadyArchived" => RuntiraText.Format("Leads_ArchiveAlready", CurrentOrganization.PreferredLanguage, result.LeadName),
+                "Deleted" => RuntiraText.Format("Leads_DeleteSuccess", CurrentOrganization.PreferredLanguage, result.LeadName),
+                "LeadNotFound" => RuntiraText.Get("Leads_ConvertLeadNotFound", CurrentOrganization.PreferredLanguage),
+                _ => RuntiraText.Get("Leads_ActionUnavailable", CurrentOrganization.PreferredLanguage)
+            };
+
+            await ReloadAsync();
+        }
+        finally
+        {
+            _isSubmittingLeadAction = false;
+        }
+    }
+
+    private string GetDynamicValue(string key)
+        => _createLeadRequest.DynamicFields.TryGetValue(key, out var value) ? value : string.Empty;
+
+    private void SetDynamicValue(string key, string? value)
+        => _createLeadRequest.DynamicFields[key] = value?.Trim() ?? string.Empty;
+
+    private void OnAssetChanged(ChangeEventArgs args)
+        => _createLeadRequest.AssetId = Guid.TryParse(args.Value?.ToString(), out var parsed) ? parsed : null;
+
+    private string GetLeaseFieldValue(string key)
+        => _leaseConversionFields.TryGetValue(key, out var value) ? value : string.Empty;
+
+    private void SetLeaseFieldValue(string key, string? value)
+        => _leaseConversionFields[key] = value?.Trim() ?? string.Empty;
+
+    private string GetFieldLabel(string key)
+        => key switch
+        {
+            "fullName" => RuntiraText.Get("Leads_Field_FullName", CurrentOrganization.PreferredLanguage),
+            "email" => RuntiraText.Get("Leads_Field_Email", CurrentOrganization.PreferredLanguage),
+            "phoneNumber" => RuntiraText.Get("Leads_Field_PhoneNumber", CurrentOrganization.PreferredLanguage),
+            "preferredLanguage" => RuntiraText.Get("Leads_Field_PreferredLanguage", CurrentOrganization.PreferredLanguage),
+            "targetAsset" => RuntiraText.Get("Leads_Field_TargetAsset", CurrentOrganization.PreferredLanguage),
+            "summary" => RuntiraText.Get("Leads_Field_Summary", CurrentOrganization.PreferredLanguage),
+            "tenantName" => RuntiraText.Get("Leads_Field_TenantName", CurrentOrganization.PreferredLanguage),
+            "ownerName" => RuntiraText.Get("Leads_Field_OwnerName", CurrentOrganization.PreferredLanguage),
+            "propertyAddress" => RuntiraText.Get("Leads_Field_PropertyAddress", CurrentOrganization.PreferredLanguage),
+            "billingPeriod" => RuntiraText.Get("Leads_Field_BillingPeriod", CurrentOrganization.PreferredLanguage),
+            "residentName" => RuntiraText.Get("Leads_Field_ResidentName", CurrentOrganization.PreferredLanguage),
+            "unitCode" => RuntiraText.Get("Leads_Field_UnitCode", CurrentOrganization.PreferredLanguage),
+            "leaseStartDate" => RuntiraText.Get("Leads_Field_LeaseStartDate", CurrentOrganization.PreferredLanguage),
+            "monthlyRent" => RuntiraText.Get("Leads_Field_MonthlyRent", CurrentOrganization.PreferredLanguage),
+            _ => key
+        };
+
+    private string GetNextActionLabel(string nextAction)
+        => nextAction switch
+        {
+            "CreateResidentLease" => RuntiraText.Get("Leads_NextAction_CreateResidentLease", CurrentOrganization.PreferredLanguage),
+            "PrepareWaitlist" => RuntiraText.Get("Leads_NextAction_PrepareWaitlist", CurrentOrganization.PreferredLanguage),
+            "AssignAsset" => RuntiraText.Get("Leads_NextAction_AssignAsset", CurrentOrganization.PreferredLanguage),
+            "ExistingResidentReview" => RuntiraText.Get("Leads_NextAction_ExistingResidentReview", CurrentOrganization.PreferredLanguage),
+            _ => nextAction
+        };
+}

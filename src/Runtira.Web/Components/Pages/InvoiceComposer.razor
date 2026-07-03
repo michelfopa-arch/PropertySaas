@@ -10,15 +10,28 @@
 
         @if (_invoice == null)
         {
-            <div class="empty-state">
-                <strong>@RuntiraText.Get("Invoice_MissingTitle", CurrentOrganization.PreferredLanguage)</strong>
-                <p>@RuntiraText.Get("Invoice_MissingBody", CurrentOrganization.PreferredLanguage)</p>
-            </div>
+            <PageEmptyState Title="@RuntiraText.Get("Invoice_MissingTitle", CurrentOrganization.PreferredLanguage)"
+                            Message="@RuntiraText.Get("Invoice_MissingBody", CurrentOrganization.PreferredLanguage)" />
         }
         else
         {
-            <EditForm Model="_invoice" class="invoice-form">
-                <div class="form-grid">
+            <SectionToolbar Hint="@RuntiraText.Get("Invoice_ResultsHint", CurrentOrganization.PreferredLanguage)">
+                <Actions>
+                    <a class="ghost-button" href="@($"/{CurrentOrganization.OrganizationSlug}")">@RuntiraText.Get("Invoice_BackHome", CurrentOrganization.PreferredLanguage)</a>
+                </Actions>
+            </SectionToolbar>
+
+            <EditForm Model="_invoice" FormName="invoice-composer" class="invoice-form">
+                <div class="form-shell">
+                    <div class="form-shell-header">
+                        <div>
+                            <span class="summary-label">@RuntiraText.Get("Invoice_WorkflowBadge", CurrentOrganization.PreferredLanguage)</span>
+                            <h3>@RuntiraText.Get("Invoice_FormTitle", CurrentOrganization.PreferredLanguage)</h3>
+                        </div>
+                        <span class="workspace-state">@RuntiraText.Get("Common_Ready", CurrentOrganization.PreferredLanguage)</span>
+                    </div>
+
+                    <div class="form-grid form-grid-elevated">
                     <label>
                         <span class="summary-label">@RuntiraText.Get("Invoice_Organization", CurrentOrganization.PreferredLanguage)</span>
                         <input value="@_invoice.OrganizationName" readonly />
@@ -72,10 +85,11 @@
                         <span class="summary-label">@RuntiraText.Get("Invoice_SupportedLanguages", CurrentOrganization.PreferredLanguage)</span>
                         <input value="@_invoice.SupportedLanguagesJson" readonly />
                     </label>
+                    </div>
                 </div>
             </EditForm>
 
-            <div class="prompt-box">
+            <div class="prompt-box prompt-box-soft">
                 <div class="prompt-title">@RuntiraText.Get("Invoice_SuggestedPrompt", CurrentOrganization.PreferredLanguage)</div>
                 <div class="draft-box">@_invoice.SuggestedPrompt</div>
                 <div class="prompt-title">@RuntiraText.Get("Invoice_Rules", CurrentOrganization.PreferredLanguage)</div>
@@ -84,9 +98,7 @@
                 <div class="draft-box">@_invoice.RequiredQuestionsJson</div>
                 @if (!string.IsNullOrWhiteSpace(_draftEmailStatus))
                 {
-                    <div class="empty-state mt-3">
-                        <p>@_draftEmailStatus</p>
-                    </div>
+                    <PageEmptyState Message="@_draftEmailStatus" CssClass="mt-3" />
                 }
             </div>
         }
@@ -98,12 +110,15 @@
             <span class="workspace-state">@RuntiraText.Get("Common_Preview", CurrentOrganization.PreferredLanguage)</span>
         </div>
 
-        <div class="prompt-box">
+        <div class="prompt-box prompt-box-soft">
             <button type="button" class="prompt-chip">@RuntiraText.Get("Invoice_ReadRules", CurrentOrganization.PreferredLanguage)</button>
             <button type="button" class="prompt-chip">@RuntiraText.Get("Invoice_AskAllowedQuestions", CurrentOrganization.PreferredLanguage)</button>
             <button type="button" class="prompt-chip">@RuntiraText.Get("Invoice_IncludeLocalFields", CurrentOrganization.PreferredLanguage)</button>
             <button type="button" class="prompt-chip">@RuntiraText.Get("Invoice_PreparePdf", CurrentOrganization.PreferredLanguage)</button>
-            <button type="button" class="prompt-chip" @onclick="SendDraftEmailAsync">@RuntiraText.Get("Invoice_SendDraftEmail", CurrentOrganization.PreferredLanguage)</button>
+            <BusyActionButton CssClass="prompt-chip"
+                              IsBusy="@_isSendingDraftEmail"
+                              OnClick="SendDraftEmailAsync"
+                              Label="@RuntiraText.Get("Invoice_SendDraftEmail", CurrentOrganization.PreferredLanguage)" />
         </div>
     </section>
 </div>

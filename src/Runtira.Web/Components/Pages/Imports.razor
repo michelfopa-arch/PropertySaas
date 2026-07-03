@@ -1,0 +1,232 @@
+@page "/{tenantSlug}/imports"
+@using Runtira.Application.Common
+@using Runtira.Application.Features
+@inject CurrentOrganization CurrentOrganization
+@inject RuntiraWorkspaceService WorkspaceService
+
+<PageTitle>@RuntiraText.Get("Nav_Imports", CurrentOrganization.PreferredLanguage)</PageTitle>
+
+<div class="hero-shell">
+    <section class="hero-card">
+        <div class="hero-badge">@RuntiraText.Get("Imports_Badge", CurrentOrganization.PreferredLanguage)</div>
+        <h1>@RuntiraText.Get("Imports_Title", CurrentOrganization.PreferredLanguage)</h1>
+        <p class="hero-copy">@RuntiraText.Get("Imports_Subtitle", CurrentOrganization.PreferredLanguage)</p>
+
+        @if (!string.IsNullOrWhiteSpace(_statusMessage))
+        {
+            <PageEmptyState Title="@_statusMessage" />
+        }
+
+        @if (_isLoading)
+        {
+            <PageLoadingState />
+        }
+        else if (_workspace.Sources.Count > 0)
+        {
+            <div class="tenant-summary">
+                <div>
+                    <span class="summary-label">@RuntiraText.Get("Imports_Summary_Region", CurrentOrganization.PreferredLanguage)</span>
+                    <strong>@_workspace.ActiveRegion</strong>
+                </div>
+                <div>
+                    <span class="summary-label">@RuntiraText.Get("Imports_Summary_Language", CurrentOrganization.PreferredLanguage)</span>
+                    <strong>@_workspace.ActiveLanguage</strong>
+                </div>
+                <div>
+                    <span class="summary-label">@RuntiraText.Get("Imports_Summary_Formats", CurrentOrganization.PreferredLanguage)</span>
+                    <strong>@string.Join(" · ", _workspace.SupportedFormats)</strong>
+                </div>
+                <div>
+                    <span class="summary-label">@RuntiraText.Get("Imports_Summary_Sources", CurrentOrganization.PreferredLanguage)</span>
+                    <strong>@_workspace.Sources.Count</strong>
+                </div>
+            </div>
+
+            <div class="localized-section">
+                <div class="prompt-title">@RuntiraText.Get("Imports_SourcesTitle", CurrentOrganization.PreferredLanguage)</div>
+                <div class="stats-grid">
+                    @foreach (var source in _workspace.Sources)
+                    {
+                        <div class="stat-card">
+                            <span>@RuntiraText.Get("Inbox_Table_Subject", CurrentOrganization.PreferredLanguage)</span>
+                            <strong>@source.SourceName</strong>
+                            <span>@RuntiraText.Get("Imports_SourceType", CurrentOrganization.PreferredLanguage) · @source.SourceType</span>
+                            <span>@RuntiraText.Get("Imports_SourceStatus", CurrentOrganization.PreferredLanguage) · @source.Status</span>
+                            <span>@RuntiraText.Get("Imports_SourceRecords", CurrentOrganization.PreferredLanguage) · @source.SuggestedRecordCount</span>
+                            <p class="hero-copy">@source.Summary</p>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <div class="localized-section">
+                <div class="prompt-title">@RuntiraText.Get("Imports_FieldsTitle", CurrentOrganization.PreferredLanguage)</div>
+                <div class="stats-grid">
+                    @foreach (var field in _workspace.SuggestedFields)
+                    {
+                        <div class="stat-card">
+                            <span>@RuntiraText.Get("Imports_FieldName", CurrentOrganization.PreferredLanguage)</span>
+                            <strong>@field.FieldName</strong>
+                            <span>@RuntiraText.Get("Imports_FieldValue", CurrentOrganization.PreferredLanguage) · @field.SuggestedValue</span>
+                            <span>@RuntiraText.Get("Imports_FieldConfidence", CurrentOrganization.PreferredLanguage) · @field.ConfidenceScore%</span>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+        else
+        {
+            <PageEmptyState Title="@RuntiraText.Get("Imports_EmptyTitle", CurrentOrganization.PreferredLanguage)"
+                            Message="@RuntiraText.Get("Imports_EmptyBody", CurrentOrganization.PreferredLanguage)" />
+        }
+
+        @if (_validationContext is not null && CurrentOrganization.CanManageData)
+        {
+            <div class="localized-section">
+                <div class="prompt-title">@RuntiraText.Get("Imports_ValidationTitle", CurrentOrganization.PreferredLanguage)</div>
+                <FlexibleContextCard SummaryItems="@GetImportContextSummaryItems()"
+                                     Fields="@GetImportContextFields()" />
+
+                <EditForm Model="_approvalRequest" FormName="import-approval" OnValidSubmit="ApproveImportAsync" class="invoice-form">
+                    <div class="form-grid">
+                        @foreach (var field in _validationContext.Fields)
+                        {
+                            <label>
+                                <span class="summary-label">@(field.Required ? $"{GetFieldLabel(field.Key)} *" : GetFieldLabel(field.Key))</span>
+                                <input value="@GetApprovalFieldValue(field.Key)" @onchange="@(e => SetApprovalFieldValue(field.Key, e.Value?.ToString()))" />
+                            </label>
+                        }
+                    </div>
+
+                    <div class="prompt-box">
+                        <BusyActionButton Type="submit"
+                                          CssClass="prompt-chip"
+                                          IsBusy="@_isSubmittingApproval"
+                                          Label="@RuntiraText.Get("Imports_ApprovalButton", CurrentOrganization.PreferredLanguage)" />
+                    </div>
+                </EditForm>
+            </div>
+        }
+    </section>
+
+    <section class="workspace-card">
+        <div class="workspace-header">
+            <h2>@RuntiraText.Get("Imports_WorkspaceTitle", CurrentOrganization.PreferredLanguage)</h2>
+            <span class="workspace-state">@RuntiraText.Get("Common_Preview", CurrentOrganization.PreferredLanguage)</span>
+        </div>
+
+        <div class="prompt-box">
+            <button type="button" class="prompt-chip">@RuntiraText.Get("Imports_Action_Upload", CurrentOrganization.PreferredLanguage)</button>
+            <button type="button" class="prompt-chip">@RuntiraText.Get("Imports_Action_Extract", CurrentOrganization.PreferredLanguage)</button>
+            <button type="button" class="prompt-chip">@RuntiraText.Get("Imports_Action_Validate", CurrentOrganization.PreferredLanguage)</button>
+            <button type="button" class="prompt-chip">@RuntiraText.Get("Imports_Action_Archive", CurrentOrganization.PreferredLanguage)</button>
+        </div>
+    </section>
+</div>
+
+@code {
+    [Parameter]
+    public string? TenantSlug { get; set; }
+
+    private RuntiraImportWorkspaceDto _workspace = new();
+    private RuntiraImportValidationContextDto? _validationContext;
+    private RuntiraImportApprovalRequestDto _approvalRequest = new();
+    private string _statusMessage = string.Empty;
+    private bool _isLoading = true;
+    private bool _hasInitialized;
+    private bool _isSubmittingApproval;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (_hasInitialized)
+        {
+            return;
+        }
+
+        _hasInitialized = true;
+
+        try
+        {
+            _workspace = await WorkspaceService.GetImportWorkspaceAsync();
+            _validationContext = await WorkspaceService.GetImportValidationContextAsync();
+            if (_validationContext is not null)
+            {
+                _approvalRequest.SourceName = _validationContext.SourceName;
+                foreach (var field in _validationContext.Fields)
+                {
+                    _approvalRequest.DynamicFields[field.Key] = field.SuggestedValue ?? string.Empty;
+                }
+            }
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task ApproveImportAsync()
+    {
+        if (_isSubmittingApproval)
+        {
+            return;
+        }
+
+        _isSubmittingApproval = true;
+
+        var result = await WorkspaceService.ApproveImportAsync(_approvalRequest);
+
+        try
+        {
+            _statusMessage = result.ResultCode switch
+            {
+                "Approved" => RuntiraText.Format("Imports_ApprovalSuccess", CurrentOrganization.PreferredLanguage, result.LeadName),
+                "MissingRequiredField" => RuntiraText.Format("Imports_ApprovalMissingField", CurrentOrganization.PreferredLanguage, GetFieldLabel(result.FieldKey ?? string.Empty)),
+                _ => RuntiraText.Get("Imports_ApprovalUnavailable", CurrentOrganization.PreferredLanguage)
+            };
+
+            _workspace = await WorkspaceService.GetImportWorkspaceAsync();
+        }
+        finally
+        {
+            _isSubmittingApproval = false;
+        }
+    }
+
+    private string GetApprovalFieldValue(string key)
+        => _approvalRequest.DynamicFields.TryGetValue(key, out var value) ? value : string.Empty;
+
+    private void SetApprovalFieldValue(string key, string? value)
+        => _approvalRequest.DynamicFields[key] = value?.Trim() ?? string.Empty;
+
+    private IReadOnlyList<FlexibleContextSummaryItem> GetImportContextSummaryItems()
+        => _validationContext is null
+            ? Array.Empty<FlexibleContextSummaryItem>()
+            : new[]
+            {
+                new FlexibleContextSummaryItem(RuntiraText.Get("Inbox_Table_Subject", CurrentOrganization.PreferredLanguage), _validationContext.SourceName),
+                new FlexibleContextSummaryItem(RuntiraText.Get("Leads_FormJurisdiction", CurrentOrganization.PreferredLanguage), _validationContext.JurisdictionDisplayName)
+            };
+
+    private IReadOnlyDictionary<string, string> GetImportContextFields()
+        => _validationContext?.Fields.ToDictionary(
+               field => GetFieldLabel(field.Key),
+               field => field.SuggestedValue ?? string.Empty,
+               StringComparer.OrdinalIgnoreCase)
+           ?? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+    private string GetFieldLabel(string key)
+        => key switch
+        {
+            "fullName" => RuntiraText.Get("Leads_Field_FullName", CurrentOrganization.PreferredLanguage),
+            "email" => RuntiraText.Get("Leads_Field_Email", CurrentOrganization.PreferredLanguage),
+            "phoneNumber" => RuntiraText.Get("Leads_Field_PhoneNumber", CurrentOrganization.PreferredLanguage),
+            "preferredLanguage" => RuntiraText.Get("Leads_Field_PreferredLanguage", CurrentOrganization.PreferredLanguage),
+            "targetAsset" => RuntiraText.Get("Leads_Field_TargetAsset", CurrentOrganization.PreferredLanguage),
+            "summary" => RuntiraText.Get("Leads_Field_Summary", CurrentOrganization.PreferredLanguage),
+            "tenantName" => RuntiraText.Get("Leads_Field_TenantName", CurrentOrganization.PreferredLanguage),
+            "ownerName" => RuntiraText.Get("Leads_Field_OwnerName", CurrentOrganization.PreferredLanguage),
+            "propertyAddress" => RuntiraText.Get("Leads_Field_PropertyAddress", CurrentOrganization.PreferredLanguage),
+            "billingPeriod" => RuntiraText.Get("Leads_Field_BillingPeriod", CurrentOrganization.PreferredLanguage),
+            _ => key
+        };
+}

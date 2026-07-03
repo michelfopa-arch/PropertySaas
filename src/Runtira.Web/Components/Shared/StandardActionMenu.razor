@@ -1,0 +1,43 @@
+<details class="action-menu-details">
+    <summary class="action-menu-trigger">@MenuLabel</summary>
+    <div class="action-menu-panel">
+        @if (!string.IsNullOrWhiteSpace(Title))
+        {
+            <div class="action-menu-title">@Title</div>
+        }
+
+        @foreach (var item in Items)
+        {
+            <button type="button"
+                    class="@(item.IsDestructive ? "action-menu-item action-menu-item-danger" : "action-menu-item")"
+                    disabled="@(IsBusy || item.IsDisabled)"
+                    @onclick="() => HandleActionAsync(item.ActionKey)">
+                <span>@item.Label</span>
+                @if (!string.IsNullOrWhiteSpace(item.Hint))
+                {
+                    <small>@item.Hint</small>
+                }
+            </button>
+        }
+    </div>
+</details>
+
+@code {
+    [Parameter]
+    public string MenuLabel { get; set; } = string.Empty;
+
+    [Parameter]
+    public string? Title { get; set; }
+
+    [Parameter]
+    public IReadOnlyList<StandardActionMenuItem> Items { get; set; } = Array.Empty<StandardActionMenuItem>();
+
+    [Parameter]
+    public bool IsBusy { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnAction { get; set; }
+
+    private Task HandleActionAsync(string actionKey)
+        => OnAction.HasDelegate ? OnAction.InvokeAsync(actionKey) : Task.CompletedTask;
+}

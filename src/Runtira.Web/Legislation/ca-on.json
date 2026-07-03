@@ -7,7 +7,7 @@
   "requiredQuestionsJson": "[\"propertyAddress\",\"billingPeriod\",\"tenantName\",\"monthlyRent\"]",
   "validationRulesJson": "{\"billingPeriod\":{\"required\":true},\"tenantName\":{\"required\":true}}",
   "invoiceRulesJson": "{\"generatePdf\":true,\"addAutomaticSalesTax\":false,\"includePropertyAddress\":true,\"includeBillingPeriod\":true}",
-  "assetRulesJson": "{\"supportsMultiUnit\":true}",
+  "assetRulesJson": "{\"supportsMultiUnit\":true,\"leadForm\":{\"visibleFields\":[\"fullName\",\"email\",\"phoneNumber\",\"preferredLanguage\",\"targetAsset\",\"summary\",\"tenantName\",\"billingPeriod\"],\"requiredFields\":[\"fullName\",\"email\",\"tenantName\"]},\"leaseConversionForm\":{\"visibleFields\":[\"residentName\",\"unitCode\",\"leaseStartDate\",\"monthlyRent\",\"billingPeriod\",\"tenantName\"],\"requiredFields\":[\"residentName\",\"unitCode\",\"leaseStartDate\",\"monthlyRent\",\"tenantName\"]},\"importValidationForm\":{\"visibleFields\":[\"fullName\",\"email\",\"preferredLanguage\",\"targetAsset\",\"summary\",\"tenantName\",\"billingPeriod\"],\"requiredFields\":[\"fullName\",\"email\",\"tenantName\"]}}",
   "maintenanceRulesJson": "{\"supportInboxClassification\":true}",
   "generatePdf": true,
   "addAutomaticSalesTax": false

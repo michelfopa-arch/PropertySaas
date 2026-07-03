@@ -1,0 +1,17 @@
+<div class="explorer-shell">
+    <div class="explorer-sidebar">
+        @SidebarContent
+    </div>
+
+    <div class="explorer-detail">
+        @DetailContent
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public RenderFragment? SidebarContent { get; set; }
+
+    [Parameter]
+    public RenderFragment? DetailContent { get; set; }
+}

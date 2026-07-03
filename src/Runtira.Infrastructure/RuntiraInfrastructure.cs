@@ -71,22 +71,24 @@ namespace Runtira.Infrastructure.Data
         private readonly Guid? _tenantId;
         private readonly bool _bypassTenantFilter;
 
-        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options)
+        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options, ITenantContextAccessor? tenantContextAccessor = null) : base(options)
         {
-        }
-
-        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options, ITenantContextAccessor tenantContextAccessor) : base(options)
-        {
-            _tenantId = tenantContextAccessor.TenantId;
-            _bypassTenantFilter = tenantContextAccessor.BypassTenantFilter;
+            _tenantId = tenantContextAccessor?.TenantId;
+            _bypassTenantFilter = tenantContextAccessor?.BypassTenantFilter == true;
         }
 
         public DbSet<RuntiraOrganization> RuntiraOrganizations => Set<RuntiraOrganization>();
         public DbSet<RuntiraUser> RuntiraUsers => Set<RuntiraUser>();
         public DbSet<RuntiraMembership> RuntiraMemberships => Set<RuntiraMembership>();
         public DbSet<RuntiraAsset> RuntiraAssets => Set<RuntiraAsset>();
+        public DbSet<RuntiraUnit> RuntiraUnits => Set<RuntiraUnit>();
+        public DbSet<RuntiraResident> RuntiraResidents => Set<RuntiraResident>();
+        public DbSet<RuntiraLease> RuntiraLeases => Set<RuntiraLease>();
+        public DbSet<RuntiraLead> RuntiraLeads => Set<RuntiraLead>();
         public DbSet<RuntiraConversation> RuntiraConversations => Set<RuntiraConversation>();
         public DbSet<RuntiraMessage> RuntiraMessages => Set<RuntiraMessage>();
+        public DbSet<RuntiraInboxMessage> RuntiraInboxMessages => Set<RuntiraInboxMessage>();
+        public DbSet<RuntiraAttachment> RuntiraAttachments => Set<RuntiraAttachment>();
         public DbSet<RuntiraWorkflowTemplate> RuntiraWorkflowTemplates => Set<RuntiraWorkflowTemplate>();
         public DbSet<RuntiraBlobArchive> RuntiraBlobArchives => Set<RuntiraBlobArchive>();
         public DbSet<RuntiraJurisdictionProfile> RuntiraJurisdictionProfiles => Set<RuntiraJurisdictionProfile>();
@@ -100,16 +102,31 @@ namespace Runtira.Infrastructure.Data
             modelBuilder.Entity<RuntiraMembership>().HasOne(x => x.Tenant).WithMany(x => x.Memberships).HasForeignKey(x => x.TenantId).OnDelete(DeleteBehavior.Cascade);
             modelBuilder.Entity<RuntiraMembership>().HasOne(x => x.User).WithMany(x => x.Memberships).HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
             modelBuilder.Entity<RuntiraAsset>().HasOne(x => x.Tenant).WithMany(x => x.Assets).HasForeignKey(x => x.TenantId).OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<RuntiraUnit>().HasIndex(x => new { x.TenantId, x.AssetId, x.UnitCode }).IsUnique();
+            modelBuilder.Entity<RuntiraUnit>().HasOne(x => x.Asset).WithMany(x => x.Units).HasForeignKey(x => x.AssetId).OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<RuntiraResident>().HasIndex(x => new { x.TenantId, x.Email });
+            modelBuilder.Entity<RuntiraLease>().HasOne(x => x.Asset).WithMany(x => x.Leases).HasForeignKey(x => x.AssetId).OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<RuntiraLease>().HasOne(x => x.Unit).WithMany(x => x.Leases).HasForeignKey(x => x.UnitId).OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<RuntiraLease>().HasOne(x => x.Resident).WithMany(x => x.Leases).HasForeignKey(x => x.ResidentId).OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<RuntiraLead>().HasOne(x => x.Asset).WithMany(x => x.Leads).HasForeignKey(x => x.AssetId).OnDelete(DeleteBehavior.SetNull);
             modelBuilder.Entity<RuntiraConversation>().HasOne<RuntiraOrganization>().WithMany().HasForeignKey(x => x.TenantId).OnDelete(DeleteBehavior.Cascade);
             modelBuilder.Entity<RuntiraMessage>().HasOne(x => x.Conversation).WithMany(x => x.Messages).HasForeignKey(x => x.ConversationId).OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<RuntiraInboxMessage>().HasIndex(x => new { x.TenantId, x.ExternalMessageId }).IsUnique();
+            modelBuilder.Entity<RuntiraAttachment>().HasOne(x => x.InboxMessage).WithMany(x => x.Attachments).HasForeignKey(x => x.InboxMessageId).OnDelete(DeleteBehavior.Cascade);
             modelBuilder.Entity<RuntiraWorkflowTemplate>().HasOne<RuntiraOrganization>().WithMany().HasForeignKey(x => x.TenantId).OnDelete(DeleteBehavior.Cascade);
             modelBuilder.Entity<RuntiraBlobArchive>().HasOne<RuntiraOrganization>().WithMany().HasForeignKey(x => x.TenantId).OnDelete(DeleteBehavior.Cascade);
             modelBuilder.Entity<RuntiraJurisdictionProfile>().HasOne<RuntiraOrganization>().WithMany().HasForeignKey(x => x.TenantId).OnDelete(DeleteBehavior.Cascade);
             modelBuilder.Entity<RuntiraQuotaPolicy>().HasOne<RuntiraOrganization>().WithMany().HasForeignKey(x => x.TenantId).OnDelete(DeleteBehavior.Cascade);
             modelBuilder.Entity<RuntiraMembership>().HasQueryFilter(x => _bypassTenantFilter || (_tenantId.HasValue && x.TenantId == _tenantId.Value));
             modelBuilder.Entity<RuntiraAsset>().HasQueryFilter(x => _bypassTenantFilter || (_tenantId.HasValue && x.TenantId == _tenantId.Value));
+            modelBuilder.Entity<RuntiraUnit>().HasQueryFilter(x => _bypassTenantFilter || (_tenantId.HasValue && x.TenantId == _tenantId.Value));
+            modelBuilder.Entity<RuntiraResident>().HasQueryFilter(x => _bypassTenantFilter || (_tenantId.HasValue && x.TenantId == _tenantId.Value));
+            modelBuilder.Entity<RuntiraLease>().HasQueryFilter(x => _bypassTenantFilter || (_tenantId.HasValue && x.TenantId == _tenantId.Value));
+            modelBuilder.Entity<RuntiraLead>().HasQueryFilter(x => _bypassTenantFilter || (_tenantId.HasValue && x.TenantId == _tenantId.Value));
             modelBuilder.Entity<RuntiraConversation>().HasQueryFilter(x => _bypassTenantFilter || (_tenantId.HasValue && x.TenantId == _tenantId.Value));
             modelBuilder.Entity<RuntiraMessage>().HasQueryFilter(x => _bypassTenantFilter || (_tenantId.HasValue && x.TenantId == _tenantId.Value));
+            modelBuilder.Entity<RuntiraInboxMessage>().HasQueryFilter(x => _bypassTenantFilter || (_tenantId.HasValue && x.TenantId == _tenantId.Value));
+            modelBuilder.Entity<RuntiraAttachment>().HasQueryFilter(x => _bypassTenantFilter || (_tenantId.HasValue && x.TenantId == _tenantId.Value));
             modelBuilder.Entity<RuntiraWorkflowTemplate>().HasQueryFilter(x => _bypassTenantFilter || (_tenantId.HasValue && x.TenantId == _tenantId.Value));
             modelBuilder.Entity<RuntiraBlobArchive>().HasQueryFilter(x => _bypassTenantFilter || (_tenantId.HasValue && x.TenantId == _tenantId.Value));
             modelBuilder.Entity<RuntiraJurisdictionProfile>().HasQueryFilter(x => _bypassTenantFilter || (_tenantId.HasValue && x.TenantId == _tenantId.Value));
@@ -213,13 +230,13 @@ namespace Runtira.Infrastructure.Data
                 {
                     Id = Guid.Parse("11111111-aaaa-bbbb-cccc-222222222222"),
                     TenantId = Guid.Parse("aaaaaaaa-1111-2222-3333-bbbbbbbbbbbb"),
-                    Name = "1180 17 Ave SW",
+                    Name = "1180 17 Ave SW · Atlas 50",
                     AssetType = "Property",
                     AddressLine1 = "1180 17 Ave SW",
                     City = "Calgary",
                     RegionCode = "AB",
                     CountryCode = "CA",
-                    UnitCount = 12,
+                    UnitCount = 50,
                     LegalProfileJson = "{\"requiredQuestions\":[\"address\",\"period\",\"monthlyRent\"]}",
                     AdditionalDataJson = "{\"source\":\"seed\"}",
                     WorkflowSummaryJson = "{\"status\":\"ready\"}",
@@ -255,6 +272,228 @@ namespace Runtira.Infrastructure.Data
                     LegalProfileJson = "{\"requiredQuestions\":[\"propertyAddress\",\"billingPeriod\",\"ownerName\",\"monthlyRent\"]}",
                     AdditionalDataJson = "{\"source\":\"seed\"}",
                     WorkflowSummaryJson = "{\"status\":\"ready\"}",
+                    CreatedUtc = new DateTime(2026, 7, 3, 0, 0, 0, DateTimeKind.Utc)
+                });
+            var albertaSeedUnits = Enumerable.Range(1, 50)
+                .Select(index => new RuntiraUnit
+                {
+                    Id = Guid.Parse($"10000000-0000-0000-0000-{index:D12}"),
+                    TenantId = Guid.Parse("aaaaaaaa-1111-2222-3333-bbbbbbbbbbbb"),
+                    AssetId = Guid.Parse("11111111-aaaa-bbbb-cccc-222222222222"),
+                    UnitCode = $"A-{100 + index}",
+                    UnitType = index % 5 == 0 ? "Studio" : index % 2 == 0 ? "Apartment" : "Loft",
+                    Status = index == 1 ? "Occupied" : index % 11 == 0 ? "Maintenance" : index % 3 == 0 ? "Reserved" : "Available",
+                    MarketRent = 1750m + (index * 22m),
+                    AdditionalDataJson = $"{{\"bedrooms\":{(index % 3) + 1},\"floor\":{((index - 1) / 10) + 1}}}",
+                    CreatedUtc = new DateTime(2026, 7, 3, 0, 0, 0, DateTimeKind.Utc)
+                })
+                .ToArray();
+
+            modelBuilder.Entity<RuntiraUnit>().HasData(
+                albertaSeedUnits[0],
+                albertaSeedUnits[1],
+                albertaSeedUnits[2],
+                albertaSeedUnits[3],
+                albertaSeedUnits[4],
+                albertaSeedUnits[5],
+                albertaSeedUnits[6],
+                albertaSeedUnits[7],
+                albertaSeedUnits[8],
+                albertaSeedUnits[9],
+                albertaSeedUnits[10],
+                albertaSeedUnits[11],
+                albertaSeedUnits[12],
+                albertaSeedUnits[13],
+                albertaSeedUnits[14],
+                albertaSeedUnits[15],
+                albertaSeedUnits[16],
+                albertaSeedUnits[17],
+                albertaSeedUnits[18],
+                albertaSeedUnits[19],
+                albertaSeedUnits[20],
+                albertaSeedUnits[21],
+                albertaSeedUnits[22],
+                albertaSeedUnits[23],
+                albertaSeedUnits[24],
+                albertaSeedUnits[25],
+                albertaSeedUnits[26],
+                albertaSeedUnits[27],
+                albertaSeedUnits[28],
+                albertaSeedUnits[29],
+                albertaSeedUnits[30],
+                albertaSeedUnits[31],
+                albertaSeedUnits[32],
+                albertaSeedUnits[33],
+                albertaSeedUnits[34],
+                albertaSeedUnits[35],
+                albertaSeedUnits[36],
+                albertaSeedUnits[37],
+                albertaSeedUnits[38],
+                albertaSeedUnits[39],
+                albertaSeedUnits[40],
+                albertaSeedUnits[41],
+                albertaSeedUnits[42],
+                albertaSeedUnits[43],
+                albertaSeedUnits[44],
+                albertaSeedUnits[45],
+                albertaSeedUnits[46],
+                albertaSeedUnits[47],
+                albertaSeedUnits[48],
+                albertaSeedUnits[49],
+                new RuntiraUnit
+                {
+                    Id = Guid.Parse("23232323-aaaa-bbbb-cccc-454545454545"),
+                    TenantId = Guid.Parse("abababab-1111-2222-3333-bcbcbcbcbcbc"),
+                    AssetId = Guid.Parse("13131313-aaaa-bbbb-cccc-242424242424"),
+                    UnitCode = "1204",
+                    UnitType = "Condo",
+                    Status = "Occupied",
+                    MarketRent = 3100m,
+                    AdditionalDataJson = "{\"bedrooms\":1}",
+                    CreatedUtc = new DateTime(2026, 7, 3, 0, 0, 0, DateTimeKind.Utc)
+                },
+                new RuntiraUnit
+                {
+                    Id = Guid.Parse("25252525-aaaa-bbbb-cccc-474747474747"),
+                    TenantId = Guid.Parse("acacacac-1111-2222-3333-bdbdbdbdbdbd"),
+                    AssetId = Guid.Parse("15151515-aaaa-bbbb-cccc-262626262626"),
+                    UnitCode = "8B",
+                    UnitType = "Apartment",
+                    Status = "Occupied",
+                    MarketRent = 2800m,
+                    AdditionalDataJson = "{\"bedrooms\":2}",
+                    CreatedUtc = new DateTime(2026, 7, 3, 0, 0, 0, DateTimeKind.Utc)
+                });
+            modelBuilder.Entity<RuntiraResident>().HasData(
+                new RuntiraResident
+                {
+                    Id = Guid.Parse("27272727-aaaa-bbbb-cccc-494949494949"),
+                    TenantId = Guid.Parse("aaaaaaaa-1111-2222-3333-bbbbbbbbbbbb"),
+                    FullName = "Amelie Gagnon",
+                    Email = "amelie.gagnon@example.com",
+                    PhoneNumber = "+1-403-555-0147",
+                    PreferredLanguage = "fr-CA",
+                    Status = "Active",
+                    NotesJson = "{\"leaseIntent\":\"renewal\"}",
+                    CreatedUtc = new DateTime(2026, 7, 3, 0, 0, 0, DateTimeKind.Utc)
+                },
+                new RuntiraResident
+                {
+                    Id = Guid.Parse("29292929-aaaa-bbbb-cccc-515151515151"),
+                    TenantId = Guid.Parse("abababab-1111-2222-3333-bcbcbcbcbcbc"),
+                    FullName = "Lucas Martin",
+                    Email = "lucas.martin@example.com",
+                    PhoneNumber = "+1-416-555-0120",
+                    PreferredLanguage = "en-CA",
+                    Status = "Active",
+                    NotesJson = "{\"preferredChannel\":\"email\"}",
+                    CreatedUtc = new DateTime(2026, 7, 3, 0, 0, 0, DateTimeKind.Utc)
+                },
+                new RuntiraResident
+                {
+                    Id = Guid.Parse("31313131-aaaa-bbbb-cccc-535353535353"),
+                    TenantId = Guid.Parse("acacacac-1111-2222-3333-bdbdbdbdbdbd"),
+                    FullName = "Maya Rodriguez",
+                    Email = "maya.rodriguez@example.com",
+                    PhoneNumber = "+1-214-555-0191",
+                    PreferredLanguage = "es-MX",
+                    Status = "Active",
+                    NotesJson = "{\"moveInWindow\":\"2026-08\"}",
+                    CreatedUtc = new DateTime(2026, 7, 3, 0, 0, 0, DateTimeKind.Utc)
+                });
+            modelBuilder.Entity<RuntiraLease>().HasData(
+                new RuntiraLease
+                {
+                    Id = Guid.Parse("41414141-aaaa-bbbb-cccc-616161616161"),
+                    TenantId = Guid.Parse("aaaaaaaa-1111-2222-3333-bbbbbbbbbbbb"),
+                    AssetId = Guid.Parse("11111111-aaaa-bbbb-cccc-222222222222"),
+                    UnitId = Guid.Parse("10000000-0000-0000-0000-000000000001"),
+                    ResidentId = Guid.Parse("27272727-aaaa-bbbb-cccc-494949494949"),
+                    LeaseStartUtc = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+                    LeaseEndUtc = new DateTime(2026, 12, 31, 0, 0, 0, DateTimeKind.Utc),
+                    MonthlyRent = 2450m,
+                    BillingPeriod = "Monthly",
+                    Status = "Active",
+                    TermsJson = "{\"deposit\":2450}",
+                    CreatedUtc = new DateTime(2026, 7, 3, 0, 0, 0, DateTimeKind.Utc)
+                },
+                new RuntiraLease
+                {
+                    Id = Guid.Parse("43434343-aaaa-bbbb-cccc-636363636363"),
+                    TenantId = Guid.Parse("abababab-1111-2222-3333-bcbcbcbcbcbc"),
+                    AssetId = Guid.Parse("13131313-aaaa-bbbb-cccc-242424242424"),
+                    UnitId = Guid.Parse("23232323-aaaa-bbbb-cccc-454545454545"),
+                    ResidentId = Guid.Parse("29292929-aaaa-bbbb-cccc-515151515151"),
+                    LeaseStartUtc = new DateTime(2026, 3, 1, 0, 0, 0, DateTimeKind.Utc),
+                    LeaseEndUtc = new DateTime(2027, 2, 28, 0, 0, 0, DateTimeKind.Utc),
+                    MonthlyRent = 3100m,
+                    BillingPeriod = "Monthly",
+                    Status = "Active",
+                    TermsJson = "{\"noticeDays\":60}",
+                    CreatedUtc = new DateTime(2026, 7, 3, 0, 0, 0, DateTimeKind.Utc)
+                },
+                new RuntiraLease
+                {
+                    Id = Guid.Parse("45454545-aaaa-bbbb-cccc-656565656565"),
+                    TenantId = Guid.Parse("acacacac-1111-2222-3333-bdbdbdbdbdbd"),
+                    AssetId = Guid.Parse("15151515-aaaa-bbbb-cccc-262626262626"),
+                    UnitId = Guid.Parse("25252525-aaaa-bbbb-cccc-474747474747"),
+                    ResidentId = Guid.Parse("31313131-aaaa-bbbb-cccc-535353535353"),
+                    LeaseStartUtc = new DateTime(2026, 5, 1, 0, 0, 0, DateTimeKind.Utc),
+                    LeaseEndUtc = new DateTime(2027, 4, 30, 0, 0, 0, DateTimeKind.Utc),
+                    MonthlyRent = 2800m,
+                    BillingPeriod = "Monthly",
+                    Status = "Active",
+                    TermsJson = "{\"lateFee\":75}",
+                    CreatedUtc = new DateTime(2026, 7, 3, 0, 0, 0, DateTimeKind.Utc)
+                });
+            modelBuilder.Entity<RuntiraLead>().HasData(
+                new RuntiraLead
+                {
+                    Id = Guid.Parse("47474747-aaaa-bbbb-cccc-676767676767"),
+                    TenantId = Guid.Parse("aaaaaaaa-1111-2222-3333-bbbbbbbbbbbb"),
+                    AssetId = Guid.Parse("11111111-aaaa-bbbb-cccc-222222222222"),
+                    FullName = "Nora Bouchard",
+                    Email = "nora.bouchard@example.com",
+                    PhoneNumber = "+1-403-555-0171",
+                    Source = "InboxMock",
+                    Status = "Qualified",
+                    PreferredLanguage = "fr-CA",
+                    QualificationScore = 92,
+                    Summary = "Lead chaud pour un 2 chambres avec entrée en août.",
+                    NotesJson = "{\"budget\":2500,\"moveInMonth\":\"2026-08\"}",
+                    CreatedUtc = new DateTime(2026, 7, 3, 0, 0, 0, DateTimeKind.Utc)
+                },
+                new RuntiraLead
+                {
+                    Id = Guid.Parse("49494949-aaaa-bbbb-cccc-696969696969"),
+                    TenantId = Guid.Parse("abababab-1111-2222-3333-bcbcbcbcbcbc"),
+                    AssetId = Guid.Parse("13131313-aaaa-bbbb-cccc-242424242424"),
+                    FullName = "Kevin Thompson",
+                    Email = "kevin.thompson@example.com",
+                    PhoneNumber = "+1-647-555-0112",
+                    Source = "ImportCsv",
+                    Status = "New",
+                    PreferredLanguage = "en-CA",
+                    QualificationScore = 78,
+                    Summary = "Lead imported from listing export, interested in downtown condo.",
+                    NotesJson = "{\"budget\":3200,\"petFriendly\":true}",
+                    CreatedUtc = new DateTime(2026, 7, 3, 0, 0, 0, DateTimeKind.Utc)
+                },
+                new RuntiraLead
+                {
+                    Id = Guid.Parse("51515151-aaaa-bbbb-cccc-717171717171"),
+                    TenantId = Guid.Parse("acacacac-1111-2222-3333-bdbdbdbdbdbd"),
+                    AssetId = Guid.Parse("15151515-aaaa-bbbb-cccc-262626262626"),
+                    FullName = "Elena Perez",
+                    Email = "elena.perez@example.com",
+                    PhoneNumber = "+1-214-555-0126",
+                    Source = "Manual",
+                    Status = "Pending",
+                    PreferredLanguage = "es-MX",
+                    QualificationScore = 84,
+                    Summary = "Lead bilingue demandant un logement proche du centre-ville.",
+                    NotesJson = "{\"budget\":2900,\"preferredLanguage\":\"es-MX\"}",
                     CreatedUtc = new DateTime(2026, 7, 3, 0, 0, 0, DateTimeKind.Utc)
                 });
             modelBuilder.Entity<RuntiraConversation>().HasData(
@@ -420,6 +659,86 @@ namespace Runtira.Infrastructure.Data
                     Hash = "seed-demo-texas-invoice",
                     CreatedUtc = new DateTime(2026, 7, 3, 0, 0, 0, DateTimeKind.Utc)
                 });
+            modelBuilder.Entity<RuntiraInboxMessage>().HasData(
+                new RuntiraInboxMessage
+                {
+                    Id = Guid.Parse("62626262-aaaa-bbbb-cccc-848484848484"),
+                    TenantId = Guid.Parse("aaaaaaaa-1111-2222-3333-bbbbbbbbbbbb"),
+                    ExternalMessageId = "mock-ab-001",
+                    Provider = "MockMicrosoft365",
+                    FromEmail = "prospect.ab@example.com",
+                    Subject = "Disponibilité pour août",
+                    PreviewText = "Bonjour, je cherche un 2 chambres disponible en août à Calgary.",
+                    ReceivedUtc = new DateTime(2026, 7, 3, 14, 0, 0, DateTimeKind.Utc),
+                    Status = "Classified",
+                    Category = "Lead",
+                    RelatedEntityType = "Lead",
+                    RelatedEntityId = Guid.Parse("47474747-aaaa-bbbb-cccc-676767676767"),
+                    HasAttachments = true,
+                    ClassificationJson = "{\"confidence\":0.92,\"suggestedAction\":\"CallBack\"}",
+                    CreatedUtc = new DateTime(2026, 7, 3, 14, 0, 0, DateTimeKind.Utc)
+                },
+                new RuntiraInboxMessage
+                {
+                    Id = Guid.Parse("64646464-aaaa-bbbb-cccc-868686868686"),
+                    TenantId = Guid.Parse("abababab-1111-2222-3333-bcbcbcbcbcbc"),
+                    ExternalMessageId = "mock-on-001",
+                    Provider = "MockMicrosoft365",
+                    FromEmail = "resident.on@example.com",
+                    Subject = "Need invoice copy for July",
+                    PreviewText = "Can you resend the July invoice for unit 1204?",
+                    ReceivedUtc = new DateTime(2026, 7, 3, 15, 0, 0, DateTimeKind.Utc),
+                    Status = "Classified",
+                    Category = "Invoice",
+                    RelatedEntityType = "Lease",
+                    RelatedEntityId = Guid.Parse("43434343-aaaa-bbbb-cccc-636363636363"),
+                    HasAttachments = false,
+                    ClassificationJson = "{\"confidence\":0.88,\"suggestedAction\":\"SendInvoice\"}",
+                    CreatedUtc = new DateTime(2026, 7, 3, 15, 0, 0, DateTimeKind.Utc)
+                },
+                new RuntiraInboxMessage
+                {
+                    Id = Guid.Parse("66666666-aaaa-bbbb-cccc-888888888889"),
+                    TenantId = Guid.Parse("acacacac-1111-2222-3333-bdbdbdbdbdbd"),
+                    ExternalMessageId = "mock-tx-001",
+                    Provider = "MockMicrosoft365",
+                    FromEmail = "owner.tx@example.com",
+                    Subject = "Please archive this vendor quote",
+                    PreviewText = "Attaching a quote for the next lease renewal package.",
+                    ReceivedUtc = new DateTime(2026, 7, 3, 16, 0, 0, DateTimeKind.Utc),
+                    Status = "Classified",
+                    Category = "Document",
+                    RelatedEntityType = "Asset",
+                    RelatedEntityId = Guid.Parse("15151515-aaaa-bbbb-cccc-262626262626"),
+                    HasAttachments = true,
+                    ClassificationJson = "{\"confidence\":0.81,\"suggestedAction\":\"ArchiveDocument\"}",
+                    CreatedUtc = new DateTime(2026, 7, 3, 16, 0, 0, DateTimeKind.Utc)
+                });
+            modelBuilder.Entity<RuntiraAttachment>().HasData(
+                new RuntiraAttachment
+                {
+                    Id = Guid.Parse("68686868-aaaa-bbbb-cccc-909090909091"),
+                    TenantId = Guid.Parse("aaaaaaaa-1111-2222-3333-bbbbbbbbbbbb"),
+                    InboxMessageId = Guid.Parse("62626262-aaaa-bbbb-cccc-848484848484"),
+                    FileName = "budget-range.txt",
+                    ContentType = "text/plain",
+                    SizeBytes = 256,
+                    Category = "LeadDocument",
+                    MetadataJson = "{\"source\":\"mock-inbox\"}",
+                    CreatedUtc = new DateTime(2026, 7, 3, 14, 0, 0, DateTimeKind.Utc)
+                },
+                new RuntiraAttachment
+                {
+                    Id = Guid.Parse("70707070-aaaa-bbbb-cccc-929292929293"),
+                    TenantId = Guid.Parse("acacacac-1111-2222-3333-bdbdbdbdbdbd"),
+                    InboxMessageId = Guid.Parse("66666666-aaaa-bbbb-cccc-888888888889"),
+                    FileName = "vendor-quote.pdf",
+                    ContentType = "application/pdf",
+                    SizeBytes = 40960,
+                    Category = "VendorQuote",
+                    MetadataJson = "{\"source\":\"mock-inbox\"}",
+                    CreatedUtc = new DateTime(2026, 7, 3, 16, 0, 0, DateTimeKind.Utc)
+                });
             modelBuilder.Entity<RuntiraJurisdictionProfile>().HasData(
                 new RuntiraJurisdictionProfile
                 {
@@ -567,6 +886,36 @@ namespace Runtira.Infrastructure.Data
 
             return builder.ConnectionString;
         }
+    }
+
+    internal sealed class ApplicationDbContextLease : IApplicationDbContextLease
+    {
+        private readonly ApplicationDbContext _dbContext;
+
+        public ApplicationDbContextLease(ApplicationDbContext dbContext)
+        {
+            _dbContext = dbContext;
+        }
+
+        public IApplicationDbContext DbContext => _dbContext;
+
+        public void Dispose()
+        {
+            _dbContext.Dispose();
+        }
+    }
+
+    internal sealed class ApplicationDbContextFactoryAdapter : IApplicationDbContextFactory
+    {
+        private readonly IDbContextFactory<ApplicationDbContext> _factory;
+
+        public ApplicationDbContextFactoryAdapter(IDbContextFactory<ApplicationDbContext> factory)
+        {
+            _factory = factory;
+        }
+
+        public IApplicationDbContextLease CreateDbContext()
+            => new ApplicationDbContextLease(_factory.CreateDbContext());
     }
 }
 
@@ -1056,11 +1405,16 @@ namespace Runtira.Infrastructure.Services
             services.AddHttpClient<IEmailService, ResendEmailService>(client => client.BaseAddress = new Uri("https://api.resend.com/"));
 
             var connectionString = SqlConnectionStringResolver.Resolve(configuration);
+            services.AddDbContextFactory<ApplicationDbContext>((provider, options) =>
+            {
+                options.UseSqlServer(connectionString, sqlOptions => sqlOptions.EnableRetryOnFailure());
+            }, ServiceLifetime.Scoped);
             services.AddDbContext<ApplicationDbContext>((provider, options) =>
             {
                 options.UseSqlServer(connectionString, sqlOptions => sqlOptions.EnableRetryOnFailure());
             });
             services.AddScoped<IApplicationDbContext>(provider => provider.GetRequiredService<ApplicationDbContext>());
+            services.AddScoped<IApplicationDbContextFactory, ApplicationDbContextFactoryAdapter>();
             services.AddSingleton<ILegislationCatalog, JsonLegislationCatalog>();
             services.AddHttpClient<StripeBillingService>(client => client.BaseAddress = new Uri("https://api.stripe.com/v1/"));
 

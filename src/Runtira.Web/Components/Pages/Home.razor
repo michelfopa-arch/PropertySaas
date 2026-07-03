@@ -3,6 +3,7 @@
 @using Runtira.Application.Common
 @using Runtira.Application.Features
 @inject CurrentOrganization CurrentOrganization
+@inject NavigationManager Navigation
 @inject RuntiraWorkspaceService WorkspaceService
 
 <PageTitle>@CurrentOrganization.OrganizationName</PageTitle>
@@ -39,7 +40,7 @@
         </div>
 
         <div class="prompt-box">
-            <div class="prompt-title">@RuntiraText.Get("Home_ExamplesTitle", CurrentOrganization.PreferredLanguage)</div>
+            <div class="prompt-title">@RuntiraText.Get("Home_TodayTitle", CurrentOrganization.PreferredLanguage)</div>
             @foreach (var prompt in GetLocalizedPrompts())
             {
                 <button type="button" class="prompt-chip">@prompt</button>
@@ -57,6 +58,10 @@
             </div>
             @if (!string.IsNullOrWhiteSpace(CurrentOrganization.OrganizationSlug))
             {
+                <a class="prompt-chip prompt-link" href="@($"/{CurrentOrganization.OrganizationSlug}/assets")">@RuntiraText.Get("Home_OpenAssets", CurrentOrganization.PreferredLanguage)</a>
+                <a class="prompt-chip prompt-link" href="@($"/{CurrentOrganization.OrganizationSlug}/imports")">@RuntiraText.Get("Home_OpenImports", CurrentOrganization.PreferredLanguage)</a>
+                <a class="prompt-chip prompt-link" href="@($"/{CurrentOrganization.OrganizationSlug}/leads")">@RuntiraText.Get("Home_OpenLeads", CurrentOrganization.PreferredLanguage)</a>
+                <a class="prompt-chip prompt-link" href="@($"/{CurrentOrganization.OrganizationSlug}/inbox")">@RuntiraText.Get("Home_OpenInbox", CurrentOrganization.PreferredLanguage)</a>
                 <a class="prompt-chip prompt-link" href="@($"/{CurrentOrganization.OrganizationSlug}/invoice-composer")">@RuntiraText.Get("Home_OpenInvoiceComposer", CurrentOrganization.PreferredLanguage)</a>
                 <a class="prompt-chip prompt-link" href="@($"/{CurrentOrganization.OrganizationSlug}/billing")">@RuntiraText.Get("Home_OpenBilling", CurrentOrganization.PreferredLanguage)</a>
                 <a class="prompt-chip prompt-link" href="@($"/{CurrentOrganization.OrganizationSlug}/legislation")">@RuntiraText.Get("Home_OpenLegislation", CurrentOrganization.PreferredLanguage)</a>
@@ -73,7 +78,57 @@
             <span class="workspace-state">@RuntiraText.Get("Common_Mvp", CurrentOrganization.PreferredLanguage)</span>
         </div>
 
-        @if (_summary is not null)
+        @if (!string.IsNullOrWhiteSpace(CurrentOrganization.OrganizationSlug))
+        {
+            <div class="localized-section">
+                <div class="prompt-title">@RuntiraText.Get("Home_ActionHubTitle", CurrentOrganization.PreferredLanguage)</div>
+                <p class="hero-copy">@RuntiraText.Get("Home_ActionHubCopy", CurrentOrganization.PreferredLanguage)</p>
+                <div class="focus-strip">
+                    <div class="focus-card focus-card-primary">
+                        <span class="summary-label">@RuntiraText.Get("Home_Focus_Primary", CurrentOrganization.PreferredLanguage)</span>
+                        <strong>@RuntiraText.Get("Home_Focus_Revenue_Title", CurrentOrganization.PreferredLanguage)</strong>
+                        <p>@RuntiraText.Get("Home_Focus_Revenue_Copy", CurrentOrganization.PreferredLanguage)</p>
+                    </div>
+                    <div class="focus-card">
+                        <span class="summary-label">@RuntiraText.Get("Home_Focus_Secondary", CurrentOrganization.PreferredLanguage)</span>
+                        <strong>@RuntiraText.Get("Home_Focus_Support_Title", CurrentOrganization.PreferredLanguage)</strong>
+                        <p>@RuntiraText.Get("Home_Focus_Support_Copy", CurrentOrganization.PreferredLanguage)</p>
+                    </div>
+                </div>
+                <div class="home-actions-grid">
+                    <a class="action-card action-card-primary" href="@($"/{CurrentOrganization.OrganizationSlug}/invoice-composer")">
+                        <strong>@RuntiraText.Get("Home_Action_Billing_Title", CurrentOrganization.PreferredLanguage)</strong>
+                        <span>@RuntiraText.Get("Home_Action_Billing_Copy", CurrentOrganization.PreferredLanguage)</span>
+                    </a>
+                    <a class="action-card" href="@($"/{CurrentOrganization.OrganizationSlug}/assets")">
+                        <strong>@RuntiraText.Get("Home_Action_Assets_Title", CurrentOrganization.PreferredLanguage)</strong>
+                        <span>@RuntiraText.Get("Home_Action_Assets_Copy", CurrentOrganization.PreferredLanguage)</span>
+                    </a>
+                    <a class="action-card" href="@($"/{CurrentOrganization.OrganizationSlug}/inbox")">
+                        <strong>@RuntiraText.Get("Home_Action_Inbox_Title", CurrentOrganization.PreferredLanguage)</strong>
+                        <span>@RuntiraText.Get("Home_Action_Inbox_Copy", CurrentOrganization.PreferredLanguage)</span>
+                    </a>
+                    <a class="action-card" href="@($"/{CurrentOrganization.OrganizationSlug}/imports")">
+                        <strong>@RuntiraText.Get("Home_Action_Imports_Title", CurrentOrganization.PreferredLanguage)</strong>
+                        <span>@RuntiraText.Get("Home_Action_Imports_Copy", CurrentOrganization.PreferredLanguage)</span>
+                    </a>
+                    <a class="action-card" href="@($"/{CurrentOrganization.OrganizationSlug}/exports")">
+                        <strong>@RuntiraText.Get("Home_Action_Exports_Title", CurrentOrganization.PreferredLanguage)</strong>
+                        <span>@RuntiraText.Get("Home_Action_Exports_Copy", CurrentOrganization.PreferredLanguage)</span>
+                    </a>
+                    <a class="action-card action-card-secondary" href="@($"/{CurrentOrganization.OrganizationSlug}/leads")">
+                        <strong>@RuntiraText.Get("Home_Action_Leads_Title", CurrentOrganization.PreferredLanguage)</strong>
+                        <span>@RuntiraText.Get("Home_Action_Leads_Copy", CurrentOrganization.PreferredLanguage)</span>
+                    </a>
+                </div>
+            </div>
+        }
+
+        @if (_isLoading)
+        {
+            <PageLoadingState />
+        }
+        else if (_summary is not null)
         {
             <div class="stats-grid">
                 <div class="stat-card">
@@ -109,10 +164,8 @@
         }
         else
         {
-            <div class="empty-state">
-                <strong>@RuntiraText.Get("Home_InitializedTitle", CurrentOrganization.PreferredLanguage)</strong>
-                <p>@RuntiraText.Get("Home_InitializedBody", CurrentOrganization.PreferredLanguage)</p>
-            </div>
+            <PageEmptyState Title="@RuntiraText.Get("Home_InitializedTitle", CurrentOrganization.PreferredLanguage)"
+                            Message="@RuntiraText.Get("Home_InitializedBody", CurrentOrganization.PreferredLanguage)" />
         }
     </section>
 </div>
@@ -122,11 +175,39 @@
     public string? TenantSlug { get; set; }
 
     private RuntiraWorkspaceSummaryDto? _summary;
+    private bool _isLoading = true;
+    private bool _hasInitialized;
 
     protected override async Task OnInitializedAsync()
     {
-        _summary = await WorkspaceService.GetWorkspaceSummaryAsync();
+        if (_hasInitialized)
+        {
+            return;
+        }
+
+        _hasInitialized = true;
+
+        if (ShouldAutoOpenOrganization())
+        {
+            Navigation.NavigateTo($"/{CurrentOrganization.OrganizationSlug}", replace: true);
+            return;
+        }
+
+        try
+        {
+            _summary = await WorkspaceService.GetWorkspaceSummaryAsync();
+        }
+        finally
+        {
+            _isLoading = false;
+        }
     }
+
+    private bool ShouldAutoOpenOrganization()
+        => string.IsNullOrWhiteSpace(TenantSlug)
+           && !string.IsNullOrWhiteSpace(CurrentOrganization.OrganizationSlug)
+           && CurrentOrganization.HasOrganizationAccess
+           && CurrentOrganization.AccessibleOrganizationCount <= 1;
 
     private string GetHeroTitle()
         => CurrentOrganization.CountryCode switch

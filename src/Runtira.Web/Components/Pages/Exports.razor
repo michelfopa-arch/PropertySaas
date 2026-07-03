@@ -1,0 +1,126 @@
+@page "/{tenantSlug}/exports"
+@using Runtira.Application.Common
+@using Runtira.Application.Features
+@inject CurrentOrganization CurrentOrganization
+@inject RuntiraWorkspaceService WorkspaceService
+
+<PageTitle>@RuntiraText.Get("Nav_Exports", CurrentOrganization.PreferredLanguage)</PageTitle>
+
+<div class="hero-shell">
+    <section class="hero-card">
+        <div class="hero-badge">@RuntiraText.Get("Exports_Badge", CurrentOrganization.PreferredLanguage)</div>
+        <h1>@RuntiraText.Get("Exports_Title", CurrentOrganization.PreferredLanguage)</h1>
+        <p class="hero-copy">@RuntiraText.Get("Exports_Subtitle", CurrentOrganization.PreferredLanguage)</p>
+
+        @if (_isLoading)
+        {
+            <PageLoadingState />
+        }
+        else if (_workspace is not null)
+        {
+            <div class="tenant-summary">
+                <div>
+                    <span class="summary-label">@RuntiraText.Get("Imports_Summary_Region", CurrentOrganization.PreferredLanguage)</span>
+                    <strong>@_workspace.ActiveRegion</strong>
+                </div>
+                <div>
+                    <span class="summary-label">@RuntiraText.Get("Imports_Summary_Language", CurrentOrganization.PreferredLanguage)</span>
+                    <strong>@_workspace.ActiveLanguage</strong>
+                </div>
+                <div>
+                    <span class="summary-label">@RuntiraText.Get("Exports_Summary_Formats", CurrentOrganization.PreferredLanguage)</span>
+                    <strong>@_workspace.Options.Count</strong>
+                </div>
+                <div>
+                    <span class="summary-label">@RuntiraText.Get("Exports_Summary_Destinations", CurrentOrganization.PreferredLanguage)</span>
+                    <strong>@string.Join(" · ", _workspace.SupportedDestinations)</strong>
+                </div>
+            </div>
+
+            <SectionToolbar Hint="@RuntiraText.Get("Exports_ResultsHint", CurrentOrganization.PreferredLanguage)">
+                <Actions>
+                    <a class="ghost-button" href="@($"/{CurrentOrganization.OrganizationSlug}")">@RuntiraText.Get("Exports_BackHome", CurrentOrganization.PreferredLanguage)</a>
+                </Actions>
+            </SectionToolbar>
+
+            <div class="stats-grid">
+                @foreach (var option in _workspace.Options)
+                {
+                    <div class="stat-card list-card">
+                        <span>@RuntiraText.Get("Exports_Format", CurrentOrganization.PreferredLanguage)</span>
+                        <strong>@option.Format</strong>
+                        <span>@RuntiraText.Get("Exports_Audience", CurrentOrganization.PreferredLanguage) · @option.Audience</span>
+                        <span>@RuntiraText.Get("Exports_Status", CurrentOrganization.PreferredLanguage) · @option.Status</span>
+                        <p class="hero-copy">@option.Summary</p>
+                    </div>
+                }
+            </div>
+        }
+    </section>
+
+    <section class="workspace-card">
+        <div class="workspace-header">
+            <h2>@RuntiraText.Get("Exports_WorkspaceTitle", CurrentOrganization.PreferredLanguage)</h2>
+            <span class="workspace-state">@RuntiraText.Get("Common_Preview", CurrentOrganization.PreferredLanguage)</span>
+        </div>
+
+        <div class="workspace-grid">
+            <div class="workspace-panel">
+                <h3>@RuntiraText.Get("Exports_Panel_Standard", CurrentOrganization.PreferredLanguage)</h3>
+                <div class="option-list">
+                    <span class="option-pill option-pill-accent">Excel</span>
+                    <span class="option-pill option-pill-accent">PDF</span>
+                    <span class="option-pill">CSV</span>
+                    <span class="option-pill">Word</span>
+                </div>
+            </div>
+            <div class="workspace-panel">
+                <h3>@RuntiraText.Get("Exports_Panel_Delivery", CurrentOrganization.PreferredLanguage)</h3>
+                <div class="option-list">
+                    @foreach (var destination in _workspace?.SupportedDestinations ?? Array.Empty<string>())
+                    {
+                        <span class="option-pill">@destination</span>
+                    }
+                </div>
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(CurrentOrganization.OrganizationSlug))
+            {
+                <div class="localized-section">
+                    <div class="prompt-title">@RuntiraText.Get("Exports_DownloadsTitle", CurrentOrganization.PreferredLanguage)</div>
+                    <div class="prompt-box">
+                        <a class="prompt-chip prompt-link" href="@($"/{CurrentOrganization.OrganizationSlug}/exports/leads.csv")">@RuntiraText.Get("Exports_DownloadLeadsCsv", CurrentOrganization.PreferredLanguage)</a>
+                    </div>
+                </div>
+            }
+        </div>
+    </section>
+</div>
+
+@code {
+    [Parameter]
+    public string? TenantSlug { get; set; }
+
+    private RuntiraExportWorkspaceDto? _workspace;
+    private bool _isLoading = true;
+    private bool _hasInitialized;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (_hasInitialized)
+        {
+            return;
+        }
+
+        _hasInitialized = true;
+
+        try
+        {
+            _workspace = await WorkspaceService.GetExportWorkspaceAsync();
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+}

@@ -50,10 +50,9 @@
 
         @if (!string.IsNullOrWhiteSpace(_resendStatus))
         {
-            <div class="empty-state mt-3">
-                <strong>@RuntiraText.Get("Account_ResendTitle", CurrentOrganization.PreferredLanguage)</strong>
-                <p>@_resendStatus</p>
-            </div>
+            <PageEmptyState Title="@RuntiraText.Get("Account_ResendTitle", CurrentOrganization.PreferredLanguage)"
+                            Message="@_resendStatus"
+                            CssClass="mt-3" />
         }
     </section>
 

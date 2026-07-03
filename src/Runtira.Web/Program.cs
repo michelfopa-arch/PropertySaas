@@ -97,7 +97,7 @@ builder.Services.AddScoped<CurrentOrganization>(provider =>
             var dbOptions = provider.GetService<DbContextOptions<ApplicationDbContext>>();
             if (dbOptions is not null)
             {
-                using var db = new ApplicationDbContext(dbOptions);
+                using var db = new ApplicationDbContext(dbOptions, tenantContextAccessor: null);
 
                 var userEmail = user?.FindFirstValue(ClaimTypes.Email)
                     ?? user?.FindFirstValue("email")
@@ -339,6 +339,22 @@ app.MapPost("/api/invoices/draft-email", async (HttpContext httpContext, [FromSe
     return Results.Ok(new { recipient, language, invoice.OrganizationName, invoice.BillingPeriod });
 });
 
+app.MapGet("/{tenantSlug}/exports/leads.csv", async (string tenantSlug, HttpContext httpContext, [FromServices] CurrentOrganization currentOrganization, [FromServices] RuntiraWorkspaceService workspaceService) =>
+{
+    if (!string.Equals(currentOrganization.OrganizationSlug, tenantSlug, StringComparison.OrdinalIgnoreCase))
+    {
+        return Results.NotFound();
+    }
+
+    var export = await workspaceService.ExportLeadsCsvAsync(httpContext.RequestAborted);
+    if (export is null || export.Content.Length == 0)
+    {
+        return Results.NotFound();
+    }
+
+    return Results.File(export.Content, export.ContentType, export.FileName);
+});
+
 app.MapGet("/{tenantSlug}/billing/checkout/{plan}", async (string tenantSlug, string plan, HttpContext httpContext, [FromServices] Runtira.Infrastructure.Data.ApplicationDbContext db, [FromServices] Runtira.Infrastructure.Services.StripeBillingService billingService) =>
 {
     var organization = await db.RuntiraOrganizations.FirstOrDefaultAsync(x => x.Slug == tenantSlug);
@@ -369,7 +385,7 @@ app.MapPost("/billing/webhook", async (HttpContext httpContext, [FromServices] R
 });
 
 app.MapStaticAssets();
-app.MapRazorComponents<App>()
+app.MapRazorComponents<Runtira.Web.Components.App>()
     .AddInteractiveServerRenderMode();
 
 app.Run();

@@ -24,9 +24,18 @@ public partial class InvoiceComposer : ComponentBase
     private HashSet<string> _visibleOptions = new(StringComparer.OrdinalIgnoreCase);
     private List<string> _requiredQuestions = new();
     private string _draftEmailStatus = string.Empty;
+    private bool _hasInitialized;
+    private bool _isSendingDraftEmail;
 
     protected override async Task OnInitializedAsync()
     {
+        if (_hasInitialized)
+        {
+            return;
+        }
+
+        _hasInitialized = true;
+
         _invoice = await WorkspaceService.GetInvoiceComposerAsync();
         if (_invoice is null)
         {
@@ -111,6 +120,13 @@ public partial class InvoiceComposer : ComponentBase
 
     private async Task SendDraftEmailAsync()
     {
+        if (_isSendingDraftEmail)
+        {
+            return;
+        }
+
+        _isSendingDraftEmail = true;
+
         try
         {
             var response = await Http.PostAsync("/api/invoices/draft-email", content: null);
@@ -121,6 +137,10 @@ public partial class InvoiceComposer : ComponentBase
         catch
         {
             _draftEmailStatus = RuntiraText.Get("Invoice_DraftEmailError", CurrentOrganization.PreferredLanguage);
+        }
+        finally
+        {
+            _isSendingDraftEmail = false;
         }
     }
 }
