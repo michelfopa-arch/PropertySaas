@@ -1,0 +1,119 @@
+<div class="localized-section">
+    @if (!string.IsNullOrWhiteSpace(Title))
+    {
+        <div class="prompt-title">@Title</div>
+    }
+
+    <ExplorerLayout>
+        <SidebarContent>
+            @if (ShowSearch)
+            {
+                <ExplorerSearchBox Label="@SearchLabel"
+                                   Placeholder="@SearchPlaceholder"
+                                   Value="@SearchValue"
+                                   OnInput="OnSearchInput"
+                                   OnKeyDown="OnSearchKeyDown"
+                                   ShowAutocomplete="@ShowAutocomplete"
+                                   AutocompleteTitle="@AutocompleteTitle">
+                    <MetaContent>
+                        @MetaContent
+                    </MetaContent>
+                    <AutocompleteContent>
+                        @AutocompleteContent
+                    </AutocompleteContent>
+                </ExplorerSearchBox>
+            }
+
+            @if (!string.IsNullOrWhiteSpace(Hint))
+            {
+                <p class="results-hint">@Hint</p>
+            }
+
+            @if (HasItems)
+            {
+                <ExplorerList>
+                    <ItemsContent>
+                        @ListContent
+                    </ItemsContent>
+                </ExplorerList>
+            }
+            else
+            {
+                <PageEmptyState Title="@EmptyTitle"
+                                Message="@EmptyMessage" />
+            }
+        </SidebarContent>
+
+        <DetailContent>
+            @if (DetailContent is not null)
+            {
+                @DetailContent
+            }
+            else if (!string.IsNullOrWhiteSpace(DetailEmptyTitle))
+            {
+                <PageEmptyState Title="@DetailEmptyTitle"
+                                Message="@DetailEmptyMessage"
+                                CssClass="explorer-detail-empty" />
+            }
+        </DetailContent>
+    </ExplorerLayout>
+</div>
+
+@code {
+    [Parameter]
+    public string? Title { get; set; }
+
+    [Parameter]
+    public bool ShowSearch { get; set; }
+
+    [Parameter]
+    public string SearchLabel { get; set; } = string.Empty;
+
+    [Parameter]
+    public string SearchPlaceholder { get; set; } = string.Empty;
+
+    [Parameter]
+    public string SearchValue { get; set; } = string.Empty;
+
+    [Parameter]
+    public string? AutocompleteTitle { get; set; }
+
+    [Parameter]
+    public bool ShowAutocomplete { get; set; }
+
+    [Parameter]
+    public EventCallback<ChangeEventArgs> OnSearchInput { get; set; }
+
+    [Parameter]
+    public EventCallback<KeyboardEventArgs> OnSearchKeyDown { get; set; }
+
+    [Parameter]
+    public string? Hint { get; set; }
+
+    [Parameter]
+    public bool HasItems { get; set; }
+
+    [Parameter]
+    public string EmptyTitle { get; set; } = string.Empty;
+
+    [Parameter]
+    public string EmptyMessage { get; set; } = string.Empty;
+
+    [Parameter]
+    public string? DetailEmptyTitle { get; set; }
+
+    [Parameter]
+    public string? DetailEmptyMessage { get; set; }
+
+    [Parameter]
+    public RenderFragment? MetaContent { get; set; }
+
+    [Parameter]
+    public RenderFragment? AutocompleteContent { get; set; }
+
+    [Parameter]
+    public RenderFragment? ListContent { get; set; }
+
+    [Parameter]
+    public RenderFragment? DetailContent { get; set; }
+}

@@ -56,73 +56,55 @@
                 </Actions>
             </SectionToolbar>
 
-            <div class="localized-section">
-                <div class="prompt-title">@RuntiraText.Get("Assets_UnitsTitle", CurrentOrganization.PreferredLanguage)</div>
-
-                <ExplorerLayout>
-                    <SidebarContent>
-                        <ExplorerSearchBox Label="@RuntiraText.Get("Assets_UnitSearchLabel", CurrentOrganization.PreferredLanguage)"
-                                           Placeholder="@RuntiraText.Get("Assets_UnitSearchPlaceholder", CurrentOrganization.PreferredLanguage)"
-                                           Value="@_unitSearchTerm"
-                                           OnInput="OnUnitSearchChanged"
-                                           OnKeyDown="OnUnitSearchKeyDown"
-                                           ShowAutocomplete="@ShouldShowUnitAutocomplete()"
-                                           AutocompleteTitle="@RuntiraText.Get("Assets_UnitAutocompleteTitle", CurrentOrganization.PreferredLanguage)">
-                            <MetaContent>
-                                <span>@RuntiraText.Format("Assets_UnitShowing", CurrentOrganization.PreferredLanguage, GetFilteredUnits().Count, _workspace.Units.Count)</span>
-                                @if (_workspace.Units.Count >= 40)
-                                {
-                                    <span class="option-pill option-pill-accent">@RuntiraText.Get("Assets_UnitAutocompleteRecommendation", CurrentOrganization.PreferredLanguage)</span>
-                                }
-                            </MetaContent>
-                            <AutocompleteContent>
-                                @foreach (var suggestion in GetUnitAutocompleteSuggestions().Select((unit, index) => new { Unit = unit, Index = index }))
-                                {
-                                    <button type="button"
-                                            class="@(suggestion.Index == _unitAutocompleteIndex ? "explorer-autocomplete-item active" : "explorer-autocomplete-item")"
-                                            @onclick="() => SelectUnitFromAutocomplete(suggestion.Unit)">
-                                        <strong>@suggestion.Unit.UnitCode</strong>
-                                        <span>@suggestion.Unit.UnitType · @suggestion.Unit.Status</span>
-                                        <small>@RuntiraText.Get("Assets_UnitRent", CurrentOrganization.PreferredLanguage) · @suggestion.Unit.MarketRent</small>
-                                    </button>
-                                }
-                            </AutocompleteContent>
-                        </ExplorerSearchBox>
-
-                        <p class="results-hint">@RuntiraText.Get("Assets_UnitExplorerHint", CurrentOrganization.PreferredLanguage)</p>
-
-                        @if (GetFilteredUnits().Count == 0)
-                        {
-                            <PageEmptyState Title="@RuntiraText.Get("Assets_UnitNoMatchTitle", CurrentOrganization.PreferredLanguage)"
-                                            Message="@RuntiraText.Get("Assets_UnitNoMatchBody", CurrentOrganization.PreferredLanguage)" />
-                        }
-                        else
-                        {
-                            <ExplorerList>
-                                <ItemsContent>
-                                    @foreach (var unit in GetFilteredUnits())
-                                    {
-                                        <button type="button"
-                                                class="@(IsSelectedUnit(unit.Id) ? "explorer-list-item selected" : "explorer-list-item")"
-                                                @onclick="() => SelectUnit(unit.Id)">
-                                            <strong>@unit.UnitCode</strong>
-                                            <span>@unit.UnitType</span>
-                                            <small>@unit.Status · @unit.MarketRent</small>
-                                        </button>
-                                    }
-                                </ItemsContent>
-                            </ExplorerList>
-                        }
-                    </SidebarContent>
-
-                    <DetailContent>
-                        @if (HasSelectedUnit)
-                        {
-                            @RenderSelectedUnitDetail()
-                        }
-                    </DetailContent>
-                </ExplorerLayout>
-            </div>
+            <ExplorerSection Title="@RuntiraText.Get("Assets_UnitsTitle", CurrentOrganization.PreferredLanguage)"
+                             ShowSearch="true"
+                             SearchLabel="@RuntiraText.Get("Assets_UnitSearchLabel", CurrentOrganization.PreferredLanguage)"
+                             SearchPlaceholder="@RuntiraText.Get("Assets_UnitSearchPlaceholder", CurrentOrganization.PreferredLanguage)"
+                             SearchValue="@_unitSearchTerm"
+                             OnSearchInput="OnUnitSearchChanged"
+                             OnSearchKeyDown="OnUnitSearchKeyDown"
+                             ShowAutocomplete="@ShouldShowUnitAutocomplete()"
+                             AutocompleteTitle="@RuntiraText.Get("Assets_UnitAutocompleteTitle", CurrentOrganization.PreferredLanguage)"
+                             Hint="@RuntiraText.Get("Assets_ExplorerCompactHint", CurrentOrganization.PreferredLanguage)"
+                             HasItems="@(GetFilteredUnits().Count > 0)"
+                             EmptyTitle="@RuntiraText.Get("Assets_UnitNoMatchTitle", CurrentOrganization.PreferredLanguage)"
+                             EmptyMessage="@RuntiraText.Get("Assets_UnitNoMatchBody", CurrentOrganization.PreferredLanguage)"
+                             DetailEmptyTitle="@RuntiraText.Get("Explorer_SelectItemTitle", CurrentOrganization.PreferredLanguage)"
+                             DetailEmptyMessage="@RuntiraText.Get("Explorer_SelectItemBody", CurrentOrganization.PreferredLanguage)">
+                <MetaContent>
+                    <span>@RuntiraText.Format("Assets_UnitShowing", CurrentOrganization.PreferredLanguage, GetFilteredUnits().Count, _workspace.Units.Count)</span>
+                </MetaContent>
+                <AutocompleteContent>
+                    @foreach (var suggestion in GetUnitAutocompleteSuggestions().Select((unit, index) => new { Unit = unit, Index = index }))
+                    {
+                        <button type="button"
+                                class="@(suggestion.Index == _unitAutocompleteIndex ? "explorer-autocomplete-item active" : "explorer-autocomplete-item")"
+                                @onclick="() => SelectUnitFromAutocomplete(suggestion.Unit)">
+                            <strong>@suggestion.Unit.UnitCode</strong>
+                            <span>@suggestion.Unit.UnitType</span>
+                            <small>@suggestion.Unit.Status</small>
+                        </button>
+                    }
+                </AutocompleteContent>
+                <ListContent>
+                    @foreach (var unit in GetFilteredUnits())
+                    {
+                        <button type="button"
+                                class="@(IsSelectedUnit(unit.Id) ? "explorer-list-item selected" : "explorer-list-item")"
+                                @onclick="() => SelectUnit(unit.Id)">
+                            <strong>@unit.UnitCode</strong>
+                            <span>@unit.UnitType</span>
+                            <small>@unit.Status</small>
+                        </button>
+                    }
+                </ListContent>
+                <DetailContent>
+                    @if (HasSelectedUnit)
+                    {
+                        @RenderSelectedUnitDetail()
+                    }
+                </DetailContent>
+            </ExplorerSection>
 
             @if (_workspace.ContextData is not null)
             {
@@ -130,127 +112,105 @@
                                      SummaryItems="@GetAssetContextSummaryItems()" />
             }
 
-            <div class="localized-section">
-                <div class="prompt-title">@RuntiraText.Get("Assets_LeasesTitle", CurrentOrganization.PreferredLanguage)</div>
-                <ExplorerLayout>
-                    <SidebarContent>
-                        <ExplorerSearchBox Label="@RuntiraText.Get("Assets_LeaseSearchLabel", CurrentOrganization.PreferredLanguage)"
-                                           Placeholder="@RuntiraText.Get("Assets_LeaseSearchPlaceholder", CurrentOrganization.PreferredLanguage)"
-                                           Value="@_leaseSearchTerm"
-                                           OnInput="OnLeaseSearchChanged"
-                                           OnKeyDown="OnLeaseSearchKeyDown"
-                                           ShowAutocomplete="@ShouldShowLeaseAutocomplete()"
-                                           AutocompleteTitle="@RuntiraText.Get("Assets_LeaseAutocompleteTitle", CurrentOrganization.PreferredLanguage)">
-                            <MetaContent>
-                                <span>@RuntiraText.Format("Assets_LeaseShowing", CurrentOrganization.PreferredLanguage, GetFilteredLeases().Count, _workspace.Leases.Count)</span>
-                            </MetaContent>
-                            <AutocompleteContent>
-                                @foreach (var suggestion in GetLeaseAutocompleteSuggestions().Select((lease, index) => new { Lease = lease, Index = index }))
-                                {
-                                    <button type="button"
-                                            class="@(suggestion.Index == _leaseAutocompleteIndex ? "explorer-autocomplete-item active" : "explorer-autocomplete-item")"
-                                            @onclick="() => SelectLeaseFromAutocomplete(suggestion.Lease)">
-                                        <strong>@suggestion.Lease.UnitCode</strong>
-                                        <span>@suggestion.Lease.ResidentName · @suggestion.Lease.Status</span>
-                                        <small>@RuntiraText.Get("Assets_LeaseBilling", CurrentOrganization.PreferredLanguage) · @suggestion.Lease.BillingPeriod</small>
-                                    </button>
-                                }
-                            </AutocompleteContent>
-                        </ExplorerSearchBox>
+            <ExplorerSection Title="@RuntiraText.Get("Assets_LeasesTitle", CurrentOrganization.PreferredLanguage)"
+                             ShowSearch="true"
+                             SearchLabel="@RuntiraText.Get("Assets_LeaseSearchLabel", CurrentOrganization.PreferredLanguage)"
+                             SearchPlaceholder="@RuntiraText.Get("Assets_LeaseSearchPlaceholder", CurrentOrganization.PreferredLanguage)"
+                             SearchValue="@_leaseSearchTerm"
+                             OnSearchInput="OnLeaseSearchChanged"
+                             OnSearchKeyDown="OnLeaseSearchKeyDown"
+                             ShowAutocomplete="@ShouldShowLeaseAutocomplete()"
+                             AutocompleteTitle="@RuntiraText.Get("Assets_LeaseAutocompleteTitle", CurrentOrganization.PreferredLanguage)"
+                             Hint="@RuntiraText.Get("Assets_ExplorerCompactHint", CurrentOrganization.PreferredLanguage)"
+                             HasItems="@(GetFilteredLeases().Count > 0)"
+                             EmptyTitle="@RuntiraText.Get("Assets_LeaseNoMatchTitle", CurrentOrganization.PreferredLanguage)"
+                             EmptyMessage="@RuntiraText.Get("Assets_LeaseNoMatchBody", CurrentOrganization.PreferredLanguage)"
+                             DetailEmptyTitle="@RuntiraText.Get("Explorer_SelectItemTitle", CurrentOrganization.PreferredLanguage)"
+                             DetailEmptyMessage="@RuntiraText.Get("Explorer_SelectItemBody", CurrentOrganization.PreferredLanguage)">
+                <MetaContent>
+                    <span>@RuntiraText.Format("Assets_LeaseShowing", CurrentOrganization.PreferredLanguage, GetFilteredLeases().Count, _workspace.Leases.Count)</span>
+                </MetaContent>
+                <AutocompleteContent>
+                    @foreach (var suggestion in GetLeaseAutocompleteSuggestions().Select((lease, index) => new { Lease = lease, Index = index }))
+                    {
+                        <button type="button"
+                                class="@(suggestion.Index == _leaseAutocompleteIndex ? "explorer-autocomplete-item active" : "explorer-autocomplete-item")"
+                                @onclick="() => SelectLeaseFromAutocomplete(suggestion.Lease)">
+                            <strong>@suggestion.Lease.UnitCode</strong>
+                            <span>@suggestion.Lease.ResidentName</span>
+                            <small>@suggestion.Lease.Status</small>
+                        </button>
+                    }
+                </AutocompleteContent>
+                <ListContent>
+                    @foreach (var lease in GetFilteredLeases())
+                    {
+                        <button type="button"
+                                class="@(IsSelectedLease(lease.Id) ? "explorer-list-item selected" : "explorer-list-item")"
+                                @onclick="() => SelectLease(lease.Id)">
+                            <strong>@lease.UnitCode</strong>
+                            <span>@lease.ResidentName</span>
+                            <small>@lease.Status</small>
+                        </button>
+                    }
+                </ListContent>
+                <DetailContent>
+                    @if (HasSelectedLease)
+                    {
+                        @RenderSelectedLeaseDetail()
+                    }
+                </DetailContent>
+            </ExplorerSection>
 
-                        @if (GetFilteredLeases().Count == 0)
-                        {
-                            <PageEmptyState Title="@RuntiraText.Get("Assets_LeaseNoMatchTitle", CurrentOrganization.PreferredLanguage)"
-                                            Message="@RuntiraText.Get("Assets_LeaseNoMatchBody", CurrentOrganization.PreferredLanguage)" />
-                        }
-                        else
-                        {
-                            <ExplorerList>
-                                <ItemsContent>
-                                    @foreach (var lease in GetFilteredLeases())
-                                    {
-                                        <button type="button"
-                                                class="@(IsSelectedLease(lease.Id) ? "explorer-list-item selected" : "explorer-list-item")"
-                                                @onclick="() => SelectLease(lease.Id)">
-                                            <strong>@lease.UnitCode</strong>
-                                            <span>@lease.ResidentName</span>
-                                            <small>@lease.Status · @lease.BillingPeriod</small>
-                                        </button>
-                                    }
-                                </ItemsContent>
-                            </ExplorerList>
-                        }
-                    </SidebarContent>
-
-                    <DetailContent>
-                        @if (HasSelectedLease)
-                        {
-                            @RenderSelectedLeaseDetail()
-                        }
-                    </DetailContent>
-                </ExplorerLayout>
-            </div>
-
-            <div class="localized-section">
-                <div class="prompt-title">@RuntiraText.Get("Assets_ResidentsTitle", CurrentOrganization.PreferredLanguage)</div>
-                <ExplorerLayout>
-                    <SidebarContent>
-                        <ExplorerSearchBox Label="@RuntiraText.Get("Assets_ResidentSearchLabel", CurrentOrganization.PreferredLanguage)"
-                                           Placeholder="@RuntiraText.Get("Assets_ResidentSearchPlaceholder", CurrentOrganization.PreferredLanguage)"
-                                           Value="@_residentSearchTerm"
-                                           OnInput="OnResidentSearchChanged"
-                                           OnKeyDown="OnResidentSearchKeyDown"
-                                           ShowAutocomplete="@ShouldShowResidentAutocomplete()"
-                                           AutocompleteTitle="@RuntiraText.Get("Assets_ResidentAutocompleteTitle", CurrentOrganization.PreferredLanguage)">
-                            <MetaContent>
-                                <span>@RuntiraText.Format("Assets_ResidentShowing", CurrentOrganization.PreferredLanguage, GetFilteredResidents().Count, _workspace.Residents.Count)</span>
-                            </MetaContent>
-                            <AutocompleteContent>
-                                @foreach (var suggestion in GetResidentAutocompleteSuggestions().Select((resident, index) => new { Resident = resident, Index = index }))
-                                {
-                                    <button type="button"
-                                            class="@(suggestion.Index == _residentAutocompleteIndex ? "explorer-autocomplete-item active" : "explorer-autocomplete-item")"
-                                            @onclick="() => SelectResidentFromAutocomplete(suggestion.Resident)">
-                                        <strong>@suggestion.Resident.FullName</strong>
-                                        <span>@suggestion.Resident.Email</span>
-                                        <small>@suggestion.Resident.Status · @suggestion.Resident.PreferredLanguage</small>
-                                    </button>
-                                }
-                            </AutocompleteContent>
-                        </ExplorerSearchBox>
-
-                        @if (GetFilteredResidents().Count == 0)
-                        {
-                            <PageEmptyState Title="@RuntiraText.Get("Assets_ResidentNoMatchTitle", CurrentOrganization.PreferredLanguage)"
-                                            Message="@RuntiraText.Get("Assets_ResidentNoMatchBody", CurrentOrganization.PreferredLanguage)" />
-                        }
-                        else
-                        {
-                            <ExplorerList>
-                                <ItemsContent>
-                                    @foreach (var resident in GetFilteredResidents())
-                                    {
-                                        <button type="button"
-                                                class="@(IsSelectedResident(resident.Id) ? "explorer-list-item selected" : "explorer-list-item")"
-                                                @onclick="() => SelectResident(resident.Id)">
-                                            <strong>@resident.FullName</strong>
-                                            <span>@resident.Email</span>
-                                            <small>@resident.Status · @resident.PreferredLanguage</small>
-                                        </button>
-                                    }
-                                </ItemsContent>
-                            </ExplorerList>
-                        }
-                    </SidebarContent>
-
-                    <DetailContent>
-                        @if (HasSelectedResident)
-                        {
-                            @RenderSelectedResidentDetail()
-                        }
-                    </DetailContent>
-                </ExplorerLayout>
-            </div>
+            <ExplorerSection Title="@RuntiraText.Get("Assets_ResidentsTitle", CurrentOrganization.PreferredLanguage)"
+                             ShowSearch="true"
+                             SearchLabel="@RuntiraText.Get("Assets_ResidentSearchLabel", CurrentOrganization.PreferredLanguage)"
+                             SearchPlaceholder="@RuntiraText.Get("Assets_ResidentSearchPlaceholder", CurrentOrganization.PreferredLanguage)"
+                             SearchValue="@_residentSearchTerm"
+                             OnSearchInput="OnResidentSearchChanged"
+                             OnSearchKeyDown="OnResidentSearchKeyDown"
+                             ShowAutocomplete="@ShouldShowResidentAutocomplete()"
+                             AutocompleteTitle="@RuntiraText.Get("Assets_ResidentAutocompleteTitle", CurrentOrganization.PreferredLanguage)"
+                             Hint="@RuntiraText.Get("Assets_ExplorerCompactHint", CurrentOrganization.PreferredLanguage)"
+                             HasItems="@(GetFilteredResidents().Count > 0)"
+                             EmptyTitle="@RuntiraText.Get("Assets_ResidentNoMatchTitle", CurrentOrganization.PreferredLanguage)"
+                             EmptyMessage="@RuntiraText.Get("Assets_ResidentNoMatchBody", CurrentOrganization.PreferredLanguage)"
+                             DetailEmptyTitle="@RuntiraText.Get("Explorer_SelectItemTitle", CurrentOrganization.PreferredLanguage)"
+                             DetailEmptyMessage="@RuntiraText.Get("Explorer_SelectItemBody", CurrentOrganization.PreferredLanguage)">
+                <MetaContent>
+                    <span>@RuntiraText.Format("Assets_ResidentShowing", CurrentOrganization.PreferredLanguage, GetFilteredResidents().Count, _workspace.Residents.Count)</span>
+                </MetaContent>
+                <AutocompleteContent>
+                    @foreach (var suggestion in GetResidentAutocompleteSuggestions().Select((resident, index) => new { Resident = resident, Index = index }))
+                    {
+                        <button type="button"
+                                class="@(suggestion.Index == _residentAutocompleteIndex ? "explorer-autocomplete-item active" : "explorer-autocomplete-item")"
+                                @onclick="() => SelectResidentFromAutocomplete(suggestion.Resident)">
+                            <strong>@suggestion.Resident.FullName</strong>
+                            <span>@suggestion.Resident.Email</span>
+                            <small>@suggestion.Resident.Status</small>
+                        </button>
+                    }
+                </AutocompleteContent>
+                <ListContent>
+                    @foreach (var resident in GetFilteredResidents())
+                    {
+                        <button type="button"
+                                class="@(IsSelectedResident(resident.Id) ? "explorer-list-item selected" : "explorer-list-item")"
+                                @onclick="() => SelectResident(resident.Id)">
+                            <strong>@resident.FullName</strong>
+                            <span>@resident.Email</span>
+                            <small>@resident.Status</small>
+                        </button>
+                    }
+                </ListContent>
+                <DetailContent>
+                    @if (HasSelectedResident)
+                    {
+                        @RenderSelectedResidentDetail()
+                    }
+                </DetailContent>
+            </ExplorerSection>
         }
         else
         {
@@ -360,6 +320,7 @@
     <div>
         <span>{RuntiraText.Get("Assets_UnitDetailsTitle", CurrentOrganization.PreferredLanguage)}</span>
         <strong>{unit.UnitCode}</strong>
+        <p class=""detail-helper-copy"">{RuntiraText.Get("Assets_DetailPanelHint", CurrentOrganization.PreferredLanguage)}</p>
     </div>
 </div>
 <div class=""tenant-summary unit-detail-summary"">
@@ -413,6 +374,7 @@
     <div>
         <span>{RuntiraText.Get("Assets_LeaseDetailsTitle", CurrentOrganization.PreferredLanguage)}</span>
         <strong>{lease.UnitCode}</strong>
+        <p class=""detail-helper-copy"">{RuntiraText.Get("Assets_DetailPanelHint", CurrentOrganization.PreferredLanguage)}</p>
     </div>
 </div>
 <div class=""tenant-summary unit-detail-summary"">
@@ -462,6 +424,7 @@
     <div>
         <span>{RuntiraText.Get("Assets_ResidentDetailsTitle", CurrentOrganization.PreferredLanguage)}</span>
         <strong>{resident.FullName}</strong>
+        <p class=""detail-helper-copy"">{RuntiraText.Get("Assets_DetailPanelHint", CurrentOrganization.PreferredLanguage)}</p>
     </div>
 </div>
 <div class=""tenant-summary unit-detail-summary"">
@@ -519,9 +482,9 @@
         try
         {
             _workspace = await WorkspaceService.GetAssetWorkspaceAsync();
-            _selectedUnitId = _workspace?.Units.FirstOrDefault()?.Id;
-            _selectedLeaseId = _workspace?.Leases.FirstOrDefault()?.Id;
-            _selectedResidentId = _workspace?.Residents.FirstOrDefault()?.Id;
+            _selectedUnitId = null;
+            _selectedLeaseId = null;
+            _selectedResidentId = null;
         }
         finally
         {
@@ -573,7 +536,7 @@
     private void OnUnitSearchChanged(ChangeEventArgs args)
     {
         _unitSearchTerm = args.Value?.ToString()?.Trim() ?? string.Empty;
-        _selectedUnitId = GetFilteredUnits().FirstOrDefault()?.Id;
+            _selectedUnitId = null;
         _unitAutocompleteIndex = GetUnitAutocompleteSuggestions().Count > 0 ? 0 : -1;
     }
 
@@ -621,7 +584,7 @@
     private RuntiraUnitSummaryDto? GetSelectedUnit()
     {
         var filteredUnits = GetFilteredUnits();
-        return filteredUnits.FirstOrDefault(x => x.Id == _selectedUnitId) ?? filteredUnits.FirstOrDefault();
+        return filteredUnits.FirstOrDefault(x => x.Id == _selectedUnitId);
     }
 
     private RuntiraLeaseSummaryDto? GetLeaseForUnit(RuntiraUnitSummaryDto unit)
@@ -657,7 +620,7 @@
     private void OnLeaseSearchChanged(ChangeEventArgs args)
     {
         _leaseSearchTerm = args.Value?.ToString()?.Trim() ?? string.Empty;
-        _selectedLeaseId = GetFilteredLeases().FirstOrDefault()?.Id;
+            _selectedLeaseId = null;
         _leaseAutocompleteIndex = GetLeaseAutocompleteSuggestions().Count > 0 ? 0 : -1;
     }
 
@@ -710,7 +673,7 @@
     private RuntiraLeaseSummaryDto? GetSelectedLease()
     {
         var filteredLeases = GetFilteredLeases();
-        return filteredLeases.FirstOrDefault(x => x.Id == _selectedLeaseId) ?? filteredLeases.FirstOrDefault();
+        return filteredLeases.FirstOrDefault(x => x.Id == _selectedLeaseId);
     }
 
     private int GetSelectedLeaseIndex(Guid leaseId)
@@ -751,7 +714,7 @@
     private void OnResidentSearchChanged(ChangeEventArgs args)
     {
         _residentSearchTerm = args.Value?.ToString()?.Trim() ?? string.Empty;
-        _selectedResidentId = GetFilteredResidents().FirstOrDefault()?.Id;
+            _selectedResidentId = null;
         _residentAutocompleteIndex = GetResidentAutocompleteSuggestions().Count > 0 ? 0 : -1;
     }
 
@@ -804,7 +767,7 @@
     private RuntiraResidentSummaryDto? GetSelectedResident()
     {
         var filteredResidents = GetFilteredResidents();
-        return filteredResidents.FirstOrDefault(x => x.Id == _selectedResidentId) ?? filteredResidents.FirstOrDefault();
+        return filteredResidents.FirstOrDefault(x => x.Id == _selectedResidentId);
     }
 
     private int GetSelectedResidentIndex(Guid residentId)
@@ -894,9 +857,20 @@
             };
 
             _workspace = await WorkspaceService.GetAssetWorkspaceAsync();
-            _selectedUnitId ??= _workspace?.Units.FirstOrDefault()?.Id;
-            _selectedLeaseId ??= _workspace?.Leases.FirstOrDefault()?.Id;
-            _selectedResidentId ??= _workspace?.Residents.FirstOrDefault()?.Id;
+            if (_workspace?.Units.All(x => x.Id != _selectedUnitId) != false)
+            {
+                _selectedUnitId = null;
+            }
+
+            if (_workspace?.Leases.All(x => x.Id != _selectedLeaseId) != false)
+            {
+                _selectedLeaseId = null;
+            }
+
+            if (_workspace?.Residents.All(x => x.Id != _selectedResidentId) != false)
+            {
+                _selectedResidentId = null;
+            }
         }
         finally
         {
@@ -925,9 +899,20 @@
             };
 
             _workspace = await WorkspaceService.GetAssetWorkspaceAsync();
-            _selectedUnitId ??= _workspace?.Units.FirstOrDefault()?.Id;
-            _selectedLeaseId ??= _workspace?.Leases.FirstOrDefault()?.Id;
-            _selectedResidentId ??= _workspace?.Residents.FirstOrDefault()?.Id;
+            if (_workspace?.Units.All(x => x.Id != _selectedUnitId) != false)
+            {
+                _selectedUnitId = null;
+            }
+
+            if (_workspace?.Leases.All(x => x.Id != _selectedLeaseId) != false)
+            {
+                _selectedLeaseId = null;
+            }
+
+            if (_workspace?.Residents.All(x => x.Id != _selectedResidentId) != false)
+            {
+                _selectedResidentId = null;
+            }
         }
         finally
         {
@@ -956,9 +941,20 @@
             };
 
             _workspace = await WorkspaceService.GetAssetWorkspaceAsync();
-            _selectedUnitId ??= _workspace?.Units.FirstOrDefault()?.Id;
-            _selectedLeaseId ??= _workspace?.Leases.FirstOrDefault()?.Id;
-            _selectedResidentId ??= _workspace?.Residents.FirstOrDefault()?.Id;
+            if (_workspace?.Units.All(x => x.Id != _selectedUnitId) != false)
+            {
+                _selectedUnitId = null;
+            }
+
+            if (_workspace?.Leases.All(x => x.Id != _selectedLeaseId) != false)
+            {
+                _selectedLeaseId = null;
+            }
+
+            if (_workspace?.Residents.All(x => x.Id != _selectedResidentId) != false)
+            {
+                _selectedResidentId = null;
+            }
         }
         finally
         {

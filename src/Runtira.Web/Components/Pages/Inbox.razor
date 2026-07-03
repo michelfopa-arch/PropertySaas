@@ -33,20 +33,71 @@
                 </div>
             </div>
 
-            <div class="stats-grid">
-                @foreach (var message in _messages)
-                {
-                    <div class="stat-card">
-                        <span>@RuntiraText.Get("Inbox_Table_From", CurrentOrganization.PreferredLanguage)</span>
-                        <strong>@message.FromEmail</strong>
-                        <span>@RuntiraText.Get("Inbox_Table_Subject", CurrentOrganization.PreferredLanguage) · @message.Subject</span>
-                        <span>@RuntiraText.Get("Inbox_Table_Category", CurrentOrganization.PreferredLanguage) · @message.Category</span>
-                        <span>@RuntiraText.Get("Inbox_Table_Status", CurrentOrganization.PreferredLanguage) · @message.Status</span>
-                        <span>@RuntiraText.Get("Inbox_Table_Received", CurrentOrganization.PreferredLanguage) · @message.ReceivedUtc.ToString("yyyy-MM-dd HH:mm")</span>
-                        <p class="hero-copy">@message.PreviewText</p>
-                    </div>
-                }
-            </div>
+            <ExplorerSection Title="@RuntiraText.Get("Inbox_WorkspaceTitle", CurrentOrganization.PreferredLanguage)"
+                             Hint="@RuntiraText.Get("Inbox_ListHint", CurrentOrganization.PreferredLanguage)"
+                             HasItems="@(_messages.Count > 0)"
+                             EmptyTitle="@RuntiraText.Get("Inbox_EmptyTitle", CurrentOrganization.PreferredLanguage)"
+                             EmptyMessage="@RuntiraText.Get("Inbox_EmptyBody", CurrentOrganization.PreferredLanguage)"
+                             DetailEmptyTitle="@RuntiraText.Get("Inbox_DetailEmptyTitle", CurrentOrganization.PreferredLanguage)"
+                             DetailEmptyMessage="@RuntiraText.Get("Inbox_DetailEmptyBody", CurrentOrganization.PreferredLanguage)">
+                <ListContent>
+                    @foreach (var message in _messages)
+                    {
+                        <button type="button"
+                                class="@(IsSelectedMessage(message.Id) ? "explorer-list-item selected" : "explorer-list-item")"
+                                @onclick="() => SelectMessage(message.Id)">
+                            <strong>@message.FromEmail</strong>
+                            <span>@message.Subject</span>
+                            <small>@message.Status</small>
+                        </button>
+                    }
+                </ListContent>
+                <DetailContent>
+                    @if (SelectedMessage is not null)
+                    {
+                        <div class="explorer-detail-stack">
+                            <div class="stat-card unit-detail-card">
+                                <div class="card-header-inline">
+                                    <div>
+                                        <span>@RuntiraText.Get("Inbox_DetailTitle", CurrentOrganization.PreferredLanguage)</span>
+                                        <strong>@SelectedMessage.Subject</strong>
+                                        <p class="detail-helper-copy">@RuntiraText.Get("Assets_DetailPanelHint", CurrentOrganization.PreferredLanguage)</p>
+                                    </div>
+                                </div>
+
+                                <div class="tenant-summary unit-detail-summary">
+                                    <div>
+                                        <span class="summary-label">@RuntiraText.Get("Inbox_Table_From", CurrentOrganization.PreferredLanguage)</span>
+                                        <strong>@SelectedMessage.FromEmail</strong>
+                                    </div>
+                                    <div>
+                                        <span class="summary-label">@RuntiraText.Get("Inbox_Table_Category", CurrentOrganization.PreferredLanguage)</span>
+                                        <strong>@SelectedMessage.Category</strong>
+                                    </div>
+                                    <div>
+                                        <span class="summary-label">@RuntiraText.Get("Inbox_Table_Status", CurrentOrganization.PreferredLanguage)</span>
+                                        <strong>@SelectedMessage.Status</strong>
+                                    </div>
+                                    <div>
+                                        <span class="summary-label">@RuntiraText.Get("Inbox_Table_Received", CurrentOrganization.PreferredLanguage)</span>
+                                        <strong>@SelectedMessage.ReceivedUtc.ToString("yyyy-MM-dd HH:mm")</strong>
+                                    </div>
+                                </div>
+
+                                @if (SelectedMessage.HasAttachments)
+                                {
+                                    <div class="detail-kpi">@RuntiraText.Get("Inbox_Summary_Attachments", CurrentOrganization.PreferredLanguage)</div>
+                                }
+
+                                <div class="draft-box">
+                                    <strong>@RuntiraText.Get("Inbox_DetailPreviewTitle", CurrentOrganization.PreferredLanguage)</strong>
+                                    <p class="detail-summary-copy">@SelectedMessage.PreviewText</p>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </DetailContent>
+            </ExplorerSection>
         }
         else
         {
@@ -76,6 +127,9 @@
 
     private IReadOnlyList<RuntiraInboxMessageDto> _messages = Array.Empty<RuntiraInboxMessageDto>();
     private bool _hasInitialized;
+    private Guid? _selectedMessageId;
+
+    private RuntiraInboxMessageDto? SelectedMessage => _messages.FirstOrDefault(x => x.Id == _selectedMessageId);
 
     protected override async Task OnInitializedAsync()
     {
@@ -88,4 +142,10 @@
 
         _messages = await WorkspaceService.GetInboxAsync();
     }
+
+    private void SelectMessage(Guid messageId)
+        => _selectedMessageId = messageId;
+
+    private bool IsSelectedMessage(Guid messageId)
+        => _selectedMessageId == messageId;
 }

@@ -43,18 +43,72 @@
                 </Actions>
             </SectionToolbar>
 
-            <div class="stats-grid">
-                @foreach (var option in _workspace.Options)
-                {
-                    <div class="stat-card list-card">
-                        <span>@RuntiraText.Get("Exports_Format", CurrentOrganization.PreferredLanguage)</span>
-                        <strong>@option.Format</strong>
-                        <span>@RuntiraText.Get("Exports_Audience", CurrentOrganization.PreferredLanguage) · @option.Audience</span>
-                        <span>@RuntiraText.Get("Exports_Status", CurrentOrganization.PreferredLanguage) · @option.Status</span>
-                        <p class="hero-copy">@option.Summary</p>
-                    </div>
-                }
-            </div>
+            <ExplorerSection Title="@RuntiraText.Get("Exports_WorkspaceTitle", CurrentOrganization.PreferredLanguage)"
+                             Hint="@RuntiraText.Get("Exports_ListHint", CurrentOrganization.PreferredLanguage)"
+                             HasItems="@(_workspace.Options.Count > 0)"
+                             EmptyTitle="@RuntiraText.Get("Exports_DetailEmptyTitle", CurrentOrganization.PreferredLanguage)"
+                             EmptyMessage="@RuntiraText.Get("Exports_DetailEmptyBody", CurrentOrganization.PreferredLanguage)"
+                             DetailEmptyTitle="@RuntiraText.Get("Exports_DetailEmptyTitle", CurrentOrganization.PreferredLanguage)"
+                             DetailEmptyMessage="@RuntiraText.Get("Exports_DetailEmptyBody", CurrentOrganization.PreferredLanguage)">
+                <ListContent>
+                    @foreach (var option in _workspace.Options)
+                    {
+                        <button type="button"
+                                class="@(IsSelectedExport(option.Format) ? "explorer-list-item selected" : "explorer-list-item")"
+                                @onclick="() => SelectExport(option.Format)">
+                            <strong>@option.Format</strong>
+                            <span>@option.Audience</span>
+                            <small>@option.Status</small>
+                        </button>
+                    }
+                </ListContent>
+                <DetailContent>
+                    @if (SelectedExport is not null)
+                    {
+                        <div class="explorer-detail-stack">
+                            <div class="stat-card unit-detail-card">
+                                <div class="card-header-inline">
+                                    <div>
+                                        <span>@RuntiraText.Get("Exports_DetailTitle", CurrentOrganization.PreferredLanguage)</span>
+                                        <strong>@SelectedExport.Format</strong>
+                                        <p class="detail-helper-copy">@RuntiraText.Get("Assets_DetailPanelHint", CurrentOrganization.PreferredLanguage)</p>
+                                    </div>
+                                </div>
+
+                                <div class="tenant-summary unit-detail-summary">
+                                    <div>
+                                        <span class="summary-label">@RuntiraText.Get("Exports_Audience", CurrentOrganization.PreferredLanguage)</span>
+                                        <strong>@SelectedExport.Audience</strong>
+                                    </div>
+                                    <div>
+                                        <span class="summary-label">@RuntiraText.Get("Exports_Status", CurrentOrganization.PreferredLanguage)</span>
+                                        <strong>@SelectedExport.Status</strong>
+                                    </div>
+                                    <div>
+                                        <span class="summary-label">@RuntiraText.Get("Imports_Summary_Region", CurrentOrganization.PreferredLanguage)</span>
+                                        <strong>@_workspace.ActiveRegion</strong>
+                                    </div>
+                                    <div>
+                                        <span class="summary-label">@RuntiraText.Get("Imports_Summary_Language", CurrentOrganization.PreferredLanguage)</span>
+                                        <strong>@_workspace.ActiveLanguage</strong>
+                                    </div>
+                                </div>
+
+                                <div class="draft-box">
+                                    <strong>@RuntiraText.Get("Exports_DetailDeliveryTitle", CurrentOrganization.PreferredLanguage)</strong>
+                                    <p class="detail-summary-copy">@SelectedExport.Summary</p>
+                                    <div class="option-list">
+                                        @foreach (var destination in _workspace.SupportedDestinations)
+                                        {
+                                            <span class="option-pill">@destination</span>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </DetailContent>
+            </ExplorerSection>
         }
     </section>
 
@@ -104,6 +158,9 @@
     private RuntiraExportWorkspaceDto? _workspace;
     private bool _isLoading = true;
     private bool _hasInitialized;
+    private string? _selectedExportFormat;
+
+    private RuntiraExportOptionDto? SelectedExport => _workspace?.Options.FirstOrDefault(x => string.Equals(x.Format, _selectedExportFormat, StringComparison.OrdinalIgnoreCase));
 
     protected override async Task OnInitializedAsync()
     {
@@ -123,4 +180,10 @@
             _isLoading = false;
         }
     }
+
+    private void SelectExport(string format)
+        => _selectedExportFormat = format;
+
+    private bool IsSelectedExport(string format)
+        => string.Equals(_selectedExportFormat, format, StringComparison.OrdinalIgnoreCase);
 }

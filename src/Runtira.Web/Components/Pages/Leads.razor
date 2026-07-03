@@ -42,42 +42,86 @@
                 </div>
             </div>
 
-            <div class="stats-grid">
-                @foreach (var lead in _leads)
-                {
-                    <div class="stat-card">
-                        <div class="card-header-inline">
-                            <div>
-                                <span>@RuntiraText.Get("Leads_Table_Name", CurrentOrganization.PreferredLanguage)</span>
-                                <strong>@lead.FullName</strong>
+            <ExplorerSection Title="@RuntiraText.Get("Nav_Leads", CurrentOrganization.PreferredLanguage)"
+                             Hint="@RuntiraText.Get("Leads_ListHint", CurrentOrganization.PreferredLanguage)"
+                             HasItems="@(_leads.Count > 0)"
+                             EmptyTitle="@RuntiraText.Get("Leads_EmptyTitle", CurrentOrganization.PreferredLanguage)"
+                             EmptyMessage="@RuntiraText.Get("Leads_EmptyBody", CurrentOrganization.PreferredLanguage)"
+                             DetailEmptyTitle="@RuntiraText.Get("Leads_DetailEmptyTitle", CurrentOrganization.PreferredLanguage)"
+                             DetailEmptyMessage="@RuntiraText.Get("Leads_DetailEmptyBody", CurrentOrganization.PreferredLanguage)">
+                <ListContent>
+                    @foreach (var lead in _leads)
+                    {
+                        <button type="button"
+                                class="@(IsSelectedLead(lead.Id) ? "explorer-list-item selected" : "explorer-list-item")"
+                                @onclick="() => SelectLead(lead.Id)">
+                            <strong>@lead.FullName</strong>
+                            <span>@lead.Source</span>
+                            <small>@lead.Status</small>
+                        </button>
+                    }
+                </ListContent>
+                <DetailContent>
+                    @if (SelectedLead is not null)
+                    {
+                        <div class="explorer-detail-stack">
+                            <div class="stat-card unit-detail-card">
+                                <div class="card-header-inline">
+                                    <div>
+                                        <span>@RuntiraText.Get("Leads_DetailTitle", CurrentOrganization.PreferredLanguage)</span>
+                                        <strong>@SelectedLead.FullName</strong>
+                                        <p class="detail-helper-copy">@RuntiraText.Get("Assets_DetailPanelHint", CurrentOrganization.PreferredLanguage)</p>
+                                    </div>
+
+                                    @if (CurrentOrganization.CanManageData)
+                                    {
+                                        <StandardActionMenu MenuLabel="@RuntiraText.Get("Common_Actions", CurrentOrganization.PreferredLanguage)"
+                                                            Title="@SelectedLead.FullName"
+                                                            Items="@GetLeadActionItems(SelectedLead)"
+                                                            IsBusy="@IsBusy"
+                                                            OnAction='@((action) => HandleLeadActionAsync(SelectedLead.Id, action))' />
+                                    }
+                                </div>
+
+                                <div class="tenant-summary unit-detail-summary">
+                                    <div>
+                                        <span class="summary-label">@RuntiraText.Get("Leads_Table_Status", CurrentOrganization.PreferredLanguage)</span>
+                                        <strong>@SelectedLead.Status</strong>
+                                    </div>
+                                    <div>
+                                        <span class="summary-label">@RuntiraText.Get("Leads_Table_Source", CurrentOrganization.PreferredLanguage)</span>
+                                        <strong>@SelectedLead.Source</strong>
+                                    </div>
+                                    <div>
+                                        <span class="summary-label">@RuntiraText.Get("Leads_Table_Asset", CurrentOrganization.PreferredLanguage)</span>
+                                        <strong>@(string.IsNullOrWhiteSpace(SelectedLead.AssetName) ? "—" : SelectedLead.AssetName)</strong>
+                                    </div>
+                                    <div>
+                                        <span class="summary-label">@RuntiraText.Get("Leads_Table_Language", CurrentOrganization.PreferredLanguage)</span>
+                                        <strong>@SelectedLead.PreferredLanguage</strong>
+                                    </div>
+                                    <div>
+                                        <span class="summary-label">@RuntiraText.Get("Leads_Table_Score", CurrentOrganization.PreferredLanguage)</span>
+                                        <strong>@SelectedLead.QualificationScore</strong>
+                                    </div>
+                                </div>
+
+                                <div class="draft-box">
+                                    <strong>@RuntiraText.Get("Leads_DetailSupportTitle", CurrentOrganization.PreferredLanguage)</strong>
+                                    <p class="detail-summary-copy">@SelectedLead.Summary</p>
+                                </div>
                             </div>
 
-                            @if (CurrentOrganization.CanManageData)
+                            @if (SelectedLead.ContextData is not null)
                             {
-                                <StandardActionMenu MenuLabel="@RuntiraText.Get("Common_Actions", CurrentOrganization.PreferredLanguage)"
-                                                    Title="@lead.FullName"
-                                                    Items="@GetLeadActionItems(lead)"
-                                                    IsBusy="@IsBusy"
-                                                    OnAction='@((action) => HandleLeadActionAsync(lead.Id, action))' />
+                                <FlexibleContextCard Title="@RuntiraText.Get("Leads_ContextTitle", CurrentOrganization.PreferredLanguage)"
+                                                     SummaryItems="@GetLeadContextSummaryItems(SelectedLead)"
+                                                     Fields="@SelectedLead.ContextData.Fields" />
                             }
                         </div>
-
-                        <span>@RuntiraText.Get("Leads_Table_Status", CurrentOrganization.PreferredLanguage) · @lead.Status</span>
-                        <span>@RuntiraText.Get("Leads_Table_Source", CurrentOrganization.PreferredLanguage) · @lead.Source</span>
-                        <span>@RuntiraText.Get("Leads_Table_Asset", CurrentOrganization.PreferredLanguage) · @(string.IsNullOrWhiteSpace(lead.AssetName) ? "—" : lead.AssetName)</span>
-                        <span>@RuntiraText.Get("Leads_Table_Language", CurrentOrganization.PreferredLanguage) · @lead.PreferredLanguage</span>
-                        <span>@RuntiraText.Get("Leads_Table_Score", CurrentOrganization.PreferredLanguage) · @lead.QualificationScore</span>
-                        <p class="hero-copy">@lead.Summary</p>
-
-                        @if (lead.ContextData is not null)
-                        {
-                            <FlexibleContextCard Title="@RuntiraText.Get("Leads_ContextTitle", CurrentOrganization.PreferredLanguage)"
-                                                 SummaryItems="@GetLeadContextSummaryItems(lead)"
-                                                 Fields="@lead.ContextData.Fields" />
-                        }
-                    </div>
-                }
-            </div>
+                    }
+                </DetailContent>
+            </ExplorerSection>
         }
         else
         {
@@ -278,8 +322,10 @@
     private bool _isSubmittingCreateLead;
     private bool _isSubmittingConversion;
     private bool _isSubmittingLeadAction;
+    private Guid? _selectedLeadId;
 
     private bool IsBusy => _isLoading || _isSubmittingCreateLead || _isSubmittingConversion || _isSubmittingLeadAction;
+    private RuntiraLeadSummaryDto? SelectedLead => _leads.FirstOrDefault(x => x.Id == _selectedLeadId);
 
     protected override async Task OnInitializedAsync()
     {
@@ -299,6 +345,12 @@
             .OrderByDescending(x => x.Count())
             .Select(x => x.Key)
             .FirstOrDefault() ?? "—";
+
+    private void SelectLead(Guid leadId)
+        => _selectedLeadId = leadId;
+
+    private bool IsSelectedLead(Guid leadId)
+        => _selectedLeadId == leadId;
 
     private IReadOnlyList<FlexibleContextSummaryItem> GetLeadContextSummaryItems(RuntiraLeadSummaryDto lead)
         => lead.ContextData is null

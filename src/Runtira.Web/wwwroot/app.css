@@ -426,6 +426,11 @@ h1:focus {
     text-align: left;
 }
 
+.explorer-list-item strong {
+    margin: 0;
+    font-size: 1rem;
+}
+
 .explorer-list-item span,
 .explorer-list-item small {
     color: #94a3b8;
@@ -436,12 +441,47 @@ h1:focus {
     background: linear-gradient(180deg, rgba(37, 99, 235, 0.14), rgba(255, 255, 255, 0.04));
 }
 
+.explorer-detail-empty {
+    min-height: 18rem;
+    display: grid;
+    align-content: center;
+}
+
+.explorer-detail-stack {
+    display: grid;
+    gap: 1rem;
+}
+
+.detail-summary-copy {
+    margin: 0.75rem 0 0;
+    color: #cbd5e1;
+    white-space: pre-wrap;
+}
+
+.detail-kpi {
+    display: inline-flex;
+    align-items: center;
+    width: fit-content;
+    padding: 0.4rem 0.7rem;
+    border-radius: 999px;
+    background: rgba(37, 99, 235, 0.16);
+    color: #bfdbfe;
+    border: 1px solid rgba(96, 165, 250, 0.22);
+}
+
 .unit-detail-card {
     min-height: 100%;
 }
 
 .unit-detail-summary {
     margin-top: 1rem;
+}
+
+.detail-helper-copy {
+    margin: 0.35rem 0 0;
+    color: #94a3b8;
+    font-size: 0.92rem;
+    max-width: 48ch;
 }
 
 .tenant-links {
