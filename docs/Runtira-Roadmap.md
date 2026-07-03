@@ -16,6 +16,43 @@ Runtira se vend comme :
 
 > Un workspace AI-first multi-tenant pour gérer leads, emails, imports documentaires et facturation, avec adaptation automatique par juridiction, langue et marché.
 
+## Décision produit
+Runtira n’est pas conçu comme un PMS traditionnel complet au départ.
+
+Le produit doit se positionner comme un **AI operations layer** verticalisé pour les opérations locatives et administratives, avec trois promesses fortes :
+- ingestion intelligente des entrées : emails, leads, imports, documents
+- exécution guidée par règles locales : juridictions, langue, conformité, facturation
+- production rapide des sorties : facture, réponse, archive, action recommandée
+
+L’objectif commercial est d’être plus rapide à adopter et plus différenciant qu’un outil immobilier classique trop lourd ou trop comptable.
+
+## Segment cible
+Priorité commerciale initiale :
+- property managers small et mid-market
+- propriétaires multi-biens
+- petites équipes operations / administration
+- structures qui gèrent beaucoup d’emails, documents, factures et règles locales
+
+Ne pas viser l’enterprise lourd au départ.
+
+## Démonstration commerciale cible
+La démo vendable doit tenir en moins de 5 minutes :
+1. un email, un lead ou un document entre
+2. l’IA classe et structure l’information
+3. le système propose l’action suivante
+4. une facture, une réponse ou une archive est produite
+5. le tout respecte la juridiction active et la langue du marché
+
+## KPI produit à suivre
+- organisations actives
+- leads créés ou importés
+- emails classés
+- imports traités
+- factures générées
+- temps moyen jusqu’à la première action utile
+- taux d’usage des suggestions IA
+- conversion trial vers abonnement
+
 ## Principes produit
 - Multi-tenant par organisation avec URL `/{tenantSlug}`
 - Expérience AI-first, simple, guidée, orientée questions/réponses
@@ -24,6 +61,7 @@ Runtira se vend comme :
 - Providers alignés sur la configuration Runtira active et réutilisables selon l’environnement
 - Archivage JSON local compatible Azure Blob
 - Extensibilité future par configuration plutôt que par code dur
+- Déploiement Azure visé dès le MVP avec configuration cloud-native simple
 
 ## MVP vendable recommandé
 Le MVP doit inclure :
@@ -40,6 +78,7 @@ Le MVP doit inclure :
 - connexion Microsoft 365
 - lecture des emails
 - classement IA des emails
+- Microsoft 365 mocké au départ tant que le compte n’est pas disponible
 - import IA Excel / CSV / texte / PDF / documents
 - validation utilisateur avant enregistrement
 - archive JSON par tenant, prête pour Azure Blob
@@ -132,6 +171,51 @@ Le MVP doit inclure :
 - abstraction d’archive locale prête pour Azure Blob
 - modèle de données extensible pour nouveaux pays/langues
 
+## Modèle métier recommandé
+### Contexte SaaS
+- `RuntiraOrganization`
+- `RuntiraUser`
+- `RuntiraMembership`
+
+### Opérations immobilières
+- `PropertyAsset`
+- `Unit`
+- `Lease`
+- `Resident`
+- `Lead`
+- `InvoiceDraft`
+- `InvoiceRecord`
+
+### Communication
+- `InboxMessage`
+- `ConversationThread`
+- `AttachmentRecord`
+
+### Conformité et configuration
+- `JurisdictionProfile`
+- `JurisdictionRuleSet`
+- `LocalizedTemplate`
+
+Décision de vocabulaire :
+- `Organization` pour le tenant SaaS
+- `Resident` ou `Occupant` pour le locataire immobilier
+- éviter d’utiliser `Tenant` pour les deux contextes
+
+## Cible Azure MVP
+Pour avoir quelque chose de fonctionnel sur Azure en 3 semaines, viser une architecture simple :
+- hébergement de `Runtira.Web` sur Azure App Service
+- base SQL sur Azure SQL
+- archivage JSON sur Azure Blob Storage
+- secrets et configuration sensibles dans Azure Key Vault à terme
+- identité applicative Azure via Managed Identity quand l’hébergement Azure sera activé
+- logs applicatifs exploitables et diagnostics minimum dès le MVP
+
+Microsoft 365 peut rester mocké au départ :
+- service d’inbox mocké
+- emails de démonstration seedés ou simulés
+- pipeline de classement IA branché sur ces mocks
+- remplacement ultérieur par Microsoft Graph sans casser l’UI ni le domaine
+
 ## Roadmap 3 semaines
 
 ### Semaine 1 — Stabilisation et socle
@@ -154,9 +238,13 @@ Objectif : rendre la plateforme fiable et cohérente.
   - portail
   - webhook
 - stabiliser la configuration
-	- secrets/config centralisés pour Runtira
+  - secrets/config centralisés pour Runtira
   - même port local
   - retrait des secrets versionnés
+- préparer Azure MVP
+  - choix App Service + Azure SQL + Blob
+  - vérifier que la configuration est compatible cloud
+  - préparer les variables d’environnement nécessaires
 - stabiliser la base Runtira
   - migrations
   - seed
@@ -172,6 +260,7 @@ Livrables :
 - environnement local propre
 - build propre
 - checklist technique MVP
+- configuration prête pour premier déploiement Azure
 
 ### Semaine 2 — MVP produit vendable
 Objectif : livrer le coeur utilisable.
@@ -190,18 +279,21 @@ Objectif : livrer le coeur utilisable.
   - CSV
   - texte
   - PDF
-- ajouter la connexion Microsoft 365
-- lire les emails du support
-- classifier les emails par IA
+- ajouter le service inbox mocké
+- fournir des emails mockés dans le workspace
+- classifier les emails mockés par IA
 - rattacher emails/imports/leads au tenant
 - continuer la localisation FR / EN / ES
+- préparer le stockage Azure Blob pour les archives JSON
+- tester le comportement applicatif avec configuration cloud
 
 Livrables :
 - MVP navigable de bout en bout
 - leads utilisables
 - import IA utilisable
-- emails Microsoft 365 ingérés
+- emails mockés ingérés et classés
 - facturation principale utilisable
+- archive Blob-ready validée
 
 ### Semaine 3 — Qualité, conformité et préparation vente
 Objectif : rendre le produit présentable, extensible et prêt démo.
@@ -222,22 +314,29 @@ Objectif : rendre le produit présentable, extensible et prêt démo.
   - billing
 - nettoyer UX/UI
 - préparer le déploiement Azure
+  - config App Service
+  - config Azure SQL
+  - config Blob
+  - secrets d’environnement
+  - smoke test post-déploiement
 - préparer la documentation d’exploitation
 - documenter le modèle d’ajout d’un nouveau pays / langue / juridiction
+- documenter le remplacement futur des mocks Microsoft 365 par Microsoft Graph
 
 Livrables :
 - MVP prêt démo
 - produit vendable V1
 - base extensible pour nouveaux marchés
 - backlog V2 clair
+- application fonctionnelle sur Azure avec inbox mockée
 
 ## Priorités absolues MVP
 1. Auth Clerk
 2. Multi-tenant par slug
 3. Stripe
 4. Resend
-5. Microsoft 365
-6. Inbox + classement IA
+5. Inbox mockée + classement IA
+6. Azure App Service + Azure SQL + Blob-ready
 7. Imports IA
 8. Leads
 9. Facturation + PDF
