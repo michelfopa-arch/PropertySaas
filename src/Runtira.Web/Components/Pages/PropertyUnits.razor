@@ -1,0 +1,101 @@
+@page "/{tenantSlug}/{propertySlug}/units"
+@using Runtira.Application.Common
+@using Runtira.Application.Features
+@inject CurrentOrganization CurrentOrganization
+@inject RuntiraWorkspaceService WorkspaceService
+
+<PageTitle>Units · @CurrentOrganization.PropertyName</PageTitle>
+
+<div class="hero-shell">
+    <section class="hero-card">
+        <div class="hero-badge">Units</div>
+        <h1>Units</h1>
+        <p class="hero-copy">Une page dédiée aux unités de cette propriété, avec des actions simples et ciblées.</p>
+
+        @if (_isLoading)
+        {
+            <PageLoadingState />
+        }
+        else if (_workspace is not null)
+        {
+            <div class="tenant-summary">
+                <div>
+                    <span class="summary-label">Units</span>
+                    <strong>@_workspace.Units.Count</strong>
+                </div>
+                <div>
+                    <span class="summary-label">Occupied</span>
+                    <strong>@_workspace.Units.Count(x => string.Equals(x.Status, "Occupied", StringComparison.OrdinalIgnoreCase))</strong>
+                </div>
+                <div>
+                    <span class="summary-label">Property</span>
+                    <strong>@(_workspace.AssetName)</strong>
+                </div>
+                <div>
+                    <span class="summary-label">Tier</span>
+                    <strong>Free · Included</strong>
+                </div>
+            </div>
+
+            <SectionToolbar Hint="Une page dédiée par entité pour une lecture claire et rapide.">
+                <Actions>
+                    <a class="ghost-button" href="@($"/{CurrentOrganization.OrganizationSlug}/{CurrentOrganization.PropertySlug}/dashboard")">Back to property</a>
+                </Actions>
+            </SectionToolbar>
+
+            <div class="option-list">
+                @foreach (var unit in _workspace.Units)
+                {
+                    <span class="option-pill option-pill-accent">@unit.UnitCode · @unit.Status</span>
+                }
+            </div>
+        }
+        else
+        {
+            <PageEmptyState Title="No unit data" Message="Aucune unité mock disponible pour cette propriété." />
+        }
+    </section>
+
+    <section class="workspace-card">
+        <div class="workspace-header">
+            <h2>Unit actions</h2>
+            <span class="workspace-state">Mock</span>
+        </div>
+
+        <div class="prompt-box prompt-box-soft">
+            <button type="button" class="prompt-chip">Add unit</button>
+            <button type="button" class="prompt-chip">Prepare invoice</button>
+        </div>
+    </section>
+</div>
+
+@code {
+    [Parameter]
+    public string? TenantSlug { get; set; }
+
+    [Parameter]
+    public string? PropertySlug { get; set; }
+
+    private RuntiraAssetWorkspaceDto? _workspace;
+    private bool _isLoading = true;
+    private bool _hasInitialized;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (_hasInitialized)
+        {
+            return;
+        }
+
+        _hasInitialized = true;
+
+        try
+        {
+            _workspace = await WorkspaceService.GetAssetWorkspaceAsync();
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+}

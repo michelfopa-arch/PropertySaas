@@ -1,0 +1,53 @@
+@page "/activity-log"
+@using Runtira.Application.Common
+@inject CurrentOrganization CurrentOrganization
+
+<PageTitle>Activity log</PageTitle>
+
+<div class="hero-shell">
+    <section class="hero-card">
+        <div class="hero-badge hero-badge-secondary">Activity log</div>
+        <h1>Activity log</h1>
+        <p class="hero-copy">Journal mock des actions pour préparer la restauration rapide et l’audit fonctionnel avant branchement réel Cosmos + Blob.</p>
+
+        <div class="tenant-summary">
+            <div>
+                <span class="summary-label">Scope</span>
+                <strong>@(string.IsNullOrWhiteSpace(CurrentOrganization.OrganizationName) ? "Platform" : CurrentOrganization.OrganizationName)</strong>
+            </div>
+            <div>
+                <span class="summary-label">Mode</span>
+                <strong>Mock</strong>
+            </div>
+            <div>
+                <span class="summary-label">Retention</span>
+                <strong>Cosmos fast restore + Blob archive</strong>
+            </div>
+            <div>
+                <span class="summary-label">Entries</span>
+                <strong>6</strong>
+            </div>
+        </div>
+
+        <div class="option-list">
+            <span class="option-pill option-pill-accent">ImportQueued · owner-ledger-july.xlsx · Atlas 50</span>
+            <span class="option-pill">InvoiceGenerated · Monthly invoice draft · 25 Carlton Street</span>
+            <span class="option-pill">ResidentUpdated · Lucas Martin · Manager</span>
+            <span class="option-pill">LeaseReviewed · Unit 8B · SuperAdmin</span>
+            <span class="option-pill">DocumentArchived · vendor-quote.pdf · Owner</span>
+            <span class="option-pill">RestorePointCreated · Nightly snapshot · Platform</span>
+        </div>
+    </section>
+
+    <section class="workspace-card">
+        <div class="workspace-header">
+            <h2>Log actions</h2>
+            <span class="workspace-state">Mock</span>
+        </div>
+
+        <div class="prompt-box prompt-box-soft">
+            <button type="button" class="prompt-chip">Export JSON snapshot</button>
+            <button type="button" class="prompt-chip">Replay restore scenario</button>
+        </div>
+    </section>
+</div>

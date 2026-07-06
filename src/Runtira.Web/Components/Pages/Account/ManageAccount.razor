@@ -15,37 +15,16 @@
             @RuntiraText.Get("Account_Subtitle", CurrentOrganization.PreferredLanguage)
         </p>
 
-        <div class="tenant-summary">
-            <div>
-                <span class="summary-label">@RuntiraText.Get("Account_Summary_User", CurrentOrganization.PreferredLanguage)</span>
-                <strong>@(string.IsNullOrWhiteSpace(CurrentOrganization.UserEmail) ? RuntiraText.Get("Account_Guest", CurrentOrganization.PreferredLanguage) : CurrentOrganization.UserEmail)</strong>
-            </div>
-            <div>
-                <span class="summary-label">@RuntiraText.Get("Account_Summary_SystemRole", CurrentOrganization.PreferredLanguage)</span>
-                <strong>@CurrentOrganization.SystemRole</strong>
-            </div>
-            <div>
-                <span class="summary-label">@RuntiraText.Get("Account_Summary_Organizations", CurrentOrganization.PreferredLanguage)</span>
-                <strong>@CurrentOrganization.AccessibleOrganizationCount</strong>
-            </div>
-            <div>
-                <span class="summary-label">@RuntiraText.Get("Account_Summary_ActiveOrganization", CurrentOrganization.PreferredLanguage)</span>
-                <strong>@(string.IsNullOrWhiteSpace(CurrentOrganization.OrganizationName) ? RuntiraText.Get("Account_None", CurrentOrganization.PreferredLanguage) : CurrentOrganization.OrganizationName)</strong>
-            </div>
-            <div>
-                <span class="summary-label">@RuntiraText.Get("Account_Summary_DetectedMarket", CurrentOrganization.PreferredLanguage)</span>
-                <strong>@CurrentOrganization.CountryCode-@CurrentOrganization.Province · @CurrentOrganization.PreferredLanguage</strong>
-            </div>
+        <div class="option-list">
+            <span class="option-pill option-pill-accent">@(string.IsNullOrWhiteSpace(CurrentOrganization.UserEmail) ? RuntiraText.Get("Account_Guest", CurrentOrganization.PreferredLanguage) : CurrentOrganization.UserEmail)</span>
+            <span class="option-pill">@CurrentOrganization.SystemRole</span>
+            <span class="option-pill">@(IsMockModeEnabled ? "Mock mode" : "Live mode")</span>
         </div>
 
         <div class="prompt-box">
             <a class="prompt-chip prompt-link" href="@HostedUserProfileUrl">@RuntiraText.Get("Account_OpenClerk", CurrentOrganization.PreferredLanguage)</a>
-            @if (!string.IsNullOrWhiteSpace(CurrentOrganization.OrganizationSlug))
-            {
-                <a class="prompt-chip prompt-link" href="@($"/{CurrentOrganization.OrganizationSlug}/billing")">@RuntiraText.Get("Account_OpenStripe", CurrentOrganization.PreferredLanguage)</a>
-            }
             <button type="button" class="prompt-chip" @onclick="SendResendProbeAsync">@RuntiraText.Get("Account_TestResend", CurrentOrganization.PreferredLanguage)</button>
-            <a class="prompt-chip prompt-link" href="/">@RuntiraText.Get("Account_BackWorkspace", CurrentOrganization.PreferredLanguage)</a>
+            <a class="prompt-chip prompt-link" href="/">Retour</a>
         </div>
 
         @if (!string.IsNullOrWhiteSpace(_resendStatus))
@@ -64,10 +43,7 @@
 
         <div class="option-list">
             <span class="option-pill option-pill-accent">@RuntiraText.Get("Provider_Clerk", CurrentOrganization.PreferredLanguage)</span>
-            <span class="option-pill option-pill-accent">@RuntiraText.Get("Provider_TenantMembership", CurrentOrganization.PreferredLanguage)</span>
-            <span class="option-pill option-pill-accent">@RuntiraText.Get("Provider_LocaleClaims", CurrentOrganization.PreferredLanguage)</span>
             <span class="option-pill option-pill-accent">@RuntiraText.Get("Provider_Resend", CurrentOrganization.PreferredLanguage)</span>
-            <span class="option-pill option-pill-accent">@RuntiraText.Get("Provider_LocalOptimization", CurrentOrganization.PreferredLanguage)</span>
         </div>
     </section>
 </div>
@@ -76,6 +52,7 @@
     private string _resendStatus = string.Empty;
 
     private string HostedUserProfileUrl => GetClerkOptions().UserProfileUrl;
+    private bool IsMockModeEnabled => Configuration.GetSection("Cosmos").GetValue("MockModeEnabled", true);
 
     private async Task SendResendProbeAsync()
     {

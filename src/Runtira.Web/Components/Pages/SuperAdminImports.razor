@@ -1,0 +1,89 @@
+@page "/super-admin/imports"
+@using Runtira.Application.Common
+@using Runtira.Application.Features
+@inject CurrentOrganization CurrentOrganization
+@inject RuntiraWorkspaceService WorkspaceService
+
+<PageTitle>Super admin imports</PageTitle>
+
+<div class="hero-shell">
+    <section class="hero-card">
+        <div class="hero-badge hero-badge-secondary">Super admin</div>
+        <h1>Manual import review</h1>
+        <p class="hero-copy">Vue de maintenance pour reprendre les fichiers Excel envoyés par les organisations, vérifier le blob cible et décider du traitement manuel.</p>
+
+        @if (_isLoading)
+        {
+            <PageLoadingState />
+        }
+        else if (_workspace.UploadJobs.Count > 0)
+        {
+            <div class="tenant-summary">
+                <div>
+                    <span class="summary-label">Queued jobs</span>
+                    <strong>@_workspace.UploadJobs.Count</strong>
+                </div>
+                <div>
+                    <span class="summary-label">Require review</span>
+                    <strong>@_workspace.UploadJobs.Count(x => x.RequiresSuperAdminReview)</strong>
+                </div>
+                <div>
+                    <span class="summary-label">Queue name</span>
+                    <strong>manual-import-review</strong>
+                </div>
+                <div>
+                    <span class="summary-label">Mode</span>
+                    <strong>Mock default</strong>
+                </div>
+            </div>
+
+            <div class="option-list">
+                @foreach (var job in _workspace.UploadJobs)
+                {
+                    <span class="option-pill option-pill-accent">@job.FileName · @job.Status · @job.PropertyName</span>
+                }
+            </div>
+        }
+        else
+        {
+            <PageEmptyState Title="No upload jobs" Message="Aucun fichier Excel n’attend un traitement manuel." />
+        }
+    </section>
+
+    <section class="workspace-card">
+        <div class="workspace-header">
+            <h2>Super admin actions</h2>
+            <span class="workspace-state">Mock</span>
+        </div>
+
+        <div class="prompt-box prompt-box-soft">
+            <button type="button" class="prompt-chip">Open blob file</button>
+            <button type="button" class="prompt-chip">Approve manual processing</button>
+        </div>
+    </section>
+</div>
+
+@code {
+    private RuntiraImportWorkspaceDto _workspace = new();
+    private bool _isLoading = true;
+    private bool _hasInitialized;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (_hasInitialized)
+        {
+            return;
+        }
+
+        _hasInitialized = true;
+
+        try
+        {
+            _workspace = await WorkspaceService.GetImportWorkspaceAsync();
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+}

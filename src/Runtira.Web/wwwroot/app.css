@@ -35,6 +35,11 @@ h1:focus {
     gap: 1.5rem;
 }
 
+.hero-shell-single {
+    grid-template-columns: minmax(0, 1fr);
+    max-width: 640px;
+}
+
 .hero-card,
 .workspace-card {
     background: rgba(15, 23, 42, 0.78);

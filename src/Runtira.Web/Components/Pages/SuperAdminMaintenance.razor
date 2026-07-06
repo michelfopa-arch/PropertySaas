@@ -1,0 +1,74 @@
+@page "/super-admin/maintenance"
+@using Runtira.Application.Common
+@inject CurrentOrganization CurrentOrganization
+
+<PageTitle>Super admin maintenance</PageTitle>
+
+<div class="hero-shell">
+    <section class="hero-card">
+        <div class="hero-badge hero-badge-secondary">Super admin maintenance</div>
+        <h1>Platform maintenance</h1>
+        <p class="hero-copy">Vue de maintenance transverse pour le super admin : santé mock de la plateforme, revues d’import, restauration rapide et supervision multi-organisation.</p>
+
+        <div class="tenant-summary">
+            <div>
+                <span class="summary-label">Role</span>
+                <strong>@CurrentOrganization.SystemRole</strong>
+            </div>
+            <div>
+                <span class="summary-label">Organizations</span>
+                <strong>@CurrentOrganization.OrganizationOptions.Count</strong>
+            </div>
+            <div>
+                <span class="summary-label">Mock mode</span>
+                <strong>Enabled</strong>
+            </div>
+            <div>
+                <span class="summary-label">Restore strategy</span>
+                <strong>Cosmos + Blob</strong>
+            </div>
+            <div>
+                <span class="summary-label">Tier</span>
+                <strong>Pro · Admin</strong>
+            </div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <span>Import queue</span>
+                <strong>2 pending jobs</strong>
+                <span>Manual review required</span>
+            </div>
+            <div class="stat-card">
+                <span>Audit snapshots</span>
+                <strong>Healthy</strong>
+                <span>Latest restore point available</span>
+            </div>
+            <div class="stat-card">
+                <span>Mock identities</span>
+                <strong>4 active profiles</strong>
+                <span>Super admin, owner, manager, viewer</span>
+            </div>
+            <div class="stat-card">
+                <span>Organizations</span>
+                <strong>3 seeded demos</strong>
+                <span>Ready for product demos</span>
+            </div>
+        </div>
+    </section>
+
+    <section class="workspace-card">
+        <div class="workspace-header">
+            <h2>Maintenance actions</h2>
+            <span class="workspace-state">Mock</span>
+        </div>
+
+        <div class="prompt-box prompt-box-soft">
+            <a class="prompt-chip prompt-link" href="/super-admin/imports">Review upload queue</a>
+            <button type="button" class="prompt-chip">Replay restore simulation</button>
+            <a class="prompt-chip prompt-link" href="/activity-log">Inspect activity logs</a>
+            <button type="button" class="prompt-chip">Switch mock / live</button>
+            <a class="prompt-chip prompt-link" href="/">Back home</a>
+        </div>
+    </section>
+</div>

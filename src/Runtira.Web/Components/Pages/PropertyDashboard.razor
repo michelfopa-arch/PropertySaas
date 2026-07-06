@@ -1,0 +1,73 @@
+@page "/{tenantSlug}/{propertySlug}/dashboard"
+@using Runtira.Application.Common
+@inject CurrentOrganization CurrentOrganization
+
+<PageTitle>@(string.IsNullOrWhiteSpace(CurrentOrganization.PropertyName) ? "Property" : CurrentOrganization.PropertyName)</PageTitle>
+
+<div class="hero-shell">
+    <section class="hero-card">
+        <div class="hero-badge">Property workspace</div>
+        <h1>@(string.IsNullOrWhiteSpace(CurrentOrganization.PropertyName) ? "Your property" : CurrentOrganization.PropertyName)</h1>
+        <p class="hero-copy">Vue simple de la propriété. Choisis ensuite l’entité à gérer : unités, résidents, baux, documents, maintenance ou facturation.</p>
+
+        <div class="tenant-summary">
+            <div>
+                <span class="summary-label">Property</span>
+                <strong>@(string.IsNullOrWhiteSpace(CurrentOrganization.PropertyName) ? CurrentOrganization.PropertySlug : CurrentOrganization.PropertyName)</strong>
+            </div>
+            <div>
+                <span class="summary-label">Market</span>
+                <strong>@CurrentOrganization.CountryCode-@CurrentOrganization.Province</strong>
+            </div>
+            <div>
+                <span class="summary-label">Mode</span>
+                <strong>Mock default</strong>
+            </div>
+            <div>
+                <span class="summary-label">Plan</span>
+                <strong>Free trial</strong>
+            </div>
+        </div>
+
+        <div class="focus-strip">
+            <a class="action-card action-card-primary" href="@($"/{CurrentOrganization.OrganizationSlug}/{CurrentOrganization.PropertySlug}/units")">
+                <strong>Units</strong>
+                <span>Voir les unités, statuts et loyers marché de la propriété.</span>
+            </a>
+            <a class="action-card" href="@($"/{CurrentOrganization.OrganizationSlug}/{CurrentOrganization.PropertySlug}/residents")">
+                <strong>Residents</strong>
+                <span>Consulter les résidents actifs et leurs informations essentielles.</span>
+            </a>
+        </div>
+
+        <div class="option-list mt-3">
+            <a class="option-pill option-pill-accent" href="@($"/{CurrentOrganization.OrganizationSlug}/{CurrentOrganization.PropertySlug}/leases")">Leases</a>
+            <a class="option-pill option-pill-accent" href="@($"/{CurrentOrganization.OrganizationSlug}/{CurrentOrganization.PropertySlug}/invoice-composer")">Basic invoicing</a>
+            <a class="option-pill" href="@($"/{CurrentOrganization.OrganizationSlug}/{CurrentOrganization.PropertySlug}/imports")">Excel intake</a>
+            <a class="option-pill" href="@($"/{CurrentOrganization.OrganizationSlug}/{CurrentOrganization.PropertySlug}/documents")">Documents</a>
+            <a class="option-pill" href="@($"/{CurrentOrganization.OrganizationSlug}/{CurrentOrganization.PropertySlug}/maintenance")">Maintenance</a>
+            <a class="option-pill" href="@($"/{CurrentOrganization.OrganizationSlug}/{CurrentOrganization.PropertySlug}/settings")">Settings</a>
+        </div>
+    </section>
+
+    <section class="workspace-card">
+        <div class="workspace-header">
+            <h2>Quick links</h2>
+            <span class="workspace-state">Mock</span>
+        </div>
+
+        <div class="prompt-box prompt-box-soft">
+            <a class="prompt-chip prompt-link" href="@($"/{CurrentOrganization.OrganizationSlug}/{CurrentOrganization.PropertySlug}/leads")">Leads</a>
+            <a class="prompt-chip prompt-link" href="@($"/{CurrentOrganization.OrganizationSlug}/{CurrentOrganization.PropertySlug}/billing")">Billing</a>
+            <a class="prompt-chip prompt-link" href="@($"/{CurrentOrganization.OrganizationSlug}/{CurrentOrganization.PropertySlug}/exports")">Exports</a>
+        </div>
+    </section>
+</div>
+
+@code {
+    [Parameter]
+    public string? TenantSlug { get; set; }
+
+    [Parameter]
+    public string? PropertySlug { get; set; }
+}

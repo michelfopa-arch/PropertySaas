@@ -1,0 +1,78 @@
+@page "/organizations"
+@using Runtira.Application.Common
+@inject CurrentOrganization CurrentOrganization
+
+<PageTitle>Organizations</PageTitle>
+
+<div class="hero-shell">
+    <section class="hero-card">
+        <div class="hero-badge">Admin</div>
+        <h1>Admin view</h1>
+        <p class="hero-copy">Vue réservée au super admin pour superviser les comptes internes et la maintenance. Les utilisateurs finaux ne voient pas ce concept.</p>
+
+        @if (CurrentOrganization.OrganizationOptions.Count > 0)
+        {
+            <div class="option-list">
+                @foreach (var organization in CurrentOrganization.OrganizationOptions)
+                {
+                    var slug = SlugifyOrganization(organization.OrganizationName);
+                    <a class="option-pill option-pill-accent" href="@($"/{slug}")">@organization.OrganizationName · @organization.Role</a>
+                }
+            </div>
+        }
+        else
+        {
+            <PageEmptyState Title="No accounts" Message="Aucun compte interne mock accessible pour ce profil." />
+        }
+    </section>
+
+    <section class="workspace-card">
+        <div class="workspace-header">
+            <h2>Organization actions</h2>
+            <span class="workspace-state">Mock</span>
+        </div>
+
+        <div class="prompt-box prompt-box-soft">
+            <button type="button" class="prompt-chip" @onclick="ToggleCreateForm">Create internal account</button>
+            <a class="prompt-chip prompt-link" href="/activity-log">Activity log</a>
+            <a class="prompt-chip prompt-link" href="/onboarding/property">Property onboarding</a>
+            <a class="prompt-chip prompt-link" href="/">Back home</a>
+        </div>
+
+        @if (_showCreateForm)
+        {
+            <div class="localized-section mt-3">
+                <div class="prompt-title">Internal account creation</div>
+                <div class="form-grid">
+                    <label>
+                        <span class="summary-label">Account name</span>
+                        <input @bind="_newOrganizationName" />
+                    </label>
+                    <label>
+                        <span class="summary-label">Owner email</span>
+                        <input @bind="_newOwnerEmail" />
+                    </label>
+                </div>
+                <div class="prompt-box prompt-box-soft">
+                    <button type="button" class="prompt-chip">Create internal account</button>
+                    <span class="summary-label">Preview slug · @SlugifyOrganization(string.IsNullOrWhiteSpace(_newOrganizationName) ? "new-organization" : _newOrganizationName)</span>
+                </div>
+            </div>
+        }
+    </section>
+</div>
+
+@code {
+    private bool _showCreateForm;
+    private string _newOrganizationName = string.Empty;
+    private string _newOwnerEmail = string.Empty;
+
+    private static string SlugifyOrganization(string name)
+        => string.Join('-', (name ?? string.Empty)
+            .Trim()
+            .ToLowerInvariant()
+            .Split(new[] { ' ', '·', ',', '.', '/', '\\' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
+
+    private void ToggleCreateForm()
+        => _showCreateForm = !_showCreateForm;
+}

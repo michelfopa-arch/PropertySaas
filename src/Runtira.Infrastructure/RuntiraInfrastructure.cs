@@ -60,6 +60,7 @@ namespace Runtira.Infrastructure.Options
         public string Key { get; set; } = string.Empty;
         public string DatabaseName { get; set; } = "runtiradb";
         public bool Enabled { get; set; }
+        public bool MockModeEnabled { get; set; } = true;
         public int SharedAutoscaleMaxThroughput { get; set; } = 4000;
         public int TenantCoreAutoscaleMaxThroughput { get; set; } = 4000;
         public int MessagesAutoscaleMaxThroughput { get; set; } = 4000;

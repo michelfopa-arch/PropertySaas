@@ -1,0 +1,105 @@
+@page "/{tenantSlug}/{propertySlug}/documents"
+@using Runtira.Application.Common
+@using Runtira.Application.Features
+@inject CurrentOrganization CurrentOrganization
+@inject RuntiraWorkspaceService WorkspaceService
+
+<PageTitle>Documents · @CurrentOrganization.PropertyName</PageTitle>
+
+<div class="hero-shell">
+    <section class="hero-card">
+        <div class="hero-badge">Documents</div>
+        <h1>Documents</h1>
+        <p class="hero-copy">Une page dédiée aux documents de cette propriété, avec des actions simples et ciblées.</p>
+
+        @if (_isLoading)
+        {
+            <PageLoadingState />
+        }
+        else if (_messages.Count > 0)
+        {
+            <div class="tenant-summary">
+                <div>
+                    <span class="summary-label">Items</span>
+                    <strong>@_messages.Count</strong>
+                </div>
+                <div>
+                    <span class="summary-label">With attachments</span>
+                    <strong>@_messages.Count(x => x.HasAttachments)</strong>
+                </div>
+                <div>
+                    <span class="summary-label">Categories</span>
+                    <strong>@string.Join(" · ", _messages.Select(x => x.Category).Distinct(StringComparer.OrdinalIgnoreCase))</strong>
+                </div>
+                <div>
+                    <span class="summary-label">Property</span>
+                    <strong>@CurrentOrganization.PropertyName</strong>
+                </div>
+                <div>
+                    <span class="summary-label">Tier</span>
+                    <strong>Growth · Paid</strong>
+                </div>
+            </div>
+
+            <SectionToolbar Hint="Une page documents dédiée simplifie le traitement manuel et la préparation d’archives ou d’actions de suivi.">
+                <Actions>
+                    <a class="ghost-button" href="@($"/{CurrentOrganization.OrganizationSlug}/{CurrentOrganization.PropertySlug}/dashboard")">Back to property</a>
+                </Actions>
+            </SectionToolbar>
+
+            <div class="option-list">
+                @foreach (var message in _messages)
+                {
+                    <span class="option-pill option-pill-accent">@message.Subject · @message.Category · @message.Status</span>
+                }
+            </div>
+        }
+        else
+        {
+            <PageEmptyState Title="No documents" Message="Aucun document mock n’est encore disponible pour cette propriété." />
+        }
+    </section>
+
+    <section class="workspace-card">
+        <div class="workspace-header">
+            <h2>Document actions</h2>
+            <span class="workspace-state">Mock</span>
+        </div>
+
+        <div class="prompt-box prompt-box-soft">
+            <button type="button" class="prompt-chip">Upload lease PDF</button>
+            <button type="button" class="prompt-chip">Send to super admin review</button>
+        </div>
+    </section>
+</div>
+
+@code {
+    [Parameter]
+    public string? TenantSlug { get; set; }
+
+    [Parameter]
+    public string? PropertySlug { get; set; }
+
+    private IReadOnlyList<RuntiraInboxMessageDto> _messages = Array.Empty<RuntiraInboxMessageDto>();
+    private bool _isLoading = true;
+    private bool _hasInitialized;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (_hasInitialized)
+        {
+            return;
+        }
+
+        _hasInitialized = true;
+
+        try
+        {
+            _messages = await WorkspaceService.GetInboxAsync();
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+}

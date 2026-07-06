@@ -1,0 +1,137 @@
+@page "/onboarding/property"
+@page "/{tenantSlug}/onboarding/property"
+@using Runtira.Application.Common
+@inject CurrentOrganization CurrentOrganization
+
+<PageTitle>Property onboarding</PageTitle>
+
+<div class="hero-shell">
+    <section class="hero-card">
+        <div class="hero-badge">Property onboarding</div>
+        <h1>Create your first property</h1>
+        <p class="hero-copy">Crée ton compte, ajoute une première propriété et démarre en mode mock avec un essai simple.</p>
+
+        @if (!string.IsNullOrWhiteSpace(_statusMessage))
+        {
+            <PageEmptyState Title="Workspace draft ready" Message="@_statusMessage" CssClass="mt-3" />
+        }
+
+        <div class="option-list">
+            <span class="option-pill option-pill-accent">Mock default</span>
+            <span class="option-pill">14-day trial</span>
+            <span class="option-pill">@PropertyRoutePreview</span>
+        </div>
+
+        <EditForm Model="this" FormName="property-onboarding" OnValidSubmit="CreateWorkspaceMockAsync" class="invoice-form">
+            <div class="form-shell form-shell-secondary">
+                <div class="form-shell-header">
+                    <div>
+                        <span class="summary-label">Simple setup</span>
+                        <h3>Account and first property</h3>
+                    </div>
+                    <span class="workspace-state workspace-state-secondary">Mock</span>
+                </div>
+
+                <div class="form-grid form-grid-elevated">
+                    <label>
+                        <span class="summary-label">Display name</span>
+                        <input @bind="_organizationName" />
+                    </label>
+                    <label>
+                        <span class="summary-label">Owner email</span>
+                        <input @bind="_ownerEmail" />
+                    </label>
+                    <label>
+                        <span class="summary-label">Property name</span>
+                        <input @bind="_propertyName" />
+                    </label>
+                    <label>
+                        <span class="summary-label">City</span>
+                        <input @bind="_city" />
+                    </label>
+                    <label>
+                        <span class="summary-label">Plan</span>
+                        <select @bind="_selectedPlan">
+                            <option value="Free">Free</option>
+                            <option value="Growth">Growth</option>
+                            <option value="Pro">Pro</option>
+                        </select>
+                    </label>
+                    <label>
+                        <span class="summary-label">Primary goal</span>
+                        <select @bind="_selectedGoal">
+                            <option value="Invoicing">Invoicing</option>
+                            <option value="Leases">Leases</option>
+                            <option value="Residents">Residents</option>
+                            <option value="Documents">Documents</option>
+                        </select>
+                    </label>
+                </div>
+            </div>
+
+            <div class="prompt-box">
+                <BusyActionButton Type="submit" CssClass="prompt-chip" IsBusy="@_isSubmitting" Label="Create account and property" />
+            </div>
+        </EditForm>
+    </section>
+
+    <section class="workspace-card">
+        <div class="workspace-header">
+            <h2>Feature gating</h2>
+            <span class="workspace-state">Free vs paid</span>
+        </div>
+
+        <div class="option-list">
+            <span class="option-pill option-pill-accent">Free · 1 property</span>
+            <span class="option-pill">Growth · multi-property</span>
+            <span class="option-pill">Pro · admin supervision</span>
+        </div>
+
+        <div class="prompt-box prompt-box-soft mt-3">
+            <button type="button" class="prompt-chip">Preview trial email</button>
+            <a class="prompt-chip prompt-link" href="/">Back home</a>
+        </div>
+    </section>
+</div>
+
+@code {
+    [Parameter]
+    public string? TenantSlug { get; set; }
+
+    private string _organizationName = "New Demo Organization";
+    private string _ownerEmail = "owner@example.com";
+    private string _propertyName = "Main Street Duplex";
+    private string _city = "Calgary";
+    private string _selectedPlan = "Free";
+    private string _selectedGoal = "Invoicing";
+    private bool _isSubmitting;
+    private string _statusMessage = string.Empty;
+
+    private string OrganizationRoutePreview => $"/{Slugify(_organizationName)}";
+    private string PropertyRoutePreview => $"/{Slugify(_organizationName)}/{Slugify(_propertyName)}/dashboard";
+
+    private async Task CreateWorkspaceMockAsync()
+    {
+        if (_isSubmitting)
+        {
+            return;
+        }
+
+        _isSubmitting = true;
+        try
+        {
+            await Task.Delay(150);
+            _statusMessage = $"{_organizationName} with {_propertyName} is ready in {_selectedPlan} mode for {_selectedGoal}. Route preview: {PropertyRoutePreview}";
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+    }
+
+    private static string Slugify(string value)
+        => string.Join('-', (value ?? string.Empty)
+            .Trim()
+            .ToLowerInvariant()
+            .Split(new[] { ' ', '·', ',', '.', '/', '\\' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
+}

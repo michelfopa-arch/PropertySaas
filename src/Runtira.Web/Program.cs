@@ -50,7 +50,9 @@ if (runtiraInfrastructureEnabled)
 
 var clerkSection = builder.Configuration.GetSection("Clerk");
 var clerkOptions = clerkSection.Get<ClerkOptions>();
+var mockModeEnabled = builder.Configuration.GetSection("Cosmos").GetValue("MockModeEnabled", true);
 var useClerkAuthentication = !useLocalDevelopmentAuth
+    && !mockModeEnabled
     && !string.IsNullOrWhiteSpace(clerkOptions?.Authority)
     && !string.IsNullOrWhiteSpace(clerkOptions.ClientId);
 
@@ -80,9 +82,30 @@ builder.Services.AddScoped<CurrentOrganization>(provider =>
     var httpContext = provider.GetRequiredService<IHttpContextAccessor>().HttpContext;
     var request = httpContext?.Request;
     var user = httpContext?.User;
-    var tenantSlug = request?.Path.Value?
+    var segments = request?.Path.Value?
         .Split('/', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-        .FirstOrDefault() ?? string.Empty;
+        ?? Array.Empty<string>();
+    var tenantSlug = segments.FirstOrDefault() ?? string.Empty;
+    var propertySlug = segments.Length > 1 && !string.Equals(segments[1], "billing", StringComparison.OrdinalIgnoreCase)
+        && !string.Equals(segments[1], "account", StringComparison.OrdinalIgnoreCase)
+        && !string.Equals(segments[1], "sign-in", StringComparison.OrdinalIgnoreCase)
+        && !string.Equals(segments[1], "sign-up", StringComparison.OrdinalIgnoreCase)
+        && !string.Equals(segments[1], "dashboard", StringComparison.OrdinalIgnoreCase)
+        && !string.Equals(segments[1], "units", StringComparison.OrdinalIgnoreCase)
+        && !string.Equals(segments[1], "residents", StringComparison.OrdinalIgnoreCase)
+        && !string.Equals(segments[1], "leases", StringComparison.OrdinalIgnoreCase)
+        && !string.Equals(segments[1], "documents", StringComparison.OrdinalIgnoreCase)
+        && !string.Equals(segments[1], "maintenance", StringComparison.OrdinalIgnoreCase)
+        && !string.Equals(segments[1], "imports", StringComparison.OrdinalIgnoreCase)
+        && !string.Equals(segments[1], "exports", StringComparison.OrdinalIgnoreCase)
+        && !string.Equals(segments[1], "invoice-composer", StringComparison.OrdinalIgnoreCase)
+        && !string.Equals(segments[1], "inbox", StringComparison.OrdinalIgnoreCase)
+        && !string.Equals(segments[1], "legislation", StringComparison.OrdinalIgnoreCase)
+        && !string.Equals(segments[1], "settings", StringComparison.OrdinalIgnoreCase)
+        && !string.Equals(segments[1], "onboarding", StringComparison.OrdinalIgnoreCase)
+        && !string.Equals(segments[1], "not-found", StringComparison.OrdinalIgnoreCase)
+        ? segments[1]
+        : string.Empty;
 
     if (string.Equals(tenantSlug, "not-found", StringComparison.OrdinalIgnoreCase))
     {
@@ -122,6 +145,8 @@ builder.Services.AddScoped<CurrentOrganization>(provider =>
             if (resolved is not null)
             {
                 CopyCurrentOrganization(resolved, currentOrganization);
+                currentOrganization.PropertySlug = propertySlug;
+                currentOrganization.PropertyName = string.IsNullOrWhiteSpace(propertySlug) ? string.Empty : ToDisplayName(propertySlug);
                 return currentOrganization;
             }
         }
@@ -139,6 +164,8 @@ builder.Services.AddScoped<CurrentOrganization>(provider =>
     currentOrganization.HasSuperAdminOrganizationSelection = string.Equals(user?.FindFirstValue(ClaimTypes.Email), "michelfopa@gmail.com", StringComparison.OrdinalIgnoreCase);
     currentOrganization.OrganizationName = organizationName;
     currentOrganization.OrganizationSlug = tenantSlug;
+    currentOrganization.PropertySlug = propertySlug;
+    currentOrganization.PropertyName = string.IsNullOrWhiteSpace(propertySlug) ? string.Empty : ToDisplayName(propertySlug);
     currentOrganization.UserEmail = user?.FindFirstValue(ClaimTypes.Email) ?? string.Empty;
     currentOrganization.UserFullName = user?.Identity?.Name ?? "Workspace invité";
     currentOrganization.Role = string.IsNullOrWhiteSpace(tenantSlug) ? "Guest" : "Owner";
@@ -148,6 +175,7 @@ builder.Services.AddScoped<CurrentOrganization>(provider =>
     currentOrganization.PreferredLanguage = ResolvePreferredLanguage(userLocale);
     currentOrganization.SubscriptionIsActive = true;
     currentOrganization.TrialExpired = false;
+    currentOrganization.OrganizationOptions = Array.Empty<OrganizationAccessOptionDto>();
     return currentOrganization;
 });
 
@@ -274,12 +302,27 @@ app.Use(async (context, next) =>
     {
         if (context.User?.Identity?.IsAuthenticated != true)
         {
+            var mockRole = context.Request.Query["mockRole"].ToString();
+            var mockEmail = mockRole.ToLowerInvariant() switch
+            {
+                "viewer" => "viewer@demo-texas.local",
+                "manager" => "manager@demo-ontario.local",
+                "owner" => "owner@demo-alberta.local",
+                _ => "michelfopa@gmail.com"
+            };
+            var role = mockRole.ToLowerInvariant() switch
+            {
+                "viewer" => "Viewer",
+                "manager" => "Manager",
+                "owner" => "Owner",
+                _ => "SuperAdmin"
+            };
             var claims = new[]
             {
-                new Claim(ClaimTypes.NameIdentifier, "local-dev-user"),
-                new Claim(ClaimTypes.Name, "michelfopa@gmail.com"),
-                new Claim(ClaimTypes.Email, "michelfopa@gmail.com"),
-                new Claim(ClaimTypes.Role, "Owner")
+                new Claim(ClaimTypes.NameIdentifier, $"mock-{role.ToLowerInvariant()}"),
+                new Claim(ClaimTypes.Name, mockEmail),
+                new Claim(ClaimTypes.Email, mockEmail),
+                new Claim(ClaimTypes.Role, role)
             };
 
             context.User = new ClaimsPrincipal(new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme));

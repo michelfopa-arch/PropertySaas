@@ -1,0 +1,101 @@
+@page "/{tenantSlug}/{propertySlug}/leases"
+@using Runtira.Application.Common
+@using Runtira.Application.Features
+@inject CurrentOrganization CurrentOrganization
+@inject RuntiraWorkspaceService WorkspaceService
+
+<PageTitle>Leases · @CurrentOrganization.PropertyName</PageTitle>
+
+<div class="hero-shell">
+    <section class="hero-card">
+        <div class="hero-badge">Leases</div>
+        <h1>Leases</h1>
+        <p class="hero-copy">Une page dédiée aux baux de cette propriété, avec des actions simples liées à la facturation et au suivi.</p>
+
+        @if (_isLoading)
+        {
+            <PageLoadingState />
+        }
+        else if (_workspace is not null)
+        {
+            <div class="tenant-summary">
+                <div>
+                    <span class="summary-label">Leases</span>
+                    <strong>@_workspace.Leases.Count</strong>
+                </div>
+                <div>
+                    <span class="summary-label">Monthly revenue</span>
+                    <strong>@_workspace.Leases.Sum(x => x.MonthlyRent).ToString("C")</strong>
+                </div>
+                <div>
+                    <span class="summary-label">Review needed</span>
+                    <strong>@_workspace.Leases.Count(x => string.Equals(x.Status, "Review", StringComparison.OrdinalIgnoreCase))</strong>
+                </div>
+                <div>
+                    <span class="summary-label">Property</span>
+                    <strong>@(_workspace.AssetName)</strong>
+                </div>
+            </div>
+
+            <SectionToolbar Hint="Le mode mock permet de valider les parcours métier avant de brancher des flux réels plus avancés.">
+                <Actions>
+                    <a class="ghost-button" href="@($"/{CurrentOrganization.OrganizationSlug}/{CurrentOrganization.PropertySlug}/dashboard")">Back to property</a>
+                </Actions>
+            </SectionToolbar>
+
+            <div class="option-list">
+                @foreach (var lease in _workspace.Leases)
+                {
+                    <span class="option-pill option-pill-accent">@lease.UnitCode · @lease.Status</span>
+                }
+            </div>
+        }
+        else
+        {
+            <PageEmptyState Title="No lease data" Message="Aucun bail mock disponible pour cette propriété." />
+        }
+    </section>
+
+    <section class="workspace-card">
+        <div class="workspace-header">
+            <h2>Lease actions</h2>
+            <span class="workspace-state">Mock</span>
+        </div>
+
+        <div class="prompt-box prompt-box-soft">
+            <button type="button" class="prompt-chip">Create lease</button>
+            <button type="button" class="prompt-chip">Prepare invoice</button>
+        </div>
+    </section>
+</div>
+
+@code {
+    [Parameter]
+    public string? TenantSlug { get; set; }
+
+    [Parameter]
+    public string? PropertySlug { get; set; }
+
+    private RuntiraAssetWorkspaceDto? _workspace;
+    private bool _isLoading = true;
+    private bool _hasInitialized;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (_hasInitialized)
+        {
+            return;
+        }
+
+        _hasInitialized = true;
+
+        try
+        {
+            _workspace = await WorkspaceService.GetAssetWorkspaceAsync();
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+}

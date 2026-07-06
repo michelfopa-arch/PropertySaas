@@ -1,0 +1,38 @@
+@page "/demo"
+@using Runtira.Application.Common
+@inject CurrentOrganization CurrentOrganization
+
+<PageTitle>Public demo</PageTitle>
+
+<div class="hero-shell">
+    <section class="hero-card">
+        <div class="hero-badge hero-badge-secondary">Public demo</div>
+        <h1>Try the landlord workspace</h1>
+        <p class="hero-copy">Découvre le produit en mode mock : propriétés, résidents, baux, factures, documents et maintenance dans un parcours simple et vendable.</p>
+
+        <div class="option-list">
+            <span class="option-pill option-pill-accent">Small landlords</span>
+            <span class="option-pill">14-day trial</span>
+            <span class="option-pill">Property-first setup</span>
+            <span class="option-pill">Excel import review</span>
+        </div>
+
+        <div class="prompt-box">
+            <a class="prompt-chip prompt-link" href="/?mockRole=owner">Play the owner demo</a>
+            <a class="prompt-chip prompt-link" href="/sign-up">Create your account</a>
+        </div>
+    </section>
+
+    <section class="workspace-card">
+        <div class="workspace-header">
+            <h2>Feature tiers</h2>
+            <span class="workspace-state">Free vs paid</span>
+        </div>
+
+        <div class="option-list">
+            <span class="option-pill option-pill-accent">Free · 1 property</span>
+            <span class="option-pill">Growth · multi-property</span>
+            <span class="option-pill">Pro · supervision</span>
+        </div>
+    </section>
+</div>

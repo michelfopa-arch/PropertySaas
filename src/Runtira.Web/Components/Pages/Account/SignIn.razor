@@ -13,8 +13,15 @@
 
         <div class="prompt-box">
             <a class="prompt-chip prompt-link" href="@LoginHref">@RuntiraText.Get("SignIn_Action")</a>
-            <a class="prompt-chip prompt-link" href="@SignUpHref">@RuntiraText.Get("SignIn_CreateAccount")</a>
-            <a class="prompt-chip prompt-link" href="/">@RuntiraText.Get("SignIn_BackHome")</a>
+            <a class="prompt-chip prompt-link" href="/demo">Play the demo</a>
+        </div>
+
+        <div class="prompt-box prompt-box-soft mt-3">
+            <div class="prompt-title">Mock access</div>
+            <a class="prompt-chip prompt-link" href="/?mockRole=superadmin">Enter as super admin</a>
+            <a class="prompt-chip prompt-link" href="/?mockRole=owner">Enter as owner</a>
+            <a class="prompt-chip prompt-link" href="/?mockRole=manager">Enter as manager</a>
+            <a class="prompt-chip prompt-link" href="/?mockRole=viewer">Enter as viewer</a>
         </div>
     </section>
 
@@ -25,17 +32,16 @@
         </div>
 
         <div class="option-list">
-            <span class="option-pill option-pill-accent">@RuntiraText.Get("Provider_Clerk")</span>
-            <span class="option-pill option-pill-accent">@RuntiraText.Get("Provider_Stripe")</span>
-            <span class="option-pill option-pill-accent">@RuntiraText.Get("Provider_Resend")</span>
+            <span class="option-pill option-pill-accent">Super admin</span>
+            <span class="option-pill">Owner</span>
+            <span class="option-pill">Manager</span>
+            <span class="option-pill">Viewer</span>
         </div>
     </section>
 </div>
 
 @code {
     private string LoginHref => BuildHref("/account/login");
-    private string SignUpHref => BuildHref("/account/sign-up");
-
     private string BuildHref(string basePath)
     {
         var uri = new Uri(NavigationManager.Uri);

@@ -121,6 +121,8 @@ namespace Runtira.Application.Common
         public bool HasSuperAdminOrganizationSelection { get; set; }
         public string OrganizationName { get; set; } = string.Empty;
         public string OrganizationSlug { get; set; } = string.Empty;
+        public string PropertySlug { get; set; } = string.Empty;
+        public string PropertyName { get; set; } = string.Empty;
         public bool IsDemo { get; set; }
         public DateTime? DemoExpiresUtc { get; set; }
         public string UserEmail { get; set; } = string.Empty;
@@ -455,6 +457,20 @@ namespace Runtira.Application.Features
         public IReadOnlyList<string> SupportedFormats { get; set; } = Array.Empty<string>();
         public IReadOnlyList<RuntiraImportSourceDto> Sources { get; set; } = Array.Empty<RuntiraImportSourceDto>();
         public IReadOnlyList<RuntiraImportFieldSuggestionDto> SuggestedFields { get; set; } = Array.Empty<RuntiraImportFieldSuggestionDto>();
+        public IReadOnlyList<RuntiraUploadJobDto> UploadJobs { get; set; } = Array.Empty<RuntiraUploadJobDto>();
+    }
+
+    public sealed class RuntiraUploadJobDto
+    {
+        public Guid Id { get; set; }
+        public string FileName { get; set; } = string.Empty;
+        public string OrganizationName { get; set; } = string.Empty;
+        public string PropertyName { get; set; } = string.Empty;
+        public string QueueName { get; set; } = string.Empty;
+        public string BlobPath { get; set; } = string.Empty;
+        public string Status { get; set; } = string.Empty;
+        public DateTime CreatedUtc { get; set; }
+        public bool RequiresSuperAdminReview { get; set; }
     }
 
     public sealed class RuntiraExportOptionDto
@@ -991,6 +1007,33 @@ namespace Runtira.Application.Features
                         FieldName = "PreferredLanguage",
                         SuggestedValue = _currentOrganization.PreferredLanguage,
                         ConfidenceScore = 98
+                    }
+                ],
+                UploadJobs =
+                [
+                    new()
+                    {
+                        Id = Guid.Parse("91919191-aaaa-bbbb-cccc-101010101010"),
+                        FileName = "owner-ledger-july.xlsx",
+                        OrganizationName = "Runtira Demo Alberta",
+                        PropertyName = "1180 17 Ave SW · Atlas 50",
+                        QueueName = "manual-import-review",
+                        BlobPath = "demo-alberta/uploads/owner-ledger-july.xlsx",
+                        Status = "Queued",
+                        CreatedUtc = DateTime.UtcNow.AddMinutes(-32),
+                        RequiresSuperAdminReview = true
+                    },
+                    new()
+                    {
+                        Id = Guid.Parse("92929292-aaaa-bbbb-cccc-111111111111"),
+                        FileName = "new-rent-roll.xlsx",
+                        OrganizationName = "Runtira Demo Ontario",
+                        PropertyName = "25 Carlton Street",
+                        QueueName = "manual-import-review",
+                        BlobPath = "demo-ontario/uploads/new-rent-roll.xlsx",
+                        Status = "Reviewing",
+                        CreatedUtc = DateTime.UtcNow.AddHours(-2),
+                        RequiresSuperAdminReview = true
                     }
                 ]
             };

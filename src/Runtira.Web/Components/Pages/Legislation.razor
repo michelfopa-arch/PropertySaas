@@ -1,4 +1,5 @@
 @page "/{tenantSlug}/legislation"
+@page "/{tenantSlug}/{propertySlug}/legislation"
 @using Runtira.Application.Common
 @using Runtira.Application.Features
 @inject CurrentOrganization CurrentOrganization
@@ -81,6 +82,9 @@
 @code {
     [Parameter]
     public string? TenantSlug { get; set; }
+
+    [Parameter]
+    public string? PropertySlug { get; set; }
 
     private RuntiraLegislationExperienceDto? _experience;
     private bool _hasInitialized;

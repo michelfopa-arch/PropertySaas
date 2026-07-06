@@ -1,4 +1,5 @@
 @page "/{tenantSlug}/billing"
+@page "/{tenantSlug}/{propertySlug}/billing"
 @using Runtira.Application.Common
 @using Runtira.Application.Features
 @inject CurrentOrganization CurrentOrganization
@@ -42,6 +43,10 @@
                     <span class="summary-label">@RuntiraText.Get("Billing_TransactionalEmails", CurrentOrganization.PreferredLanguage)</span>
                     <strong>@RuntiraText.Get("Billing_ResendReady", CurrentOrganization.PreferredLanguage)</strong>
                 </div>
+                <div>
+                    <span class="summary-label">Tier focus</span>
+                    <strong>Free, Growth, Pro</strong>
+                </div>
             </div>
 
             <SectionToolbar Hint="@RuntiraText.Get("Billing_ResultsHint", CurrentOrganization.PreferredLanguage)">
@@ -51,14 +56,10 @@
             </SectionToolbar>
         }
 
-        <div class="stats-grid stats-grid-priority">
+        <div class="option-list">
             @foreach (var plan in _planPrices)
             {
-                <div class="stat-card stat-card-priority">
-                    <span>@plan.Plan</span>
-                    <strong>@plan.DisplayPrice</strong>
-                    <a class="prompt-chip prompt-link mt-3" href="@($"/{CurrentOrganization.OrganizationSlug}/billing/checkout/{plan.Plan.ToLowerInvariant()}")">@RuntiraText.Get("Billing_ChoosePlan", CurrentOrganization.PreferredLanguage)</a>
-                </div>
+                <a class="option-pill option-pill-accent" href="@($"/{CurrentOrganization.OrganizationSlug}/billing/checkout/{plan.Plan.ToLowerInvariant()}")">@plan.Plan · @plan.DisplayPrice</a>
             }
         </div>
     </section>
@@ -71,11 +72,7 @@
 
         <div class="prompt-box prompt-box-soft">
             <a class="prompt-chip prompt-link" href="@($"/{CurrentOrganization.OrganizationSlug}/billing/portal")">@RuntiraText.Get("Billing_OpenPortal", CurrentOrganization.PreferredLanguage)</a>
-            <a class="prompt-chip prompt-link" href="/account">@RuntiraText.Get("Billing_BackAccount", CurrentOrganization.PreferredLanguage)</a>
-            <button type="button" class="prompt-chip">@RuntiraText.Get("Billing_AppProducts", CurrentOrganization.PreferredLanguage)</button>
-            <button type="button" class="prompt-chip">@RuntiraText.Get("Billing_SimplePrices", CurrentOrganization.PreferredLanguage)</button>
-            <button type="button" class="prompt-chip">@RuntiraText.Get("Billing_LegacyStripe", CurrentOrganization.PreferredLanguage)</button>
-            <button type="button" class="prompt-chip">@RuntiraText.Get("Billing_ResendNotifications", CurrentOrganization.PreferredLanguage)</button>
+            <a class="prompt-chip prompt-link" href="/onboarding/property">Compare plans</a>
         </div>
     </section>
 </div>
@@ -83,6 +80,9 @@
 @code {
     [Parameter]
     public string? TenantSlug { get; set; }
+
+    [Parameter]
+    public string? PropertySlug { get; set; }
 
     private RuntiraWorkspaceSummaryDto? _summary;
     private List<Runtira.Infrastructure.Services.StripePlanPriceDto> _planPrices = new();

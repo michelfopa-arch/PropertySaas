@@ -11,6 +11,9 @@ public partial class InvoiceComposer : ComponentBase
     [Parameter]
     public string? TenantSlug { get; set; }
 
+    [Parameter]
+    public string? PropertySlug { get; set; }
+
     [Inject]
     public CurrentOrganization CurrentOrganization { get; set; } = default!;
 

@@ -17,16 +17,12 @@
                 <NavMenu />
                 <AuthorizeView>
                     <Authorized>
-                        <a class="top-nav-link provider-link" href="/account">@RuntiraText.Get("Nav_Account", CurrentOrganization.PreferredLanguage)</a>
+                        <a class="top-nav-link provider-link" href="/account">Account</a>
                     </Authorized>
                     <NotAuthorized>
-                        <a class="top-nav-link provider-link" href="/sign-in">@RuntiraText.Get("Nav_SignIn", CurrentOrganization.PreferredLanguage)</a>
+                        <a class="top-nav-link provider-link" href="/sign-in">Sign in</a>
                     </NotAuthorized>
                 </AuthorizeView>
-                @if (!string.IsNullOrWhiteSpace(CurrentOrganization.OrganizationSlug))
-                {
-                    <a class="top-nav-link provider-link" href="@($"/{CurrentOrganization.OrganizationSlug}/billing")">@RuntiraText.Get("Provider_Stripe", CurrentOrganization.PreferredLanguage)</a>
-                }
             </div>
         </div>
 
@@ -46,5 +42,7 @@
     private string GetWorkspaceHomeHref()
         => string.IsNullOrWhiteSpace(CurrentOrganization.OrganizationSlug)
             ? "/"
-            : $"/{CurrentOrganization.OrganizationSlug}";
+            : string.IsNullOrWhiteSpace(CurrentOrganization.PropertySlug)
+                ? $"/{CurrentOrganization.OrganizationSlug}"
+                : $"/{CurrentOrganization.OrganizationSlug}/{CurrentOrganization.PropertySlug}";
 }

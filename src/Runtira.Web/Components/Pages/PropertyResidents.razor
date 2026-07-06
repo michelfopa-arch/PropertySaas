@@ -1,0 +1,101 @@
+@page "/{tenantSlug}/{propertySlug}/residents"
+@using Runtira.Application.Common
+@using Runtira.Application.Features
+@inject CurrentOrganization CurrentOrganization
+@inject RuntiraWorkspaceService WorkspaceService
+
+<PageTitle>Residents · @CurrentOrganization.PropertyName</PageTitle>
+
+<div class="hero-shell">
+    <section class="hero-card">
+        <div class="hero-badge">Residents</div>
+        <h1>Residents</h1>
+        <p class="hero-copy">Une page dédiée aux résidents de cette propriété, avec des actions simples et ciblées.</p>
+
+        @if (_isLoading)
+        {
+            <PageLoadingState />
+        }
+        else if (_workspace is not null)
+        {
+            <div class="tenant-summary">
+                <div>
+                    <span class="summary-label">Residents</span>
+                    <strong>@_workspace.Residents.Count</strong>
+                </div>
+                <div>
+                    <span class="summary-label">Languages</span>
+                    <strong>@string.Join(" · ", _workspace.Residents.Select(x => x.PreferredLanguage).Distinct(StringComparer.OrdinalIgnoreCase))</strong>
+                </div>
+                <div>
+                    <span class="summary-label">Active</span>
+                    <strong>@_workspace.Residents.Count(x => string.Equals(x.Status, "Active", StringComparison.OrdinalIgnoreCase))</strong>
+                </div>
+                <div>
+                    <span class="summary-label">Property</span>
+                    <strong>@(_workspace.AssetName)</strong>
+                </div>
+            </div>
+
+            <SectionToolbar Hint="Concentrer les actions sur l’entité affichée améliore la clarté pour les petits propriétaires.">
+                <Actions>
+                    <a class="ghost-button" href="@($"/{CurrentOrganization.OrganizationSlug}/{CurrentOrganization.PropertySlug}/dashboard")">Back to property</a>
+                </Actions>
+            </SectionToolbar>
+
+            <div class="option-list">
+                @foreach (var resident in _workspace.Residents)
+                {
+                    <span class="option-pill option-pill-accent">@resident.FullName · @resident.Status</span>
+                }
+            </div>
+        }
+        else
+        {
+            <PageEmptyState Title="No resident data" Message="Aucun résident mock disponible pour cette propriété." />
+        }
+    </section>
+
+    <section class="workspace-card">
+        <div class="workspace-header">
+            <h2>Resident actions</h2>
+            <span class="workspace-state">Mock</span>
+        </div>
+
+        <div class="prompt-box prompt-box-soft">
+            <button type="button" class="prompt-chip">Add resident</button>
+            <button type="button" class="prompt-chip">Open lease</button>
+        </div>
+    </section>
+</div>
+
+@code {
+    [Parameter]
+    public string? TenantSlug { get; set; }
+
+    [Parameter]
+    public string? PropertySlug { get; set; }
+
+    private RuntiraAssetWorkspaceDto? _workspace;
+    private bool _isLoading = true;
+    private bool _hasInitialized;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (_hasInitialized)
+        {
+            return;
+        }
+
+        _hasInitialized = true;
+
+        try
+        {
+            _workspace = await WorkspaceService.GetAssetWorkspaceAsync();
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+}

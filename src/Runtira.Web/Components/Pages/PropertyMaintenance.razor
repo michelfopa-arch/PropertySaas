@@ -1,0 +1,65 @@
+@page "/{tenantSlug}/{propertySlug}/maintenance"
+@using Runtira.Application.Common
+@inject CurrentOrganization CurrentOrganization
+
+<PageTitle>Maintenance · @CurrentOrganization.PropertyName</PageTitle>
+
+<div class="hero-shell">
+    <section class="hero-card">
+        <div class="hero-badge">Maintenance</div>
+        <h1>Maintenance</h1>
+        <p class="hero-copy">Une page dédiée aux tâches de maintenance de cette propriété, avec des actions simples et ciblées.</p>
+
+        <div class="tenant-summary">
+            <div>
+                <span class="summary-label">Open tasks</span>
+                <strong>4</strong>
+            </div>
+            <div>
+                <span class="summary-label">Urgent</span>
+                <strong>1</strong>
+            </div>
+            <div>
+                <span class="summary-label">Next visit</span>
+                <strong>Friday 10:00</strong>
+            </div>
+            <div>
+                <span class="summary-label">Property</span>
+                <strong>@CurrentOrganization.PropertyName</strong>
+            </div>
+        </div>
+
+        <SectionToolbar Hint="Une maintenance lisible aide les petits propriétaires à prioriser rapidement sans surcharge d’interface.">
+            <Actions>
+                <a class="ghost-button" href="@($"/{CurrentOrganization.OrganizationSlug}/{CurrentOrganization.PropertySlug}/dashboard")">Back to property</a>
+            </Actions>
+        </SectionToolbar>
+
+        <div class="option-list">
+            <span class="option-pill option-pill-accent">Water leak · Unit A-101 · Open</span>
+            <span class="option-pill">Smoke detector check · Planned</span>
+            <span class="option-pill">Roof quote review · Waiting approval</span>
+            <span class="option-pill">Appliance replacement · Scheduled</span>
+        </div>
+    </section>
+
+    <section class="workspace-card">
+        <div class="workspace-header">
+            <h2>Maintenance actions</h2>
+            <span class="workspace-state">Mock</span>
+        </div>
+
+        <div class="prompt-box prompt-box-soft">
+            <button type="button" class="prompt-chip">Create task</button>
+            <button type="button" class="prompt-chip">Assign vendor</button>
+        </div>
+    </section>
+</div>
+
+@code {
+    [Parameter]
+    public string? TenantSlug { get; set; }
+
+    [Parameter]
+    public string? PropertySlug { get; set; }
+}

@@ -2,28 +2,37 @@
 @inject CurrentOrganization CurrentOrganization
 
 <nav class="top-nav">
-    <NavLink class="top-nav-link" href="@GetHomeHref()" Match="NavLinkMatch.All">@RuntiraText.Get("Nav_Home", CurrentOrganization.PreferredLanguage)</NavLink>
-    <NavLink class="top-nav-link" href="" Match="NavLinkMatch.Prefix">@RuntiraText.Get("Nav_Workspace", CurrentOrganization.PreferredLanguage)</NavLink>
-    <NavLink class="top-nav-link" href="/sign-in">@RuntiraText.Get("Nav_SignIn", CurrentOrganization.PreferredLanguage)</NavLink>
-    <NavLink class="top-nav-link" href="/sign-up">@RuntiraText.Get("Nav_SignUp", CurrentOrganization.PreferredLanguage)</NavLink>
-    <NavLink class="top-nav-link" href="/account">@RuntiraText.Get("Nav_Account", CurrentOrganization.PreferredLanguage)</NavLink>
-    @if (!string.IsNullOrWhiteSpace(CurrentOrganization.OrganizationSlug))
+    @if (!CurrentOrganization.IsAuthenticated)
     {
-        <NavLink class="top-nav-link nav-priority-link" href="@($"/{CurrentOrganization.OrganizationSlug}/invoice-composer")">@RuntiraText.Get("Nav_LocalBilling", CurrentOrganization.PreferredLanguage)</NavLink>
-        <NavLink class="top-nav-link nav-priority-link" href="@($"/{CurrentOrganization.OrganizationSlug}/billing")">@RuntiraText.Get("Nav_Billing", CurrentOrganization.PreferredLanguage)</NavLink>
-        <NavLink class="top-nav-link nav-priority-link" href="@($"/{CurrentOrganization.OrganizationSlug}/assets")">@RuntiraText.Get("Nav_Assets", CurrentOrganization.PreferredLanguage)</NavLink>
-        <NavLink class="top-nav-link nav-priority-link" href="@($"/{CurrentOrganization.OrganizationSlug}/exports")">@RuntiraText.Get("Nav_Exports", CurrentOrganization.PreferredLanguage)</NavLink>
-        <NavLink class="top-nav-link" href="@($"/{CurrentOrganization.OrganizationSlug}/inbox")">@RuntiraText.Get("Nav_Inbox", CurrentOrganization.PreferredLanguage)</NavLink>
-        <NavLink class="top-nav-link" href="@($"/{CurrentOrganization.OrganizationSlug}/imports")">@RuntiraText.Get("Nav_Imports", CurrentOrganization.PreferredLanguage)</NavLink>
-        <NavLink class="top-nav-link nav-secondary-link" href="@($"/{CurrentOrganization.OrganizationSlug}/leads")">@RuntiraText.Get("Nav_Leads", CurrentOrganization.PreferredLanguage)</NavLink>
-        <NavLink class="top-nav-link" href="@($"/{CurrentOrganization.OrganizationSlug}/legislation")">@RuntiraText.Get("Nav_LocalFramework", CurrentOrganization.PreferredLanguage)</NavLink>
+        <NavLink class="top-nav-link" href="/demo">Demo</NavLink>
+        <NavLink class="top-nav-link nav-priority-link" href="/sign-up">Créer un compte</NavLink>
+    }
+    else
+    {
+        @if (!string.IsNullOrWhiteSpace(CurrentOrganization.OrganizationSlug))
+        {
+            <NavLink class="top-nav-link nav-priority-link" href="@BuildWorkspaceHref("dashboard")">Espace</NavLink>
+            <NavLink class="top-nav-link" href="@BuildWorkspaceHref("billing")">Facturation</NavLink>
+        }
+
+        @if (CurrentOrganization.IsSuperAdmin)
+        {
+            <NavLink class="top-nav-link" href="/organizations">Espaces</NavLink>
+        }
     }
 </nav>
 
 @code {
-    private string GetHomeHref()
-        => string.IsNullOrWhiteSpace(CurrentOrganization.OrganizationSlug)
-            ? "/"
-            : $"/{CurrentOrganization.OrganizationSlug}";
+    private string BuildWorkspaceHref(string leaf)
+    {
+        if (string.IsNullOrWhiteSpace(CurrentOrganization.OrganizationSlug))
+        {
+            return "/";
+        }
+
+        return string.IsNullOrWhiteSpace(CurrentOrganization.PropertySlug)
+            ? $"/{CurrentOrganization.OrganizationSlug}/{leaf}"
+            : $"/{CurrentOrganization.OrganizationSlug}/{CurrentOrganization.PropertySlug}/{leaf}";
+    }
 }
 

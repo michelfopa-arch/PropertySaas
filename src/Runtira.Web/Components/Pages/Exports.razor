@@ -1,4 +1,5 @@
 @page "/{tenantSlug}/exports"
+@page "/{tenantSlug}/{propertySlug}/exports"
 @using Runtira.Application.Common
 @using Runtira.Application.Features
 @inject CurrentOrganization CurrentOrganization
@@ -154,6 +155,9 @@
 @code {
     [Parameter]
     public string? TenantSlug { get; set; }
+
+    [Parameter]
+    public string? PropertySlug { get; set; }
 
     private RuntiraExportWorkspaceDto? _workspace;
     private bool _isLoading = true;
