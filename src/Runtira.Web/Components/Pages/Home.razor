@@ -41,6 +41,20 @@
 
         <div class="prompt-box">
             <div class="prompt-title">@RuntiraText.Get("Home_TodayTitle", CurrentOrganization.PreferredLanguage)</div>
+            @if (CurrentOrganization.IsSuperAdmin && CurrentOrganization.OrganizationOptions.Count > 0)
+            {
+                <div class="prompt-title">Organizations</div>
+                <div class="option-list">
+                    @foreach (var organization in CurrentOrganization.OrganizationOptions)
+                    {
+                        var targetSlug = string.Equals(CurrentOrganization.OrganizationName, organization.OrganizationName, StringComparison.OrdinalIgnoreCase)
+                            && !string.IsNullOrWhiteSpace(CurrentOrganization.OrganizationSlug)
+                            ? CurrentOrganization.OrganizationSlug
+                            : SlugifyOrganization(organization.OrganizationName);
+                        <a class="option-pill option-pill-accent" href="@($"/{targetSlug}")">@organization.OrganizationName</a>
+                    }
+                </div>
+            }
             @foreach (var prompt in GetLocalizedPrompts())
             {
                 <button type="button" class="prompt-chip">@prompt</button>
@@ -216,6 +230,12 @@
             "CA" => RuntiraText.Get("Home_HeroTitle_Canada", CurrentOrganization.PreferredLanguage),
             _ => RuntiraText.Get("Home_HeroTitle_Default", CurrentOrganization.PreferredLanguage)
         };
+
+    private static string SlugifyOrganization(string name)
+        => string.Join('-', (name ?? string.Empty)
+            .Trim()
+            .ToLowerInvariant()
+            .Split(new[] { ' ', '·', ',', '.', '/', '\\' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
 
     private string GetHeroCopy()
         => CurrentOrganization.CountryCode switch

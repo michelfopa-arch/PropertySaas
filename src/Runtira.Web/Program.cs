@@ -4,12 +4,10 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using MudBlazor.Services;
 using Runtira.Application.Abstractions;
 using Runtira.Application.Common;
 using Runtira.Application.Features;
-using Runtira.Infrastructure.Data;
 using Runtira.Infrastructure.Options;
 using Runtira.Infrastructure.Services;
 using Runtira.Web.Components;
@@ -42,8 +40,8 @@ var authenticationBuilder = builder.Services.AddAuthentication(options =>
     options.LoginPath = "/account/login";
 });
 
-var runtiraInfrastructureEnabled = !string.IsNullOrWhiteSpace(builder.Configuration.GetConnectionString("RuntiraDb"))
-    || !string.IsNullOrWhiteSpace(builder.Configuration.GetConnectionString("PropertyDb"));
+var cosmosEnabled = builder.Configuration.GetSection("Cosmos").GetValue("Enabled", false);
+var runtiraInfrastructureEnabled = cosmosEnabled;
 
 if (runtiraInfrastructureEnabled)
 {
@@ -78,9 +76,10 @@ builder.Services.AddCascadingAuthenticationState();
 
 builder.Services.AddScoped<CurrentOrganization>(provider =>
 {
-    var httpContextAccessor = provider.GetRequiredService<IHttpContextAccessor>();
-    var request = httpContextAccessor.HttpContext?.Request;
-    var user = httpContextAccessor.HttpContext?.User;
+    var currentOrganization = new CurrentOrganization();
+    var httpContext = provider.GetRequiredService<IHttpContextAccessor>().HttpContext;
+    var request = httpContext?.Request;
+    var user = httpContext?.User;
     var tenantSlug = request?.Path.Value?
         .Split('/', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
         .FirstOrDefault() ?? string.Empty;
@@ -90,106 +89,40 @@ builder.Services.AddScoped<CurrentOrganization>(provider =>
         tenantSlug = string.Empty;
     }
 
+    var acceptLanguage = request?.Headers.AcceptLanguage.ToString();
+    var userLocale = user?.FindFirstValue("locale")
+        ?? user?.FindFirstValue("ui_locale")
+        ?? ResolvePreferredLanguageFromHeader(acceptLanguage)
+        ?? string.Empty;
+    var headerRegion = acceptLanguage?.ToUpperInvariant() switch
+    {
+        var value when !string.IsNullOrWhiteSpace(value) && value.Contains("FR-CA") => "QC",
+        var value when !string.IsNullOrWhiteSpace(value) && value.Contains("EN-CA") => "ON",
+        var value when !string.IsNullOrWhiteSpace(value) && (value.Contains("EN-US") || value.Contains("ES-MX")) => "TX",
+        _ => string.Empty
+    };
+    var regionClaim = user?.FindFirstValue("region")
+        ?? user?.FindFirstValue("zoneinfo")
+        ?? headerRegion;
+
     if (runtiraInfrastructureEnabled)
     {
         try
         {
-            var dbOptions = provider.GetService<DbContextOptions<ApplicationDbContext>>();
-            if (dbOptions is not null)
+            var readModelStore = provider.GetRequiredService<IRuntiraReadModelStore>();
+            var resolved = Task.Run(() => readModelStore.ResolveCurrentOrganizationAsync(
+                tenantSlug,
+                user?.FindFirstValue(ClaimTypes.Email) ?? user?.FindFirstValue("email") ?? string.Empty,
+                user?.FindFirstValue(ClaimTypes.NameIdentifier) ?? user?.FindFirstValue("sub") ?? string.Empty,
+                ResolvePreferredLanguage(userLocale),
+                ResolveRegionFromClaim(regionClaim),
+                user?.Identity?.Name ?? string.Empty,
+                httpContext?.RequestAborted ?? CancellationToken.None)).GetAwaiter().GetResult();
+
+            if (resolved is not null)
             {
-                using var db = new ApplicationDbContext(dbOptions, tenantContextAccessor: null);
-
-                var userEmail = user?.FindFirstValue(ClaimTypes.Email)
-                    ?? user?.FindFirstValue("email")
-                    ?? string.Empty;
-                var clerkUserId = user?.FindFirstValue(ClaimTypes.NameIdentifier)
-                    ?? user?.FindFirstValue("sub")
-                    ?? string.Empty;
-                var acceptLanguage = request?.Headers.AcceptLanguage.ToString();
-                var userLocale = user?.FindFirstValue("locale")
-                    ?? user?.FindFirstValue("ui_locale")
-                    ?? ResolvePreferredLanguageFromHeader(acceptLanguage)
-                    ?? string.Empty;
-                var headerRegion = acceptLanguage?.ToUpperInvariant() switch
-                {
-                    var value when !string.IsNullOrWhiteSpace(value) && value.Contains("FR-CA") => "QC",
-                    var value when !string.IsNullOrWhiteSpace(value) && value.Contains("EN-CA") => "ON",
-                    var value when !string.IsNullOrWhiteSpace(value) && (value.Contains("EN-US") || value.Contains("ES-MX")) => "TX",
-                    _ => string.Empty
-                };
-                var regionClaim = user?.FindFirstValue("region")
-                    ?? user?.FindFirstValue("zoneinfo")
-                    ?? headerRegion;
-
-                var organizationQuery = db.RuntiraOrganizations.AsNoTracking();
-                Runtira.Domain.Entities.RuntiraOrganization? organization = null;
-
-                if (!string.IsNullOrWhiteSpace(tenantSlug))
-                {
-                    organization = organizationQuery.FirstOrDefault(x => x.Slug == tenantSlug);
-                }
-
-                var matchedUser = string.IsNullOrWhiteSpace(userEmail) && string.IsNullOrWhiteSpace(clerkUserId)
-                    ? null
-                    : db.RuntiraUsers
-                        .AsNoTracking()
-                        .FirstOrDefault(x =>
-                            (!string.IsNullOrWhiteSpace(userEmail) && x.Email == userEmail)
-                            || (!string.IsNullOrWhiteSpace(clerkUserId) && x.ClerkUserId == clerkUserId));
-
-                var memberships = matchedUser is null
-                    ? new List<Runtira.Domain.Entities.RuntiraMembership>()
-                    : db.RuntiraMemberships
-                        .AsNoTracking()
-                        .Where(x => x.UserId == matchedUser.Id)
-                        .OrderByDescending(x => x.LastSelectedUtc ?? x.CreatedUtc)
-                        .ToList();
-
-                if (organization is null && memberships.Count > 0)
-                {
-                    var candidateTenantIds = memberships.Select(x => x.TenantId).ToList();
-                    organization = organizationQuery.FirstOrDefault(x => candidateTenantIds.Contains(x.Id));
-                }
-
-                organization ??= organizationQuery.OrderBy(x => x.Name).FirstOrDefault();
-
-                if (organization is not null)
-                {
-                    var activeMembership = memberships.FirstOrDefault(x => x.TenantId == organization.Id);
-                    var accessibleOrganizationCount = memberships.Select(x => x.TenantId).Distinct().Count();
-                    var isSuperAdmin = matchedUser?.IsSuperAdmin == true
-                        || string.Equals(organization.OwnerEmail, "michelfopa@gmail.com", StringComparison.OrdinalIgnoreCase)
-                        || string.Equals(userEmail, "michelfopa@gmail.com", StringComparison.OrdinalIgnoreCase);
-
-                    var effectiveLocale = !string.IsNullOrWhiteSpace(userLocale)
-                        ? userLocale
-                        : matchedUser?.PreferredLanguage ?? organization.DefaultLocale;
-                    var effectiveRegion = !string.IsNullOrWhiteSpace(ResolveRegionFromClaim(regionClaim))
-                        ? ResolveRegionFromClaim(regionClaim)
-                        : organization.RegionCode;
-                    var effectiveCountryCode = !string.IsNullOrWhiteSpace(organization.CountryCode)
-                        ? organization.CountryCode
-                        : ResolveCountryCode(effectiveRegion);
-
-                    return new CurrentOrganization
-                    {
-                        UserId = matchedUser?.Id ?? Guid.Empty,
-                        OrganizationId = organization.Id,
-                        AccessibleOrganizationCount = Math.Max(accessibleOrganizationCount, 1),
-                        HasSuperAdminOrganizationSelection = isSuperAdmin,
-                        OrganizationName = organization.Name,
-                        OrganizationSlug = organization.Slug,
-                        UserEmail = !string.IsNullOrWhiteSpace(userEmail) ? userEmail : organization.OwnerEmail,
-                        UserFullName = matchedUser?.FullName ?? user?.Identity?.Name ?? organization.OwnerEmail,
-                        Role = activeMembership?.Role ?? (isSuperAdmin ? "SuperAdmin" : "Owner"),
-                        SystemRole = isSuperAdmin ? "SuperAdmin" : "User",
-                        Province = string.IsNullOrWhiteSpace(effectiveRegion) ? "AB" : effectiveRegion,
-                        CountryCode = effectiveCountryCode,
-                        PreferredLanguage = ResolvePreferredLanguage(effectiveLocale),
-                        SubscriptionIsActive = organization.IsActive,
-                        TrialExpired = false
-                    };
-                }
+                CopyCurrentOrganization(resolved, currentOrganization);
+                return currentOrganization;
             }
         }
         catch
@@ -197,38 +130,25 @@ builder.Services.AddScoped<CurrentOrganization>(provider =>
         }
     }
 
-    var fallbackAcceptLanguage = request?.Headers.AcceptLanguage.ToString();
-    var fallbackLocale = user?.FindFirstValue("locale")
-        ?? user?.FindFirstValue("ui_locale")
-        ?? ResolvePreferredLanguageFromHeader(fallbackAcceptLanguage);
-    var fallbackHeaderRegion = fallbackAcceptLanguage?.ToUpperInvariant() switch
-    {
-        var value when !string.IsNullOrWhiteSpace(value) && value.Contains("FR-CA") => "QC",
-        var value when !string.IsNullOrWhiteSpace(value) && value.Contains("EN-CA") => "ON",
-        var value when !string.IsNullOrWhiteSpace(value) && (value.Contains("EN-US") || value.Contains("ES-MX")) => "TX",
-        _ => string.Empty
-    };
-    var fallbackRegion = ResolveRegionFromClaim(user?.FindFirstValue("region") ?? user?.FindFirstValue("zoneinfo") ?? fallbackHeaderRegion);
+    var fallbackRegion = ResolveRegionFromClaim(regionClaim);
     var province = string.IsNullOrWhiteSpace(fallbackRegion) ? "AB" : fallbackRegion;
     var organizationName = string.IsNullOrWhiteSpace(tenantSlug) ? "Runtira Demo" : ToDisplayName(tenantSlug);
 
-    return new CurrentOrganization
-    {
-        OrganizationId = Guid.Empty,
-        AccessibleOrganizationCount = 0,
-        HasSuperAdminOrganizationSelection = string.Equals(user?.FindFirstValue(ClaimTypes.Email), "michelfopa@gmail.com", StringComparison.OrdinalIgnoreCase),
-        OrganizationName = organizationName,
-        OrganizationSlug = tenantSlug,
-        UserEmail = user?.FindFirstValue(ClaimTypes.Email) ?? string.Empty,
-        UserFullName = user?.Identity?.Name ?? "Workspace invité",
-        Role = string.IsNullOrWhiteSpace(tenantSlug) ? "Guest" : "Owner",
-        SystemRole = string.Equals(user?.FindFirstValue(ClaimTypes.Email), "michelfopa@gmail.com", StringComparison.OrdinalIgnoreCase) ? "SuperAdmin" : (string.IsNullOrWhiteSpace(tenantSlug) ? "Guest" : "User"),
-        Province = province,
-        CountryCode = ResolveCountryCode(province),
-        PreferredLanguage = ResolvePreferredLanguage(fallbackLocale),
-        SubscriptionIsActive = true,
-        TrialExpired = false
-    };
+    currentOrganization.OrganizationId = Guid.Empty;
+    currentOrganization.AccessibleOrganizationCount = 0;
+    currentOrganization.HasSuperAdminOrganizationSelection = string.Equals(user?.FindFirstValue(ClaimTypes.Email), "michelfopa@gmail.com", StringComparison.OrdinalIgnoreCase);
+    currentOrganization.OrganizationName = organizationName;
+    currentOrganization.OrganizationSlug = tenantSlug;
+    currentOrganization.UserEmail = user?.FindFirstValue(ClaimTypes.Email) ?? string.Empty;
+    currentOrganization.UserFullName = user?.Identity?.Name ?? "Workspace invité";
+    currentOrganization.Role = string.IsNullOrWhiteSpace(tenantSlug) ? "Guest" : "Owner";
+    currentOrganization.SystemRole = string.Equals(user?.FindFirstValue(ClaimTypes.Email), "michelfopa@gmail.com", StringComparison.OrdinalIgnoreCase) ? "SuperAdmin" : (string.IsNullOrWhiteSpace(tenantSlug) ? "Guest" : "User");
+    currentOrganization.Province = province;
+    currentOrganization.CountryCode = ResolveCountryCode(province);
+    currentOrganization.PreferredLanguage = ResolvePreferredLanguage(userLocale);
+    currentOrganization.SubscriptionIsActive = true;
+    currentOrganization.TrialExpired = false;
+    return currentOrganization;
 });
 
 builder.Services.AddScoped<ITenantContextAccessor>(provider =>
@@ -266,8 +186,88 @@ app.UseRequestLocalization(new RequestLocalizationOptions
 });
 
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
-app.UseHttpsRedirection();
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
 app.UseAuthentication();
+app.Use(async (context, next) =>
+{
+    var currentOrganization = context.RequestServices.GetRequiredService<CurrentOrganization>();
+    var request = context.Request;
+    var user = context.User;
+    var tenantSlug = request.Path.Value?
+        .Split('/', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+        .FirstOrDefault() ?? string.Empty;
+
+    if (string.Equals(tenantSlug, "not-found", StringComparison.OrdinalIgnoreCase))
+    {
+        tenantSlug = string.Empty;
+    }
+
+    var acceptLanguage = request.Headers.AcceptLanguage.ToString();
+    var userLocale = user?.FindFirstValue("locale")
+        ?? user?.FindFirstValue("ui_locale")
+        ?? ResolvePreferredLanguageFromHeader(acceptLanguage)
+        ?? string.Empty;
+    var headerRegion = acceptLanguage?.ToUpperInvariant() switch
+    {
+        var value when !string.IsNullOrWhiteSpace(value) && value.Contains("FR-CA") => "QC",
+        var value when !string.IsNullOrWhiteSpace(value) && value.Contains("EN-CA") => "ON",
+        var value when !string.IsNullOrWhiteSpace(value) && (value.Contains("EN-US") || value.Contains("ES-MX")) => "TX",
+        _ => string.Empty
+    };
+    var regionClaim = user?.FindFirstValue("region")
+        ?? user?.FindFirstValue("zoneinfo")
+        ?? headerRegion;
+
+    if (runtiraInfrastructureEnabled)
+    {
+        try
+        {
+            var readModelStore = context.RequestServices.GetRequiredService<IRuntiraReadModelStore>();
+            var resolved = await readModelStore.ResolveCurrentOrganizationAsync(
+                tenantSlug,
+                user?.FindFirstValue(ClaimTypes.Email) ?? user?.FindFirstValue("email") ?? string.Empty,
+                user?.FindFirstValue(ClaimTypes.NameIdentifier) ?? user?.FindFirstValue("sub") ?? string.Empty,
+                ResolvePreferredLanguage(userLocale),
+                ResolveRegionFromClaim(regionClaim),
+                user?.Identity?.Name ?? string.Empty,
+                context.RequestAborted);
+
+            if (resolved is not null)
+            {
+                CopyCurrentOrganization(resolved, currentOrganization);
+                await next();
+                return;
+            }
+        }
+        catch
+        {
+        }
+    }
+
+    var fallbackRegion = ResolveRegionFromClaim(regionClaim);
+    var province = string.IsNullOrWhiteSpace(fallbackRegion) ? "AB" : fallbackRegion;
+    var organizationName = string.IsNullOrWhiteSpace(tenantSlug) ? "Runtira Demo" : ToDisplayName(tenantSlug);
+
+    currentOrganization.OrganizationId = Guid.Empty;
+    currentOrganization.AccessibleOrganizationCount = 0;
+    currentOrganization.HasSuperAdminOrganizationSelection = string.Equals(user?.FindFirstValue(ClaimTypes.Email), "michelfopa@gmail.com", StringComparison.OrdinalIgnoreCase);
+    currentOrganization.OrganizationName = organizationName;
+    currentOrganization.OrganizationSlug = tenantSlug;
+    currentOrganization.UserEmail = user?.FindFirstValue(ClaimTypes.Email) ?? string.Empty;
+    currentOrganization.UserFullName = user?.Identity?.Name ?? "Workspace invité";
+    currentOrganization.Role = string.IsNullOrWhiteSpace(tenantSlug) ? "Guest" : "Owner";
+    currentOrganization.SystemRole = string.Equals(user?.FindFirstValue(ClaimTypes.Email), "michelfopa@gmail.com", StringComparison.OrdinalIgnoreCase) ? "SuperAdmin" : (string.IsNullOrWhiteSpace(tenantSlug) ? "Guest" : "User");
+    currentOrganization.Province = province;
+    currentOrganization.CountryCode = ResolveCountryCode(province);
+    currentOrganization.PreferredLanguage = ResolvePreferredLanguage(userLocale);
+    currentOrganization.SubscriptionIsActive = true;
+    currentOrganization.TrialExpired = false;
+
+    await next();
+});
 app.Use(async (context, next) =>
 {
     if (!useClerkAuthentication)
@@ -355,24 +355,26 @@ app.MapGet("/{tenantSlug}/exports/leads.csv", async (string tenantSlug, HttpCont
     return Results.File(export.Content, export.ContentType, export.FileName);
 });
 
-app.MapGet("/{tenantSlug}/billing/checkout/{plan}", async (string tenantSlug, string plan, HttpContext httpContext, [FromServices] Runtira.Infrastructure.Data.ApplicationDbContext db, [FromServices] Runtira.Infrastructure.Services.StripeBillingService billingService) =>
+app.MapGet("/{tenantSlug}/billing/checkout/{plan}", async (string tenantSlug, string plan, HttpContext httpContext, [FromServices] IRuntiraReadModelStore readModelStore, [FromServices] Runtira.Infrastructure.Services.StripeBillingService billingService) =>
 {
-    var organization = await db.RuntiraOrganizations.FirstOrDefaultAsync(x => x.Slug == tenantSlug);
-    if (organization is null)
+    var billingOrganization = await readModelStore.GetBillingOrganizationAsync(tenantSlug, httpContext.RequestAborted);
+    if (billingOrganization is null)
     {
         return Results.LocalRedirect($"/{tenantSlug}");
     }
 
     var root = $"{httpContext.Request.Scheme}://{httpContext.Request.Host}";
-    var url = await billingService.CreateCheckoutSessionAsync(organization, plan, $"{root}/{tenantSlug}/billing", $"{root}/{tenantSlug}/billing");
+    var currentOrganization = await readModelStore.ResolveCurrentOrganizationAsync(tenantSlug, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, httpContext.RequestAborted);
+    var ownerEmail = currentOrganization?.UserEmail ?? string.Empty;
+    var url = await billingService.CreateCheckoutSessionAsync(billingOrganization.Value.OrganizationId, ownerEmail, plan, $"{root}/{tenantSlug}/billing", $"{root}/{tenantSlug}/billing");
     return Results.Redirect(url);
 });
 
-app.MapGet("/{tenantSlug}/billing/portal", async (string tenantSlug, HttpContext httpContext, [FromServices] Runtira.Infrastructure.Data.ApplicationDbContext db, [FromServices] Runtira.Infrastructure.Services.StripeBillingService billingService) =>
+app.MapGet("/{tenantSlug}/billing/portal", async (string tenantSlug, HttpContext httpContext, [FromServices] IRuntiraReadModelStore readModelStore, [FromServices] Runtira.Infrastructure.Services.StripeBillingService billingService) =>
 {
-    var organization = await db.RuntiraOrganizations.FirstOrDefaultAsync(x => x.Slug == tenantSlug);
+    var billingOrganization = await readModelStore.GetBillingOrganizationAsync(tenantSlug, httpContext.RequestAborted);
     var root = $"{httpContext.Request.Scheme}://{httpContext.Request.Host}";
-    var url = await billingService.CreateBillingPortalAsync(organization?.StripeCustomerId ?? string.Empty, $"{root}/{tenantSlug}/billing");
+    var url = await billingService.CreateBillingPortalAsync(billingOrganization?.StripeCustomerId ?? string.Empty, $"{root}/{tenantSlug}/billing");
     return Results.Redirect(url);
 });
 
@@ -489,4 +491,25 @@ static string ToDisplayName(string slug)
 
     return string.Join(' ', slug.Split('-', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
         .Select(part => char.ToUpperInvariant(part[0]) + part[1..]));
+}
+
+static void CopyCurrentOrganization(CurrentOrganization source, CurrentOrganization target)
+{
+    target.UserId = source.UserId;
+    target.OrganizationId = source.OrganizationId;
+    target.AccessibleOrganizationCount = source.AccessibleOrganizationCount;
+    target.HasSuperAdminOrganizationSelection = source.HasSuperAdminOrganizationSelection;
+    target.OrganizationName = source.OrganizationName;
+    target.OrganizationSlug = source.OrganizationSlug;
+    target.IsDemo = source.IsDemo;
+    target.DemoExpiresUtc = source.DemoExpiresUtc;
+    target.UserEmail = source.UserEmail;
+    target.UserFullName = source.UserFullName;
+    target.Role = source.Role;
+    target.SystemRole = source.SystemRole;
+    target.Province = source.Province;
+    target.CountryCode = source.CountryCode;
+    target.PreferredLanguage = source.PreferredLanguage;
+    target.SubscriptionIsActive = source.SubscriptionIsActive;
+    target.TrialExpired = source.TrialExpired;
 }
