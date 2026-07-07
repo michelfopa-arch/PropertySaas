@@ -1,0 +1,10 @@
+[
+  { "id": "h1h1h1h1-0001-0001-0001-000000000001", "tenantId": "a1a1a1a1-0001-0001-0001-000000000001", "propertyId": "b1b1b1b1-0001-0001-0001-000000000001", "category": "Bail", "fileName": "bail-a101.pdf", "uploadedUtc": "2026-01-05T00:00:00Z", "status": "Archived" },
+  { "id": "h1h1h1h1-0001-0001-0001-000000000002", "tenantId": "a1a1a1a1-0001-0001-0001-000000000001", "propertyId": "b1b1b1b1-0001-0001-0001-000000000001", "category": "Facture", "fileName": "facture-juillet.pdf", "uploadedUtc": "2026-07-03T00:00:00Z", "status": "Ready" },
+
+  { "id": "h2h2h2h2-0002-0002-0002-000000000001", "tenantId": "a1a1a1a1-0002-0002-0002-000000000002", "propertyId": "b1b1b1b1-0002-0002-0002-000000000002", "category": "Lease", "fileName": "lease-1204.pdf", "uploadedUtc": "2026-03-05T00:00:00Z", "status": "Archived" },
+  { "id": "h2h2h2h2-0002-0002-0002-000000000002", "tenantId": "a1a1a1a1-0002-0002-0002-000000000002", "propertyId": "b1b1b1b1-0002-0002-0002-000000000002", "category": "Invoice", "fileName": "invoice-july.pdf", "uploadedUtc": "2026-07-03T00:00:00Z", "status": "Ready" },
+
+  { "id": "h3h3h3h3-0003-0003-0003-000000000001", "tenantId": "a1a1a1a1-0003-0003-0003-000000000003", "propertyId": "b1b1b1b1-0003-0003-0003-000000000003", "category": "Lease", "fileName": "lease-8b.pdf", "uploadedUtc": "2026-04-05T00:00:00Z", "status": "Archived" },
+  { "id": "h3h3h3h3-0003-0003-0003-000000000002", "tenantId": "a1a1a1a1-0003-0003-0003-000000000003", "propertyId": "b1b1b1b1-0003-0003-0003-000000000003", "category": "VendorQuote", "fileName": "vendor-quote.pdf", "uploadedUtc": "2026-07-03T00:00:00Z", "status": "NeedsReview" }
+]

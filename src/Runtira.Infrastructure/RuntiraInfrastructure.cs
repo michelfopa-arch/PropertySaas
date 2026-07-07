@@ -466,6 +466,8 @@ namespace Runtira.Infrastructure.Data
             var organizations = database.GetContainer("Organizations");
             var users = database.GetContainer("Users");
             var tenantCore = database.GetContainer("TenantCore");
+            var inbox = database.GetContainer("Inbox");
+            var blobArchives = database.GetContainer("BlobArchives");
 
             foreach (var document in BuildSeedDocuments())
             {
@@ -473,6 +475,9 @@ namespace Runtira.Infrastructure.Data
                 {
                     "organization" => organizations,
                     "user" => users,
+                    "inboxMessage" => inbox,
+                    "attachment" => inbox,
+                    "blobArchive" => blobArchives,
                     _ => tenantCore
                 };
 
@@ -1037,6 +1042,23 @@ namespace Runtira.Infrastructure.Data
                 Category = GetString(x, "category"),
                 ReceivedUtc = DateTime.TryParse(GetString(x, "receivedUtc"), out var receivedUtc) ? receivedUtc : DateTime.MinValue,
                 HasAttachments = bool.TryParse(GetString(x, "hasAttachments"), out var hasAttachments) && hasAttachments
+            }).ToList();
+        }
+
+        public async Task<IReadOnlyList<Runtira.Application.Features.RuntiraDocumentDto>> GetDocumentsAsync(Guid tenantId, CancellationToken cancellationToken = default)
+        {
+            var database = _cosmosClient.GetDatabase(_options.DatabaseName);
+            var blobArchives = database.GetContainer("BlobArchives");
+            var archives = await QueryManyAsync(blobArchives, tenantId, "SELECT * FROM c WHERE c.tenantId = @tenantId AND c.type = 'blobArchive' ORDER BY c.data.createdUtc DESC", cancellationToken);
+
+            return archives.Select(x => new Runtira.Application.Features.RuntiraDocumentDto
+            {
+                Id = ParseGuid(x.id),
+                FileName = System.IO.Path.GetFileName(GetString(x, "blobPath")),
+                Category = GetString(x, "category"),
+                Status = "Archived",
+                UploadedUtc = DateTime.TryParse(GetString(x, "createdUtc"), out var uploadedUtc) ? uploadedUtc : DateTime.MinValue,
+                SizeBytes = GetInt(x, "sizeBytes")
             }).ToList();
         }
 

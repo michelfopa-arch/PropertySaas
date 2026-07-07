@@ -25,6 +25,10 @@
             <a class="prompt-chip prompt-link" href="@HostedUserProfileUrl">@RuntiraText.Get("Account_OpenClerk", CurrentOrganization.PreferredLanguage)</a>
             <button type="button" class="prompt-chip" @onclick="SendResendProbeAsync">@RuntiraText.Get("Account_TestResend", CurrentOrganization.PreferredLanguage)</button>
             <a class="prompt-chip prompt-link" href="/">Retour</a>
+            @if (IsMockModeEnabled)
+            {
+                <a class="prompt-chip prompt-link" href="/mock-logout">Changer de profil mock</a>
+            }
         </div>
 
         @if (!string.IsNullOrWhiteSpace(_resendStatus))

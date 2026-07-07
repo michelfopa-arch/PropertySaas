@@ -1,0 +1,17 @@
+[
+  { "id": "c1c1c1c1-0001-0001-0001-000000000001", "tenantId": "a1a1a1a1-0001-0001-0001-000000000001", "propertyId": "b1b1b1b1-0001-0001-0001-000000000001", "unitCode": "A-101", "unitType": "Apartment", "status": "Occupied", "marketRent": 1850 },
+  { "id": "c1c1c1c1-0001-0001-0001-000000000002", "tenantId": "a1a1a1a1-0001-0001-0001-000000000001", "propertyId": "b1b1b1b1-0001-0001-0001-000000000001", "unitCode": "A-102", "unitType": "Apartment", "status": "Occupied", "marketRent": 1900 },
+  { "id": "c1c1c1c1-0001-0001-0001-000000000003", "tenantId": "a1a1a1a1-0001-0001-0001-000000000001", "propertyId": "b1b1b1b1-0001-0001-0001-000000000001", "unitCode": "A-103", "unitType": "Studio", "status": "Available", "marketRent": 1450 },
+  { "id": "c1c1c1c1-0001-0001-0001-000000000004", "tenantId": "a1a1a1a1-0001-0001-0001-000000000001", "propertyId": "b1b1b1b1-0001-0001-0001-000000000001", "unitCode": "A-104", "unitType": "Apartment", "status": "Occupied", "marketRent": 1875 },
+  { "id": "c1c1c1c1-0001-0001-0001-000000000005", "tenantId": "a1a1a1a1-0001-0001-0001-000000000001", "propertyId": "b1b1b1b1-0001-0001-0001-000000000001", "unitCode": "A-105", "unitType": "Loft", "status": "Available", "marketRent": 2100 },
+
+  { "id": "c2c2c2c2-0002-0002-0002-000000000001", "tenantId": "a1a1a1a1-0002-0002-0002-000000000002", "propertyId": "b1b1b1b1-0002-0002-0002-000000000002", "unitCode": "1204", "unitType": "Condo", "status": "Occupied", "marketRent": 3100 },
+  { "id": "c2c2c2c2-0002-0002-0002-000000000002", "tenantId": "a1a1a1a1-0002-0002-0002-000000000002", "propertyId": "b1b1b1b1-0002-0002-0002-000000000002", "unitCode": "1205", "unitType": "Condo", "status": "Available", "marketRent": 3050 },
+  { "id": "c2c2c2c2-0002-0002-0002-000000000003", "tenantId": "a1a1a1a1-0002-0002-0002-000000000002", "propertyId": "b1b1b1b1-0002-0002-0002-000000000002", "unitCode": "1206", "unitType": "Condo", "status": "Occupied", "marketRent": 3200 },
+  { "id": "c2c2c2c2-0002-0002-0002-000000000004", "tenantId": "a1a1a1a1-0002-0002-0002-000000000002", "propertyId": "b1b1b1b1-0002-0002-0002-000000000002", "unitCode": "1207", "unitType": "Condo", "status": "Reserved", "marketRent": 3150 },
+
+  { "id": "c3c3c3c3-0003-0003-0003-000000000001", "tenantId": "a1a1a1a1-0003-0003-0003-000000000003", "propertyId": "b1b1b1b1-0003-0003-0003-000000000003", "unitCode": "8B", "unitType": "Apartment", "status": "Occupied", "marketRent": 2800 },
+  { "id": "c3c3c3c3-0003-0003-0003-000000000002", "tenantId": "a1a1a1a1-0003-0003-0003-000000000003", "propertyId": "b1b1b1b1-0003-0003-0003-000000000003", "unitCode": "8C", "unitType": "Apartment", "status": "Available", "marketRent": 2750 },
+  { "id": "c3c3c3c3-0003-0003-0003-000000000003", "tenantId": "a1a1a1a1-0003-0003-0003-000000000003", "propertyId": "b1b1b1b1-0003-0003-0003-000000000003", "unitCode": "9A", "unitType": "Apartment", "status": "Occupied", "marketRent": 2900 },
+  { "id": "c3c3c3c3-0003-0003-0003-000000000004", "tenantId": "a1a1a1a1-0003-0003-0003-000000000003", "propertyId": "b1b1b1b1-0003-0003-0003-000000000003", "unitCode": "9B", "unitType": "Apartment", "status": "Maintenance", "marketRent": 2850 }
+]

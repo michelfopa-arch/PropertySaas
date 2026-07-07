@@ -271,4 +271,52 @@ namespace Runtira.Domain.Entities
         public int MaxActiveWorkflows { get; set; } = 50;
         public bool EnforceHardLimit { get; set; } = true;
     }
+
+    public sealed class RuntiraPayment : RuntiraTenantEntity
+    {
+        public Guid AssetId { get; set; }
+        public Guid LeaseId { get; set; }
+        public decimal Amount { get; set; }
+        public DateTime DueUtc { get; set; }
+        public DateTime? PaidUtc { get; set; }
+        public string Status { get; set; } = "Pending";
+    }
+
+    public sealed class RuntiraDeposit : RuntiraTenantEntity
+    {
+        public Guid AssetId { get; set; }
+        public Guid LeaseId { get; set; }
+        public decimal Amount { get; set; }
+        public DateTime ReceivedUtc { get; set; }
+        public string Status { get; set; } = "Held";
+        public DateTime? RefundUtc { get; set; }
+        public decimal? RefundAmount { get; set; }
+    }
+
+    public sealed class RuntiraDocumentRecord : RuntiraTenantEntity
+    {
+        public Guid? AssetId { get; set; }
+        public string Category { get; set; } = "Autre";
+        public string FileName { get; set; } = string.Empty;
+        public DateTime UploadedUtc { get; set; }
+        public string Status { get; set; } = "Archived";
+    }
+
+    public sealed class RuntiraMaintenanceRequest : RuntiraTenantEntity
+    {
+        public Guid? AssetId { get; set; }
+        public string UnitCode { get; set; } = string.Empty;
+        public string Title { get; set; } = string.Empty;
+        public string Priority { get; set; } = "Normal";
+        public string Status { get; set; } = "Open";
+        public DateTime? NextVisitUtc { get; set; }
+        public List<string> Comments { get; set; } = new();
+    }
+
+    public sealed class RuntiraNotification : RuntiraTenantEntity
+    {
+        public string Type { get; set; } = "General";
+        public string Message { get; set; } = string.Empty;
+        public bool IsRead { get; set; }
+    }
 }

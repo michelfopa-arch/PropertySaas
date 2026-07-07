@@ -44,15 +44,8 @@
                 <a class="prompt-chip prompt-link" href="/sign-up">Créer mon compte</a>
                 <a class="prompt-chip prompt-link" href="/demo">Public demo</a>
             </div>
-            @if (!string.IsNullOrWhiteSpace(CurrentOrganization.OrganizationSlug) && string.IsNullOrWhiteSpace(CurrentOrganization.PropertySlug))
-            {
-                <div class="prompt-title">Choose a property</div>
-                <div class="tenant-links">
-                    <a class="prompt-chip prompt-link" href="@BuildWorkspaceHref("dashboard")">Open property</a>
                 </div>
-            }
-        </div>
-    </section>
+            </section>
 
     <section class="workspace-card">
         <div class="workspace-header">
@@ -85,6 +78,15 @@
         {
             <PageLoadingState />
         }
+        else if (_asset is not null && string.IsNullOrWhiteSpace(CurrentOrganization.PropertySlug))
+        {
+            <div class="home-actions-grid">
+                <a class="action-card action-card-primary" href="@GetPropertyHref()">
+                    <strong>@_asset.AssetName</strong>
+                    <span>@_asset.AssetAddress · @_asset.UnitCount units</span>
+                </a>
+            </div>
+        }
         else if (_summary is not null && string.IsNullOrWhiteSpace(CurrentOrganization.PropertySlug))
         {
             <div class="option-list">
@@ -108,6 +110,7 @@
     public string? PropertySlug { get; set; }
 
     private RuntiraWorkspaceSummaryDto? _summary;
+    private RuntiraAssetWorkspaceDto? _asset;
     private bool _isLoading = true;
     private bool _hasInitialized;
 
@@ -129,6 +132,11 @@
         try
         {
             _summary = await WorkspaceService.GetWorkspaceSummaryAsync();
+
+            if (!string.IsNullOrWhiteSpace(CurrentOrganization.OrganizationSlug) && string.IsNullOrWhiteSpace(CurrentOrganization.PropertySlug))
+            {
+                _asset = await WorkspaceService.GetAssetWorkspaceAsync();
+            }
         }
         finally
         {
@@ -162,7 +170,20 @@
             _ => RuntiraText.Get("Home_HeroTitle_Default", CurrentOrganization.PreferredLanguage)
         };
 
-    private static string SlugifyOrganization(string name)
+    private string GetPropertyHref()
+    {
+        if (string.IsNullOrWhiteSpace(CurrentOrganization.OrganizationSlug) || _asset is null)
+        {
+            return string.IsNullOrWhiteSpace(CurrentOrganization.OrganizationSlug) ? "/" : $"/{CurrentOrganization.OrganizationSlug}";
+        }
+
+        var propertySlug = Slugify(_asset.AssetName);
+        return string.IsNullOrWhiteSpace(propertySlug)
+            ? $"/{CurrentOrganization.OrganizationSlug}"
+            : $"/{CurrentOrganization.OrganizationSlug}/{propertySlug}/dashboard";
+    }
+
+    private static string Slugify(string name)
         => string.Join('-', (name ?? string.Empty)
             .Trim()
             .ToLowerInvariant()

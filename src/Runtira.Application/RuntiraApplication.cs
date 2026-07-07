@@ -45,6 +45,7 @@ namespace Runtira.Application.Abstractions
         Task<Runtira.Application.Features.RuntiraWorkspaceSummaryDto?> GetWorkspaceSummaryAsync(Guid tenantId, CancellationToken cancellationToken = default);
         Task<Runtira.Application.Features.RuntiraInvoiceComposerDto?> GetInvoiceComposerAsync(Guid tenantId, string countryCode, string regionCode, string preferredLanguage, Runtira.Application.Features.RuntiraLegislationProfileDto? legislationProfile, CancellationToken cancellationToken = default);
         Task<IReadOnlyList<Runtira.Application.Features.RuntiraInboxMessageDto>> GetInboxAsync(Guid tenantId, CancellationToken cancellationToken = default);
+        Task<IReadOnlyList<Runtira.Application.Features.RuntiraDocumentDto>> GetDocumentsAsync(Guid tenantId, CancellationToken cancellationToken = default);
         Task<Runtira.Application.Features.RuntiraImportWorkspaceDto> GetImportWorkspaceAsync(Guid tenantId, string preferredLanguage, CancellationToken cancellationToken = default);
         Task<Runtira.Application.Features.RuntiraLegislationExperienceDto?> GetLegislationExperienceAsync(Guid tenantId, string countryCode, string regionCode, string preferredLanguage, Runtira.Application.Features.RuntiraLegislationProfileDto? legislationProfile, CancellationToken cancellationToken = default);
         Task<IReadOnlyList<Runtira.Application.Common.OrganizationAccessOptionDto>> GetOrganizationAccessOptionsAsync(string userEmail, string clerkUserId, CancellationToken cancellationToken = default);
@@ -352,6 +353,16 @@ namespace Runtira.Application.Features
         public string Category { get; set; } = string.Empty;
         public DateTime ReceivedUtc { get; set; }
         public bool HasAttachments { get; set; }
+    }
+
+    public sealed class RuntiraDocumentDto
+    {
+        public Guid Id { get; set; }
+        public string FileName { get; set; } = string.Empty;
+        public string Category { get; set; } = string.Empty;
+        public string Status { get; set; } = string.Empty;
+        public DateTime UploadedUtc { get; set; }
+        public long SizeBytes { get; set; }
     }
 
     public sealed class RuntiraUnitSummaryDto
@@ -891,6 +902,17 @@ namespace Runtira.Application.Features
             }
 
             return Array.Empty<RuntiraInboxMessageDto>();
+        }
+
+        public async Task<IReadOnlyList<RuntiraDocumentDto>> GetDocumentsAsync(CancellationToken cancellationToken = default)
+        {
+            var tenantId = _tenantContextAccessor.TenantId ?? (_currentOrganization.OrganizationId == Guid.Empty ? null : _currentOrganization.OrganizationId);
+            if (tenantId.HasValue && _readModelStore is not null)
+            {
+                return await _readModelStore.GetDocumentsAsync(tenantId.Value, cancellationToken);
+            }
+
+            return Array.Empty<RuntiraDocumentDto>();
         }
 
         public async Task<RuntiraImportWorkspaceDto> GetImportWorkspaceAsync(CancellationToken cancellationToken = default)

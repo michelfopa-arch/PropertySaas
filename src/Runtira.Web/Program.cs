@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Security.Claims;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Localization;
@@ -221,6 +222,22 @@ if (!app.Environment.IsDevelopment())
 app.UseAuthentication();
 app.Use(async (context, next) =>
 {
+    if (!useClerkAuthentication && context.User?.Identity?.IsAuthenticated != true)
+    {
+        // Fallback for requests that hit a mock-role link without an explicit cookie yet
+        // (e.g. first paint before /mock-login redirected). Uses the same defaulting rules
+        // as the /mock-login endpoint below, but does not persist a cookie.
+        var mockRole = context.Request.Query["mockRole"].ToString();
+        if (!string.IsNullOrWhiteSpace(mockRole))
+        {
+            context.User = BuildMockPrincipal(mockRole);
+        }
+    }
+
+    await next();
+});
+app.Use(async (context, next) =>
+{
     var currentOrganization = context.RequestServices.GetRequiredService<CurrentOrganization>();
     var request = context.Request;
     var user = context.User;
@@ -266,6 +283,7 @@ app.Use(async (context, next) =>
             if (resolved is not null)
             {
                 CopyCurrentOrganization(resolved, currentOrganization);
+                ApplyMockRoleOverride(currentOrganization, user);
                 await next();
                 return;
             }
@@ -293,47 +311,41 @@ app.Use(async (context, next) =>
     currentOrganization.PreferredLanguage = ResolvePreferredLanguage(userLocale);
     currentOrganization.SubscriptionIsActive = true;
     currentOrganization.TrialExpired = false;
-
-    await next();
-});
-app.Use(async (context, next) =>
-{
-    if (!useClerkAuthentication)
-    {
-        if (context.User?.Identity?.IsAuthenticated != true)
-        {
-            var mockRole = context.Request.Query["mockRole"].ToString();
-            var mockEmail = mockRole.ToLowerInvariant() switch
-            {
-                "viewer" => "viewer@demo-texas.local",
-                "manager" => "manager@demo-ontario.local",
-                "owner" => "owner@demo-alberta.local",
-                _ => "michelfopa@gmail.com"
-            };
-            var role = mockRole.ToLowerInvariant() switch
-            {
-                "viewer" => "Viewer",
-                "manager" => "Manager",
-                "owner" => "Owner",
-                _ => "SuperAdmin"
-            };
-            var claims = new[]
-            {
-                new Claim(ClaimTypes.NameIdentifier, $"mock-{role.ToLowerInvariant()}"),
-                new Claim(ClaimTypes.Name, mockEmail),
-                new Claim(ClaimTypes.Email, mockEmail),
-                new Claim(ClaimTypes.Role, role)
-            };
-
-            context.User = new ClaimsPrincipal(new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme));
-        }
-    }
+    ApplyMockRoleOverride(currentOrganization, user);
 
     await next();
 });
 app.UseAuthorization();
 
 app.UseAntiforgery();
+
+app.MapGet("/mock-login", async (HttpContext httpContext, string? mockRole) =>
+{
+    if (useClerkAuthentication)
+    {
+        httpContext.Response.Redirect("/");
+        return;
+    }
+
+    var principal = BuildMockPrincipal(mockRole ?? string.Empty);
+    await httpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
+
+    var organizationSlug = (mockRole ?? string.Empty).ToLowerInvariant() switch
+    {
+        "viewer" => "demo-texas",
+        "manager" => "demo-ontario",
+        "owner" => "demo-alberta",
+        _ => string.Empty
+    };
+
+    httpContext.Response.Redirect(string.IsNullOrWhiteSpace(organizationSlug) ? "/" : $"/{organizationSlug}");
+});
+
+app.MapGet("/mock-logout", async (HttpContext httpContext) =>
+{
+    await httpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+    httpContext.Response.Redirect("/sign-in");
+});
 
 app.MapGet("/account/login", async (HttpContext httpContext) =>
 {
@@ -534,6 +546,58 @@ static string ToDisplayName(string slug)
 
     return string.Join(' ', slug.Split('-', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
         .Select(part => char.ToUpperInvariant(part[0]) + part[1..]));
+}
+
+static ClaimsPrincipal BuildMockPrincipal(string mockRole)
+{
+    var mockEmail = mockRole.ToLowerInvariant() switch
+    {
+        "viewer" => "viewer@demo-texas.local",
+        "manager" => "manager@demo-ontario.local",
+        "owner" => "owner@demo-alberta.local",
+        _ => "michelfopa@gmail.com"
+    };
+    var role = mockRole.ToLowerInvariant() switch
+    {
+        "viewer" => "Viewer",
+        "manager" => "Manager",
+        "owner" => "Owner",
+        _ => "SuperAdmin"
+    };
+    var claims = new[]
+    {
+        new Claim(ClaimTypes.NameIdentifier, $"mock-{role.ToLowerInvariant()}"),
+        new Claim(ClaimTypes.Name, mockEmail),
+        new Claim(ClaimTypes.Email, mockEmail),
+        new Claim(ClaimTypes.Role, role)
+    };
+
+    return new ClaimsPrincipal(new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme));
+}
+
+static void ApplyMockRoleOverride(CurrentOrganization target, ClaimsPrincipal? user)
+{
+    // Mock identities are tagged with NameIdentifier "mock-*" in the mock-auth middleware above.
+    // Every seeded demo organization shares the same ownerEmail (michelfopa@gmail.com), which would
+    // otherwise make ResolveCurrentOrganizationAsync/the fallback branch report SuperAdmin for every
+    // mock persona. Force the role that was actually requested via ?mockRole= so viewer/manager/owner
+    // links produce a visibly different experience from the super admin one.
+    var mockNameIdentifier = user?.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty;
+    if (!mockNameIdentifier.StartsWith("mock-", StringComparison.OrdinalIgnoreCase))
+    {
+        return;
+    }
+
+    var mockRole = user?.FindFirstValue(ClaimTypes.Role) ?? string.Empty;
+    if (string.IsNullOrWhiteSpace(mockRole))
+    {
+        return;
+    }
+
+    var isSuperAdmin = string.Equals(mockRole, "SuperAdmin", StringComparison.OrdinalIgnoreCase);
+    target.Role = mockRole;
+    target.SystemRole = isSuperAdmin ? "SuperAdmin" : "User";
+    target.HasSuperAdminOrganizationSelection = isSuperAdmin;
 }
 
 static void CopyCurrentOrganization(CurrentOrganization source, CurrentOrganization target)
