@@ -9,6 +9,7 @@ using MudBlazor.Services;
 using Runtira.Application.Abstractions;
 using Runtira.Application.Common;
 using Runtira.Application.Features;
+using Runtira.Infrastructure;
 using Runtira.Infrastructure.Options;
 using Runtira.Infrastructure.Services;
 using Runtira.Web.Components;
@@ -444,7 +445,7 @@ app.MapGet("/{tenantSlug}/invoices/{leaseId:guid}/invoice.pdf", async (string te
     return Results.File(export.Content, export.ContentType, export.FileName);
 });
 
-app.MapGet("/{tenantSlug}/billing/checkout/{plan}", async (string tenantSlug, string plan, HttpContext httpContext, [FromServices] IRuntiraReadModelStore readModelStore, [FromServices] Runtira.Infrastructure.Services.StripeBillingService billingService) =>
+app.MapGet("/{tenantSlug}/billing/checkout/{plan}", async (string tenantSlug, string plan, HttpContext httpContext, [FromServices] IRuntiraReadModelStore readModelStore, [FromServices] Runtira.Infrastructure.Services.Billing.StripeBillingService billingService) =>
 {
     var billingOrganization = await readModelStore.GetBillingOrganizationAsync(tenantSlug, httpContext.RequestAborted);
     if (billingOrganization is null)
@@ -459,7 +460,7 @@ app.MapGet("/{tenantSlug}/billing/checkout/{plan}", async (string tenantSlug, st
     return Results.Redirect(url);
 });
 
-app.MapGet("/{tenantSlug}/billing/portal", async (string tenantSlug, HttpContext httpContext, [FromServices] IRuntiraReadModelStore readModelStore, [FromServices] Runtira.Infrastructure.Services.StripeBillingService billingService) =>
+app.MapGet("/{tenantSlug}/billing/portal", async (string tenantSlug, HttpContext httpContext, [FromServices] IRuntiraReadModelStore readModelStore, [FromServices] Runtira.Infrastructure.Services.Billing.StripeBillingService billingService) =>
 {
     var billingOrganization = await readModelStore.GetBillingOrganizationAsync(tenantSlug, httpContext.RequestAborted);
     var root = $"{httpContext.Request.Scheme}://{httpContext.Request.Host}";
@@ -467,7 +468,7 @@ app.MapGet("/{tenantSlug}/billing/portal", async (string tenantSlug, HttpContext
     return Results.Redirect(url);
 });
 
-app.MapPost("/billing/webhook", async (HttpContext httpContext, [FromServices] Runtira.Infrastructure.Services.StripeBillingService billingService) =>
+app.MapPost("/billing/webhook", async (HttpContext httpContext, [FromServices] Runtira.Infrastructure.Services.Billing.StripeBillingService billingService) =>
 {
     using var reader = new StreamReader(httpContext.Request.Body);
     var json = await reader.ReadToEndAsync();

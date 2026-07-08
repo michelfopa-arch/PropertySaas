@@ -39,6 +39,8 @@ namespace Runtira.Application.Abstractions
         Task<Runtira.Application.Features.RuntiraUnitActionResultDto> ManageUnitAsync(Guid tenantId, Guid unitId, string action, CancellationToken cancellationToken = default);
         Task<Runtira.Application.Features.RuntiraResidentActionResultDto> ManageResidentAsync(Guid tenantId, Guid residentId, string action, CancellationToken cancellationToken = default);
         Task<Runtira.Application.Features.RuntiraLeaseActionResultDto> ManageLeaseAsync(Guid tenantId, Guid leaseId, string action, CancellationToken cancellationToken = default);
+        Task<Runtira.Application.Features.RuntiraRentLedgerDto?> GetRentLedgerAsync(Guid tenantId, Guid leaseId, CancellationToken cancellationToken = default);
+        Task<Runtira.Application.Features.RuntiraRentLedgerActionResultDto> MarkRentPaymentAsync(Guid tenantId, Guid leaseId, DateTime periodMonthUtc, string action, CancellationToken cancellationToken = default);
     }
 
     public interface IRuntiraLeadWorkspaceStore
@@ -58,7 +60,9 @@ namespace Runtira.Application.Abstractions
         Task<Runtira.Application.Features.RuntiraWorkspaceSummaryDto?> GetWorkspaceSummaryAsync(Guid tenantId, CancellationToken cancellationToken = default);
         Task<Runtira.Application.Features.RuntiraInvoiceComposerDto?> GetInvoiceComposerAsync(Guid tenantId, string countryCode, string regionCode, string preferredLanguage, Runtira.Application.Features.RuntiraLegislationProfileDto? legislationProfile, CancellationToken cancellationToken = default);
         Task<IReadOnlyList<Runtira.Application.Features.RuntiraInboxMessageDto>> GetInboxAsync(Guid tenantId, CancellationToken cancellationToken = default);
+        Task<Runtira.Application.Features.RuntiraInboxActionResultDto> ManageInboxMessageAsync(Guid tenantId, Guid messageId, string action, CancellationToken cancellationToken = default);
         Task<IReadOnlyList<Runtira.Application.Features.RuntiraDocumentDto>> GetDocumentsAsync(Guid tenantId, CancellationToken cancellationToken = default);
+        Task<Runtira.Application.Features.RuntiraDocumentActionResultDto> ManageDocumentAsync(Guid tenantId, Guid documentId, string action, CancellationToken cancellationToken = default);
         Task<Runtira.Application.Features.RuntiraImportWorkspaceDto> GetImportWorkspaceAsync(Guid tenantId, string preferredLanguage, CancellationToken cancellationToken = default);
         Task<Runtira.Application.Features.RuntiraLegislationExperienceDto?> GetLegislationExperienceAsync(Guid tenantId, string countryCode, string regionCode, string preferredLanguage, Runtira.Application.Features.RuntiraLegislationProfileDto? legislationProfile, CancellationToken cancellationToken = default);
         Task<IReadOnlyList<Runtira.Application.Common.OrganizationAccessOptionDto>> GetOrganizationAccessOptionsAsync(string userEmail, string clerkUserId, CancellationToken cancellationToken = default);
@@ -387,6 +391,20 @@ namespace Runtira.Application.Features
         public long SizeBytes { get; set; }
     }
 
+    public sealed class RuntiraInboxActionResultDto
+    {
+        public bool Success { get; set; }
+        public string ResultCode { get; set; } = string.Empty;
+        public string Status { get; set; } = string.Empty;
+    }
+
+    public sealed class RuntiraDocumentActionResultDto
+    {
+        public bool Success { get; set; }
+        public string ResultCode { get; set; } = string.Empty;
+        public string Status { get; set; } = string.Empty;
+    }
+
     public sealed class RuntiraUnitSummaryDto
     {
         public Guid Id { get; set; }
@@ -440,6 +458,32 @@ namespace Runtira.Application.Features
         public DateTime? LeaseEndUtc { get; set; }
         public string ComplianceDataJson { get; set; } = "{}";
         public RuntiraLeaseComplianceData? ComplianceData { get; set; }
+    }
+
+    public sealed class RuntiraRentLedgerEntryDto
+    {
+        public DateTime PeriodMonthUtc { get; set; }
+        public decimal AmountDue { get; set; }
+        public string Status { get; set; } = "Pending";
+        public DateTime? PaidUtc { get; set; }
+    }
+
+    public sealed class RuntiraRentLedgerDto
+    {
+        public Guid LeaseId { get; set; }
+        public decimal MonthlyRent { get; set; }
+        public int PaidCount { get; set; }
+        public int LateCount { get; set; }
+        public int PendingCount { get; set; }
+        public decimal OutstandingBalance { get; set; }
+        public IReadOnlyList<RuntiraRentLedgerEntryDto> Entries { get; set; } = Array.Empty<RuntiraRentLedgerEntryDto>();
+    }
+
+    public sealed class RuntiraRentLedgerActionResultDto
+    {
+        public bool Success { get; set; }
+        public string ResultCode { get; set; } = string.Empty;
+        public string Status { get; set; } = string.Empty;
     }
 
     public sealed class RuntiraResidentSummaryDto
@@ -1001,6 +1045,28 @@ namespace Runtira.Application.Features
             return new RuntiraLeaseActionResultDto { ResultCode = "Unavailable" };
         }
 
+        public async Task<RuntiraRentLedgerDto?> GetRentLedgerAsync(Guid leaseId, CancellationToken cancellationToken = default)
+        {
+            var tenantId = _tenantContextAccessor.TenantId ?? (_currentOrganization.OrganizationId == Guid.Empty ? null : _currentOrganization.OrganizationId);
+            if (tenantId.HasValue && _assetWorkspaceStore is not null)
+            {
+                return await _assetWorkspaceStore.GetRentLedgerAsync(tenantId.Value, leaseId, cancellationToken);
+            }
+
+            return null;
+        }
+
+        public async Task<RuntiraRentLedgerActionResultDto> MarkRentPaymentAsync(Guid leaseId, DateTime periodMonthUtc, string action, CancellationToken cancellationToken = default)
+        {
+            var tenantId = _tenantContextAccessor.TenantId ?? (_currentOrganization.OrganizationId == Guid.Empty ? null : _currentOrganization.OrganizationId);
+            if (tenantId.HasValue && _assetWorkspaceStore is not null)
+            {
+                return await _assetWorkspaceStore.MarkRentPaymentAsync(tenantId.Value, leaseId, periodMonthUtc, action, cancellationToken);
+            }
+
+            return new RuntiraRentLedgerActionResultDto { ResultCode = "Unavailable" };
+        }
+
         public async Task<RuntiraImportValidationContextDto?> GetImportValidationContextAsync(CancellationToken cancellationToken = default)
         {
             var tenantId = _tenantContextAccessor.TenantId ?? (_currentOrganization.OrganizationId == Guid.Empty ? null : _currentOrganization.OrganizationId);
@@ -1093,6 +1159,17 @@ namespace Runtira.Application.Features
             return Array.Empty<RuntiraInboxMessageDto>();
         }
 
+        public async Task<RuntiraInboxActionResultDto> ManageInboxMessageAsync(Guid messageId, string action, CancellationToken cancellationToken = default)
+        {
+            var tenantId = _tenantContextAccessor.TenantId ?? (_currentOrganization.OrganizationId == Guid.Empty ? null : _currentOrganization.OrganizationId);
+            if (tenantId.HasValue && _readModelStore is not null)
+            {
+                return await _readModelStore.ManageInboxMessageAsync(tenantId.Value, messageId, action, cancellationToken);
+            }
+
+            return new RuntiraInboxActionResultDto { ResultCode = "Unavailable" };
+        }
+
         public async Task<IReadOnlyList<RuntiraDocumentDto>> GetDocumentsAsync(CancellationToken cancellationToken = default)
         {
             var tenantId = _tenantContextAccessor.TenantId ?? (_currentOrganization.OrganizationId == Guid.Empty ? null : _currentOrganization.OrganizationId);
@@ -1102,6 +1179,17 @@ namespace Runtira.Application.Features
             }
 
             return Array.Empty<RuntiraDocumentDto>();
+        }
+
+        public async Task<RuntiraDocumentActionResultDto> ManageDocumentAsync(Guid documentId, string action, CancellationToken cancellationToken = default)
+        {
+            var tenantId = _tenantContextAccessor.TenantId ?? (_currentOrganization.OrganizationId == Guid.Empty ? null : _currentOrganization.OrganizationId);
+            if (tenantId.HasValue && _readModelStore is not null)
+            {
+                return await _readModelStore.ManageDocumentAsync(tenantId.Value, documentId, action, cancellationToken);
+            }
+
+            return new RuntiraDocumentActionResultDto { ResultCode = "Unavailable" };
         }
 
         public async Task<RuntiraImportWorkspaceDto> GetImportWorkspaceAsync(CancellationToken cancellationToken = default)

@@ -8,7 +8,7 @@
 
 <PageTitle>@(_lead is null ? "Lead" : _lead.FullName) · @RuntiraText.Get("Nav_Leads", CurrentOrganization.PreferredLanguage)</PageTitle>
 
-<div class="hero-shell hero-shell-single">
+<div class="hero-shell">
     <section class="hero-card">
         <div class="hero-badge hero-badge-secondary">@RuntiraText.Get("Leads_Badge", CurrentOrganization.PreferredLanguage)</div>
 
@@ -144,6 +144,8 @@
             </PageEmptyState>
         }
     </section>
+
+    <QuickLinksPanel Actions="@GetQuickActions()" AiPrompts="@GetAiPrompts()" />
 </div>
 
 @code {
@@ -184,6 +186,56 @@
         => string.IsNullOrWhiteSpace(PropertySlug)
             ? $"/{CurrentOrganization.OrganizationSlug}/leads"
             : $"/{CurrentOrganization.OrganizationSlug}/{PropertySlug}/leads";
+
+    private string GetTenantLeafHref(string leaf)
+        => string.IsNullOrWhiteSpace(PropertySlug)
+            ? $"/{CurrentOrganization.OrganizationSlug}/{leaf}"
+            : $"/{CurrentOrganization.OrganizationSlug}/{PropertySlug}/{leaf}";
+
+    private List<QuickLinkAction> GetQuickActions()
+    {
+        var actions = new List<QuickLinkAction>();
+        if (_lead is null)
+        {
+            return actions;
+        }
+
+        if (!string.IsNullOrWhiteSpace(_lead.Email))
+        {
+            actions.Add(new QuickLinkAction("Envoyer un email", $"mailto:{_lead.Email}", IsAccent: true));
+        }
+
+        actions.Add(new QuickLinkAction("Voir l'inbox", GetTenantLeafHref("inbox")));
+        actions.Add(new QuickLinkAction("Voir les unités disponibles", GetTenantLeafHref("units")));
+        actions.Add(new QuickLinkAction("Voir tous les leads", GetBackToLeadsHref()));
+        return actions;
+    }
+
+    private List<AiPromptSuggestion> GetAiPrompts()
+    {
+        var prompts = new List<AiPromptSuggestion>();
+        if (_lead is null)
+        {
+            return prompts;
+        }
+
+        prompts.Add(new AiPromptSuggestion(
+            "Rédiger un email de bienvenue",
+            $"Rédige un email de bienvenue et de suivi pour {_lead.FullName} ({_lead.Email}), intéressé(e) par {(string.IsNullOrWhiteSpace(_lead.AssetName) ? "une de nos propriétés" : _lead.AssetName)}, en {_lead.PreferredLanguage}."));
+
+        if (_conversionCandidate is not null)
+        {
+            prompts.Add(new AiPromptSuggestion(
+                "Rédiger une offre de bail",
+                $"Rédige un message proposant l'unité {_conversionCandidate.SuggestedUnitCode} à {_conversionCandidate.SuggestedRent:C}/mois à {_lead.FullName}, avec les prochaines étapes pour signer le bail."));
+        }
+
+        prompts.Add(new AiPromptSuggestion(
+            "Résumer ce lead pour le propriétaire",
+            $"Résume en 3 phrases ce lead pour le propriétaire : {_lead.FullName}, source {_lead.Source}, statut {_lead.Status}, score de qualification {_lead.QualificationScore}/100. Contexte : {_lead.Summary}"));
+
+        return prompts;
+    }
 
     private IReadOnlyList<FlexibleContextSummaryItem> GetLeadContextSummaryItems(RuntiraLeadSummaryDto lead)
         => lead.ContextData is null

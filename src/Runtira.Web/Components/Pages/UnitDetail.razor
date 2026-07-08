@@ -7,7 +7,7 @@
 
 <PageTitle>@(_unit is null ? "Unit" : _unit.UnitCode) · @CurrentOrganization.PropertyName</PageTitle>
 
-<div class="hero-shell hero-shell-single">
+<div class="hero-shell">
     <section class="hero-card">
         <div class="hero-badge">Unit</div>
 
@@ -77,15 +77,7 @@
                     <div>Statut · @EntityStatusPresenter.LeasePaymentLabel(_lease.Status)</div>
                 </div>
 
-                <div class="localized-section">
-                    <div class="prompt-title">Facture mensuelle (PDF)</div>
-                    <p class="hero-copy form-intro-copy">Format standard et minimal Alberta, sans TPS automatique.</p>
-                    <div class="option-list">
-                        <a class="option-pill" href="@GetInvoiceHref(-1)" target="_blank">Mois précédent</a>
-                        <a class="option-pill option-pill-accent" href="@GetInvoiceHref(0)" target="_blank">Mois courant</a>
-                        <a class="option-pill" href="@GetInvoiceHref(1)" target="_blank">Mois suivant</a>
-                    </div>
-                </div>
+                <RentLedgerSummary Ledger="@_ledger" LeaseDetailHref="@GetLeaseDetailHref()" />
 
                 @if (_lease.ComplianceData?.Fields is { Count: > 0 } fields)
                 {
@@ -96,13 +88,6 @@
             {
                 <PageEmptyState Title="Aucun bail actif" Message="Cette unité n’a pas de bail rattaché pour le moment." />
             }
-
-            <div class="option-list mt-3">
-                <a class="option-pill option-pill-accent" href="@GetPropertyLeafHref("leads")">Voir les leads</a>
-                <a class="option-pill option-pill-accent" href="@GetPropertyLeafHref("invoice-composer")">Préparer une facture</a>
-                <a class="option-pill" href="@GetPropertyLeafHref("residents")">Voir les résidents</a>
-                <a class="option-pill" href="@GetPropertyLeafHref("leases")">Voir les baux</a>
-            </div>
         }
         else
         {
@@ -111,6 +96,8 @@
             </PageEmptyState>
         }
     </section>
+
+    <QuickLinksPanel Actions="@GetQuickActions()" AiPrompts="@GetAiPrompts()" />
 </div>
 
 @code {
@@ -127,6 +114,7 @@
     private RuntiraUnitSummaryDto? _unit;
     private RuntiraLeaseSummaryDto? _lease;
     private RuntiraResidentSummaryDto? _resident;
+    private RuntiraRentLedgerDto? _ledger;
     private bool _isLoading = true;
     private string? _loadedPropertySlug;
     private bool _isSubmittingAction;
@@ -146,7 +134,7 @@
 
         if (_workspace is not null && string.Equals(_loadedPropertySlug, CurrentOrganization.PropertySlug, StringComparison.OrdinalIgnoreCase))
         {
-            RefreshSelectedUnit();
+            await RefreshSelectedUnitAsync();
             return;
         }
 
@@ -160,7 +148,7 @@
             }
 
             _loadedPropertySlug = CurrentOrganization.PropertySlug;
-            RefreshSelectedUnit();
+            await RefreshSelectedUnitAsync();
         }
         finally
         {
@@ -168,12 +156,16 @@
         }
     }
 
-    private void RefreshSelectedUnit()
+    private async Task RefreshSelectedUnitAsync()
     {
         _unit = _workspace?.Units.FirstOrDefault(x => x.Id == UnitId);
         _lease = _unit is null ? null : _workspace?.Leases.FirstOrDefault(x => string.Equals(x.UnitCode, _unit.UnitCode, StringComparison.OrdinalIgnoreCase));
         _resident = _lease is null ? null : _workspace?.Residents.FirstOrDefault(x => string.Equals(x.FullName, _lease.ResidentName, StringComparison.OrdinalIgnoreCase));
+        _ledger = _lease is null ? null : await WorkspaceService.GetRentLedgerAsync(_lease.Id);
     }
+
+    private string GetLeaseDetailHref()
+        => _lease is null ? "#" : $"/{CurrentOrganization.OrganizationSlug}/{CurrentOrganization.PropertySlug}/leases/{_lease.Id}";
 
     private string GetBackToUnitsHref()
         => $"/{CurrentOrganization.OrganizationSlug}/{CurrentOrganization.PropertySlug}/units";
@@ -183,6 +175,62 @@
 
     private string GetInvoiceHref(int monthOffset)
         => _lease is null ? "#" : $"/{CurrentOrganization.OrganizationSlug}/{CurrentOrganization.PropertySlug}/leases/{_lease.Id}/invoice.pdf?monthOffset={monthOffset}";
+
+    private List<QuickLinkAction> GetQuickActions()
+    {
+        var actions = new List<QuickLinkAction>();
+        if (_unit is null)
+        {
+            return actions;
+        }
+
+        if (_lease is not null)
+        {
+            actions.Add(new QuickLinkAction("Imprimer la facture du mois précédent", GetInvoiceHref(-1), Target: "_blank"));
+            actions.Add(new QuickLinkAction("Imprimer la facture du mois courant", GetInvoiceHref(0), IsAccent: true, Target: "_blank"));
+            actions.Add(new QuickLinkAction("Imprimer la facture du mois suivant", GetInvoiceHref(1), Target: "_blank"));
+            actions.Add(new QuickLinkAction("Voir le bail complet", $"/{CurrentOrganization.OrganizationSlug}/{CurrentOrganization.PropertySlug}/leases/{_lease.Id}"));
+        }
+
+        if (_resident is not null)
+        {
+            actions.Add(new QuickLinkAction("Voir la fiche du résident", $"/{CurrentOrganization.OrganizationSlug}/{CurrentOrganization.PropertySlug}/residents/{_resident.Id}"));
+        }
+
+        actions.Add(new QuickLinkAction("Voir les leads de cette propriété", GetPropertyLeafHref("leads")));
+        actions.Add(new QuickLinkAction("Voir toutes les unités", GetPropertyLeafHref("units")));
+        actions.Add(new QuickLinkAction("Voir tous les baux", GetPropertyLeafHref("leases")));
+        return actions;
+    }
+
+    private List<AiPromptSuggestion> GetAiPrompts()
+    {
+        var prompts = new List<AiPromptSuggestion>();
+        if (_unit is null)
+        {
+            return prompts;
+        }
+
+        if (_lease is not null && _resident is not null)
+        {
+            prompts.Add(new AiPromptSuggestion(
+                "Rédiger un rappel de paiement",
+                $"Rédige un email de rappel de paiement de loyer, poli et professionnel, pour {_resident.FullName}, unité {_unit.UnitCode}, loyer {_lease.MonthlyRent:C} ({_lease.BillingPeriod})."));
+        }
+
+        if (string.Equals(_unit.Status, "Available", StringComparison.OrdinalIgnoreCase))
+        {
+            prompts.Add(new AiPromptSuggestion(
+                "Rédiger une annonce de disponibilité",
+                $"Rédige une annonce immobilière attrayante pour l'unité {_unit.UnitCode} ({_unit.UnitType}), disponible à {_unit.MarketRent:C}/mois, à {_workspace?.AssetAddress}."));
+        }
+
+        prompts.Add(new AiPromptSuggestion(
+            "Résumer l'état de cette unité",
+            $"Résume en 3 phrases l'état actuel de l'unité {_unit.UnitCode} pour le propriétaire : statut {_unit.Status}, loyer marché {_unit.MarketRent:C}{(_lease is null ? ", aucun bail actif" : $", bail actif avec {_lease.ResidentName}")}."));
+
+        return prompts;
+    }
 
     private IReadOnlyList<StandardActionMenuItem> GetUnitActionItems()
         =>
@@ -228,7 +276,7 @@
             };
 
             _workspace = await WorkspaceService.GetAssetWorkspaceAsync();
-            RefreshSelectedUnit();
+            await RefreshSelectedUnitAsync();
         }
         finally
         {

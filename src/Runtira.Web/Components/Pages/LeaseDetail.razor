@@ -7,7 +7,7 @@
 
 <PageTitle>@(_lease is null ? "Lease" : GetLeaseTitle(_lease)) · @CurrentOrganization.PropertyName</PageTitle>
 
-<div class="hero-shell hero-shell-single">
+<div class="hero-shell">
     <section class="hero-card">
         <div class="hero-badge">Lease</div>
 
@@ -57,16 +57,6 @@
                 </div>
             </div>
 
-            <div class="localized-section">
-                <div class="prompt-title">Facture mensuelle (PDF)</div>
-                <p class="hero-copy form-intro-copy">Format standard et minimal Alberta, sans TPS automatique.</p>
-                <div class="option-list">
-                    <a class="option-pill" href="@GetInvoiceHref(-1)" target="_blank">Mois précédent</a>
-                    <a class="option-pill option-pill-accent" href="@GetInvoiceHref(0)" target="_blank">Mois courant</a>
-                    <a class="option-pill" href="@GetInvoiceHref(1)" target="_blank">Mois suivant</a>
-                </div>
-            </div>
-
             @if (CurrentOrganization.CanManageData)
             {
                 <StandardActionMenu MenuLabel="Actions"
@@ -74,6 +64,53 @@
                                      Items="@GetLeaseActionItems()"
                                      IsBusy="@_isSubmittingAction"
                                      OnAction="@(action => HandleLeaseActionAsync(action))" />
+            }
+
+            @if (_ledger is not null)
+            {
+                <div class="localized-section">
+                    <div class="prompt-title">Historique de paiement (Rent Ledger)</div>
+                    <div class="tenant-summary unit-detail-summary">
+                        <div>
+                            <span class="summary-label">Payés</span>
+                            <strong class="ledger-count-paid">@_ledger.PaidCount</strong>
+                        </div>
+                        <div>
+                            <span class="summary-label">En retard</span>
+                            <strong class="ledger-count-late">@_ledger.LateCount</strong>
+                        </div>
+                        <div>
+                            <span class="summary-label">À venir</span>
+                            <strong>@_ledger.PendingCount</strong>
+                        </div>
+                        <div>
+                            <span class="summary-label">Solde impayé</span>
+                            <strong>@_ledger.OutstandingBalance.ToString("C")</strong>
+                        </div>
+                    </div>
+
+                    <div class="ledger-list">
+                        @foreach (var entry in _ledger.Entries)
+                        {
+                            <div class="ledger-row">
+                                <span class="ledger-month">@entry.PeriodMonthUtc.ToString("MMMM yyyy")</span>
+                                <span class="ledger-amount">@entry.AmountDue.ToString("C")</span>
+                                <span class="@GetLedgerStatusCss(entry.Status)">@GetLedgerStatusLabel(entry.Status)</span>
+                                @if (CurrentOrganization.CanManageData)
+                                {
+                                    @if (string.Equals(entry.Status, "Paid", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        <button type="button" class="ghost-button ledger-action" disabled="@_isSubmittingLedgerAction" @onclick='() => ToggleRentPaymentAsync(entry.PeriodMonthUtc, "markUnpaid")'>Annuler</button>
+                                    }
+                                    else
+                                    {
+                                        <button type="button" class="ghost-button ledger-action ledger-action-accent" disabled="@_isSubmittingLedgerAction" @onclick='() => ToggleRentPaymentAsync(entry.PeriodMonthUtc, "markPaid")'>Marquer payé</button>
+                                    }
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
             }
 
             @if (_resident is not null)
@@ -91,13 +128,6 @@
             {
                 <FlexibleContextCard Title="Détails du bail" Fields="@fields" />
             }
-
-            <div class="option-list mt-3">
-                <a class="option-pill option-pill-accent" href="@GetPropertyLeafHref("invoice-composer")">Préparer une facture</a>
-                <a class="option-pill option-pill-accent" href="@GetPropertyLeafHref("leads")">Voir les leads</a>
-                <a class="option-pill" href="@GetPropertyLeafHref("units")">Voir les unités</a>
-                <a class="option-pill" href="@GetPropertyLeafHref("residents")">Voir les résidents</a>
-            </div>
         }
         else
         {
@@ -106,6 +136,8 @@
             </PageEmptyState>
         }
     </section>
+
+    <QuickLinksPanel Actions="@GetQuickActions()" AiPrompts="@GetAiPrompts()" />
 </div>
 
 @code {
@@ -121,9 +153,11 @@
     private RuntiraAssetWorkspaceDto? _workspace;
     private RuntiraLeaseSummaryDto? _lease;
     private RuntiraResidentSummaryDto? _resident;
+    private RuntiraRentLedgerDto? _ledger;
     private bool _isLoading = true;
     private string? _loadedPropertySlug;
     private bool _isSubmittingAction;
+    private bool _isSubmittingLedgerAction;
     private string? _statusMessage;
 
     protected override async Task OnParametersSetAsync()
@@ -140,7 +174,7 @@
 
         if (_workspace is not null && string.Equals(_loadedPropertySlug, CurrentOrganization.PropertySlug, StringComparison.OrdinalIgnoreCase))
         {
-            RefreshSelectedLease();
+            await RefreshSelectedLeaseAsync();
             return;
         }
 
@@ -154,7 +188,7 @@
             }
 
             _loadedPropertySlug = CurrentOrganization.PropertySlug;
-            RefreshSelectedLease();
+            await RefreshSelectedLeaseAsync();
         }
         finally
         {
@@ -162,10 +196,11 @@
         }
     }
 
-    private void RefreshSelectedLease()
+    private async Task RefreshSelectedLeaseAsync()
     {
         _lease = _workspace?.Leases.FirstOrDefault(x => x.Id == LeaseId);
         _resident = _lease is null ? null : _workspace?.Residents.FirstOrDefault(x => string.Equals(x.FullName, _lease.ResidentName, StringComparison.OrdinalIgnoreCase));
+        _ledger = _lease is null ? null : await WorkspaceService.GetRentLedgerAsync(_lease.Id);
     }
 
     private string GetBackToLeasesHref()
@@ -179,6 +214,63 @@
 
     private static string GetLeaseTitle(RuntiraLeaseSummaryDto lease)
         => string.IsNullOrWhiteSpace(lease.UnitCode) ? lease.ResidentName : $"Unit {lease.UnitCode}";
+
+    private List<QuickLinkAction> GetQuickActions()
+    {
+        var actions = new List<QuickLinkAction>();
+        if (_lease is null)
+        {
+            return actions;
+        }
+
+        actions.Add(new QuickLinkAction("Imprimer la facture du mois précédent", GetInvoiceHref(-1), Target: "_blank"));
+        actions.Add(new QuickLinkAction("Imprimer la facture du mois courant", GetInvoiceHref(0), IsAccent: true, Target: "_blank"));
+        actions.Add(new QuickLinkAction("Imprimer la facture du mois suivant", GetInvoiceHref(1), Target: "_blank"));
+        actions.Add(new QuickLinkAction("Composer une facture avancée", GetPropertyLeafHref("invoice-composer")));
+
+        if (!string.IsNullOrWhiteSpace(_lease.UnitCode))
+        {
+            actions.Add(new QuickLinkAction("Voir l’unité de ce bail", GetPropertyLeafHref("units")));
+        }
+
+        if (_resident is not null)
+        {
+            actions.Add(new QuickLinkAction("Voir la fiche du résident", $"/{CurrentOrganization.OrganizationSlug}/{CurrentOrganization.PropertySlug}/residents/{_resident.Id}"));
+        }
+
+        actions.Add(new QuickLinkAction("Voir les leads de cette propriété", GetPropertyLeafHref("leads")));
+        actions.Add(new QuickLinkAction("Voir tous les baux", GetPropertyLeafHref("leases")));
+        return actions;
+    }
+
+    private List<AiPromptSuggestion> GetAiPrompts()
+    {
+        var prompts = new List<AiPromptSuggestion>();
+        if (_lease is null)
+        {
+            return prompts;
+        }
+
+        prompts.Add(new AiPromptSuggestion(
+            "Résumer ce bail pour le propriétaire",
+            $"Résume en 3 phrases ce bail pour le propriétaire : résident {_lease.ResidentName}, {(string.IsNullOrWhiteSpace(_lease.UnitCode) ? "propriété entière" : $"unité {_lease.UnitCode}")}, loyer {_lease.MonthlyRent:C} ({_lease.BillingPeriod}), statut {_lease.Status}, du {_lease.LeaseStartUtc:MMM d, yyyy} au {(_lease.LeaseEndUtc.HasValue ? _lease.LeaseEndUtc.Value.ToString("MMM d, yyyy") : "indéterminé")}."));
+
+        if (string.Equals(_lease.Status, "Review", StringComparison.OrdinalIgnoreCase))
+        {
+            prompts.Add(new AiPromptSuggestion(
+                "Rédiger un message de suivi",
+                $"Rédige un message professionnel à {_lease.ResidentName} pour clarifier le statut « à vérifier » de son bail (loyer {_lease.MonthlyRent:C}), en demandant les informations manquantes."));
+        }
+
+        if (_lease.LeaseEndUtc.HasValue && _lease.LeaseEndUtc.Value <= DateTime.UtcNow.AddDays(60))
+        {
+            prompts.Add(new AiPromptSuggestion(
+                "Préparer un avis de renouvellement",
+                $"Rédige un avis de renouvellement de bail pour {_lease.ResidentName}, échéance le {_lease.LeaseEndUtc.Value:MMM d, yyyy}, loyer actuel {_lease.MonthlyRent:C}."));
+        }
+
+        return prompts;
+    }
 
     private IReadOnlyList<StandardActionMenuItem> GetLeaseActionItems()
         =>
@@ -216,11 +308,47 @@
             };
 
             _workspace = await WorkspaceService.GetAssetWorkspaceAsync();
-            RefreshSelectedLease();
+            await RefreshSelectedLeaseAsync();
         }
         finally
         {
             _isSubmittingAction = false;
         }
     }
+
+    private async Task ToggleRentPaymentAsync(DateTime periodMonthUtc, string action)
+    {
+        if (_isSubmittingLedgerAction || _lease is null)
+        {
+            return;
+        }
+
+        _isSubmittingLedgerAction = true;
+
+        try
+        {
+            await WorkspaceService.MarkRentPaymentAsync(_lease.Id, periodMonthUtc, action);
+            _ledger = await WorkspaceService.GetRentLedgerAsync(_lease.Id);
+        }
+        finally
+        {
+            _isSubmittingLedgerAction = false;
+        }
+    }
+
+    private static string GetLedgerStatusLabel(string status)
+        => status switch
+        {
+            "Paid" => "Payé",
+            "Late" => "En retard",
+            _ => "À venir"
+        };
+
+    private static string GetLedgerStatusCss(string status)
+        => status switch
+        {
+            "Paid" => "status-pill status-pill-success",
+            "Late" => "status-pill status-pill-danger",
+            _ => "status-pill status-pill-muted"
+        };
 }

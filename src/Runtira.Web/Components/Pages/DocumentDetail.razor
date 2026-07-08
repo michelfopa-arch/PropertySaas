@@ -1,12 +1,13 @@
 @page "/{tenantSlug}/{propertySlug}/documents/{documentId:guid}"
 @using Runtira.Application.Common
 @using Runtira.Application.Features
+@using Runtira.Web.Components.Shared
 @inject CurrentOrganization CurrentOrganization
 @inject RuntiraWorkspaceService WorkspaceService
 
 <PageTitle>@(_document is null ? "Document" : _document.FileName) · @CurrentOrganization.PropertyName</PageTitle>
 
-<div class="hero-shell hero-shell-single">
+<div class="hero-shell">
     <section class="hero-card">
         <div class="hero-badge">@RuntiraText.Get("Documents_Badge", CurrentOrganization.PreferredLanguage)</div>
 
@@ -16,6 +17,13 @@
         }
         else if (_document is not null)
         {
+            <BusyOverlay IsVisible="@_isSubmittingAction" Label="Mise à jour" Message="Application de l’action sur le document." />
+
+            @if (!string.IsNullOrWhiteSpace(_statusMessage))
+            {
+                <PageEmptyState Title="@_statusMessage" CssClass="inline-status" />
+            }
+
             <div class="card-header-inline">
                 <div>
                     <h1>@_document.FileName</h1>
@@ -49,10 +57,14 @@
                 </div>
             </div>
 
-            <div class="option-list mt-3">
-                <a class="option-pill option-pill-accent" href="@GetPropertyLeafHref("leases")">Voir les baux</a>
-                <a class="option-pill" href="@GetPropertyLeafHref("units")">Voir les unités</a>
-            </div>
+            @if (CurrentOrganization.CanManageData)
+            {
+                <StandardActionMenu MenuLabel="Actions"
+                                     Title="Gérer le document"
+                                     Items="@GetDocumentActionItems()"
+                                     IsBusy="@_isSubmittingAction"
+                                     OnAction="@(action => HandleDocumentActionAsync(action))" />
+            }
         }
         else
         {
@@ -61,6 +73,8 @@
             </PageEmptyState>
         }
     </section>
+
+    <QuickLinksPanel Actions="@GetQuickActions()" AiPrompts="@GetAiPrompts()" />
 </div>
 
 @code {
@@ -76,6 +90,8 @@
     private RuntiraDocumentDto? _document;
     private bool _isLoading = true;
     private bool _hasInitialized;
+    private bool _isSubmittingAction;
+    private string? _statusMessage;
 
     protected override async Task OnInitializedAsync()
     {
@@ -97,6 +113,50 @@
         }
     }
 
+    private IReadOnlyList<StandardActionMenuItem> GetDocumentActionItems()
+        =>
+        [
+            new StandardActionMenuItem(
+                "markArchived",
+                "Marquer archivé",
+                _document is null || string.Equals(_document.Status, "Archived", StringComparison.OrdinalIgnoreCase),
+                "Le document passe en statut Archivé."),
+            new StandardActionMenuItem(
+                "markPendingReview",
+                "Marquer en revue",
+                _document is null || string.Equals(_document.Status, "PendingReview", StringComparison.OrdinalIgnoreCase),
+                "Le document est mis en attente de revue par le super admin.")
+        ];
+
+    private async Task HandleDocumentActionAsync(string action)
+    {
+        if (_isSubmittingAction || _document is null)
+        {
+            return;
+        }
+
+        _isSubmittingAction = true;
+        _statusMessage = null;
+
+        try
+        {
+            var result = await WorkspaceService.ManageDocumentAsync(_document.Id, action);
+            _statusMessage = result.ResultCode switch
+            {
+                "Updated" => $"Document mis à jour · {result.Status}.",
+                "DocumentNotFound" => "Document introuvable.",
+                _ => "Action indisponible."
+            };
+
+            var documents = await WorkspaceService.GetDocumentsAsync();
+            _document = documents.FirstOrDefault(x => x.Id == DocumentId);
+        }
+        finally
+        {
+            _isSubmittingAction = false;
+        }
+    }
+
     private static string GetStatusCss(string status)
         => status switch
         {
@@ -110,4 +170,40 @@
 
     private string GetPropertyLeafHref(string leaf)
         => $"/{CurrentOrganization.OrganizationSlug}/{CurrentOrganization.PropertySlug}/{leaf}";
+
+    private List<QuickLinkAction> GetQuickActions()
+    {
+        var actions = new List<QuickLinkAction>();
+        if (_document is null)
+        {
+            return actions;
+        }
+
+        actions.Add(new QuickLinkAction("Voir les baux liés", GetPropertyLeafHref("leases")));
+        actions.Add(new QuickLinkAction("Voir les unités", GetPropertyLeafHref("units")));
+        actions.Add(new QuickLinkAction("Voir tous les documents", GetPropertyLeafHref("documents")));
+        return actions;
+    }
+
+    private List<AiPromptSuggestion> GetAiPrompts()
+    {
+        var prompts = new List<AiPromptSuggestion>();
+        if (_document is null)
+        {
+            return prompts;
+        }
+
+        prompts.Add(new AiPromptSuggestion(
+            "Résumer ce document",
+            $"Résume en 3 phrases le contenu probable du document « {_document.FileName} » (catégorie {_document.Category}, déposé le {_document.UploadedUtc:yyyy-MM-dd}) pour le propriétaire."));
+
+        if (string.Equals(_document.Status, "PendingReview", StringComparison.OrdinalIgnoreCase))
+        {
+            prompts.Add(new AiPromptSuggestion(
+                "Rédiger une demande de revue",
+                $"Rédige un message court demandant au super admin de réviser le document « {_document.FileName} » en attente de validation."));
+        }
+
+        return prompts;
+    }
 }

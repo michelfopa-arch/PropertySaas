@@ -1,0 +1,67 @@
+@using Microsoft.JSInterop
+@inject IJSRuntime JsRuntime
+
+@if ((Actions?.Count ?? 0) > 0 || (AiPrompts?.Count ?? 0) > 0)
+{
+    <section class="workspace-card">
+        <div class="workspace-header">
+            <h2>Quick links</h2>
+            <span class="workspace-state">@(IsAiSimulated ? "Mock + IA simulée" : "Mock")</span>
+        </div>
+
+        @if ((Actions?.Count ?? 0) > 0)
+        {
+            <div class="prompt-box prompt-box-soft">
+                @foreach (var action in Actions!)
+                {
+                    <a class="@(action.IsAccent ? "prompt-chip prompt-link prompt-chip-accent" : "prompt-chip prompt-link")"
+                       href="@action.Href"
+                       target="@action.Target">
+                        @action.Label
+                    </a>
+                }
+            </div>
+        }
+
+        @if ((AiPrompts?.Count ?? 0) > 0)
+        {
+            <div class="prompt-title mt-3">Suggestions IA</div>
+            <div class="prompt-box prompt-box-soft">
+                @foreach (var suggestion in AiPrompts!)
+                {
+                    <button type="button" class="prompt-chip ai-prompt-chip" @onclick="() => CopyPromptAsync(suggestion.Prompt)">
+                        <span>@suggestion.Label</span>
+                        <small>@(_copiedPrompt == suggestion.Prompt ? "Copié ✓" : "Copier le prompt")</small>
+                    </button>
+                }
+            </div>
+        }
+    </section>
+}
+
+@code {
+    [Parameter]
+    public IReadOnlyList<QuickLinkAction>? Actions { get; set; }
+
+    [Parameter]
+    public IReadOnlyList<AiPromptSuggestion>? AiPrompts { get; set; }
+
+    [Parameter]
+    public bool IsAiSimulated { get; set; } = true;
+
+    private string? _copiedPrompt;
+
+    private async Task CopyPromptAsync(string prompt)
+    {
+        try
+        {
+            await JsRuntime.InvokeVoidAsync("navigator.clipboard.writeText", prompt);
+        }
+        catch
+        {
+            // Clipboard API can be unavailable (e.g. insecure context); the prompt text remains visible either way.
+        }
+
+        _copiedPrompt = prompt;
+    }
+}

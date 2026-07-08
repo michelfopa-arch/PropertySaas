@@ -55,18 +55,7 @@
         </div>
     </section>
 
-    <section class="workspace-card">
-        <div class="workspace-header">
-            <h2>Quick links</h2>
-            <span class="workspace-state">Mock</span>
-        </div>
-
-        <div class="prompt-box prompt-box-soft">
-            <a class="prompt-chip prompt-link" href="@($"/{CurrentOrganization.OrganizationSlug}/{CurrentOrganization.PropertySlug}/leads")">Leads</a>
-            <a class="prompt-chip prompt-link" href="@($"/{CurrentOrganization.OrganizationSlug}/{CurrentOrganization.PropertySlug}/billing")">Billing</a>
-            <a class="prompt-chip prompt-link" href="@($"/{CurrentOrganization.OrganizationSlug}/{CurrentOrganization.PropertySlug}/exports")">Exports</a>
-        </div>
-    </section>
+    <QuickLinksPanel Actions="@GetQuickActions()" AiPrompts="@GetAiPrompts()" />
 </div>
 
 @code {
@@ -88,4 +77,25 @@
             CurrentOrganization.PropertySlug = PropertySlug;
         }
     }
+
+    private List<QuickLinkAction> GetQuickActions()
+        =>
+        [
+            new QuickLinkAction("Voir les leads", $"/{CurrentOrganization.OrganizationSlug}/{CurrentOrganization.PropertySlug}/leads", IsAccent: true),
+            new QuickLinkAction("Voir l'inbox", $"/{CurrentOrganization.OrganizationSlug}/{CurrentOrganization.PropertySlug}/inbox"),
+            new QuickLinkAction("Voir la facturation", $"/{CurrentOrganization.OrganizationSlug}/{CurrentOrganization.PropertySlug}/billing"),
+            new QuickLinkAction("Voir les exports", $"/{CurrentOrganization.OrganizationSlug}/{CurrentOrganization.PropertySlug}/exports"),
+            new QuickLinkAction("Voir toutes les factures", $"/{CurrentOrganization.OrganizationSlug}/invoices")
+        ];
+
+    private List<AiPromptSuggestion> GetAiPrompts()
+        =>
+        [
+            new AiPromptSuggestion(
+                "Résumer la propriété",
+                $"Résume en 3 phrases l'état actuel de la propriété {(string.IsNullOrWhiteSpace(CurrentOrganization.PropertyName) ? CurrentOrganization.PropertySlug : CurrentOrganization.PropertyName)} pour le propriétaire : occupation, revenus et points d'attention."),
+            new AiPromptSuggestion(
+                "Préparer un rapport mensuel",
+                $"Prépare un rapport mensuel court (occupation, loyers, baux à renouveler) pour la propriété {(string.IsNullOrWhiteSpace(CurrentOrganization.PropertyName) ? CurrentOrganization.PropertySlug : CurrentOrganization.PropertyName)}.")
+        ];
 }

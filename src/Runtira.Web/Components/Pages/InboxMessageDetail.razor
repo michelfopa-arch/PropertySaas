@@ -2,12 +2,13 @@
 @page "/{tenantSlug}/{propertySlug}/inbox/{messageId:guid}"
 @using Runtira.Application.Common
 @using Runtira.Application.Features
+@using Runtira.Web.Components.Shared
 @inject CurrentOrganization CurrentOrganization
 @inject RuntiraWorkspaceService WorkspaceService
 
 <PageTitle>@(_message is null ? "Message" : _message.Subject) · @RuntiraText.Get("Inbox_Badge", CurrentOrganization.PreferredLanguage)</PageTitle>
 
-<div class="hero-shell hero-shell-single">
+<div class="hero-shell">
     <section class="hero-card">
         <div class="hero-badge">@RuntiraText.Get("Inbox_Badge", CurrentOrganization.PreferredLanguage)</div>
 
@@ -17,6 +18,13 @@
         }
         else if (_message is not null)
         {
+            <BusyOverlay IsVisible="@_isSubmittingAction" Label="Mise à jour" Message="Application de l’action sur le message." />
+
+            @if (!string.IsNullOrWhiteSpace(_statusMessage))
+            {
+                <PageEmptyState Title="@_statusMessage" CssClass="inline-status" />
+            }
+
             <div class="card-header-inline">
                 <div>
                     <h1>@_message.Subject</h1>
@@ -50,6 +58,15 @@
                 </div>
             </div>
 
+            @if (CurrentOrganization.CanManageData)
+            {
+                <StandardActionMenu MenuLabel="Actions"
+                                     Title="Gérer le message"
+                                     Items="@GetMessageActionItems()"
+                                     IsBusy="@_isSubmittingAction"
+                                     OnAction="@(action => HandleMessageActionAsync(action))" />
+            }
+
             @if (_message.HasAttachments)
             {
                 <div class="detail-kpi">@RuntiraText.Get("Inbox_Summary_Attachments", CurrentOrganization.PreferredLanguage)</div>
@@ -67,6 +84,8 @@
             </PageEmptyState>
         }
     </section>
+
+    <QuickLinksPanel Actions="@GetQuickActions()" AiPrompts="@GetAiPrompts()" />
 </div>
 
 @code {
@@ -82,6 +101,8 @@
     private RuntiraInboxMessageDto? _message;
     private bool _isLoading = true;
     private bool _hasInitialized;
+    private bool _isSubmittingAction;
+    private string? _statusMessage;
 
     protected override async Task OnInitializedAsync()
     {
@@ -103,10 +124,60 @@
         }
     }
 
+    private IReadOnlyList<StandardActionMenuItem> GetMessageActionItems()
+        =>
+        [
+            new StandardActionMenuItem(
+                "markClassified",
+                "Marquer classé",
+                _message is null || string.Equals(_message.Status, "Classified", StringComparison.OrdinalIgnoreCase),
+                "Le message est marqué comme classé."),
+            new StandardActionMenuItem(
+                "markResolved",
+                "Marquer résolu",
+                _message is null || string.Equals(_message.Status, "Resolved", StringComparison.OrdinalIgnoreCase),
+                "Le message est marqué comme traité et résolu."),
+            new StandardActionMenuItem(
+                "markPending",
+                "Rouvrir (à traiter)",
+                _message is null || string.Equals(_message.Status, "Pending", StringComparison.OrdinalIgnoreCase),
+                "Le message repasse en attente de traitement.")
+        ];
+
+    private async Task HandleMessageActionAsync(string action)
+    {
+        if (_isSubmittingAction || _message is null)
+        {
+            return;
+        }
+
+        _isSubmittingAction = true;
+        _statusMessage = null;
+
+        try
+        {
+            var result = await WorkspaceService.ManageInboxMessageAsync(_message.Id, action);
+            _statusMessage = result.ResultCode switch
+            {
+                "Updated" => $"Message mis à jour · {result.Status}.",
+                "MessageNotFound" => "Message introuvable.",
+                _ => "Action indisponible."
+            };
+
+            var messages = await WorkspaceService.GetInboxAsync();
+            _message = messages.FirstOrDefault(x => x.Id == MessageId);
+        }
+        finally
+        {
+            _isSubmittingAction = false;
+        }
+    }
+
     private static string GetStatusCss(string status)
         => status switch
         {
             "Classified" => "status-pill status-pill-success",
+            "Resolved" => "status-pill status-pill-success",
             "Pending" => "status-pill status-pill-warning",
             _ => "status-pill status-pill-muted"
         };
@@ -115,4 +186,41 @@
         => string.IsNullOrWhiteSpace(PropertySlug)
             ? $"/{CurrentOrganization.OrganizationSlug}/inbox"
             : $"/{CurrentOrganization.OrganizationSlug}/{PropertySlug}/inbox";
+
+    private string GetTenantLeafHref(string leaf)
+        => string.IsNullOrWhiteSpace(PropertySlug)
+            ? $"/{CurrentOrganization.OrganizationSlug}/{leaf}"
+            : $"/{CurrentOrganization.OrganizationSlug}/{PropertySlug}/{leaf}";
+
+    private List<QuickLinkAction> GetQuickActions()
+    {
+        var actions = new List<QuickLinkAction>();
+        if (_message is null)
+        {
+            return actions;
+        }
+
+        actions.Add(new QuickLinkAction("Voir les leads", GetTenantLeafHref("leads")));
+        actions.Add(new QuickLinkAction("Voir tous les messages", GetBackToInboxHref()));
+        return actions;
+    }
+
+    private List<AiPromptSuggestion> GetAiPrompts()
+    {
+        var prompts = new List<AiPromptSuggestion>();
+        if (_message is null)
+        {
+            return prompts;
+        }
+
+        prompts.Add(new AiPromptSuggestion(
+            "Rédiger une réponse",
+            $"Rédige une réponse professionnelle à {_message.FromEmail} concernant « {_message.Subject} » : {_message.PreviewText}"));
+
+        prompts.Add(new AiPromptSuggestion(
+            "Classer ce message",
+            $"Analyse ce message et suggère la meilleure catégorie (Lead, Invoice, Document, Maintenance) : sujet « {_message.Subject} », contenu : {_message.PreviewText}"));
+
+        return prompts;
+    }
 }

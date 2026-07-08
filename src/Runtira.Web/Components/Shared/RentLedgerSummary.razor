@@ -1,0 +1,39 @@
+@using Runtira.Application.Features
+
+@if (Ledger is not null)
+{
+    <div class="localized-section">
+        <div class="prompt-title">Historique de paiement (Rent Ledger)</div>
+        <div class="tenant-summary unit-detail-summary">
+            <div>
+                <span class="summary-label">Payés</span>
+                <strong class="ledger-count-paid">@Ledger.PaidCount</strong>
+            </div>
+            <div>
+                <span class="summary-label">En retard</span>
+                <strong class="ledger-count-late">@Ledger.LateCount</strong>
+            </div>
+            <div>
+                <span class="summary-label">À venir</span>
+                <strong>@Ledger.PendingCount</strong>
+            </div>
+            <div>
+                <span class="summary-label">Solde impayé</span>
+                <strong>@Ledger.OutstandingBalance.ToString("C")</strong>
+            </div>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(LeaseDetailHref))
+        {
+            <a class="ghost-button" href="@LeaseDetailHref">Voir l'historique complet</a>
+        }
+    </div>
+}
+
+@code {
+    [Parameter]
+    public RuntiraRentLedgerDto? Ledger { get; set; }
+
+    [Parameter]
+    public string? LeaseDetailHref { get; set; }
+}

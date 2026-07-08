@@ -4,7 +4,7 @@
 @using Runtira.Application.Features
 @inject CurrentOrganization CurrentOrganization
 @inject RuntiraWorkspaceService WorkspaceService
-@inject Runtira.Infrastructure.Services.StripeBillingService StripeBillingService
+@inject Runtira.Infrastructure.Services.Billing.StripeBillingService StripeBillingService
 
 <PageTitle>@RuntiraText.Get("Nav_Billing", CurrentOrganization.PreferredLanguage)</PageTitle>
 
@@ -85,7 +85,7 @@
     public string? PropertySlug { get; set; }
 
     private RuntiraWorkspaceSummaryDto? _summary;
-    private List<Runtira.Infrastructure.Services.StripePlanPriceDto> _planPrices = new();
+    private List<Runtira.Infrastructure.Services.Billing.StripePlanPriceDto> _planPrices = new();
     private string _stripeCustomerDisplay = string.Empty;
     private bool _hasInitialized;
 
