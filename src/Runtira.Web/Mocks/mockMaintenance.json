@@ -1,8 +1,0 @@
-[
-  { "id": "i1i1i1i1-0001-0001-0001-000000000001", "tenantId": "a1a1a1a1-0001-0001-0001-000000000001", "propertyId": "b1b1b1b1-0001-0001-0001-000000000001", "unitCode": "A-104", "title": "Fuite d'eau", "priority": "Urgent", "status": "Open", "nextVisitUtc": "2026-07-10T14:00:00Z" },
-  { "id": "i1i1i1i1-0001-0001-0001-000000000002", "tenantId": "a1a1a1a1-0001-0001-0001-000000000001", "propertyId": "b1b1b1b1-0001-0001-0001-000000000001", "unitCode": "A-101", "title": "Vérification détecteur de fumée", "priority": "Normal", "status": "Planned", "nextVisitUtc": "2026-07-12T09:00:00Z" },
-
-  { "id": "i2i2i2i2-0002-0002-0002-000000000001", "tenantId": "a1a1a1a1-0002-0002-0002-000000000002", "propertyId": "b1b1b1b1-0002-0002-0002-000000000002", "unitCode": "1206", "title": "Remplacement du four", "priority": "Normal", "status": "Scheduled", "nextVisitUtc": "2026-07-15T10:00:00Z" },
-
-  { "id": "i3i3i3i3-0003-0003-0003-000000000001", "tenantId": "a1a1a1a1-0003-0003-0003-000000000003", "propertyId": "b1b1b1b1-0003-0003-0003-000000000003", "unitCode": "9B", "title": "Inspection HVAC", "priority": "Normal", "status": "Open", "nextVisitUtc": "2026-07-11T13:00:00Z" }
-]

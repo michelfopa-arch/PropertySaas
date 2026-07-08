@@ -1,5 +1,0 @@
-[
-  { "id": "j1j1j1j1-0001-0001-0001-000000000001", "tenantId": "a1a1a1a1-0001-0001-0001-000000000001", "type": "Payment", "message": "Paiement en retard pour A-104.", "isRead": false, "createdUtc": "2026-07-05T00:00:00Z" },
-  { "id": "j2j2j2j2-0002-0002-0002-000000000001", "tenantId": "a1a1a1a1-0002-0002-0002-000000000002", "type": "Maintenance", "message": "Nouvelle demande de maintenance pour 1206.", "isRead": false, "createdUtc": "2026-07-04T00:00:00Z" },
-  { "id": "j3j3j3j3-0003-0003-0003-000000000001", "tenantId": "a1a1a1a1-0003-0003-0003-000000000003", "type": "Document", "message": "Nouveau document ajouté pour 2400 McKinney Avenue.", "isRead": true, "createdUtc": "2026-07-02T00:00:00Z" }
-]
