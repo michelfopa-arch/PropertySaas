@@ -1,0 +1,135 @@
+@page "/{tenantSlug}/invoices"
+@page "/{tenantSlug}/{propertySlug}/invoices"
+@using Runtira.Application.Common
+@using Runtira.Application.Features
+@using Runtira.Web.Components.Shared
+@inject CurrentOrganization CurrentOrganization
+@inject RuntiraWorkspaceService WorkspaceService
+
+<PageTitle>Invoices · @CurrentOrganization.OrganizationName</PageTitle>
+
+<div class="hero-shell hero-shell-single">
+    <section class="hero-card">
+        <div class="hero-badge">Invoices</div>
+        <h1>Factures mensuelles</h1>
+        <p class="hero-copy">Retrouvez tous les baux de vos propriétés et régénérez à tout moment la facture PDF d’un mois précédent, courant ou futur. Aucun PDF n’est conservé : seul l’historique JSON (mois générés) est gardé localement.</p>
+
+        @if (_isLoading)
+        {
+            <PageLoadingState />
+        }
+        else if (_leases.Count > 0)
+        {
+            <div class="tenant-summary">
+                <div>
+                    <span class="summary-label">Baux</span>
+                    <strong>@_leases.Count</strong>
+                </div>
+                <div>
+                    <span class="summary-label">Revenu mensuel total</span>
+                    <strong>@_leases.Sum(x => x.MonthlyRent).ToString("C")</strong>
+                </div>
+                <div>
+                    <span class="summary-label">Factures générées</span>
+                    <strong>@_leases.Sum(x => x.AvailableMonths.Count)</strong>
+                </div>
+                <div>
+                    <span class="summary-label">Organisation</span>
+                    <strong>@CurrentOrganization.OrganizationName</strong>
+                </div>
+            </div>
+
+            <SectionToolbar Hint="Choisissez un mois pour générer ou régénérer la facture PDF de ce bail.">
+                <Actions>
+                    <a class="ghost-button" href="@GetBackHref()">Back to workspace</a>
+                </Actions>
+            </SectionToolbar>
+
+            <div class="unit-explorer-list">
+                @foreach (var lease in _leases)
+                {
+                    <div class="explorer-list-item invoice-lease-card">
+                        <div class="unit-item-header">
+                            <strong>@GetLeaseTitle(lease)</strong>
+                            <span class="@EntityStatusPresenter.LeasePaymentCss(lease.LeaseStatus)">@EntityStatusPresenter.LeasePaymentLabel(lease.LeaseStatus)</span>
+                        </div>
+                        <span>@lease.PropertyName · @lease.MonthlyRent.ToString("C") / mois</span>
+
+                        <div class="option-list mt-3">
+                            <a class="option-pill" href="@GetInvoiceHref(lease.LeaseId, -1)" target="_blank">Mois précédent</a>
+                            <a class="option-pill option-pill-accent" href="@GetInvoiceHref(lease.LeaseId, 0)" target="_blank">Mois courant</a>
+                            <a class="option-pill" href="@GetInvoiceHref(lease.LeaseId, 1)" target="_blank">Mois suivant</a>
+                        </div>
+
+                        @if (lease.AvailableMonths.Count > 0)
+                        {
+                            <div class="invoice-history">
+                                <span class="summary-label">Historique (régénérer)</span>
+                                <div class="option-list">
+                                    @foreach (var month in lease.AvailableMonths)
+                                    {
+                                        <a class="option-pill" href="@GetInvoiceHrefForMonth(lease.LeaseId, month)" target="_blank">@month.ToString("MMMM yyyy")</a>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <PageEmptyState Title="Aucun bail" Message="Aucun bail disponible pour générer une facture." />
+        }
+    </section>
+</div>
+
+@code {
+    [Parameter]
+    public string? TenantSlug { get; set; }
+
+    [Parameter]
+    public string? PropertySlug { get; set; }
+
+    private IReadOnlyList<RuntiraLeaseInvoiceEntryDto> _leases = Array.Empty<RuntiraLeaseInvoiceEntryDto>();
+    private bool _isLoading = true;
+    private bool _hasInitialized;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (_hasInitialized)
+        {
+            return;
+        }
+
+        _hasInitialized = true;
+
+        try
+        {
+            _leases = await WorkspaceService.GetLeaseInvoiceEntriesAsync();
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private string GetBackHref()
+        => string.IsNullOrWhiteSpace(CurrentOrganization.PropertySlug)
+            ? $"/{CurrentOrganization.OrganizationSlug}"
+            : $"/{CurrentOrganization.OrganizationSlug}/{CurrentOrganization.PropertySlug}/dashboard";
+
+    private string GetInvoiceHref(Guid leaseId, int monthOffset)
+        => $"/{CurrentOrganization.OrganizationSlug}/invoices/{leaseId}/invoice.pdf?monthOffset={monthOffset}";
+
+    private string GetInvoiceHrefForMonth(Guid leaseId, DateTime month)
+    {
+        var today = DateTime.UtcNow;
+        var currentMonth = new DateTime(today.Year, today.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+        var offset = ((month.Year - currentMonth.Year) * 12) + month.Month - currentMonth.Month;
+        return GetInvoiceHref(leaseId, offset);
+    }
+
+    private static string GetLeaseTitle(RuntiraLeaseInvoiceEntryDto lease)
+        => string.IsNullOrWhiteSpace(lease.UnitCode) ? lease.ResidentName : $"{lease.ResidentName} · Unit {lease.UnitCode}";
+}

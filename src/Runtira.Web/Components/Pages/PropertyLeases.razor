@@ -1,16 +1,17 @@
 @page "/{tenantSlug}/{propertySlug}/leases"
 @using Runtira.Application.Common
 @using Runtira.Application.Features
+@using Runtira.Web.Components.Shared
 @inject CurrentOrganization CurrentOrganization
 @inject RuntiraWorkspaceService WorkspaceService
 
 <PageTitle>Leases · @CurrentOrganization.PropertyName</PageTitle>
 
-<div class="hero-shell">
+<div class="hero-shell hero-shell-single">
     <section class="hero-card">
         <div class="hero-badge">Leases</div>
         <h1>Leases</h1>
-        <p class="hero-copy">Une page dédiée aux baux de cette propriété, avec des actions simples liées à la facturation et au suivi.</p>
+        <p class="hero-copy">Chaque bail affiche son statut, son loyer et son résident en un coup d’œil. Cliquez sur un bail pour ouvrir sa page dédiée.</p>
 
         @if (_isLoading)
         {
@@ -37,35 +38,39 @@
                 </div>
             </div>
 
-            <SectionToolbar Hint="Le mode mock permet de valider les parcours métier avant de brancher des flux réels plus avancés.">
+            <SectionToolbar Hint="Cliquez sur un bail pour ouvrir sa fiche complète.">
                 <Actions>
                     <a class="ghost-button" href="@($"/{CurrentOrganization.OrganizationSlug}/{CurrentOrganization.PropertySlug}/dashboard")">Back to property</a>
                 </Actions>
             </SectionToolbar>
 
-            <div class="option-list">
-                @foreach (var lease in _workspace.Leases)
-                {
-                    <span class="option-pill option-pill-accent">@lease.UnitCode · @lease.Status</span>
-                }
-            </div>
+            @if (_workspace.Leases.Count > 0)
+            {
+                <div class="unit-explorer-list">
+                    @foreach (var lease in _workspace.Leases)
+                    {
+                        <a class="explorer-list-item" href="@GetLeaseDetailHref(lease.Id)">
+                            <div class="unit-item-header">
+                                <strong>@GetLeaseTitle(lease)</strong>
+                                <span class="@EntityStatusPresenter.LeasePaymentCss(lease.Status)">@EntityStatusPresenter.LeasePaymentLabel(lease.Status)</span>
+                            </div>
+                            <span>@lease.MonthlyRent.ToString("C") · @lease.BillingPeriod</span>
+                            <div class="unit-item-footer">
+                                <small>@lease.ResidentName</small>
+                            </div>
+                        </a>
+                    }
+                </div>
+            }
+            else
+            {
+                <PageEmptyState Title="Aucun bail" Message="Aucun bail mock disponible pour cette propriété." />
+            }
         }
         else
         {
             <PageEmptyState Title="No lease data" Message="Aucun bail mock disponible pour cette propriété." />
         }
-    </section>
-
-    <section class="workspace-card">
-        <div class="workspace-header">
-            <h2>Lease actions</h2>
-            <span class="workspace-state">Mock</span>
-        </div>
-
-        <div class="prompt-box prompt-box-soft">
-            <button type="button" class="prompt-chip">Create lease</button>
-            <button type="button" class="prompt-chip">Prepare invoice</button>
-        </div>
     </section>
 </div>
 
@@ -113,4 +118,10 @@
             _isLoading = false;
         }
     }
+
+    private string GetLeaseDetailHref(Guid leaseId)
+        => $"/{CurrentOrganization.OrganizationSlug}/{CurrentOrganization.PropertySlug}/leases/{leaseId}";
+
+    private static string GetLeaseTitle(RuntiraLeaseSummaryDto lease)
+        => string.IsNullOrWhiteSpace(lease.UnitCode) ? lease.ResidentName : $"Unit {lease.UnitCode}";
 }

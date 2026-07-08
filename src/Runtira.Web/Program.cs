@@ -101,6 +101,7 @@ builder.Services.AddScoped<CurrentOrganization>(provider =>
         && !string.Equals(segments[1], "imports", StringComparison.OrdinalIgnoreCase)
         && !string.Equals(segments[1], "exports", StringComparison.OrdinalIgnoreCase)
         && !string.Equals(segments[1], "invoice-composer", StringComparison.OrdinalIgnoreCase)
+        && !string.Equals(segments[1], "invoices", StringComparison.OrdinalIgnoreCase)
         && !string.Equals(segments[1], "inbox", StringComparison.OrdinalIgnoreCase)
         && !string.Equals(segments[1], "legislation", StringComparison.OrdinalIgnoreCase)
         && !string.Equals(segments[1], "settings", StringComparison.OrdinalIgnoreCase)
@@ -403,6 +404,38 @@ app.MapGet("/{tenantSlug}/exports/leads.csv", async (string tenantSlug, HttpCont
     }
 
     var export = await workspaceService.ExportLeadsCsvAsync(httpContext.RequestAborted);
+    if (export is null || export.Content.Length == 0)
+    {
+        return Results.NotFound();
+    }
+
+    return Results.File(export.Content, export.ContentType, export.FileName);
+});
+
+app.MapGet("/{tenantSlug}/{propertySlug}/leases/{leaseId:guid}/invoice.pdf", async (string tenantSlug, string propertySlug, Guid leaseId, int? monthOffset, HttpContext httpContext, [FromServices] CurrentOrganization currentOrganization, [FromServices] RuntiraWorkspaceService workspaceService) =>
+{
+    if (!string.Equals(currentOrganization.OrganizationSlug, tenantSlug, StringComparison.OrdinalIgnoreCase))
+    {
+        return Results.NotFound();
+    }
+
+    var export = await workspaceService.GenerateRentInvoicePdfAsync(leaseId, monthOffset ?? 0, httpContext.RequestAborted);
+    if (export is null || export.Content.Length == 0)
+    {
+        return Results.NotFound();
+    }
+
+    return Results.File(export.Content, export.ContentType, export.FileName);
+});
+
+app.MapGet("/{tenantSlug}/invoices/{leaseId:guid}/invoice.pdf", async (string tenantSlug, Guid leaseId, int? monthOffset, HttpContext httpContext, [FromServices] CurrentOrganization currentOrganization, [FromServices] RuntiraWorkspaceService workspaceService) =>
+{
+    if (!string.Equals(currentOrganization.OrganizationSlug, tenantSlug, StringComparison.OrdinalIgnoreCase))
+    {
+        return Results.NotFound();
+    }
+
+    var export = await workspaceService.GenerateRentInvoicePdfAsync(leaseId, monthOffset ?? 0, httpContext.RequestAborted);
     if (export is null || export.Content.Length == 0)
     {
         return Results.NotFound();

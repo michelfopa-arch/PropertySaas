@@ -20,10 +20,22 @@ namespace Runtira.Application.Abstractions
         Task SendAsync(string to, string subject, string html, string text, CancellationToken cancellationToken = default);
     }
 
+    public interface IRentInvoicePdfRenderer
+    {
+        byte[] Render(Runtira.Application.Features.RuntiraRentInvoiceDto invoice);
+    }
+
+    public interface IRentInvoiceArchiveStore
+    {
+        Task RecordAsync(string tenantSlug, Runtira.Application.Features.RuntiraRentInvoiceDto invoice, CancellationToken cancellationToken = default);
+        Task<IReadOnlyList<DateTime>> GetGeneratedMonthsAsync(string tenantSlug, Guid leaseId, CancellationToken cancellationToken = default);
+    }
+
     public interface IRuntiraAssetWorkspaceStore
     {
         Task<Runtira.Application.Features.RuntiraAssetWorkspaceDto?> GetAssetWorkspaceAsync(Guid tenantId, string? propertySlug = null, CancellationToken cancellationToken = default);
         Task<IReadOnlyList<Runtira.Application.Features.RuntiraAssetSummaryDto>> GetAssetsAsync(Guid tenantId, CancellationToken cancellationToken = default);
+        Task<IReadOnlyList<Runtira.Application.Features.RuntiraLeaseInvoiceEntryDto>> GetLeaseInvoiceEntriesAsync(Guid tenantId, CancellationToken cancellationToken = default);
         Task<Runtira.Application.Features.RuntiraUnitActionResultDto> ManageUnitAsync(Guid tenantId, Guid unitId, string action, CancellationToken cancellationToken = default);
         Task<Runtira.Application.Features.RuntiraResidentActionResultDto> ManageResidentAsync(Guid tenantId, Guid residentId, string action, CancellationToken cancellationToken = default);
         Task<Runtira.Application.Features.RuntiraLeaseActionResultDto> ManageLeaseAsync(Guid tenantId, Guid leaseId, string action, CancellationToken cancellationToken = default);
@@ -424,6 +436,8 @@ namespace Runtira.Application.Features
         public decimal MonthlyRent { get; set; }
         public string Status { get; set; } = string.Empty;
         public string BillingPeriod { get; set; } = string.Empty;
+        public DateTime LeaseStartUtc { get; set; }
+        public DateTime? LeaseEndUtc { get; set; }
         public string ComplianceDataJson { get; set; } = "{}";
         public RuntiraLeaseComplianceData? ComplianceData { get; set; }
     }
@@ -531,6 +545,39 @@ namespace Runtira.Application.Features
         public byte[] Content { get; set; } = Array.Empty<byte>();
     }
 
+    public sealed class RuntiraRentInvoiceDto
+    {
+        public Guid LeaseId { get; set; }
+        public string OrganizationName { get; set; } = string.Empty;
+        public string PropertyAddress { get; set; } = string.Empty;
+        public string ResidentName { get; set; } = string.Empty;
+        public string UnitCode { get; set; } = string.Empty;
+        public decimal MonthlyRent { get; set; }
+        public string BillingPeriod { get; set; } = string.Empty;
+        public DateTime LeaseStartUtc { get; set; }
+        public DateTime? LeaseEndUtc { get; set; }
+        public DateTime PeriodMonthUtc { get; set; }
+        public string JurisdictionDisplayName { get; set; } = string.Empty;
+        public string RegionCode { get; set; } = string.Empty;
+        public bool AddAutomaticSalesTax { get; set; }
+    }
+
+    public sealed class RuntiraLeaseInvoiceEntryDto
+    {
+        public Guid LeaseId { get; set; }
+        public string PropertyName { get; set; } = string.Empty;
+        public string PropertyAddress { get; set; } = string.Empty;
+        public string PropertySlug { get; set; } = string.Empty;
+        public string UnitCode { get; set; } = string.Empty;
+        public string ResidentName { get; set; } = string.Empty;
+        public decimal MonthlyRent { get; set; }
+        public string BillingPeriod { get; set; } = string.Empty;
+        public string LeaseStatus { get; set; } = string.Empty;
+        public DateTime LeaseStartUtc { get; set; }
+        public DateTime? LeaseEndUtc { get; set; }
+        public IReadOnlyList<DateTime> AvailableMonths { get; set; } = Array.Empty<DateTime>();
+    }
+
     public sealed class RuntiraFlexibleDataStrategyDto
     {
         public string AssetContextDataJson { get; set; } = "{}";
@@ -577,14 +624,122 @@ namespace Runtira.Application.Features
         private readonly IRuntiraAssetWorkspaceStore? _assetWorkspaceStore;
         private readonly IRuntiraLeadWorkspaceStore? _leadWorkspaceStore;
         private readonly IRuntiraReadModelStore? _readModelStore;
+        private readonly IRentInvoicePdfRenderer? _rentInvoicePdfRenderer;
+        private readonly IRentInvoiceArchiveStore? _rentInvoiceArchiveStore;
 
-        public RuntiraWorkspaceService(CurrentOrganization currentOrganization, ITenantContextAccessor tenantContextAccessor, IRuntiraAssetWorkspaceStore? assetWorkspaceStore = null, IRuntiraLeadWorkspaceStore? leadWorkspaceStore = null, IRuntiraReadModelStore? readModelStore = null)
+        public RuntiraWorkspaceService(CurrentOrganization currentOrganization, ITenantContextAccessor tenantContextAccessor, IRuntiraAssetWorkspaceStore? assetWorkspaceStore = null, IRuntiraLeadWorkspaceStore? leadWorkspaceStore = null, IRuntiraReadModelStore? readModelStore = null, IRentInvoicePdfRenderer? rentInvoicePdfRenderer = null, IRentInvoiceArchiveStore? rentInvoiceArchiveStore = null)
         {
             _currentOrganization = currentOrganization;
             _tenantContextAccessor = tenantContextAccessor;
             _assetWorkspaceStore = assetWorkspaceStore;
             _leadWorkspaceStore = leadWorkspaceStore;
             _readModelStore = readModelStore;
+            _rentInvoicePdfRenderer = rentInvoicePdfRenderer;
+            _rentInvoiceArchiveStore = rentInvoiceArchiveStore;
+        }
+
+        public async Task<IReadOnlyList<RuntiraLeaseInvoiceEntryDto>> GetLeaseInvoiceEntriesAsync(CancellationToken cancellationToken = default)
+        {
+            var tenantId = _tenantContextAccessor.TenantId ?? (_currentOrganization.OrganizationId == Guid.Empty ? null : _currentOrganization.OrganizationId);
+            if (!tenantId.HasValue || _assetWorkspaceStore is null)
+            {
+                return Array.Empty<RuntiraLeaseInvoiceEntryDto>();
+            }
+
+            var entries = await _assetWorkspaceStore.GetLeaseInvoiceEntriesAsync(tenantId.Value, cancellationToken);
+            if (_rentInvoiceArchiveStore is null)
+            {
+                return entries;
+            }
+
+            var slug = _currentOrganization.OrganizationSlug;
+            var enriched = new List<RuntiraLeaseInvoiceEntryDto>(entries.Count);
+            foreach (var entry in entries)
+            {
+                var months = await _rentInvoiceArchiveStore.GetGeneratedMonthsAsync(slug, entry.LeaseId, cancellationToken);
+                enriched.Add(new RuntiraLeaseInvoiceEntryDto
+                {
+                    LeaseId = entry.LeaseId,
+                    PropertyName = entry.PropertyName,
+                    PropertyAddress = entry.PropertyAddress,
+                    PropertySlug = entry.PropertySlug,
+                    UnitCode = entry.UnitCode,
+                    ResidentName = entry.ResidentName,
+                    MonthlyRent = entry.MonthlyRent,
+                    BillingPeriod = entry.BillingPeriod,
+                    LeaseStatus = entry.LeaseStatus,
+                    LeaseStartUtc = entry.LeaseStartUtc,
+                    LeaseEndUtc = entry.LeaseEndUtc,
+                    AvailableMonths = months
+                });
+            }
+
+            return enriched;
+        }
+
+        public async Task<RuntiraExportFileDto?> GenerateRentInvoicePdfAsync(Guid leaseId, int monthOffset, CancellationToken cancellationToken = default)
+        {
+            if (_rentInvoicePdfRenderer is null || _assetWorkspaceStore is null)
+            {
+                return null;
+            }
+
+            var tenantId = _tenantContextAccessor.TenantId ?? (_currentOrganization.OrganizationId == Guid.Empty ? null : _currentOrganization.OrganizationId);
+            if (!tenantId.HasValue)
+            {
+                return null;
+            }
+
+            var entries = await _assetWorkspaceStore.GetLeaseInvoiceEntriesAsync(tenantId.Value, cancellationToken);
+            var lease = entries.FirstOrDefault(x => x.LeaseId == leaseId);
+            if (lease is null)
+            {
+                return null;
+            }
+
+            var today = DateTime.UtcNow;
+            var periodMonthUtc = new DateTime(today.Year, today.Month, 1, 0, 0, 0, DateTimeKind.Utc).AddMonths(monthOffset);
+
+            var invoice = new RuntiraRentInvoiceDto
+            {
+                LeaseId = lease.LeaseId,
+                OrganizationName = _currentOrganization.OrganizationName,
+                PropertyAddress = lease.PropertyAddress,
+                ResidentName = lease.ResidentName,
+                UnitCode = lease.UnitCode,
+                MonthlyRent = lease.MonthlyRent,
+                BillingPeriod = lease.BillingPeriod,
+                LeaseStartUtc = lease.LeaseStartUtc,
+                LeaseEndUtc = lease.LeaseEndUtc,
+                PeriodMonthUtc = periodMonthUtc,
+                JurisdictionDisplayName = $"{_currentOrganization.CountryCode}-{_currentOrganization.Province}",
+                RegionCode = _currentOrganization.Province,
+                AddAutomaticSalesTax = false
+            };
+
+            var content = _rentInvoicePdfRenderer.Render(invoice);
+
+            if (_rentInvoiceArchiveStore is not null)
+            {
+                await _rentInvoiceArchiveStore.RecordAsync(_currentOrganization.OrganizationSlug, invoice, cancellationToken);
+            }
+
+            var slug = string.IsNullOrWhiteSpace(_currentOrganization.OrganizationSlug) ? "workspace" : _currentOrganization.OrganizationSlug;
+            var fileName = $"{slug}-invoice-{periodMonthUtc:yyyy-MM}-{(string.IsNullOrWhiteSpace(lease.UnitCode) ? lease.ResidentName : lease.UnitCode)}.pdf";
+
+            return new RuntiraExportFileDto
+            {
+                FileName = SanitizeFileName(fileName),
+                ContentType = "application/pdf",
+                Content = content
+            };
+        }
+
+        private static string SanitizeFileName(string fileName)
+        {
+            var invalidChars = System.IO.Path.GetInvalidFileNameChars();
+            var sanitized = new string(fileName.Select(c => invalidChars.Contains(c) || c == ' ' ? '-' : c).ToArray());
+            return sanitized.Replace("--", "-");
         }
 
         public async Task<RuntiraWorkspaceSummaryDto?> GetWorkspaceSummaryAsync(CancellationToken cancellationToken = default)

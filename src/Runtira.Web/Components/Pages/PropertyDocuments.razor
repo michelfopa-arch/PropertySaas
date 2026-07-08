@@ -6,7 +6,7 @@
 
 <PageTitle>@RuntiraText.Get("Documents_Badge", CurrentOrganization.PreferredLanguage) · @CurrentOrganization.PropertyName</PageTitle>
 
-<div class="hero-shell">
+<div class="hero-shell hero-shell-single">
     <section class="hero-card">
         <div class="hero-badge">@RuntiraText.Get("Documents_Badge", CurrentOrganization.PreferredLanguage)</div>
         <h1>@RuntiraText.Get("Documents_Title", CurrentOrganization.PreferredLanguage)</h1>
@@ -43,76 +43,27 @@
                 </Actions>
             </SectionToolbar>
 
-            <ExplorerSection HasItems="@(_documents.Count > 0)"
-                             EmptyTitle="@RuntiraText.Get("Documents_EmptyTitle", CurrentOrganization.PreferredLanguage)"
-                             EmptyMessage="@RuntiraText.Get("Documents_EmptyBody", CurrentOrganization.PreferredLanguage)"
-                             DetailEmptyTitle="@RuntiraText.Get("Documents_DetailEmptyTitle", CurrentOrganization.PreferredLanguage)"
-                             DetailEmptyMessage="@RuntiraText.Get("Documents_DetailEmptyBody", CurrentOrganization.PreferredLanguage)">
-                <ListContent>
-                    @foreach (var document in _documents)
-                    {
-                        <button type="button"
-                                class="@(IsSelectedDocument(document.Id) ? "explorer-list-item selected" : "explorer-list-item")"
-                                @onclick="() => SelectDocument(document.Id)">
+            <div class="unit-explorer-list">
+                @foreach (var document in _documents)
+                {
+                    <a class="explorer-list-item" href="@GetDocumentDetailHref(document.Id)">
+                        <div class="unit-item-header">
                             <strong>@document.FileName</strong>
-                            <span>@document.Category</span>
-                            <small>@document.Status</small>
-                        </button>
-                    }
-                </ListContent>
-                <DetailContent>
-                    @if (SelectedDocument is not null)
-                    {
-                        <div class="explorer-detail-stack">
-                            <div class="stat-card unit-detail-card">
-                                <div class="card-header-inline">
-                                    <div>
-                                        <span>@RuntiraText.Get("Documents_DetailTitle", CurrentOrganization.PreferredLanguage)</span>
-                                        <strong>@SelectedDocument.FileName</strong>
-                                    </div>
-                                </div>
-
-                                <div class="tenant-summary unit-detail-summary">
-                                    <div>
-                                        <span class="summary-label">@RuntiraText.Get("Documents_Table_Category", CurrentOrganization.PreferredLanguage)</span>
-                                        <strong>@SelectedDocument.Category</strong>
-                                    </div>
-                                    <div>
-                                        <span class="summary-label">@RuntiraText.Get("Documents_Table_Status", CurrentOrganization.PreferredLanguage)</span>
-                                        <strong>@SelectedDocument.Status</strong>
-                                    </div>
-                                    <div>
-                                        <span class="summary-label">@RuntiraText.Get("Documents_Table_Uploaded", CurrentOrganization.PreferredLanguage)</span>
-                                        <strong>@SelectedDocument.UploadedUtc.ToString("yyyy-MM-dd HH:mm")</strong>
-                                    </div>
-                                    <div>
-                                        <span class="summary-label">@RuntiraText.Get("Documents_Table_Size", CurrentOrganization.PreferredLanguage)</span>
-                                        <strong>@($"{SelectedDocument.SizeBytes / 1024.0:0.#} Ko")</strong>
-                                    </div>
-                                </div>
-                            </div>
+                            <span class="@GetStatusCss(document.Status)">@document.Status</span>
                         </div>
-                    }
-                </DetailContent>
-            </ExplorerSection>
+                        <span>@document.Category</span>
+                        <div class="unit-item-footer">
+                            <small>@document.UploadedUtc.ToString("yyyy-MM-dd")</small>
+                        </div>
+                    </a>
+                }
+            </div>
         }
         else
         {
             <PageEmptyState Title="@RuntiraText.Get("Documents_EmptyTitle", CurrentOrganization.PreferredLanguage)"
                             Message="@RuntiraText.Get("Documents_EmptyBody", CurrentOrganization.PreferredLanguage)" />
         }
-    </section>
-
-    <section class="workspace-card">
-        <div class="workspace-header">
-            <h2>@RuntiraText.Get("Documents_WorkspaceTitle", CurrentOrganization.PreferredLanguage)</h2>
-            <span class="workspace-state">@RuntiraText.Get("Common_Preview", CurrentOrganization.PreferredLanguage)</span>
-        </div>
-
-        <div class="prompt-box prompt-box-soft">
-            <button type="button" class="prompt-chip">@RuntiraText.Get("Documents_Action_Upload", CurrentOrganization.PreferredLanguage)</button>
-            <button type="button" class="prompt-chip">@RuntiraText.Get("Documents_Action_SendReview", CurrentOrganization.PreferredLanguage)</button>
-        </div>
     </section>
 </div>
 
@@ -126,9 +77,6 @@
     private IReadOnlyList<RuntiraDocumentDto> _documents = Array.Empty<RuntiraDocumentDto>();
     private bool _isLoading = true;
     private bool _hasInitialized;
-    private Guid? _selectedDocumentId;
-
-    private RuntiraDocumentDto? SelectedDocument => _documents.FirstOrDefault(x => x.Id == _selectedDocumentId);
 
     protected override async Task OnInitializedAsync()
     {
@@ -149,9 +97,14 @@
         }
     }
 
-    private void SelectDocument(Guid documentId)
-        => _selectedDocumentId = documentId;
+    private static string GetStatusCss(string status)
+        => status switch
+        {
+            "Archived" => "status-pill status-pill-success",
+            "PendingReview" => "status-pill status-pill-warning",
+            _ => "status-pill status-pill-muted"
+        };
 
-    private bool IsSelectedDocument(Guid documentId)
-        => _selectedDocumentId == documentId;
+    private string GetDocumentDetailHref(Guid documentId)
+        => $"/{CurrentOrganization.OrganizationSlug}/{CurrentOrganization.PropertySlug}/documents/{documentId}";
 }

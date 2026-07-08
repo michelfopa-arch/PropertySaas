@@ -1,0 +1,113 @@
+@page "/{tenantSlug}/{propertySlug}/documents/{documentId:guid}"
+@using Runtira.Application.Common
+@using Runtira.Application.Features
+@inject CurrentOrganization CurrentOrganization
+@inject RuntiraWorkspaceService WorkspaceService
+
+<PageTitle>@(_document is null ? "Document" : _document.FileName) · @CurrentOrganization.PropertyName</PageTitle>
+
+<div class="hero-shell hero-shell-single">
+    <section class="hero-card">
+        <div class="hero-badge">@RuntiraText.Get("Documents_Badge", CurrentOrganization.PreferredLanguage)</div>
+
+        @if (_isLoading)
+        {
+            <PageLoadingState />
+        }
+        else if (_document is not null)
+        {
+            <div class="card-header-inline">
+                <div>
+                    <h1>@_document.FileName</h1>
+                    <p class="hero-copy">@_document.Category</p>
+                </div>
+                <span class="@GetStatusCss(_document.Status)">@_document.Status</span>
+            </div>
+
+            <SectionToolbar Hint="@RuntiraText.Get("Documents_ListHint", CurrentOrganization.PreferredLanguage)">
+                <Actions>
+                    <a class="ghost-button" href="@GetBackToDocumentsHref()">Back to documents</a>
+                </Actions>
+            </SectionToolbar>
+
+            <div class="tenant-summary unit-detail-summary">
+                <div>
+                    <span class="summary-label">@RuntiraText.Get("Documents_Table_Category", CurrentOrganization.PreferredLanguage)</span>
+                    <strong>@_document.Category</strong>
+                </div>
+                <div>
+                    <span class="summary-label">@RuntiraText.Get("Documents_Table_Status", CurrentOrganization.PreferredLanguage)</span>
+                    <strong>@_document.Status</strong>
+                </div>
+                <div>
+                    <span class="summary-label">@RuntiraText.Get("Documents_Table_Uploaded", CurrentOrganization.PreferredLanguage)</span>
+                    <strong>@_document.UploadedUtc.ToString("yyyy-MM-dd HH:mm")</strong>
+                </div>
+                <div>
+                    <span class="summary-label">@RuntiraText.Get("Documents_Table_Size", CurrentOrganization.PreferredLanguage)</span>
+                    <strong>@($"{_document.SizeBytes / 1024.0:0.#} Ko")</strong>
+                </div>
+            </div>
+
+            <div class="option-list mt-3">
+                <a class="option-pill option-pill-accent" href="@GetPropertyLeafHref("leases")">Voir les baux</a>
+                <a class="option-pill" href="@GetPropertyLeafHref("units")">Voir les unités</a>
+            </div>
+        }
+        else
+        {
+            <PageEmptyState Title="Document introuvable" Message="Ce document n’existe plus ou a été supprimé.">
+                <a class="ghost-button" href="@GetBackToDocumentsHref()">Back to documents</a>
+            </PageEmptyState>
+        }
+    </section>
+</div>
+
+@code {
+    [Parameter]
+    public string? TenantSlug { get; set; }
+
+    [Parameter]
+    public string? PropertySlug { get; set; }
+
+    [Parameter]
+    public Guid DocumentId { get; set; }
+
+    private RuntiraDocumentDto? _document;
+    private bool _isLoading = true;
+    private bool _hasInitialized;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (_hasInitialized)
+        {
+            return;
+        }
+
+        _hasInitialized = true;
+
+        try
+        {
+            var documents = await WorkspaceService.GetDocumentsAsync();
+            _document = documents.FirstOrDefault(x => x.Id == DocumentId);
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private static string GetStatusCss(string status)
+        => status switch
+        {
+            "Archived" => "status-pill status-pill-success",
+            "PendingReview" => "status-pill status-pill-warning",
+            _ => "status-pill status-pill-muted"
+        };
+
+    private string GetBackToDocumentsHref()
+        => $"/{CurrentOrganization.OrganizationSlug}/{CurrentOrganization.PropertySlug}/documents";
+
+    private string GetPropertyLeafHref(string leaf)
+        => $"/{CurrentOrganization.OrganizationSlug}/{CurrentOrganization.PropertySlug}/{leaf}";
+}

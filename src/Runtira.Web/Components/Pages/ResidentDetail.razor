@@ -1,0 +1,231 @@
+@page "/{tenantSlug}/{propertySlug}/residents/{residentId:guid}"
+@using Runtira.Application.Common
+@using Runtira.Application.Features
+@using Runtira.Web.Components.Shared
+@inject CurrentOrganization CurrentOrganization
+@inject RuntiraWorkspaceService WorkspaceService
+
+<PageTitle>@(_resident is null ? "Resident" : _resident.FullName) · @CurrentOrganization.PropertyName</PageTitle>
+
+<div class="hero-shell hero-shell-single">
+    <section class="hero-card">
+        <div class="hero-badge">Resident</div>
+
+        <BusyOverlay IsVisible="@_isSubmittingAction" Label="Mise à jour" Message="Application de l’action sur le résident." />
+
+        @if (!string.IsNullOrWhiteSpace(_statusMessage))
+        {
+            <PageEmptyState Title="@_statusMessage" CssClass="inline-status" />
+        }
+
+        @if (_isLoading)
+        {
+            <PageLoadingState />
+        }
+        else if (_resident is not null)
+        {
+            <div class="card-header-inline">
+                <div>
+                    <h1>@_resident.FullName</h1>
+                    <p class="hero-copy">@_resident.Email · @_workspace?.AssetName</p>
+                </div>
+                <span class="@EntityStatusPresenter.ResidentStatusCss(_resident.Status)">@EntityStatusPresenter.ResidentStatusLabel(_resident.Status)</span>
+            </div>
+
+            <SectionToolbar Hint="Fiche complète du résident, avec son bail et ses actions.">
+                <Actions>
+                    <a class="ghost-button" href="@GetBackToResidentsHref()">Back to residents</a>
+                </Actions>
+            </SectionToolbar>
+
+            <div class="tenant-summary unit-detail-summary">
+                <div>
+                    <span class="summary-label">Email</span>
+                    <strong>@_resident.Email</strong>
+                </div>
+                <div>
+                    <span class="summary-label">Langue préférée</span>
+                    <strong>@_resident.PreferredLanguage</strong>
+                </div>
+                <div>
+                    <span class="summary-label">Statut bail</span>
+                    <strong>@(_lease is null ? "Aucun" : EntityStatusPresenter.LeasePaymentLabel(_lease.Status))</strong>
+                </div>
+                <div>
+                    <span class="summary-label">Unité</span>
+                    <strong>@(_lease is null ? "Aucune" : string.IsNullOrWhiteSpace(_lease.UnitCode) ? "Propriété entière" : _lease.UnitCode)</strong>
+                </div>
+            </div>
+
+            @if (CurrentOrganization.CanManageData)
+            {
+                <StandardActionMenu MenuLabel="Actions"
+                                     Title="Gérer le résident"
+                                     Items="@GetResidentActionItems()"
+                                     IsBusy="@_isSubmittingAction"
+                                     OnAction="@(action => HandleResidentActionAsync(action))" />
+            }
+
+            @if (_lease is not null)
+            {
+                <div class="draft-box">
+                    <strong>Bail en cours</strong>
+                    <div>Unité · @(string.IsNullOrWhiteSpace(_lease.UnitCode) ? "Propriété entière" : _lease.UnitCode)</div>
+                    <div>Loyer mensuel · @_lease.MonthlyRent.ToString("C") (@_lease.BillingPeriod)</div>
+                    <div>Statut · @EntityStatusPresenter.LeasePaymentLabel(_lease.Status)</div>
+                </div>
+
+                <div class="localized-section">
+                    <div class="prompt-title">Facture mensuelle (PDF)</div>
+                    <p class="hero-copy form-intro-copy">Format standard et minimal Alberta, sans TPS automatique.</p>
+                    <div class="option-list">
+                        <a class="option-pill" href="@GetInvoiceHref(-1)" target="_blank">Mois précédent</a>
+                        <a class="option-pill option-pill-accent" href="@GetInvoiceHref(0)" target="_blank">Mois courant</a>
+                        <a class="option-pill" href="@GetInvoiceHref(1)" target="_blank">Mois suivant</a>
+                    </div>
+                </div>
+
+                @if (_lease.ComplianceData?.Fields is { Count: > 0 } fields)
+                {
+                    <FlexibleContextCard Title="Détails du bail" Fields="@fields" />
+                }
+            }
+            else
+            {
+                <PageEmptyState Title="Aucun bail actif" Message="Ce résident n’a pas de bail rattaché pour le moment." />
+            }
+
+            @if (_resident.ProfileData?.Fields is { Count: > 0 } profileFields)
+            {
+                <FlexibleContextCard Title="Profil du résident" Fields="@profileFields" />
+            }
+
+            <div class="option-list mt-3">
+                <a class="option-pill option-pill-accent" href="@GetPropertyLeafHref("leads")">Voir les leads</a>
+                <a class="option-pill option-pill-accent" href="@GetPropertyLeafHref("invoice-composer")">Préparer une facture</a>
+                <a class="option-pill" href="@GetPropertyLeafHref("units")">Voir les unités</a>
+                <a class="option-pill" href="@GetPropertyLeafHref("leases")">Voir les baux</a>
+            </div>
+        }
+        else
+        {
+            <PageEmptyState Title="Résident introuvable" Message="Ce résident n’existe plus ou a été supprimé.">
+                <a class="ghost-button" href="@GetBackToResidentsHref()">Back to residents</a>
+            </PageEmptyState>
+        }
+    </section>
+</div>
+
+@code {
+    [Parameter]
+    public string? TenantSlug { get; set; }
+
+    [Parameter]
+    public string? PropertySlug { get; set; }
+
+    [Parameter]
+    public Guid ResidentId { get; set; }
+
+    private RuntiraAssetWorkspaceDto? _workspace;
+    private RuntiraResidentSummaryDto? _resident;
+    private RuntiraLeaseSummaryDto? _lease;
+    private bool _isLoading = true;
+    private string? _loadedPropertySlug;
+    private bool _isSubmittingAction;
+    private string? _statusMessage;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (!string.IsNullOrWhiteSpace(TenantSlug))
+        {
+            CurrentOrganization.OrganizationSlug = TenantSlug;
+        }
+
+        if (!string.IsNullOrWhiteSpace(PropertySlug))
+        {
+            CurrentOrganization.PropertySlug = PropertySlug;
+        }
+
+        if (_workspace is not null && string.Equals(_loadedPropertySlug, CurrentOrganization.PropertySlug, StringComparison.OrdinalIgnoreCase))
+        {
+            RefreshSelectedResident();
+            return;
+        }
+
+        _isLoading = true;
+        try
+        {
+            _workspace = await WorkspaceService.GetAssetWorkspaceAsync();
+            if (_workspace is not null)
+            {
+                CurrentOrganization.PropertyName = _workspace.AssetName;
+            }
+
+            _loadedPropertySlug = CurrentOrganization.PropertySlug;
+            RefreshSelectedResident();
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private void RefreshSelectedResident()
+    {
+        _resident = _workspace?.Residents.FirstOrDefault(x => x.Id == ResidentId);
+        _lease = _resident is null ? null : _workspace?.Leases.FirstOrDefault(x => string.Equals(x.ResidentName, _resident.FullName, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private string GetBackToResidentsHref()
+        => $"/{CurrentOrganization.OrganizationSlug}/{CurrentOrganization.PropertySlug}/residents";
+
+    private string GetPropertyLeafHref(string leaf)
+        => $"/{CurrentOrganization.OrganizationSlug}/{CurrentOrganization.PropertySlug}/{leaf}";
+
+    private string GetInvoiceHref(int monthOffset)
+        => _lease is null ? "#" : $"/{CurrentOrganization.OrganizationSlug}/{CurrentOrganization.PropertySlug}/leases/{_lease.Id}/invoice.pdf?monthOffset={monthOffset}";
+
+    private IReadOnlyList<StandardActionMenuItem> GetResidentActionItems()
+        =>
+        [
+            new StandardActionMenuItem(
+                "markWatch",
+                "Marquer à surveiller",
+                _resident is null || string.Equals(_resident.Status, "Watch", StringComparison.OrdinalIgnoreCase),
+                "Le résident passe en statut à surveiller."),
+            new StandardActionMenuItem(
+                "markActive",
+                "Marquer actif",
+                _resident is null || string.Equals(_resident.Status, "Active", StringComparison.OrdinalIgnoreCase),
+                "Le résident redevient actif.")
+        ];
+
+    private async Task HandleResidentActionAsync(string action)
+    {
+        if (_isSubmittingAction || _resident is null)
+        {
+            return;
+        }
+
+        _isSubmittingAction = true;
+        _statusMessage = null;
+
+        try
+        {
+            var result = await WorkspaceService.ManageResidentAsync(_resident.Id, action);
+            _statusMessage = result.ResultCode switch
+            {
+                "Updated" => $"Résident {result.ResidentName} mis à jour · {result.Status}.",
+                "ResidentNotFound" => "Résident introuvable.",
+                _ => "Action indisponible."
+            };
+
+            _workspace = await WorkspaceService.GetAssetWorkspaceAsync();
+            RefreshSelectedResident();
+        }
+        finally
+        {
+            _isSubmittingAction = false;
+        }
+    }
+}

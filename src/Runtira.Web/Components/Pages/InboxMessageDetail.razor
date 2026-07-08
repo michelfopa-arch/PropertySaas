@@ -1,0 +1,118 @@
+@page "/{tenantSlug}/inbox/{messageId:guid}"
+@page "/{tenantSlug}/{propertySlug}/inbox/{messageId:guid}"
+@using Runtira.Application.Common
+@using Runtira.Application.Features
+@inject CurrentOrganization CurrentOrganization
+@inject RuntiraWorkspaceService WorkspaceService
+
+<PageTitle>@(_message is null ? "Message" : _message.Subject) · @RuntiraText.Get("Inbox_Badge", CurrentOrganization.PreferredLanguage)</PageTitle>
+
+<div class="hero-shell hero-shell-single">
+    <section class="hero-card">
+        <div class="hero-badge">@RuntiraText.Get("Inbox_Badge", CurrentOrganization.PreferredLanguage)</div>
+
+        @if (_isLoading)
+        {
+            <PageLoadingState />
+        }
+        else if (_message is not null)
+        {
+            <div class="card-header-inline">
+                <div>
+                    <h1>@_message.Subject</h1>
+                    <p class="hero-copy">@_message.FromEmail</p>
+                </div>
+                <span class="@GetStatusCss(_message.Status)">@_message.Status</span>
+            </div>
+
+            <SectionToolbar Hint="@RuntiraText.Get("Inbox_ListHint", CurrentOrganization.PreferredLanguage)">
+                <Actions>
+                    <a class="ghost-button" href="@GetBackToInboxHref()">Back to inbox</a>
+                </Actions>
+            </SectionToolbar>
+
+            <div class="tenant-summary unit-detail-summary">
+                <div>
+                    <span class="summary-label">@RuntiraText.Get("Inbox_Table_From", CurrentOrganization.PreferredLanguage)</span>
+                    <strong>@_message.FromEmail</strong>
+                </div>
+                <div>
+                    <span class="summary-label">@RuntiraText.Get("Inbox_Table_Category", CurrentOrganization.PreferredLanguage)</span>
+                    <strong>@_message.Category</strong>
+                </div>
+                <div>
+                    <span class="summary-label">@RuntiraText.Get("Inbox_Table_Status", CurrentOrganization.PreferredLanguage)</span>
+                    <strong>@_message.Status</strong>
+                </div>
+                <div>
+                    <span class="summary-label">@RuntiraText.Get("Inbox_Table_Received", CurrentOrganization.PreferredLanguage)</span>
+                    <strong>@_message.ReceivedUtc.ToString("yyyy-MM-dd HH:mm")</strong>
+                </div>
+            </div>
+
+            @if (_message.HasAttachments)
+            {
+                <div class="detail-kpi">@RuntiraText.Get("Inbox_Summary_Attachments", CurrentOrganization.PreferredLanguage)</div>
+            }
+
+            <div class="draft-box">
+                <strong>@RuntiraText.Get("Inbox_DetailPreviewTitle", CurrentOrganization.PreferredLanguage)</strong>
+                <p class="detail-summary-copy">@_message.PreviewText</p>
+            </div>
+        }
+        else
+        {
+            <PageEmptyState Title="Message introuvable" Message="Ce message n’existe plus.">
+                <a class="ghost-button" href="@GetBackToInboxHref()">Back to inbox</a>
+            </PageEmptyState>
+        }
+    </section>
+</div>
+
+@code {
+    [Parameter]
+    public string? TenantSlug { get; set; }
+
+    [Parameter]
+    public string? PropertySlug { get; set; }
+
+    [Parameter]
+    public Guid MessageId { get; set; }
+
+    private RuntiraInboxMessageDto? _message;
+    private bool _isLoading = true;
+    private bool _hasInitialized;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (_hasInitialized)
+        {
+            return;
+        }
+
+        _hasInitialized = true;
+
+        try
+        {
+            var messages = await WorkspaceService.GetInboxAsync();
+            _message = messages.FirstOrDefault(x => x.Id == MessageId);
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private static string GetStatusCss(string status)
+        => status switch
+        {
+            "Classified" => "status-pill status-pill-success",
+            "Pending" => "status-pill status-pill-warning",
+            _ => "status-pill status-pill-muted"
+        };
+
+    private string GetBackToInboxHref()
+        => string.IsNullOrWhiteSpace(PropertySlug)
+            ? $"/{CurrentOrganization.OrganizationSlug}/inbox"
+            : $"/{CurrentOrganization.OrganizationSlug}/{PropertySlug}/inbox";
+}

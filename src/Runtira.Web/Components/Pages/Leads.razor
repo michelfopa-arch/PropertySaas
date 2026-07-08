@@ -2,12 +2,13 @@
 @page "/{tenantSlug}/{propertySlug}/leads"
 @using Runtira.Application.Common
 @using Runtira.Application.Features
+@using Runtira.Web.Components.Shared
 @inject CurrentOrganization CurrentOrganization
 @inject RuntiraWorkspaceService WorkspaceService
 
 <PageTitle>@RuntiraText.Get("Nav_Leads", CurrentOrganization.PreferredLanguage)</PageTitle>
 
-<div class="hero-shell">
+<div class="hero-shell hero-shell-single">
     <section class="hero-card">
         <div class="hero-badge hero-badge-secondary">@RuntiraText.Get("Leads_Badge", CurrentOrganization.PreferredLanguage)</div>
         <h1>@RuntiraText.Get("Leads_Title", CurrentOrganization.PreferredLanguage)</h1>
@@ -43,86 +44,27 @@
                 </div>
             </div>
 
-            <ExplorerSection Title="@RuntiraText.Get("Nav_Leads", CurrentOrganization.PreferredLanguage)"
-                             Hint="@RuntiraText.Get("Leads_ListHint", CurrentOrganization.PreferredLanguage)"
-                             HasItems="@(_leads.Count > 0)"
-                             EmptyTitle="@RuntiraText.Get("Leads_EmptyTitle", CurrentOrganization.PreferredLanguage)"
-                             EmptyMessage="@RuntiraText.Get("Leads_EmptyBody", CurrentOrganization.PreferredLanguage)"
-                             DetailEmptyTitle="@RuntiraText.Get("Leads_DetailEmptyTitle", CurrentOrganization.PreferredLanguage)"
-                             DetailEmptyMessage="@RuntiraText.Get("Leads_DetailEmptyBody", CurrentOrganization.PreferredLanguage)">
-                <ListContent>
-                    @foreach (var lead in _leads)
-                    {
-                        <button type="button"
-                                class="@(IsSelectedLead(lead.Id) ? "explorer-list-item selected" : "explorer-list-item")"
-                                @onclick="() => SelectLead(lead.Id)">
+            <SectionToolbar Hint="@RuntiraText.Get("Leads_ListHint", CurrentOrganization.PreferredLanguage)">
+                <Actions>
+                    <a class="ghost-button" href="@GetBackHref()">@RuntiraText.Get("Assets_BackHome", CurrentOrganization.PreferredLanguage)</a>
+                </Actions>
+            </SectionToolbar>
+
+            <div class="unit-explorer-list">
+                @foreach (var lead in _leads)
+                {
+                    <a class="explorer-list-item" href="@GetLeadDetailHref(lead.Id)">
+                        <div class="unit-item-header">
                             <strong>@lead.FullName</strong>
-                            <span>@lead.Source</span>
-                            <small>@lead.Status</small>
-                        </button>
-                    }
-                </ListContent>
-                <DetailContent>
-                    @if (SelectedLead is not null)
-                    {
-                        <div class="explorer-detail-stack">
-                            <div class="stat-card unit-detail-card">
-                                <div class="card-header-inline">
-                                    <div>
-                                        <span>@RuntiraText.Get("Leads_DetailTitle", CurrentOrganization.PreferredLanguage)</span>
-                                        <strong>@SelectedLead.FullName</strong>
-                                        <p class="detail-helper-copy">@RuntiraText.Get("Assets_DetailPanelHint", CurrentOrganization.PreferredLanguage)</p>
-                                    </div>
-
-                                    @if (CurrentOrganization.CanManageData)
-                                    {
-                                        <StandardActionMenu MenuLabel="@RuntiraText.Get("Common_Actions", CurrentOrganization.PreferredLanguage)"
-                                                            Title="@SelectedLead.FullName"
-                                                            Items="@GetLeadActionItems(SelectedLead)"
-                                                            IsBusy="@IsBusy"
-                                                            OnAction='@((action) => HandleLeadActionAsync(SelectedLead.Id, action))' />
-                                    }
-                                </div>
-
-                                <div class="tenant-summary unit-detail-summary">
-                                    <div>
-                                        <span class="summary-label">@RuntiraText.Get("Leads_Table_Status", CurrentOrganization.PreferredLanguage)</span>
-                                        <strong>@SelectedLead.Status</strong>
-                                    </div>
-                                    <div>
-                                        <span class="summary-label">@RuntiraText.Get("Leads_Table_Source", CurrentOrganization.PreferredLanguage)</span>
-                                        <strong>@SelectedLead.Source</strong>
-                                    </div>
-                                    <div>
-                                        <span class="summary-label">@RuntiraText.Get("Leads_Table_Asset", CurrentOrganization.PreferredLanguage)</span>
-                                        <strong>@(string.IsNullOrWhiteSpace(SelectedLead.AssetName) ? "—" : SelectedLead.AssetName)</strong>
-                                    </div>
-                                    <div>
-                                        <span class="summary-label">@RuntiraText.Get("Leads_Table_Language", CurrentOrganization.PreferredLanguage)</span>
-                                        <strong>@SelectedLead.PreferredLanguage</strong>
-                                    </div>
-                                    <div>
-                                        <span class="summary-label">@RuntiraText.Get("Leads_Table_Score", CurrentOrganization.PreferredLanguage)</span>
-                                        <strong>@SelectedLead.QualificationScore</strong>
-                                    </div>
-                                </div>
-
-                                <div class="draft-box">
-                                    <strong>@RuntiraText.Get("Leads_DetailSupportTitle", CurrentOrganization.PreferredLanguage)</strong>
-                                    <p class="detail-summary-copy">@SelectedLead.Summary</p>
-                                </div>
-                            </div>
-
-                            @if (SelectedLead.ContextData is not null)
-                            {
-                                <FlexibleContextCard Title="@RuntiraText.Get("Leads_ContextTitle", CurrentOrganization.PreferredLanguage)"
-                                                     SummaryItems="@GetLeadContextSummaryItems(SelectedLead)"
-                                                     Fields="@SelectedLead.ContextData.Fields" />
-                            }
+                            <span class="@EntityStatusPresenter.LeadStatusCss(lead.Status)">@lead.Status</span>
                         </div>
-                    }
-                </DetailContent>
-            </ExplorerSection>
+                        <span>@lead.Source · @(string.IsNullOrWhiteSpace(lead.AssetName) ? "—" : lead.AssetName)</span>
+                        <div class="unit-item-footer">
+                            <small>@RuntiraText.Get("Leads_Table_Score", CurrentOrganization.PreferredLanguage) · @lead.QualificationScore</small>
+                        </div>
+                    </a>
+                }
+            </div>
         }
         else
         {
@@ -216,95 +158,6 @@
             </div>
         }
     </section>
-
-    <section class="workspace-card">
-        <div class="workspace-header">
-            <h2>@RuntiraText.Get("Leads_WorkspaceTitle", CurrentOrganization.PreferredLanguage)</h2>
-            <span class="workspace-state">@RuntiraText.Get("Common_Mvp", CurrentOrganization.PreferredLanguage)</span>
-        </div>
-
-        @if (_conversionCandidates.Count > 0)
-        {
-            <div class="localized-section">
-                <div class="prompt-title">@RuntiraText.Get("Leads_ConversionTitle", CurrentOrganization.PreferredLanguage)</div>
-                <p class="hero-copy form-intro-copy">@RuntiraText.Get("Leads_ConversionSupportCopy", CurrentOrganization.PreferredLanguage)</p>
-                <div class="stats-grid">
-                    @foreach (var candidate in _conversionCandidates)
-                    {
-                        <div class="stat-card">
-                            <span>@RuntiraText.Get("Leads_Table_Name", CurrentOrganization.PreferredLanguage)</span>
-                            <strong>@candidate.LeadName</strong>
-                            <span>@RuntiraText.Get("Leads_Table_Asset", CurrentOrganization.PreferredLanguage) · @candidate.AssetName</span>
-                            <span>@RuntiraText.Get("Leads_ConversionResident", CurrentOrganization.PreferredLanguage) · @candidate.ResidentName</span>
-                            <span>@RuntiraText.Get("Leads_ConversionUnit", CurrentOrganization.PreferredLanguage) · @candidate.SuggestedUnitCode</span>
-                            <span>@RuntiraText.Get("Leads_ConversionRent", CurrentOrganization.PreferredLanguage) · @candidate.SuggestedRent</span>
-                            <span>@RuntiraText.Get("Leads_ConversionNextAction", CurrentOrganization.PreferredLanguage) · @GetNextActionLabel(candidate.NextAction)</span>
-                            @if (CurrentOrganization.CanManageData)
-                            {
-                                <BusyActionButton CssClass="prompt-chip"
-                                                  IsBusy="@_isSubmittingConversion"
-                                                  OnClick='@(() => OnConvertLead(candidate.LeadId))'
-                                                  Label="@RuntiraText.Get("Leads_ConvertButton", CurrentOrganization.PreferredLanguage)" />
-                            }
-                        </div>
-                    }
-                </div>
-            </div>
-
-            @if (_leaseFormContext is not null && CurrentOrganization.CanManageData)
-            {
-                <div class="localized-section">
-                    <div class="prompt-title">@RuntiraText.Get("Leads_LeaseFormTitle", CurrentOrganization.PreferredLanguage)</div>
-                    <div class="tenant-summary">
-                        <div>
-                            <span class="summary-label">@RuntiraText.Get("Leads_Table_Name", CurrentOrganization.PreferredLanguage)</span>
-                            <strong>@_leaseFormContext.LeadName</strong>
-                        </div>
-                        <div>
-                            <span class="summary-label">@RuntiraText.Get("Leads_FormJurisdiction", CurrentOrganization.PreferredLanguage)</span>
-                            <strong>@_leaseFormContext.JurisdictionDisplayName</strong>
-                        </div>
-                    </div>
-
-                    <EditForm Model="_leaseConversionFields" FormName="lead-convert" OnValidSubmit="ConvertSelectedLeadAsync" class="invoice-form">
-                        <div class="form-shell form-shell-secondary">
-                            <div class="form-shell-header">
-                                <div>
-                                    <span class="summary-label">@RuntiraText.Get("Leads_LeaseFormSupportBadge", CurrentOrganization.PreferredLanguage)</span>
-                                    <h3>@RuntiraText.Get("Leads_LeaseFormSupportTitle", CurrentOrganization.PreferredLanguage)</h3>
-                                </div>
-                                <span class="workspace-state workspace-state-secondary">@RuntiraText.Get("Leads_FormSupportState", CurrentOrganization.PreferredLanguage)</span>
-                            </div>
-
-                            <div class="form-grid form-grid-elevated">
-                            @foreach (var field in _leaseFormContext.Fields)
-                            {
-                                <label>
-                                    <span class="summary-label">@(field.Required ? $"{GetFieldLabel(field.Key)} *" : GetFieldLabel(field.Key))</span>
-                                    <input value="@GetLeaseFieldValue(field.Key)" @onchange="@(e => SetLeaseFieldValue(field.Key, e.Value?.ToString()))" />
-                                </label>
-                            }
-                            </div>
-                        </div>
-
-                        <div class="prompt-box">
-                            <BusyActionButton Type="submit"
-                                              CssClass="prompt-chip"
-                                              IsBusy="@_isSubmittingConversion"
-                                              Label="@RuntiraText.Get("Leads_LeaseFormButton", CurrentOrganization.PreferredLanguage)" />
-                        </div>
-                    </EditForm>
-                </div>
-            }
-        }
-
-        <div class="prompt-box">
-            <button type="button" class="prompt-chip">@RuntiraText.Get("Leads_Action_Import", CurrentOrganization.PreferredLanguage)</button>
-            <button type="button" class="prompt-chip">@RuntiraText.Get("Leads_Action_Inbox", CurrentOrganization.PreferredLanguage)</button>
-            <button type="button" class="prompt-chip">@RuntiraText.Get("Leads_Action_Qualify", CurrentOrganization.PreferredLanguage)</button>
-            <button type="button" class="prompt-chip">@RuntiraText.Get("Leads_Action_Convert", CurrentOrganization.PreferredLanguage)</button>
-        </div>
-    </section>
 </div>
 
 @code {
@@ -315,21 +168,14 @@
     public string? PropertySlug { get; set; }
 
     private IReadOnlyList<RuntiraLeadSummaryDto> _leads = Array.Empty<RuntiraLeadSummaryDto>();
-    private IReadOnlyList<RuntiraLeadConversionCandidateDto> _conversionCandidates = Array.Empty<RuntiraLeadConversionCandidateDto>();
     private string? _statusMessage;
     private RuntiraLeadFormContextDto? _formContext;
     private RuntiraCreateLeadRequestDto _createLeadRequest = new();
-    private RuntiraLeaseConversionFormContextDto? _leaseFormContext;
-    private Dictionary<string, string> _leaseConversionFields = new(StringComparer.OrdinalIgnoreCase);
     private bool _isLoading = true;
     private bool _hasInitialized;
     private bool _isSubmittingCreateLead;
-    private bool _isSubmittingConversion;
-    private bool _isSubmittingLeadAction;
-    private Guid? _selectedLeadId;
 
-    private bool IsBusy => _isLoading || _isSubmittingCreateLead || _isSubmittingConversion || _isSubmittingLeadAction;
-    private RuntiraLeadSummaryDto? SelectedLead => _leads.FirstOrDefault(x => x.Id == _selectedLeadId);
+    private bool IsBusy => _isLoading || _isSubmittingCreateLead;
 
     protected override async Task OnInitializedAsync()
     {
@@ -350,21 +196,15 @@
             .Select(x => x.Key)
             .FirstOrDefault() ?? "—";
 
-    private void SelectLead(Guid leadId)
-        => _selectedLeadId = leadId;
+    private string GetBackHref()
+        => string.IsNullOrWhiteSpace(CurrentOrganization.PropertySlug)
+            ? $"/{CurrentOrganization.OrganizationSlug}"
+            : $"/{CurrentOrganization.OrganizationSlug}/{CurrentOrganization.PropertySlug}/dashboard";
 
-    private bool IsSelectedLead(Guid leadId)
-        => _selectedLeadId == leadId;
-
-    private IReadOnlyList<FlexibleContextSummaryItem> GetLeadContextSummaryItems(RuntiraLeadSummaryDto lead)
-        => lead.ContextData is null
-            ? Array.Empty<FlexibleContextSummaryItem>()
-            : new[]
-            {
-                new FlexibleContextSummaryItem(RuntiraText.Get("Leads_ContextMarket", CurrentOrganization.PreferredLanguage), lead.ContextData.Market),
-                new FlexibleContextSummaryItem(RuntiraText.Get("Leads_ContextSource", CurrentOrganization.PreferredLanguage), lead.ContextData.Source),
-                new FlexibleContextSummaryItem(RuntiraText.Get("Leads_ContextLanguage", CurrentOrganization.PreferredLanguage), lead.ContextData.Language)
-            };
+    private string GetLeadDetailHref(Guid leadId)
+        => string.IsNullOrWhiteSpace(CurrentOrganization.PropertySlug)
+            ? $"/{CurrentOrganization.OrganizationSlug}/leads/{leadId}"
+            : $"/{CurrentOrganization.OrganizationSlug}/{CurrentOrganization.PropertySlug}/leads/{leadId}";
 
     private async Task ReloadAsync()
     {
@@ -373,9 +213,7 @@
         try
         {
             _leads = await WorkspaceService.GetLeadsAsync();
-            _conversionCandidates = await WorkspaceService.GetLeadConversionCandidatesAsync();
             _formContext = await WorkspaceService.GetLeadFormContextAsync();
-            _leaseFormContext = _conversionCandidates.Count > 0 ? await WorkspaceService.GetLeaseConversionFormContextAsync(_conversionCandidates[0].LeadId) : null;
 
             if (_formContext is not null)
             {
@@ -383,11 +221,6 @@
                 _createLeadRequest.PreferredLanguage = string.IsNullOrWhiteSpace(_createLeadRequest.PreferredLanguage)
                     ? _formContext.PreferredLanguage
                     : _createLeadRequest.PreferredLanguage;
-            }
-
-            if (_leaseFormContext is not null && _leaseConversionFields.Count == 0)
-            {
-                _leaseConversionFields = _leaseFormContext.Fields.ToDictionary(x => x.Key, x => x.SuggestedValue ?? string.Empty, StringComparer.OrdinalIgnoreCase);
             }
         }
         finally
@@ -441,93 +274,6 @@
         }
     }
 
-    private async Task ConvertLeadAsync(Guid leadId)
-    {
-        if (_isSubmittingConversion)
-        {
-            return;
-        }
-
-        _isSubmittingConversion = true;
-        _statusMessage = string.Empty;
-
-        try
-        {
-            var result = await WorkspaceService.ConvertLeadAsync(leadId, _leaseConversionFields);
-            _statusMessage = result.ResultCode switch
-            {
-                "Converted" => RuntiraText.Format("Leads_ConvertSuccess", CurrentOrganization.PreferredLanguage, result.LeadName, result.ResidentName, result.UnitCode, result.LeaseStatus),
-                "MissingRequiredField" => RuntiraText.Format("Leads_ConvertMissingField", CurrentOrganization.PreferredLanguage, GetFieldLabel(result.UnitCode)),
-                "LeadNotFound" => RuntiraText.Get("Leads_ConvertLeadNotFound", CurrentOrganization.PreferredLanguage),
-                "AlreadyConverted" => RuntiraText.Get("Leads_ConvertAlreadyConverted", CurrentOrganization.PreferredLanguage),
-                "UnitNotFound" => RuntiraText.Get("Leads_ConvertUnitNotFound", CurrentOrganization.PreferredLanguage),
-                _ => RuntiraText.Get("Leads_ConvertUnavailable", CurrentOrganization.PreferredLanguage)
-            };
-
-            _leaseConversionFields.Clear();
-            await ReloadAsync();
-        }
-        finally
-        {
-            _isSubmittingConversion = false;
-        }
-    }
-
-    private Task ConvertSelectedLeadAsync()
-        => _leaseFormContext is null ? Task.CompletedTask : ConvertLeadAsync(_leaseFormContext.LeadId);
-
-    private Task OnConvertLead(Guid leadId)
-        => ConvertLeadAsync(leadId);
-
-    private IReadOnlyList<StandardActionMenuItem> GetLeadActionItems(RuntiraLeadSummaryDto lead)
-        =>
-        [
-            new StandardActionMenuItem(
-                "archive",
-                RuntiraText.Get("Leads_Action_ArchiveLead", CurrentOrganization.PreferredLanguage),
-                string.Equals(lead.Status, "Archived", StringComparison.OrdinalIgnoreCase),
-                RuntiraText.Get("Leads_Action_ArchiveHint", CurrentOrganization.PreferredLanguage)),
-            new StandardActionMenuItem(
-                "delete",
-                RuntiraText.Get("Leads_Action_DeleteLead", CurrentOrganization.PreferredLanguage),
-                false,
-                RuntiraText.Get("Leads_Action_DeleteHint", CurrentOrganization.PreferredLanguage),
-                true)
-        ];
-
-    private async Task HandleLeadActionAsync(Guid leadId, string action)
-    {
-        if (_isSubmittingLeadAction)
-        {
-            return;
-        }
-
-        _isSubmittingLeadAction = true;
-        _statusMessage = string.Empty;
-
-        try
-        {
-            var result = string.Equals(action, "delete", StringComparison.OrdinalIgnoreCase)
-                ? await WorkspaceService.DeleteLeadAsync(leadId)
-                : await WorkspaceService.ArchiveLeadAsync(leadId);
-
-            _statusMessage = result.ResultCode switch
-            {
-                "Archived" => RuntiraText.Format("Leads_ArchiveSuccess", CurrentOrganization.PreferredLanguage, result.LeadName),
-                "AlreadyArchived" => RuntiraText.Format("Leads_ArchiveAlready", CurrentOrganization.PreferredLanguage, result.LeadName),
-                "Deleted" => RuntiraText.Format("Leads_DeleteSuccess", CurrentOrganization.PreferredLanguage, result.LeadName),
-                "LeadNotFound" => RuntiraText.Get("Leads_ConvertLeadNotFound", CurrentOrganization.PreferredLanguage),
-                _ => RuntiraText.Get("Leads_ActionUnavailable", CurrentOrganization.PreferredLanguage)
-            };
-
-            await ReloadAsync();
-        }
-        finally
-        {
-            _isSubmittingLeadAction = false;
-        }
-    }
-
     private string GetDynamicValue(string key)
         => _createLeadRequest.DynamicFields.TryGetValue(key, out var value) ? value : string.Empty;
 
@@ -536,12 +282,6 @@
 
     private void OnAssetChanged(ChangeEventArgs args)
         => _createLeadRequest.AssetId = Guid.TryParse(args.Value?.ToString(), out var parsed) ? parsed : null;
-
-    private string GetLeaseFieldValue(string key)
-        => _leaseConversionFields.TryGetValue(key, out var value) ? value : string.Empty;
-
-    private void SetLeaseFieldValue(string key, string? value)
-        => _leaseConversionFields[key] = value?.Trim() ?? string.Empty;
 
     private string GetFieldLabel(string key)
         => key switch
@@ -561,15 +301,5 @@
             "leaseStartDate" => RuntiraText.Get("Leads_Field_LeaseStartDate", CurrentOrganization.PreferredLanguage),
             "monthlyRent" => RuntiraText.Get("Leads_Field_MonthlyRent", CurrentOrganization.PreferredLanguage),
             _ => key
-        };
-
-    private string GetNextActionLabel(string nextAction)
-        => nextAction switch
-        {
-            "CreateResidentLease" => RuntiraText.Get("Leads_NextAction_CreateResidentLease", CurrentOrganization.PreferredLanguage),
-            "PrepareWaitlist" => RuntiraText.Get("Leads_NextAction_PrepareWaitlist", CurrentOrganization.PreferredLanguage),
-            "AssignAsset" => RuntiraText.Get("Leads_NextAction_AssignAsset", CurrentOrganization.PreferredLanguage),
-            "ExistingResidentReview" => RuntiraText.Get("Leads_NextAction_ExistingResidentReview", CurrentOrganization.PreferredLanguage),
-            _ => nextAction
         };
 }

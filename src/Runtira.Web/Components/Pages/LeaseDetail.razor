@@ -1,0 +1,226 @@
+@page "/{tenantSlug}/{propertySlug}/leases/{leaseId:guid}"
+@using Runtira.Application.Common
+@using Runtira.Application.Features
+@using Runtira.Web.Components.Shared
+@inject CurrentOrganization CurrentOrganization
+@inject RuntiraWorkspaceService WorkspaceService
+
+<PageTitle>@(_lease is null ? "Lease" : GetLeaseTitle(_lease)) · @CurrentOrganization.PropertyName</PageTitle>
+
+<div class="hero-shell hero-shell-single">
+    <section class="hero-card">
+        <div class="hero-badge">Lease</div>
+
+        <BusyOverlay IsVisible="@_isSubmittingAction" Label="Mise à jour" Message="Application de l’action sur le bail." />
+
+        @if (!string.IsNullOrWhiteSpace(_statusMessage))
+        {
+            <PageEmptyState Title="@_statusMessage" CssClass="inline-status" />
+        }
+
+        @if (_isLoading)
+        {
+            <PageLoadingState />
+        }
+        else if (_lease is not null)
+        {
+            <div class="card-header-inline">
+                <div>
+                    <h1>@GetLeaseTitle(_lease)</h1>
+                    <p class="hero-copy">@_lease.ResidentName · @_workspace?.AssetName</p>
+                </div>
+                <span class="@EntityStatusPresenter.LeasePaymentCss(_lease.Status)">@EntityStatusPresenter.LeasePaymentLabel(_lease.Status)</span>
+            </div>
+
+            <SectionToolbar Hint="Fiche complète du bail, avec le résident lié et ses actions.">
+                <Actions>
+                    <a class="ghost-button" href="@GetBackToLeasesHref()">Back to leases</a>
+                </Actions>
+            </SectionToolbar>
+
+            <div class="tenant-summary unit-detail-summary">
+                <div>
+                    <span class="summary-label">Loyer mensuel</span>
+                    <strong>@_lease.MonthlyRent.ToString("C")</strong>
+                </div>
+                <div>
+                    <span class="summary-label">Période</span>
+                    <strong>@_lease.BillingPeriod</strong>
+                </div>
+                <div>
+                    <span class="summary-label">Résident</span>
+                    <strong>@_lease.ResidentName</strong>
+                </div>
+                <div>
+                    <span class="summary-label">Unité</span>
+                    <strong>@(string.IsNullOrWhiteSpace(_lease.UnitCode) ? "Propriété entière" : _lease.UnitCode)</strong>
+                </div>
+            </div>
+
+            <div class="localized-section">
+                <div class="prompt-title">Facture mensuelle (PDF)</div>
+                <p class="hero-copy form-intro-copy">Format standard et minimal Alberta, sans TPS automatique.</p>
+                <div class="option-list">
+                    <a class="option-pill" href="@GetInvoiceHref(-1)" target="_blank">Mois précédent</a>
+                    <a class="option-pill option-pill-accent" href="@GetInvoiceHref(0)" target="_blank">Mois courant</a>
+                    <a class="option-pill" href="@GetInvoiceHref(1)" target="_blank">Mois suivant</a>
+                </div>
+            </div>
+
+            @if (CurrentOrganization.CanManageData)
+            {
+                <StandardActionMenu MenuLabel="Actions"
+                                     Title="Gérer le bail"
+                                     Items="@GetLeaseActionItems()"
+                                     IsBusy="@_isSubmittingAction"
+                                     OnAction="@(action => HandleLeaseActionAsync(action))" />
+            }
+
+            @if (_resident is not null)
+            {
+                <div class="draft-box">
+                    <strong>Résident lié</strong>
+                    <div>@_resident.FullName</div>
+                    <div>@_resident.Email</div>
+                    <div>Langue préférée · @_resident.PreferredLanguage</div>
+                    <div>Statut · @EntityStatusPresenter.ResidentStatusLabel(_resident.Status)</div>
+                </div>
+            }
+
+            @if (_lease.ComplianceData?.Fields is { Count: > 0 } fields)
+            {
+                <FlexibleContextCard Title="Détails du bail" Fields="@fields" />
+            }
+
+            <div class="option-list mt-3">
+                <a class="option-pill option-pill-accent" href="@GetPropertyLeafHref("invoice-composer")">Préparer une facture</a>
+                <a class="option-pill option-pill-accent" href="@GetPropertyLeafHref("leads")">Voir les leads</a>
+                <a class="option-pill" href="@GetPropertyLeafHref("units")">Voir les unités</a>
+                <a class="option-pill" href="@GetPropertyLeafHref("residents")">Voir les résidents</a>
+            </div>
+        }
+        else
+        {
+            <PageEmptyState Title="Bail introuvable" Message="Ce bail n’existe plus ou a été supprimé.">
+                <a class="ghost-button" href="@GetBackToLeasesHref()">Back to leases</a>
+            </PageEmptyState>
+        }
+    </section>
+</div>
+
+@code {
+    [Parameter]
+    public string? TenantSlug { get; set; }
+
+    [Parameter]
+    public string? PropertySlug { get; set; }
+
+    [Parameter]
+    public Guid LeaseId { get; set; }
+
+    private RuntiraAssetWorkspaceDto? _workspace;
+    private RuntiraLeaseSummaryDto? _lease;
+    private RuntiraResidentSummaryDto? _resident;
+    private bool _isLoading = true;
+    private string? _loadedPropertySlug;
+    private bool _isSubmittingAction;
+    private string? _statusMessage;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (!string.IsNullOrWhiteSpace(TenantSlug))
+        {
+            CurrentOrganization.OrganizationSlug = TenantSlug;
+        }
+
+        if (!string.IsNullOrWhiteSpace(PropertySlug))
+        {
+            CurrentOrganization.PropertySlug = PropertySlug;
+        }
+
+        if (_workspace is not null && string.Equals(_loadedPropertySlug, CurrentOrganization.PropertySlug, StringComparison.OrdinalIgnoreCase))
+        {
+            RefreshSelectedLease();
+            return;
+        }
+
+        _isLoading = true;
+        try
+        {
+            _workspace = await WorkspaceService.GetAssetWorkspaceAsync();
+            if (_workspace is not null)
+            {
+                CurrentOrganization.PropertyName = _workspace.AssetName;
+            }
+
+            _loadedPropertySlug = CurrentOrganization.PropertySlug;
+            RefreshSelectedLease();
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private void RefreshSelectedLease()
+    {
+        _lease = _workspace?.Leases.FirstOrDefault(x => x.Id == LeaseId);
+        _resident = _lease is null ? null : _workspace?.Residents.FirstOrDefault(x => string.Equals(x.FullName, _lease.ResidentName, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private string GetBackToLeasesHref()
+        => $"/{CurrentOrganization.OrganizationSlug}/{CurrentOrganization.PropertySlug}/leases";
+
+    private string GetPropertyLeafHref(string leaf)
+        => $"/{CurrentOrganization.OrganizationSlug}/{CurrentOrganization.PropertySlug}/{leaf}";
+
+    private string GetInvoiceHref(int monthOffset)
+        => $"/{CurrentOrganization.OrganizationSlug}/{CurrentOrganization.PropertySlug}/leases/{LeaseId}/invoice.pdf?monthOffset={monthOffset}";
+
+    private static string GetLeaseTitle(RuntiraLeaseSummaryDto lease)
+        => string.IsNullOrWhiteSpace(lease.UnitCode) ? lease.ResidentName : $"Unit {lease.UnitCode}";
+
+    private IReadOnlyList<StandardActionMenuItem> GetLeaseActionItems()
+        =>
+        [
+            new StandardActionMenuItem(
+                "markReview",
+                "Marquer à vérifier",
+                _lease is null || string.Equals(_lease.Status, "Review", StringComparison.OrdinalIgnoreCase),
+                "Le bail passe en statut à vérifier."),
+            new StandardActionMenuItem(
+                "markActive",
+                "Marquer actif",
+                _lease is null || string.Equals(_lease.Status, "Active", StringComparison.OrdinalIgnoreCase),
+                "Le bail redevient actif (loyer à jour.)")
+        ];
+
+    private async Task HandleLeaseActionAsync(string action)
+    {
+        if (_isSubmittingAction || _lease is null)
+        {
+            return;
+        }
+
+        _isSubmittingAction = true;
+        _statusMessage = null;
+
+        try
+        {
+            var result = await WorkspaceService.ManageLeaseAsync(_lease.Id, action);
+            _statusMessage = result.ResultCode switch
+            {
+                "Updated" => $"Bail {result.UnitCode} mis à jour · {result.LeaseStatus}.",
+                "LeaseNotFound" => "Bail introuvable.",
+                _ => "Action indisponible."
+            };
+
+            _workspace = await WorkspaceService.GetAssetWorkspaceAsync();
+            RefreshSelectedLease();
+        }
+        finally
+        {
+            _isSubmittingAction = false;
+        }
+    }
+}

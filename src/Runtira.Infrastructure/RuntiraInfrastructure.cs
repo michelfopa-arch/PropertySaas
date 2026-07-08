@@ -176,6 +176,12 @@ namespace Runtira.Infrastructure.Data
         public static decimal GetDecimal(CosmosDocument document, string fieldName)
             => document.data.TryGetValue(fieldName, out var value) && value is not null && decimal.TryParse(value.ToString(), out var parsed) ? parsed : 0m;
 
+        public static DateTime GetDateTime(CosmosDocument document, string fieldName)
+            => document.data.TryGetValue(fieldName, out var value) && value is not null && DateTime.TryParse(value.ToString(), out var parsed) ? parsed : DateTime.MinValue;
+
+        public static DateTime? GetDateTimeOrNull(CosmosDocument document, string fieldName)
+            => document.data.TryGetValue(fieldName, out var value) && value is not null && DateTime.TryParse(value.ToString(), out var parsed) ? parsed : null;
+
         public static void SetValue(CosmosDocument document, string fieldName, object? value)
             => document.data[fieldName] = value;
 
@@ -338,6 +344,8 @@ namespace Runtira.Infrastructure.Data
                         MonthlyRent = GetDecimal(lease, "monthlyRent"),
                         Status = GetString(lease, "status"),
                         BillingPeriod = GetString(lease, "billingPeriod"),
+                        LeaseStartUtc = GetDateTime(lease, "leaseStartUtc"),
+                        LeaseEndUtc = GetDateTimeOrNull(lease, "leaseEndUtc"),
                         ComplianceDataJson = complianceDataJson,
                         ComplianceData = Runtira.Application.Common.RuntiraJson.Deserialize<Runtira.Application.Features.RuntiraLeaseComplianceData>(complianceDataJson)
                     };
@@ -388,6 +396,51 @@ namespace Runtira.Infrastructure.Data
                     ActiveLeaseCount = activeLeases.Count,
                     ActiveResidentCount = activeResidentCount,
                     MonthlyRevenue = activeLeases.Sum(x => GetDecimal(x, "monthlyRent"))
+                };
+            }).ToList();
+        }
+
+        public async Task<IReadOnlyList<Runtira.Application.Features.RuntiraLeaseInvoiceEntryDto>> GetLeaseInvoiceEntriesAsync(Guid tenantId, CancellationToken cancellationToken = default)
+        {
+            var database = _cosmosClient.GetDatabase(_options.DatabaseName);
+            var coreContainer = database.GetContainer("TenantCore");
+
+            var assets = await QueryManyAsync(coreContainer, tenantId, "SELECT * FROM c WHERE c.tenantId = @tenantId AND c.type = 'asset'", cancellationToken);
+            if (assets.Count == 0)
+            {
+                return Array.Empty<Runtira.Application.Features.RuntiraLeaseInvoiceEntryDto>();
+            }
+
+            var units = await QueryManyAsync(coreContainer, tenantId, "SELECT * FROM c WHERE c.tenantId = @tenantId AND c.type = 'unit'", cancellationToken);
+            var leases = await QueryManyAsync(coreContainer, tenantId, "SELECT * FROM c WHERE c.tenantId = @tenantId AND c.type = 'lease' ORDER BY c.data.leaseStartUtc DESC", cancellationToken);
+            var residents = await QueryManyAsync(coreContainer, tenantId, "SELECT * FROM c WHERE c.tenantId = @tenantId AND c.type = 'resident'", cancellationToken);
+
+            var assetById = assets.ToDictionary(x => x.id, StringComparer.OrdinalIgnoreCase);
+            var unitById = units.ToDictionary(x => x.id, StringComparer.OrdinalIgnoreCase);
+            var residentById = residents.ToDictionary(x => x.id, StringComparer.OrdinalIgnoreCase);
+
+            return leases.Select(lease =>
+            {
+                var assetIdText = GetString(lease, "assetId");
+                assetById.TryGetValue(assetIdText, out var assetDocument);
+                var unitIdText = GetString(lease, "unitId");
+                unitById.TryGetValue(unitIdText, out var unitDocument);
+                var residentIdText = GetString(lease, "residentId");
+                residentById.TryGetValue(residentIdText, out var residentDocument);
+
+                return new Runtira.Application.Features.RuntiraLeaseInvoiceEntryDto
+                {
+                    LeaseId = ParseGuid(lease.id),
+                    PropertyName = assetDocument is null ? string.Empty : GetString(assetDocument, "name"),
+                    PropertyAddress = assetDocument is null ? string.Empty : GetString(assetDocument, "addressLine1"),
+                    PropertySlug = assetDocument is null ? string.Empty : Runtira.Application.Common.RuntiraSlug.Slugify(GetString(assetDocument, "name")),
+                    UnitCode = unitDocument is null ? string.Empty : GetString(unitDocument, "unitCode"),
+                    ResidentName = residentDocument is null ? string.Empty : GetString(residentDocument, "fullName"),
+                    MonthlyRent = GetDecimal(lease, "monthlyRent"),
+                    BillingPeriod = GetString(lease, "billingPeriod"),
+                    LeaseStatus = GetString(lease, "status"),
+                    LeaseStartUtc = GetDateTime(lease, "leaseStartUtc"),
+                    LeaseEndUtc = GetDateTimeOrNull(lease, "leaseEndUtc")
                 };
             }).ToList();
         }
@@ -611,7 +664,10 @@ namespace Runtira.Infrastructure.Data
                 CreateTenantDocument("quotaPolicy", "60606060-aaaa-bbbb-cccc-828282828282", texasTenantId, new Dictionary<string, object?> { ["maxAssets"] = 100, ["maxDocuments"] = 1000, ["maxMonthlyAiRequests"] = 5000, ["maxBlobStorageMb"] = 2048, ["maxActiveWorkflows"] = 50, ["enforceHardLimit"] = true, ["createdUtc"] = "2026-07-03T00:00:00Z", ["modifiedUtc"] = null }),
                 CreateTenantDocument("blobArchive", "99999999-aaaa-bbbb-cccc-000000000000", albertaTenantId, new Dictionary<string, object?> { ["blobPath"] = "demo-alberta/invoices/2026/07/invoice-july.json", ["contentType"] = "application/json", ["category"] = "InvoiceDraft", ["metadataJson"] = "{\"period\":\"2026-07\"}", ["sizeBytes"] = 512, ["sourceSystem"] = "seed", ["hash"] = "seed-demo-alberta-invoice", ["createdUtc"] = "2026-07-03T00:00:00Z", ["modifiedUtc"] = null }),
                 CreateTenantDocument("blobArchive", "a1a1a1a1-aaaa-bbbb-cccc-020202020202", ontarioTenantId, new Dictionary<string, object?> { ["blobPath"] = "demo-ontario/invoices/2026/07/invoice-july.json", ["contentType"] = "application/json", ["category"] = "InvoiceDraft", ["metadataJson"] = "{\"period\":\"2026-07\"}", ["sizeBytes"] = 544, ["sourceSystem"] = "seed", ["hash"] = "seed-demo-ontario-invoice", ["createdUtc"] = "2026-07-03T00:00:00Z", ["modifiedUtc"] = null }),
-                CreateTenantDocument("blobArchive", "a3a3a3a3-aaaa-bbbb-cccc-040404040404", texasTenantId, new Dictionary<string, object?> { ["blobPath"] = "demo-texas/invoices/2026/07/invoice-july.json", ["contentType"] = "application/json", ["category"] = "InvoiceDraft", ["metadataJson"] = "{\"period\":\"2026-07\"}", ["sizeBytes"] = 536, ["sourceSystem"] = "seed", ["hash"] = "seed-demo-texas-invoice", ["createdUtc"] = "2026-07-03T00:00:00Z", ["modifiedUtc"] = null })
+                CreateTenantDocument("blobArchive", "a3a3a3a3-aaaa-bbbb-cccc-040404040404", texasTenantId, new Dictionary<string, object?> { ["blobPath"] = "demo-texas/invoices/2026/07/invoice-july.json", ["contentType"] = "application/json", ["category"] = "InvoiceDraft", ["metadataJson"] = "{\"period\":\"2026-07\"}", ["sizeBytes"] = 536, ["sourceSystem"] = "seed", ["hash"] = "seed-demo-texas-invoice", ["createdUtc"] = "2026-07-03T00:00:00Z", ["modifiedUtc"] = null }),
+                CreateTenantDocument("asset", "87998799-aaaa-bbbb-cccc-879987998001", albertaTenantId, new Dictionary<string, object?> { ["name"] = "8799 Edgemont Link NW", ["assetType"] = "Property", ["addressLine1"] = "8799 Edgemont Link NW, Edmonton, AB T6M 0P6", ["city"] = "Edmonton", ["regionCode"] = "AB", ["countryCode"] = "CA", ["unitCount"] = 0, ["legalProfileJson"] = "{\"requiredQuestions\":[\"address\",\"period\",\"monthlyRent\"]}", ["additionalDataJson"] = "{\"source\":\"seed\",\"market\":\"Edmonton\",\"supportsMultiUnit\":false,\"assetName\":\"8799 Edgemont Link NW\",\"assetAddress\":\"8799 Edgemont Link NW, Edmonton, AB T6M 0P6\"}", ["workflowSummaryJson"] = "{\"status\":\"ready\"}", ["createdUtc"] = "2026-07-15T00:00:00Z", ["modifiedUtc"] = null }),
+                CreateTenantDocument("resident", "87998799-aaaa-bbbb-cccc-879987998002", albertaTenantId, new Dictionary<string, object?> { ["fullName"] = "Excel Homes", ["email"] = "contact@excelhomes.example.com", ["phoneNumber"] = "+1-780-555-0188", ["preferredLanguage"] = "en-CA", ["status"] = "Active", ["notesJson"] = "{\"leaseIntent\":\"newLease\"}", ["createdUtc"] = "2026-07-15T00:00:00Z", ["modifiedUtc"] = null }),
+                CreateTenantDocument("lease", "87998799-aaaa-bbbb-cccc-879987998003", albertaTenantId, new Dictionary<string, object?> { ["assetId"] = "87998799-aaaa-bbbb-cccc-879987998001", ["unitId"] = "00000000-0000-0000-0000-000000000000", ["residentId"] = "87998799-aaaa-bbbb-cccc-879987998002", ["leaseStartUtc"] = "2026-07-15T00:00:00Z", ["leaseEndUtc"] = "2026-12-15T00:00:00Z", ["monthlyRent"] = 2428.10m, ["billingPeriod"] = "Monthly", ["status"] = "Active", ["termsJson"] = "{\"leaseType\":\"SingleFamilyHome\",\"propertyType\":\"Whole property - no separate unit\"}", ["createdUtc"] = "2026-07-15T00:00:00Z", ["modifiedUtc"] = null })
             ]);
 
             documents.AddRange(Enumerable.Range(1, 50).Select(index =>
@@ -1282,7 +1338,10 @@ namespace Runtira.Infrastructure.Data
             var effectiveLocale = !string.IsNullOrWhiteSpace(userLocale)
                 ? userLocale
                 : matchedUser is null ? GetString(organization, "defaultLocale") : GetString(matchedUser, "preferredLanguage", GetString(organization, "defaultLocale"));
-            var effectiveRegion = !string.IsNullOrWhiteSpace(regionClaim) ? regionClaim : GetString(organization, "regionCode", "AB");
+            var organizationRegionCode = GetString(organization, "regionCode");
+            // The organization's own jurisdiction is authoritative once it has been resolved by tenant slug;
+            // regionClaim only comes from the visitor's browser Accept-Language header and must never override it.
+            var effectiveRegion = !string.IsNullOrWhiteSpace(organizationRegionCode) ? organizationRegionCode : (!string.IsNullOrWhiteSpace(regionClaim) ? regionClaim : "AB");
             var effectiveCountryCode = string.IsNullOrWhiteSpace(GetString(organization, "countryCode")) ? "CA" : GetString(organization, "countryCode");
 
             return new Runtira.Application.Common.CurrentOrganization
@@ -1457,10 +1516,225 @@ namespace Runtira.Infrastructure.Services
     using System.Net.Http.Headers;
     using System.Net.Http.Json;
     using System.Text.Json.Serialization;
+    using QuestPDF.Fluent;
+    using QuestPDF.Helpers;
+    using QuestPDF.Infrastructure;
     using Runtira.Application.Common;
     using Runtira.Application.Features;
     using Runtira.Infrastructure.Data;
     using Runtira.Infrastructure.Options;
+
+    internal sealed class AlbertaMinimalRentInvoicePdfRenderer : Runtira.Application.Abstractions.IRentInvoicePdfRenderer
+    {
+        static AlbertaMinimalRentInvoicePdfRenderer()
+        {
+            QuestPDF.Settings.License = LicenseType.Community;
+        }
+
+        public byte[] Render(RuntiraRentInvoiceDto invoice)
+        {
+            var periodLabel = invoice.PeriodMonthUtc.ToString("MMMM yyyy", CultureInfo.GetCultureInfo("en-CA"));
+            var dueDate = new DateTime(invoice.PeriodMonthUtc.Year, invoice.PeriodMonthUtc.Month, 1);
+            var culture = CultureInfo.GetCultureInfo("en-CA");
+
+            var document = QuestPDF.Fluent.Document.Create(container =>
+            {
+                container.Page(page =>
+                {
+                    page.Size(PageSizes.Letter);
+                    page.Margin(40);
+                    page.DefaultTextStyle(x => x.FontSize(11).FontFamily("Arial"));
+
+                    page.Header().Column(column =>
+                    {
+                        column.Item().Text("Rent Invoice").FontSize(20).Bold();
+                        column.Item().Text(invoice.JurisdictionDisplayName).FontSize(10).FontColor(Colors.Grey.Darken1);
+                    });
+
+                    page.Content().PaddingVertical(15).Column(column =>
+                    {
+                        column.Spacing(12);
+
+                        column.Item().AlignRight().Column(right =>
+                        {
+                            right.Item().AlignRight().Text("Invoice period").FontSize(9).FontColor(Colors.Grey.Darken1);
+                            right.Item().AlignRight().Text(periodLabel).Bold();
+                        });
+
+                        column.Item().LineHorizontal(0.75f).LineColor(Colors.Grey.Lighten1);
+
+                        column.Item().Column(details =>
+                        {
+                            details.Item().Text("Rental property").FontSize(9).FontColor(Colors.Grey.Darken1);
+                            details.Item().Text(invoice.PropertyAddress).Bold();
+                        });
+
+                        column.Item().Row(row =>
+                        {
+                            row.RelativeItem().Column(left =>
+                            {
+                                left.Item().Text("Resident").FontSize(9).FontColor(Colors.Grey.Darken1);
+                                left.Item().Text(invoice.ResidentName).Bold();
+                            });
+
+                            if (!string.IsNullOrWhiteSpace(invoice.UnitCode))
+                            {
+                                row.RelativeItem().Column(right =>
+                                {
+                                    right.Item().Text("Unit").FontSize(9).FontColor(Colors.Grey.Darken1);
+                                    right.Item().Text(invoice.UnitCode).Bold();
+                                });
+                            }
+                        });
+
+                        column.Item().Row(row =>
+                        {
+                            row.RelativeItem().Column(left =>
+                            {
+                                left.Item().Text("Lease term").FontSize(9).FontColor(Colors.Grey.Darken1);
+                                left.Item().Text(FormatLeaseTerm(invoice));
+                            });
+
+                            row.RelativeItem().Column(right =>
+                            {
+                                right.Item().Text("Billing period").FontSize(9).FontColor(Colors.Grey.Darken1);
+                                right.Item().Text(invoice.BillingPeriod);
+                            });
+                        });
+
+                        column.Item().PaddingTop(10).Table(table =>
+                        {
+                            table.ColumnsDefinition(columns =>
+                            {
+                                columns.RelativeColumn(3);
+                                columns.RelativeColumn(1);
+                            });
+
+                            table.Header(header =>
+                            {
+                                header.Cell().Border(0.5f).Background(Colors.Grey.Lighten3).Padding(6).Text("Description").Bold();
+                                header.Cell().Border(0.5f).Background(Colors.Grey.Lighten3).Padding(6).AlignRight().Text("Amount").Bold();
+                            });
+
+                            table.Cell().Border(0.5f).Padding(6).Text($"Monthly rent — {periodLabel}");
+                            table.Cell().Border(0.5f).Padding(6).AlignRight().Text(invoice.MonthlyRent.ToString("C", culture));
+
+                            if (invoice.AddAutomaticSalesTax)
+                            {
+                                table.Cell().Border(0.5f).Padding(6).Text("GST");
+                                table.Cell().Border(0.5f).Padding(6).AlignRight().Text((0m).ToString("C", culture));
+                            }
+
+                            table.Cell().Border(0.5f).Padding(6).Text("Total due").Bold();
+                            table.Cell().Border(0.5f).Padding(6).AlignRight().Text(invoice.MonthlyRent.ToString("C", culture)).Bold();
+                        });
+
+                        column.Item().PaddingTop(6).Text($"Due date: {dueDate:MMMM d, yyyy}").FontSize(9).FontColor(Colors.Grey.Darken1);
+                    });
+
+                    page.Footer().AlignCenter().Text(text =>
+                    {
+                        text.Span($"Generated {DateTime.UtcNow:yyyy-MM-dd}.").FontSize(8).FontColor(Colors.Grey.Darken1);
+                    });
+                });
+            });
+
+            return document.GeneratePdf();
+        }
+
+        private static string FormatLeaseTerm(RuntiraRentInvoiceDto invoice)
+        {
+            var start = invoice.LeaseStartUtc.ToString("MMM d, yyyy");
+            var end = invoice.LeaseEndUtc.HasValue ? invoice.LeaseEndUtc.Value.ToString("MMM d, yyyy") : "ongoing";
+            return $"{start} – {end}";
+        }
+    }
+
+    internal sealed class LocalJsonRentInvoiceArchiveStore : Runtira.Application.Abstractions.IRentInvoiceArchiveStore
+    {
+        private readonly string _rootPath;
+        private readonly ILogger<LocalJsonRentInvoiceArchiveStore> _logger;
+        private static readonly System.Text.Json.JsonSerializerOptions SerializerOptions = new()
+        {
+            WriteIndented = true,
+            PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase
+        };
+
+        public LocalJsonRentInvoiceArchiveStore(ILogger<LocalJsonRentInvoiceArchiveStore> logger)
+        {
+            _logger = logger;
+            _rootPath = System.IO.Path.Combine(AppContext.BaseDirectory, "App_Data", "invoices");
+        }
+
+        public Task RecordAsync(string tenantSlug, RuntiraRentInvoiceDto invoice, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var leaseFolder = GetLeaseFolder(tenantSlug, invoice.LeaseId);
+                System.IO.Directory.CreateDirectory(leaseFolder);
+
+                var filePath = System.IO.Path.Combine(leaseFolder, $"{invoice.PeriodMonthUtc:yyyy-MM}.json");
+
+                var record = new
+                {
+                    generatedUtc = DateTime.UtcNow,
+                    invoice.LeaseId,
+                    invoice.OrganizationName,
+                    invoice.PropertyAddress,
+                    invoice.ResidentName,
+                    invoice.UnitCode,
+                    invoice.MonthlyRent,
+                    invoice.BillingPeriod,
+                    invoice.LeaseStartUtc,
+                    invoice.LeaseEndUtc,
+                    invoice.PeriodMonthUtc,
+                    invoice.JurisdictionDisplayName,
+                    invoice.RegionCode,
+                    invoice.AddAutomaticSalesTax
+                };
+
+                // Regenerating the same lease/month overwrites the previous JSON record; we never keep the rendered PDF itself.
+                return System.IO.File.WriteAllTextAsync(filePath, System.Text.Json.JsonSerializer.Serialize(record, SerializerOptions), cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to record local rent invoice JSON archive for tenant {TenantSlug}.", tenantSlug);
+                return Task.CompletedTask;
+            }
+        }
+
+        public Task<IReadOnlyList<DateTime>> GetGeneratedMonthsAsync(string tenantSlug, Guid leaseId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var leaseFolder = GetLeaseFolder(tenantSlug, leaseId);
+                if (!System.IO.Directory.Exists(leaseFolder))
+                {
+                    return Task.FromResult<IReadOnlyList<DateTime>>(Array.Empty<DateTime>());
+                }
+
+                var months = System.IO.Directory.GetFiles(leaseFolder, "*.json")
+                    .Select(path => System.IO.Path.GetFileNameWithoutExtension(path))
+                    .Where(name => DateTime.TryParseExact(name, "yyyy-MM", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.AssumeUniversal | System.Globalization.DateTimeStyles.AdjustToUniversal, out _))
+                    .Select(name => DateTime.SpecifyKind(DateTime.ParseExact(name, "yyyy-MM", System.Globalization.CultureInfo.InvariantCulture), DateTimeKind.Utc))
+                    .OrderByDescending(x => x)
+                    .ToList();
+
+                return Task.FromResult<IReadOnlyList<DateTime>>(months);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to read local rent invoice JSON archive for tenant {TenantSlug} and lease {LeaseId}.", tenantSlug, leaseId);
+                return Task.FromResult<IReadOnlyList<DateTime>>(Array.Empty<DateTime>());
+            }
+        }
+
+        private string GetLeaseFolder(string tenantSlug, Guid leaseId)
+        {
+            var slug = string.IsNullOrWhiteSpace(tenantSlug) ? "workspace" : tenantSlug;
+            return System.IO.Path.Combine(_rootPath, slug, leaseId.ToString());
+        }
+    }
 
     internal sealed class ResendEmailService : IEmailService
     {
@@ -2028,6 +2302,8 @@ namespace Runtira.Infrastructure.Services
             services.AddHttpClient<IEmailService, ResendEmailService>(client => client.BaseAddress = new Uri("https://api.resend.com/"));
 
             services.AddSingleton<ILegislationCatalog, JsonLegislationCatalog>();
+            services.AddSingleton<Runtira.Application.Abstractions.IRentInvoicePdfRenderer, AlbertaMinimalRentInvoicePdfRenderer>();
+            services.AddSingleton<Runtira.Application.Abstractions.IRentInvoiceArchiveStore, LocalJsonRentInvoiceArchiveStore>();
             services.AddHttpClient<StripeBillingService>(client => client.BaseAddress = new Uri("https://api.stripe.com/v1/"));
 
             return services;
