@@ -78,20 +78,35 @@
 
     private RuntiraAssetWorkspaceDto? _workspace;
     private bool _isLoading = true;
-    private bool _hasInitialized;
+    private string? _loadedPropertySlug;
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnParametersSetAsync()
     {
-        if (_hasInitialized)
+        if (!string.IsNullOrWhiteSpace(TenantSlug))
+        {
+            CurrentOrganization.OrganizationSlug = TenantSlug;
+        }
+
+        if (!string.IsNullOrWhiteSpace(PropertySlug))
+        {
+            CurrentOrganization.PropertySlug = PropertySlug;
+        }
+
+        if (_workspace is not null && string.Equals(_loadedPropertySlug, CurrentOrganization.PropertySlug, StringComparison.OrdinalIgnoreCase))
         {
             return;
         }
 
-        _hasInitialized = true;
-
+        _isLoading = true;
         try
         {
             _workspace = await WorkspaceService.GetAssetWorkspaceAsync();
+            if (_workspace is not null)
+            {
+                CurrentOrganization.PropertyName = _workspace.AssetName;
+            }
+
+            _loadedPropertySlug = CurrentOrganization.PropertySlug;
         }
         finally
         {

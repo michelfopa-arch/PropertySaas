@@ -10,6 +10,10 @@
         <h1>@(string.IsNullOrWhiteSpace(CurrentOrganization.PropertyName) ? "Your property" : CurrentOrganization.PropertyName)</h1>
         <p class="hero-copy">Vue simple de la propriété. Choisis ensuite l’entité à gérer : unités, résidents, baux, documents, maintenance ou facturation.</p>
 
+        <div class="option-list">
+            <a class="option-pill option-pill-accent" href="@($"/{CurrentOrganization.OrganizationSlug}/properties")">Toutes les propriétés</a>
+        </div>
+
         <div class="tenant-summary">
             <div>
                 <span class="summary-label">Property</span>
@@ -70,4 +74,17 @@
 
     [Parameter]
     public string? PropertySlug { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        if (!string.IsNullOrWhiteSpace(TenantSlug))
+        {
+            CurrentOrganization.OrganizationSlug = TenantSlug;
+        }
+
+        if (!string.IsNullOrWhiteSpace(PropertySlug))
+        {
+            CurrentOrganization.PropertySlug = PropertySlug;
+        }
+    }
 }

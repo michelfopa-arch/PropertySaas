@@ -263,16 +263,21 @@ namespace Runtira.Infrastructure.Data
             _options = options;
         }
 
-        public async Task<Runtira.Application.Features.RuntiraAssetWorkspaceDto?> GetAssetWorkspaceAsync(Guid tenantId, CancellationToken cancellationToken = default)
+        public async Task<Runtira.Application.Features.RuntiraAssetWorkspaceDto?> GetAssetWorkspaceAsync(Guid tenantId, string? propertySlug = null, CancellationToken cancellationToken = default)
         {
             var database = _cosmosClient.GetDatabase(_options.DatabaseName);
             var coreContainer = database.GetContainer("TenantCore");
 
-            var assetDocument = await QuerySingleAsync(coreContainer, tenantId, "SELECT TOP 1 * FROM c WHERE c.tenantId = @tenantId AND c.type = 'asset' ORDER BY c.data.name", cancellationToken);
-            if (assetDocument is null)
+            var assets = await QueryManyAsync(coreContainer, tenantId, "SELECT * FROM c WHERE c.tenantId = @tenantId AND c.type = 'asset' ORDER BY c.data.name", cancellationToken);
+            if (assets.Count == 0)
             {
                 return null;
             }
+
+            var assetDocument = string.IsNullOrWhiteSpace(propertySlug)
+                ? assets[0]
+                : assets.FirstOrDefault(x => string.Equals(Runtira.Application.Common.RuntiraSlug.Slugify(GetString(x, "name")), propertySlug, StringComparison.OrdinalIgnoreCase))
+                    ?? assets[0];
 
             var assetId = ParseGuid(assetDocument.id);
             var units = await QueryManyAsync(coreContainer, tenantId, "SELECT * FROM c WHERE c.tenantId = @tenantId AND c.type = 'unit' AND c.data.assetId = @assetId ORDER BY c.data.unitCode", cancellationToken, ("@assetId", (object)assetId.ToString()));
@@ -338,6 +343,53 @@ namespace Runtira.Infrastructure.Data
                     };
                 }).ToList()
             };
+        }
+
+        public async Task<IReadOnlyList<Runtira.Application.Features.RuntiraAssetSummaryDto>> GetAssetsAsync(Guid tenantId, CancellationToken cancellationToken = default)
+        {
+            var database = _cosmosClient.GetDatabase(_options.DatabaseName);
+            var coreContainer = database.GetContainer("TenantCore");
+
+            var assets = await QueryManyAsync(coreContainer, tenantId, "SELECT * FROM c WHERE c.tenantId = @tenantId AND c.type = 'asset' ORDER BY c.data.name", cancellationToken);
+            if (assets.Count == 0)
+            {
+                return Array.Empty<Runtira.Application.Features.RuntiraAssetSummaryDto>();
+            }
+
+            var units = await QueryManyAsync(coreContainer, tenantId, "SELECT * FROM c WHERE c.tenantId = @tenantId AND c.type = 'unit'", cancellationToken);
+            var leases = await QueryManyAsync(coreContainer, tenantId, "SELECT * FROM c WHERE c.tenantId = @tenantId AND c.type = 'lease'", cancellationToken);
+            var residents = await QueryManyAsync(coreContainer, tenantId, "SELECT * FROM c WHERE c.tenantId = @tenantId AND c.type = 'resident'", cancellationToken);
+            var activeResidentIds = residents
+                .Where(x => string.Equals(GetString(x, "status"), "Active", StringComparison.OrdinalIgnoreCase))
+                .Select(x => x.id)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            return assets.Select(asset =>
+            {
+                var assetIdText = asset.id;
+                var assetUnits = units.Where(x => string.Equals(GetString(x, "assetId"), assetIdText, StringComparison.OrdinalIgnoreCase)).ToList();
+                var assetLeases = leases.Where(x => string.Equals(GetString(x, "assetId"), assetIdText, StringComparison.OrdinalIgnoreCase)).ToList();
+                var activeLeases = assetLeases.Where(x => string.Equals(GetString(x, "status"), "Active", StringComparison.OrdinalIgnoreCase)).ToList();
+                var activeResidentCount = activeLeases
+                    .Select(x => GetString(x, "residentId"))
+                    .Where(x => activeResidentIds.Contains(x))
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .Count();
+
+                return new Runtira.Application.Features.RuntiraAssetSummaryDto
+                {
+                    AssetId = ParseGuid(asset.id),
+                    AssetName = GetString(asset, "name"),
+                    AssetAddress = GetString(asset, "addressLine1"),
+                    AssetType = GetString(asset, "assetType"),
+                    PropertySlug = Runtira.Application.Common.RuntiraSlug.Slugify(GetString(asset, "name")),
+                    UnitCount = assetUnits.Count > 0 ? assetUnits.Count : GetInt(asset, "unitCount"),
+                    OccupiedUnitCount = assetUnits.Count(x => string.Equals(GetString(x, "status"), "Occupied", StringComparison.OrdinalIgnoreCase)),
+                    ActiveLeaseCount = activeLeases.Count,
+                    ActiveResidentCount = activeResidentCount,
+                    MonthlyRevenue = activeLeases.Sum(x => GetDecimal(x, "monthlyRent"))
+                };
+            }).ToList();
         }
 
         public async Task<Runtira.Application.Features.RuntiraUnitActionResultDto> ManageUnitAsync(Guid tenantId, Guid unitId, string action, CancellationToken cancellationToken = default)
@@ -523,6 +575,21 @@ namespace Runtira.Infrastructure.Data
                 CreateTenantDocument("lease", "41414141-aaaa-bbbb-cccc-616161616161", albertaTenantId, new Dictionary<string, object?> { ["assetId"] = "11111111-aaaa-bbbb-cccc-222222222222", ["unitId"] = "10000000-0000-0000-0000-000000000001", ["residentId"] = "27272727-aaaa-bbbb-cccc-494949494949", ["leaseStartUtc"] = "2026-01-01T00:00:00Z", ["leaseEndUtc"] = "2026-12-31T00:00:00Z", ["monthlyRent"] = 2450m, ["billingPeriod"] = "Monthly", ["status"] = "Active", ["termsJson"] = "{\"deposit\":2450}", ["createdUtc"] = "2026-07-03T00:00:00Z", ["modifiedUtc"] = null }),
                 CreateTenantDocument("lease", "43434343-aaaa-bbbb-cccc-636363636363", ontarioTenantId, new Dictionary<string, object?> { ["assetId"] = "13131313-aaaa-bbbb-cccc-242424242424", ["unitId"] = "23232323-aaaa-bbbb-cccc-454545454545", ["residentId"] = "29292929-aaaa-bbbb-cccc-515151515151", ["leaseStartUtc"] = "2026-03-01T00:00:00Z", ["leaseEndUtc"] = "2027-02-28T00:00:00Z", ["monthlyRent"] = 3100m, ["billingPeriod"] = "Monthly", ["status"] = "Active", ["termsJson"] = "{\"noticeDays\":60}", ["createdUtc"] = "2026-07-03T00:00:00Z", ["modifiedUtc"] = null }),
                 CreateTenantDocument("lease", "45454545-aaaa-bbbb-cccc-656565656565", texasTenantId, new Dictionary<string, object?> { ["assetId"] = "15151515-aaaa-bbbb-cccc-262626262626", ["unitId"] = "25252525-aaaa-bbbb-cccc-474747474747", ["residentId"] = "31313131-aaaa-bbbb-cccc-535353535353", ["leaseStartUtc"] = "2026-04-01T00:00:00Z", ["leaseEndUtc"] = "2027-03-31T00:00:00Z", ["monthlyRent"] = 2800m, ["billingPeriod"] = "Monthly", ["status"] = "Review", ["termsJson"] = "{\"noticeDays\":45}", ["createdUtc"] = "2026-07-03T00:00:00Z", ["modifiedUtc"] = null }),
+                CreateTenantDocument("asset", "21111111-aaaa-bbbb-cccc-222222222222", albertaTenantId, new Dictionary<string, object?> { ["name"] = "845 5 Ave SW · Sunset Court", ["assetType"] = "Property", ["addressLine1"] = "845 5 Ave SW", ["city"] = "Calgary", ["regionCode"] = "AB", ["countryCode"] = "CA", ["unitCount"] = 12, ["legalProfileJson"] = "{\"requiredQuestions\":[\"address\",\"period\",\"monthlyRent\"]}", ["additionalDataJson"] = "{\"source\":\"seed\",\"market\":\"Calgary\",\"supportsMultiUnit\":true,\"assetName\":\"845 5 Ave SW · Sunset Court\",\"assetAddress\":\"845 5 Ave SW\"}", ["workflowSummaryJson"] = "{\"status\":\"ready\"}", ["createdUtc"] = "2026-07-10T00:00:00Z", ["modifiedUtc"] = null }),
+                CreateTenantDocument("asset", "23131313-aaaa-bbbb-cccc-242424242424", ontarioTenantId, new Dictionary<string, object?> { ["name"] = "88 Queens Quay West", ["assetType"] = "Property", ["addressLine1"] = "88 Queens Quay West", ["city"] = "Toronto", ["regionCode"] = "ON", ["countryCode"] = "CA", ["unitCount"] = 15, ["legalProfileJson"] = "{\"requiredQuestions\":[\"propertyAddress\",\"billingPeriod\",\"tenantName\",\"monthlyRent\"]}", ["additionalDataJson"] = "{\"source\":\"seed\",\"market\":\"Toronto\",\"supportsMultiUnit\":true,\"assetName\":\"88 Queens Quay West\",\"assetAddress\":\"88 Queens Quay West\"}", ["workflowSummaryJson"] = "{\"status\":\"ready\"}", ["createdUtc"] = "2026-07-10T00:00:00Z", ["modifiedUtc"] = null }),
+                CreateTenantDocument("asset", "25151515-aaaa-bbbb-cccc-262626262626", texasTenantId, new Dictionary<string, object?> { ["name"] = "500 Congress Avenue", ["assetType"] = "Property", ["addressLine1"] = "500 Congress Avenue", ["city"] = "Austin", ["regionCode"] = "TX", ["countryCode"] = "US", ["unitCount"] = 10, ["legalProfileJson"] = "{\"requiredQuestions\":[\"propertyAddress\",\"billingPeriod\",\"ownerName\",\"monthlyRent\"]}", ["additionalDataJson"] = "{\"source\":\"seed\",\"market\":\"Austin\",\"supportsMultiUnit\":true,\"assetName\":\"500 Congress Avenue\",\"assetAddress\":\"500 Congress Avenue\"}", ["workflowSummaryJson"] = "{\"status\":\"ready\"}", ["createdUtc"] = "2026-07-10T00:00:00Z", ["modifiedUtc"] = null }),
+                CreateTenantDocument("unit", "22232323-aaaa-bbbb-cccc-454545454545", albertaTenantId, new Dictionary<string, object?> { ["assetId"] = "21111111-aaaa-bbbb-cccc-222222222222", ["unitCode"] = "S-101", ["unitType"] = "Apartment", ["status"] = "Occupied", ["marketRent"] = 1950m, ["additionalDataJson"] = "{\"bedrooms\":1}", ["createdUtc"] = "2026-07-10T00:00:00Z", ["modifiedUtc"] = null }),
+                CreateTenantDocument("unit", "22252525-aaaa-bbbb-cccc-474747474747", albertaTenantId, new Dictionary<string, object?> { ["assetId"] = "21111111-aaaa-bbbb-cccc-222222222222", ["unitCode"] = "S-102", ["unitType"] = "Apartment", ["status"] = "Available", ["marketRent"] = 2050m, ["additionalDataJson"] = "{\"bedrooms\":2}", ["createdUtc"] = "2026-07-10T00:00:00Z", ["modifiedUtc"] = null }),
+                CreateTenantDocument("unit", "24232323-aaaa-bbbb-cccc-454545454545", ontarioTenantId, new Dictionary<string, object?> { ["assetId"] = "23131313-aaaa-bbbb-cccc-242424242424", ["unitCode"] = "12A", ["unitType"] = "Condo", ["status"] = "Occupied", ["marketRent"] = 2650m, ["additionalDataJson"] = "{\"bedrooms\":1}", ["createdUtc"] = "2026-07-10T00:00:00Z", ["modifiedUtc"] = null }),
+                CreateTenantDocument("unit", "24252525-aaaa-bbbb-cccc-474747474747", ontarioTenantId, new Dictionary<string, object?> { ["assetId"] = "23131313-aaaa-bbbb-cccc-242424242424", ["unitCode"] = "12B", ["unitType"] = "Condo", ["status"] = "Available", ["marketRent"] = 2750m, ["additionalDataJson"] = "{\"bedrooms\":2}", ["createdUtc"] = "2026-07-10T00:00:00Z", ["modifiedUtc"] = null }),
+                CreateTenantDocument("unit", "26232323-aaaa-bbbb-cccc-454545454545", texasTenantId, new Dictionary<string, object?> { ["assetId"] = "25151515-aaaa-bbbb-cccc-262626262626", ["unitCode"] = "3C", ["unitType"] = "Apartment", ["status"] = "Occupied", ["marketRent"] = 2100m, ["additionalDataJson"] = "{\"bedrooms\":1}", ["createdUtc"] = "2026-07-10T00:00:00Z", ["modifiedUtc"] = null }),
+                CreateTenantDocument("unit", "26252525-aaaa-bbbb-cccc-474747474747", texasTenantId, new Dictionary<string, object?> { ["assetId"] = "25151515-aaaa-bbbb-cccc-262626262626", ["unitCode"] = "3D", ["unitType"] = "Apartment", ["status"] = "Maintenance", ["marketRent"] = 2150m, ["additionalDataJson"] = "{\"bedrooms\":2}", ["createdUtc"] = "2026-07-10T00:00:00Z", ["modifiedUtc"] = null }),
+                CreateTenantDocument("resident", "27272727-aaaa-bbbb-cccc-494949494950", albertaTenantId, new Dictionary<string, object?> { ["fullName"] = "Julien Roy", ["email"] = "julien.roy@example.com", ["phoneNumber"] = "+1-403-555-0199", ["preferredLanguage"] = "fr-CA", ["status"] = "Active", ["notesJson"] = "{\"leaseIntent\":\"newLease\"}", ["createdUtc"] = "2026-07-10T00:00:00Z", ["modifiedUtc"] = null }),
+                CreateTenantDocument("resident", "29292929-aaaa-bbbb-cccc-515151515152", ontarioTenantId, new Dictionary<string, object?> { ["fullName"] = "Emma Chen", ["email"] = "emma.chen@example.com", ["phoneNumber"] = "+1-416-555-0177", ["preferredLanguage"] = "en-CA", ["status"] = "Active", ["notesJson"] = "{\"preferredChannel\":\"email\"}", ["createdUtc"] = "2026-07-10T00:00:00Z", ["modifiedUtc"] = null }),
+                CreateTenantDocument("resident", "31313131-aaaa-bbbb-cccc-535353535354", texasTenantId, new Dictionary<string, object?> { ["fullName"] = "Diego Alvarez", ["email"] = "diego.alvarez@example.com", ["phoneNumber"] = "+1-512-555-0166", ["preferredLanguage"] = "es-MX", ["status"] = "Active", ["notesJson"] = "{\"moveInWindow\":\"2026-08\"}", ["createdUtc"] = "2026-07-10T00:00:00Z", ["modifiedUtc"] = null }),
+                CreateTenantDocument("lease", "42414141-aaaa-bbbb-cccc-616161616161", albertaTenantId, new Dictionary<string, object?> { ["assetId"] = "21111111-aaaa-bbbb-cccc-222222222222", ["unitId"] = "22232323-aaaa-bbbb-cccc-454545454545", ["residentId"] = "27272727-aaaa-bbbb-cccc-494949494950", ["leaseStartUtc"] = "2026-02-01T00:00:00Z", ["leaseEndUtc"] = "2027-01-31T00:00:00Z", ["monthlyRent"] = 1950m, ["billingPeriod"] = "Monthly", ["status"] = "Active", ["termsJson"] = "{\"deposit\":1950}", ["createdUtc"] = "2026-07-10T00:00:00Z", ["modifiedUtc"] = null }),
+                CreateTenantDocument("lease", "44434343-aaaa-bbbb-cccc-636363636363", ontarioTenantId, new Dictionary<string, object?> { ["assetId"] = "23131313-aaaa-bbbb-cccc-242424242424", ["unitId"] = "24232323-aaaa-bbbb-cccc-454545454545", ["residentId"] = "29292929-aaaa-bbbb-cccc-515151515152", ["leaseStartUtc"] = "2026-05-01T00:00:00Z", ["leaseEndUtc"] = "2027-04-30T00:00:00Z", ["monthlyRent"] = 2650m, ["billingPeriod"] = "Monthly", ["status"] = "Active", ["termsJson"] = "{\"noticeDays\":60}", ["createdUtc"] = "2026-07-10T00:00:00Z", ["modifiedUtc"] = null }),
+                CreateTenantDocument("lease", "46454545-aaaa-bbbb-cccc-656565656565", texasTenantId, new Dictionary<string, object?> { ["assetId"] = "25151515-aaaa-bbbb-cccc-262626262626", ["unitId"] = "26232323-aaaa-bbbb-cccc-454545454545", ["residentId"] = "31313131-aaaa-bbbb-cccc-535353535354", ["leaseStartUtc"] = "2026-06-01T00:00:00Z", ["leaseEndUtc"] = "2027-05-31T00:00:00Z", ["monthlyRent"] = 2100m, ["billingPeriod"] = "Monthly", ["status"] = "Active", ["termsJson"] = "{\"noticeDays\":45}", ["createdUtc"] = "2026-07-10T00:00:00Z", ["modifiedUtc"] = null }),
                 CreateTenantDocument("lead", "61616161-aaaa-bbbb-cccc-717171717171", albertaTenantId, new Dictionary<string, object?> { ["assetId"] = "11111111-aaaa-bbbb-cccc-222222222222", ["fullName"] = "Nora Bouchard", ["email"] = "nora.bouchard@example.com", ["phoneNumber"] = "+1-403-555-0181", ["source"] = "Manual", ["status"] = "Qualified", ["preferredLanguage"] = "fr-CA", ["qualificationScore"] = 88, ["summary"] = "Lead qualifié pour visite et facture mensuelle en Alberta.", ["notesJson"] = "{\"source\":\"seed\",\"market\":\"CA-AB\",\"language\":\"fr-CA\",\"fields\":{\"targetAsset\":\"11111111-aaaa-bbbb-cccc-222222222222\",\"billingPeriod\":\"2026-07\"}}", ["createdUtc"] = "2026-07-03T00:00:00Z", ["modifiedUtc"] = null }),
                 CreateTenantDocument("lead", "62626262-aaaa-bbbb-cccc-727272727272", albertaTenantId, new Dictionary<string, object?> { ["assetId"] = "11111111-aaaa-bbbb-cccc-222222222222", ["fullName"] = "Olivier Tremblay", ["email"] = "olivier.tremblay@example.com", ["phoneNumber"] = "+1-403-555-0182", ["source"] = "InboxImport", ["status"] = "New", ["preferredLanguage"] = "en-CA", ["qualificationScore"] = 71, ["summary"] = "Imported lead from classified inbox message.", ["notesJson"] = "{\"source\":\"seed\",\"market\":\"CA-AB\",\"language\":\"en-CA\",\"fields\":{\"targetAsset\":\"11111111-aaaa-bbbb-cccc-222222222222\",\"preferredMoveIn\":\"2026-08\"}}", ["createdUtc"] = "2026-07-03T00:00:00Z", ["modifiedUtc"] = null }),
                 CreateTenantDocument("lead", "63636363-aaaa-bbbb-cccc-737373737373", ontarioTenantId, new Dictionary<string, object?> { ["assetId"] = "13131313-aaaa-bbbb-cccc-242424242424", ["fullName"] = "Sophie Nguyen", ["email"] = "sophie.nguyen@example.com", ["phoneNumber"] = "+1-416-555-0183", ["source"] = "Manual", ["status"] = "Qualified", ["preferredLanguage"] = "en-CA", ["qualificationScore"] = 93, ["summary"] = "Top Ontario prospect ready for lease conversion.", ["notesJson"] = "{\"source\":\"seed\",\"market\":\"CA-ON\",\"language\":\"en-CA\",\"fields\":{\"targetAsset\":\"13131313-aaaa-bbbb-cccc-242424242424\",\"parking\":\"1\"}}", ["createdUtc"] = "2026-07-03T00:00:00Z", ["modifiedUtc"] = null }),

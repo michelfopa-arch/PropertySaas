@@ -78,20 +78,37 @@
         {
             <PageLoadingState />
         }
-        else if (_asset is not null && string.IsNullOrWhiteSpace(CurrentOrganization.PropertySlug))
+        else if (_properties.Count > 0 && string.IsNullOrWhiteSpace(CurrentOrganization.PropertySlug))
         {
-            <div class="home-actions-grid">
-                <a class="action-card action-card-primary" href="@GetPropertyHref()">
-                    <strong>@_asset.AssetName</strong>
-                    <span>@_asset.AssetAddress · @_asset.UnitCount units</span>
-                </a>
+            <div class="section-toolbar">
+                <span class="results-hint">@_properties.Count propriété@(_properties.Count > 1 ? "s" : "") disponible@(_properties.Count > 1 ? "s" : "")</span>
+                @if (_properties.Count > 1)
+                {
+                    <a class="ghost-button" href="@($"/{CurrentOrganization.OrganizationSlug}/properties")">Voir toutes les propriétés</a>
+                }
             </div>
-        }
-        else if (_summary is not null && string.IsNullOrWhiteSpace(CurrentOrganization.PropertySlug))
-        {
-            <div class="option-list">
-                <span class="option-pill option-pill-accent">@_summary.AssetCount property links available</span>
-                <span class="option-pill">Choose a property to continue</span>
+
+            <div class="property-grid">
+                @foreach (var property in _properties.Take(3))
+                {
+                    <a class="property-card" href="@GetPropertyHref(property)">
+                        <div class="property-card-header">
+                            <strong>@property.AssetName</strong>
+                            <span class="@GetOccupancyBadgeCss(property)">@GetOccupancyLabel(property)</span>
+                        </div>
+                        <span class="property-card-address">@property.AssetAddress</span>
+                        <div class="property-card-metrics">
+                            <div class="property-card-metric">
+                                <span>Units</span>
+                                <strong>@property.OccupiedUnitCount / @property.UnitCount</strong>
+                            </div>
+                            <div class="property-card-metric">
+                                <span>Active leases</span>
+                                <strong>@property.ActiveLeaseCount</strong>
+                            </div>
+                        </div>
+                    </a>
+                }
             </div>
         }
         else
@@ -110,7 +127,7 @@
     public string? PropertySlug { get; set; }
 
     private RuntiraWorkspaceSummaryDto? _summary;
-    private RuntiraAssetWorkspaceDto? _asset;
+    private IReadOnlyList<RuntiraAssetSummaryDto> _properties = Array.Empty<RuntiraAssetSummaryDto>();
     private bool _isLoading = true;
     private bool _hasInitialized;
 
@@ -135,7 +152,7 @@
 
             if (!string.IsNullOrWhiteSpace(CurrentOrganization.OrganizationSlug) && string.IsNullOrWhiteSpace(CurrentOrganization.PropertySlug))
             {
-                _asset = await WorkspaceService.GetAssetWorkspaceAsync();
+                _properties = await WorkspaceService.GetAssetsAsync();
             }
         }
         finally
@@ -170,24 +187,35 @@
             _ => RuntiraText.Get("Home_HeroTitle_Default", CurrentOrganization.PreferredLanguage)
         };
 
-    private string GetPropertyHref()
+    private string GetPropertyHref(RuntiraAssetSummaryDto property)
     {
-        if (string.IsNullOrWhiteSpace(CurrentOrganization.OrganizationSlug) || _asset is null)
+        if (string.IsNullOrWhiteSpace(CurrentOrganization.OrganizationSlug))
         {
-            return string.IsNullOrWhiteSpace(CurrentOrganization.OrganizationSlug) ? "/" : $"/{CurrentOrganization.OrganizationSlug}";
+            return "/";
         }
 
-        var propertySlug = Slugify(_asset.AssetName);
-        return string.IsNullOrWhiteSpace(propertySlug)
+        return string.IsNullOrWhiteSpace(property.PropertySlug)
             ? $"/{CurrentOrganization.OrganizationSlug}"
-            : $"/{CurrentOrganization.OrganizationSlug}/{propertySlug}/dashboard";
+            : $"/{CurrentOrganization.OrganizationSlug}/{property.PropertySlug}/dashboard";
     }
 
-    private static string Slugify(string name)
-        => string.Join('-', (name ?? string.Empty)
-            .Trim()
-            .ToLowerInvariant()
-            .Split(new[] { ' ', '·', ',', '.', '/', '\\' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
+    private static int GetOccupancyPercent(RuntiraAssetSummaryDto property)
+        => property.UnitCount <= 0 ? 0 : (int)Math.Round(property.OccupiedUnitCount * 100m / property.UnitCount);
+
+    private static string GetOccupancyLabel(RuntiraAssetSummaryDto property)
+        => $"{GetOccupancyPercent(property)}% occupied";
+
+    private static string GetOccupancyBadgeCss(RuntiraAssetSummaryDto property)
+    {
+        var percent = GetOccupancyPercent(property);
+        return percent switch
+        {
+            >= 90 => "status-pill status-pill-success",
+            >= 60 => "status-pill status-pill-info",
+            > 0 => "status-pill status-pill-warning",
+            _ => "status-pill status-pill-muted"
+        };
+    }
 
     private string GetHeroCopy()
         => CurrentOrganization.CountryCode switch

@@ -1,0 +1,127 @@
+@page "/{tenantSlug}/properties"
+@using Runtira.Application.Common
+@using Runtira.Application.Features
+@inject CurrentOrganization CurrentOrganization
+@inject RuntiraWorkspaceService WorkspaceService
+
+<PageTitle>Properties · @CurrentOrganization.OrganizationName</PageTitle>
+
+<div class="hero-shell hero-shell-single">
+    <section class="hero-card">
+        <div class="hero-badge">Properties</div>
+        <h1>Vos propriétés</h1>
+        <p class="hero-copy">Une vue compacte de toutes les propriétés de cette organisation. Cliquez sur une propriété pour ouvrir ses unités, résidents, baux et sa facturation.</p>
+
+        @if (_isLoading)
+        {
+            <PageLoadingState />
+        }
+        else if (_properties.Count > 0)
+        {
+            <div class="tenant-summary">
+                <div>
+                    <span class="summary-label">Properties</span>
+                    <strong>@_properties.Count</strong>
+                </div>
+                <div>
+                    <span class="summary-label">Total units</span>
+                    <strong>@_properties.Sum(x => x.UnitCount)</strong>
+                </div>
+                <div>
+                    <span class="summary-label">Active leases</span>
+                    <strong>@_properties.Sum(x => x.ActiveLeaseCount)</strong>
+                </div>
+                <div>
+                    <span class="summary-label">Monthly revenue</span>
+                    <strong>@_properties.Sum(x => x.MonthlyRevenue).ToString("C")</strong>
+                </div>
+            </div>
+
+            <div class="property-grid">
+                @foreach (var property in _properties)
+                {
+                    <a class="property-card" href="@($"/{CurrentOrganization.OrganizationSlug}/{property.PropertySlug}/dashboard")">
+                        <div class="property-card-header">
+                            <strong>@property.AssetName</strong>
+                            <span class="@GetOccupancyBadgeCss(property)">@GetOccupancyLabel(property)</span>
+                        </div>
+                        <span class="property-card-address">@property.AssetAddress</span>
+
+                        <div class="property-card-occupancy-bar">
+                            <div class="property-card-occupancy-fill" style="width: @(GetOccupancyPercent(property))%;"></div>
+                        </div>
+
+                        <div class="property-card-metrics">
+                            <div class="property-card-metric">
+                                <span>Units</span>
+                                <strong>@property.OccupiedUnitCount / @property.UnitCount</strong>
+                            </div>
+                            <div class="property-card-metric">
+                                <span>Active leases</span>
+                                <strong>@property.ActiveLeaseCount</strong>
+                            </div>
+                            <div class="property-card-metric">
+                                <span>Residents</span>
+                                <strong>@property.ActiveResidentCount</strong>
+                            </div>
+                            <div class="property-card-metric">
+                                <span>Monthly revenue</span>
+                                <strong>@property.MonthlyRevenue.ToString("C")</strong>
+                            </div>
+                        </div>
+                    </a>
+                }
+            </div>
+        }
+        else
+        {
+            <PageEmptyState Title="Aucune propriété" Message="Aucune propriété mock disponible pour cette organisation." />
+        }
+    </section>
+</div>
+
+@code {
+    [Parameter]
+    public string? TenantSlug { get; set; }
+
+    private IReadOnlyList<RuntiraAssetSummaryDto> _properties = Array.Empty<RuntiraAssetSummaryDto>();
+    private bool _isLoading = true;
+    private bool _hasInitialized;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (_hasInitialized)
+        {
+            return;
+        }
+
+        _hasInitialized = true;
+
+        try
+        {
+            _properties = await WorkspaceService.GetAssetsAsync();
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private static int GetOccupancyPercent(RuntiraAssetSummaryDto property)
+        => property.UnitCount <= 0 ? 0 : (int)Math.Round(property.OccupiedUnitCount * 100m / property.UnitCount);
+
+    private static string GetOccupancyLabel(RuntiraAssetSummaryDto property)
+        => $"{GetOccupancyPercent(property)}% occupied";
+
+    private static string GetOccupancyBadgeCss(RuntiraAssetSummaryDto property)
+    {
+        var percent = GetOccupancyPercent(property);
+        return percent switch
+        {
+            >= 90 => "status-pill status-pill-success",
+            >= 60 => "status-pill status-pill-info",
+            > 0 => "status-pill status-pill-warning",
+            _ => "status-pill status-pill-muted"
+        };
+    }
+}

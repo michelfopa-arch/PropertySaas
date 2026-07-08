@@ -92,6 +92,7 @@ builder.Services.AddScoped<CurrentOrganization>(provider =>
         && !string.Equals(segments[1], "sign-in", StringComparison.OrdinalIgnoreCase)
         && !string.Equals(segments[1], "sign-up", StringComparison.OrdinalIgnoreCase)
         && !string.Equals(segments[1], "dashboard", StringComparison.OrdinalIgnoreCase)
+        && !string.Equals(segments[1], "properties", StringComparison.OrdinalIgnoreCase)
         && !string.Equals(segments[1], "units", StringComparison.OrdinalIgnoreCase)
         && !string.Equals(segments[1], "residents", StringComparison.OrdinalIgnoreCase)
         && !string.Equals(segments[1], "leases", StringComparison.OrdinalIgnoreCase)

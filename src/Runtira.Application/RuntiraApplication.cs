@@ -22,7 +22,8 @@ namespace Runtira.Application.Abstractions
 
     public interface IRuntiraAssetWorkspaceStore
     {
-        Task<Runtira.Application.Features.RuntiraAssetWorkspaceDto?> GetAssetWorkspaceAsync(Guid tenantId, CancellationToken cancellationToken = default);
+        Task<Runtira.Application.Features.RuntiraAssetWorkspaceDto?> GetAssetWorkspaceAsync(Guid tenantId, string? propertySlug = null, CancellationToken cancellationToken = default);
+        Task<IReadOnlyList<Runtira.Application.Features.RuntiraAssetSummaryDto>> GetAssetsAsync(Guid tenantId, CancellationToken cancellationToken = default);
         Task<Runtira.Application.Features.RuntiraUnitActionResultDto> ManageUnitAsync(Guid tenantId, Guid unitId, string action, CancellationToken cancellationToken = default);
         Task<Runtira.Application.Features.RuntiraResidentActionResultDto> ManageResidentAsync(Guid tenantId, Guid residentId, string action, CancellationToken cancellationToken = default);
         Task<Runtira.Application.Features.RuntiraLeaseActionResultDto> ManageLeaseAsync(Guid tenantId, Guid leaseId, string action, CancellationToken cancellationToken = default);
@@ -82,6 +83,15 @@ namespace Runtira.Application.Common
         public static Dictionary<string, string> ReadStringDictionary(string? json)
             => Deserialize<Dictionary<string, string>>(json)
                ?? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+    }
+
+    public static class RuntiraSlug
+    {
+        public static string Slugify(string? name)
+            => string.Join('-', (name ?? string.Empty)
+                .Trim()
+                .ToLowerInvariant()
+                .Split(new[] { ' ', '·', ',', '.', '/', '\\' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
     }
 
     public sealed class TenantContext : ITenantContextAccessor
@@ -443,6 +453,20 @@ namespace Runtira.Application.Features
         public IReadOnlyList<RuntiraUnitSummaryDto> Units { get; set; } = Array.Empty<RuntiraUnitSummaryDto>();
         public IReadOnlyList<RuntiraLeaseSummaryDto> Leases { get; set; } = Array.Empty<RuntiraLeaseSummaryDto>();
         public IReadOnlyList<RuntiraResidentSummaryDto> Residents { get; set; } = Array.Empty<RuntiraResidentSummaryDto>();
+    }
+
+    public sealed class RuntiraAssetSummaryDto
+    {
+        public Guid AssetId { get; set; }
+        public string AssetName { get; set; } = string.Empty;
+        public string AssetAddress { get; set; } = string.Empty;
+        public string AssetType { get; set; } = string.Empty;
+        public string PropertySlug { get; set; } = string.Empty;
+        public int UnitCount { get; set; }
+        public int OccupiedUnitCount { get; set; }
+        public int ActiveLeaseCount { get; set; }
+        public int ActiveResidentCount { get; set; }
+        public decimal MonthlyRevenue { get; set; }
     }
 
     public sealed class RuntiraImportSourceDto
@@ -886,11 +910,21 @@ namespace Runtira.Application.Features
             var tenantId = _tenantContextAccessor.TenantId ?? (_currentOrganization.OrganizationId == Guid.Empty ? null : _currentOrganization.OrganizationId);
             if (tenantId.HasValue && _assetWorkspaceStore is not null)
             {
-                return await _assetWorkspaceStore.GetAssetWorkspaceAsync(tenantId.Value, cancellationToken);
+                return await _assetWorkspaceStore.GetAssetWorkspaceAsync(tenantId.Value, _currentOrganization.PropertySlug, cancellationToken);
             }
 
-
             return null;
+        }
+
+        public async Task<IReadOnlyList<RuntiraAssetSummaryDto>> GetAssetsAsync(CancellationToken cancellationToken = default)
+        {
+            var tenantId = _tenantContextAccessor.TenantId ?? (_currentOrganization.OrganizationId == Guid.Empty ? null : _currentOrganization.OrganizationId);
+            if (tenantId.HasValue && _assetWorkspaceStore is not null)
+            {
+                return await _assetWorkspaceStore.GetAssetsAsync(tenantId.Value, cancellationToken);
+            }
+
+            return Array.Empty<RuntiraAssetSummaryDto>();
         }
 
         public async Task<IReadOnlyList<RuntiraInboxMessageDto>> GetInboxAsync(CancellationToken cancellationToken = default)

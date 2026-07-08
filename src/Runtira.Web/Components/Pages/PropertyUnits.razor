@@ -6,11 +6,18 @@
 
 <PageTitle>Units · @CurrentOrganization.PropertyName</PageTitle>
 
-<div class="hero-shell">
+<div class="hero-shell hero-shell-single">
     <section class="hero-card">
         <div class="hero-badge">Units</div>
         <h1>Units</h1>
-        <p class="hero-copy">Une page dédiée aux unités de cette propriété, avec des actions simples et ciblées.</p>
+        <p class="hero-copy">Chaque unité affiche son occupation, son loyer et l’état du bail en un coup d’œil. Cliquez sur une unité pour voir le détail et agir (bail, facturation, leads).</p>
+
+        <BusyOverlay IsVisible="@_isSubmittingAction" Label="Mise à jour" Message="Application de l’action sur l’unité." />
+
+        @if (!string.IsNullOrWhiteSpace(_statusMessage))
+        {
+            <PageEmptyState Title="@_statusMessage" CssClass="inline-status" />
+        }
 
         @if (_isLoading)
         {
@@ -28,44 +35,72 @@
                     <strong>@_workspace.Units.Count(x => string.Equals(x.Status, "Occupied", StringComparison.OrdinalIgnoreCase))</strong>
                 </div>
                 <div>
-                    <span class="summary-label">Property</span>
-                    <strong>@(_workspace.AssetName)</strong>
+                    <span class="summary-label">Loyer à jour</span>
+                    <strong>@_workspace.Leases.Count(x => string.Equals(x.Status, "Active", StringComparison.OrdinalIgnoreCase))</strong>
                 </div>
                 <div>
-                    <span class="summary-label">Tier</span>
-                    <strong>Free · Included</strong>
+                    <span class="summary-label">À vérifier</span>
+                    <strong>@_workspace.Leases.Count(x => string.Equals(x.Status, "Review", StringComparison.OrdinalIgnoreCase))</strong>
                 </div>
             </div>
 
-            <SectionToolbar Hint="Une page dédiée par entité pour une lecture claire et rapide.">
+            <SectionToolbar Hint="Cliquez sur une unité pour ouvrir son détail et ses actions.">
                 <Actions>
                     <a class="ghost-button" href="@($"/{CurrentOrganization.OrganizationSlug}/{CurrentOrganization.PropertySlug}/dashboard")">Back to property</a>
                 </Actions>
             </SectionToolbar>
 
-            <div class="option-list">
-                @foreach (var unit in _workspace.Units)
-                {
-                    <span class="option-pill option-pill-accent">@unit.UnitCode · @unit.Status</span>
-                }
-            </div>
+            <ExplorerSection ShowSearch="true"
+                             SearchLabel="Rechercher"
+                             SearchPlaceholder="Code, statut ou résident..."
+                             SearchValue="@_searchTerm"
+                             OnSearchInput="OnSearchChanged"
+                             HasItems="@(GetFilteredUnits().Count > 0)"
+                             EmptyTitle="Aucune unité"
+                             EmptyMessage="Aucune unité ne correspond à cette recherche."
+                             DetailEmptyTitle="Sélectionnez une unité"
+                             DetailEmptyMessage="Cliquez sur une unité à gauche pour voir son détail, son résident et ses actions.">
+                <MetaContent>
+                    <span>@GetFilteredUnits().Count / @_workspace.Units.Count</span>
+                </MetaContent>
+                <ListContent>
+                    @foreach (var unit in GetFilteredUnits())
+                    {
+                        var lease = GetLeaseForUnit(unit);
+                        <button type="button"
+                                class="@(IsSelectedUnit(unit.Id) ? "explorer-list-item selected" : "explorer-list-item")"
+                                @onclick="() => SelectUnit(unit.Id)">
+                            <div class="unit-item-header">
+                                <strong>@unit.UnitCode</strong>
+                                <span class="@GetOccupancyBadgeCss(unit)">@GetOccupancyBadgeLabel(unit)</span>
+                            </div>
+                            <span>@unit.UnitType · @unit.MarketRent.ToString("C")</span>
+                            <div class="unit-item-footer">
+                                @if (lease is not null)
+                                {
+                                    <span class="@GetPaymentBadgeCss(lease)">@GetPaymentBadgeLabel(lease)</span>
+                                    <small>@lease.ResidentName</small>
+                                }
+                                else
+                                {
+                                    <span class="status-pill status-pill-muted">Sans bail</span>
+                                }
+                            </div>
+                        </button>
+                    }
+                </ListContent>
+                <DetailContent>
+                    @if (HasSelectedUnit)
+                    {
+                        @RenderSelectedUnitDetail()
+                    }
+                </DetailContent>
+            </ExplorerSection>
         }
         else
         {
             <PageEmptyState Title="No unit data" Message="Aucune unité mock disponible pour cette propriété." />
         }
-    </section>
-
-    <section class="workspace-card">
-        <div class="workspace-header">
-            <h2>Unit actions</h2>
-            <span class="workspace-state">Mock</span>
-        </div>
-
-        <div class="prompt-box prompt-box-soft">
-            <button type="button" class="prompt-chip">Add unit</button>
-            <button type="button" class="prompt-chip">Prepare invoice</button>
-        </div>
     </section>
 </div>
 
@@ -78,24 +113,268 @@
 
     private RuntiraAssetWorkspaceDto? _workspace;
     private bool _isLoading = true;
-    private bool _hasInitialized;
+    private string? _loadedPropertySlug;
+    private string _searchTerm = string.Empty;
+    private Guid? _selectedUnitId;
+    private bool _isSubmittingAction;
+    private string? _statusMessage;
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnParametersSetAsync()
     {
-        if (_hasInitialized)
+        if (!string.IsNullOrWhiteSpace(TenantSlug))
+        {
+            CurrentOrganization.OrganizationSlug = TenantSlug;
+        }
+
+        if (!string.IsNullOrWhiteSpace(PropertySlug))
+        {
+            CurrentOrganization.PropertySlug = PropertySlug;
+        }
+
+        if (_workspace is not null && string.Equals(_loadedPropertySlug, CurrentOrganization.PropertySlug, StringComparison.OrdinalIgnoreCase))
         {
             return;
         }
 
-        _hasInitialized = true;
-
+        _isLoading = true;
         try
         {
             _workspace = await WorkspaceService.GetAssetWorkspaceAsync();
+            if (_workspace is not null)
+            {
+                CurrentOrganization.PropertyName = _workspace.AssetName;
+            }
+
+            _loadedPropertySlug = CurrentOrganization.PropertySlug;
+            _selectedUnitId = null;
         }
         finally
         {
             _isLoading = false;
+        }
+    }
+
+    private IReadOnlyList<RuntiraUnitSummaryDto> GetFilteredUnits()
+    {
+        if (_workspace is null)
+        {
+            return Array.Empty<RuntiraUnitSummaryDto>();
+        }
+
+        if (string.IsNullOrWhiteSpace(_searchTerm))
+        {
+            return _workspace.Units;
+        }
+
+        return _workspace.Units
+            .Where(unit =>
+                unit.UnitCode.Contains(_searchTerm, StringComparison.OrdinalIgnoreCase)
+                || unit.UnitType.Contains(_searchTerm, StringComparison.OrdinalIgnoreCase)
+                || unit.Status.Contains(_searchTerm, StringComparison.OrdinalIgnoreCase)
+                || (GetLeaseForUnit(unit)?.ResidentName.Contains(_searchTerm, StringComparison.OrdinalIgnoreCase) ?? false))
+            .ToList();
+    }
+
+    private void OnSearchChanged(ChangeEventArgs args)
+    {
+        _searchTerm = args.Value?.ToString()?.Trim() ?? string.Empty;
+    }
+
+    private void SelectUnit(Guid unitId)
+        => _selectedUnitId = unitId;
+
+    private bool IsSelectedUnit(Guid unitId)
+        => _selectedUnitId == unitId;
+
+    private bool HasSelectedUnit => GetSelectedUnit() is not null;
+
+    private RuntiraUnitSummaryDto? GetSelectedUnit()
+        => GetFilteredUnits().FirstOrDefault(x => x.Id == _selectedUnitId);
+
+    private RuntiraLeaseSummaryDto? GetLeaseForUnit(RuntiraUnitSummaryDto unit)
+        => _workspace?.Leases.FirstOrDefault(x => string.Equals(x.UnitCode, unit.UnitCode, StringComparison.OrdinalIgnoreCase));
+
+    private int GetSelectedUnitIndex(Guid unitId)
+    {
+        if (_workspace is null)
+        {
+            return 0;
+        }
+
+        var index = _workspace.Units.Select((unit, position) => new { unit.Id, Position = position + 1 }).FirstOrDefault(x => x.Id == unitId);
+        return index?.Position ?? 0;
+    }
+
+    private static string GetOccupancyBadgeLabel(RuntiraUnitSummaryDto unit)
+        => unit.Status switch
+        {
+            "Occupied" => "Occupée",
+            "Available" => "Disponible",
+            "Maintenance" => "Maintenance",
+            "Reserved" => "Réservée",
+            _ => unit.Status
+        };
+
+    private static string GetOccupancyBadgeCss(RuntiraUnitSummaryDto unit)
+        => unit.Status switch
+        {
+            "Occupied" => "status-pill status-pill-success",
+            "Available" => "status-pill status-pill-info",
+            "Maintenance" => "status-pill status-pill-warning",
+            _ => "status-pill status-pill-muted"
+        };
+
+    private static string GetPaymentBadgeLabel(RuntiraLeaseSummaryDto lease)
+        => lease.Status switch
+        {
+            "Active" => "Loyer à jour",
+            "Review" => "À vérifier",
+            "Ended" => "Bail terminé",
+            _ => lease.Status
+        };
+
+    private static string GetPaymentBadgeCss(RuntiraLeaseSummaryDto lease)
+        => lease.Status switch
+        {
+            "Active" => "status-pill status-pill-success",
+            "Review" => "status-pill status-pill-warning",
+            _ => "status-pill status-pill-muted"
+        };
+
+    private IReadOnlyList<StandardActionMenuItem> GetUnitActionItems(RuntiraUnitSummaryDto unit)
+        =>
+        [
+            new StandardActionMenuItem(
+                "markMaintenance",
+                "Marquer en maintenance",
+                string.Equals(unit.Status, "Maintenance", StringComparison.OrdinalIgnoreCase),
+                "L’unité passe en statut Maintenance."),
+            new StandardActionMenuItem(
+                "markAvailable",
+                "Marquer disponible",
+                string.Equals(unit.Status, "Available", StringComparison.OrdinalIgnoreCase),
+                "L’unité redevient disponible à la location."),
+            new StandardActionMenuItem(
+                "delete",
+                "Supprimer l’unité",
+                !unit.CanDelete,
+                unit.CanDelete ? "Supprime définitivement cette unité." : "Impossible : un bail actif y est rattaché.",
+                isDestructive: true)
+        ];
+
+    private RenderFragment RenderSelectedUnitDetail() => __builder =>
+    {
+        var unit = GetSelectedUnit();
+        if (unit is null)
+        {
+            return;
+        }
+
+        var lease = GetLeaseForUnit(unit);
+        var resident = lease is null ? null : _workspace?.Residents.FirstOrDefault(x => string.Equals(x.FullName, lease.ResidentName, StringComparison.OrdinalIgnoreCase));
+        var sequence = 0;
+
+        __builder.OpenElement(sequence++, "div");
+        __builder.AddAttribute(sequence++, "class", "stat-card unit-detail-card");
+        __builder.AddMarkupContent(sequence++, $@"
+<div class=""card-header-inline"">
+    <div>
+        <span>Détail de l’unité</span>
+        <strong>{unit.UnitCode}</strong>
+        <p class=""detail-helper-copy"">Position {GetSelectedUnitIndex(unit.Id)} / {_workspace?.Units.Count ?? 0} dans la liste.</p>
+    </div>
+    <span class=""{GetOccupancyBadgeCss(unit)}"">{GetOccupancyBadgeLabel(unit)}</span>
+</div>
+<div class=""tenant-summary unit-detail-summary"">
+    <div><span class=""summary-label"">Type</span><strong>{unit.UnitType}</strong></div>
+    <div><span class=""summary-label"">Loyer marché</span><strong>{unit.MarketRent:C}</strong></div>
+    <div><span class=""summary-label"">Statut bail</span><strong>{(lease is null ? "Aucun" : GetPaymentBadgeLabel(lease))}</strong></div>
+    <div><span class=""summary-label"">Résident</span><strong>{(resident?.FullName ?? "Aucun")}</strong></div>
+</div>");
+
+        if (CurrentOrganization.CanManageData)
+        {
+            __builder.OpenComponent<StandardActionMenu>(sequence++);
+            __builder.AddAttribute(sequence++, "MenuLabel", "Actions");
+            __builder.AddAttribute(sequence++, "Title", "Gérer l’unité");
+            __builder.AddAttribute(sequence++, "Items", GetUnitActionItems(unit));
+            __builder.AddAttribute(sequence++, "IsBusy", _isSubmittingAction);
+            __builder.AddAttribute(sequence++, "OnAction", EventCallback.Factory.Create<string>(this, action => HandleUnitActionAsync(unit.Id, action)));
+            __builder.CloseComponent();
+        }
+
+        if (lease is not null && resident is not null)
+        {
+            __builder.AddMarkupContent(sequence++, $@"
+<div class=""draft-box"">
+    <strong>Bail en cours</strong>
+    <div>Résident · {resident.FullName}</div>
+    <div>Email · {resident.Email}</div>
+    <div>Loyer mensuel · {lease.MonthlyRent:C} ({lease.BillingPeriod})</div>
+    <div>Statut · {GetPaymentBadgeLabel(lease)}</div>
+</div>");
+        }
+        else
+        {
+            __builder.OpenComponent<PageEmptyState>(sequence++);
+            __builder.AddAttribute(sequence++, "Title", "Aucun bail actif");
+            __builder.AddAttribute(sequence++, "Message", "Cette unité n’a pas de bail rattaché pour le moment.");
+            __builder.CloseComponent();
+        }
+
+        __builder.OpenElement(sequence++, "div");
+        __builder.AddAttribute(sequence++, "class", "option-list mt-3");
+        __builder.OpenElement(sequence++, "a");
+        __builder.AddAttribute(sequence++, "class", "option-pill option-pill-accent");
+        __builder.AddAttribute(sequence++, "href", $"/{CurrentOrganization.OrganizationSlug}/{CurrentOrganization.PropertySlug}/leads");
+        __builder.AddContent(sequence++, "Voir les leads");
+        __builder.CloseElement();
+        __builder.OpenElement(sequence++, "a");
+        __builder.AddAttribute(sequence++, "class", "option-pill option-pill-accent");
+        __builder.AddAttribute(sequence++, "href", $"/{CurrentOrganization.OrganizationSlug}/{CurrentOrganization.PropertySlug}/invoice-composer");
+        __builder.AddContent(sequence++, "Préparer une facture");
+        __builder.CloseElement();
+        __builder.OpenElement(sequence++, "a");
+        __builder.AddAttribute(sequence++, "class", "option-pill");
+        __builder.AddAttribute(sequence++, "href", $"/{CurrentOrganization.OrganizationSlug}/{CurrentOrganization.PropertySlug}/residents");
+        __builder.AddContent(sequence++, "Voir les résidents");
+        __builder.CloseElement();
+        __builder.CloseElement();
+
+        __builder.CloseElement();
+    };
+
+    private async Task HandleUnitActionAsync(Guid unitId, string action)
+    {
+        if (_isSubmittingAction)
+        {
+            return;
+        }
+
+        _isSubmittingAction = true;
+        _statusMessage = null;
+
+        try
+        {
+            var result = await WorkspaceService.ManageUnitAsync(unitId, action);
+            _statusMessage = result.ResultCode switch
+            {
+                "Updated" => $"Unité {result.UnitCode} mise à jour · {result.Status}.",
+                "Deleted" => $"Unité {result.UnitCode} supprimée.",
+                "UnitHasActiveLease" => $"Impossible de supprimer {result.UnitCode} : un bail actif y est rattaché.",
+                "UnitNotFound" => "Unité introuvable.",
+                _ => "Action indisponible."
+            };
+
+            _workspace = await WorkspaceService.GetAssetWorkspaceAsync();
+            if (_workspace?.Units.All(x => x.Id != _selectedUnitId) != false)
+            {
+                _selectedUnitId = null;
+            }
+        }
+        finally
+        {
+            _isSubmittingAction = false;
         }
     }
 }
