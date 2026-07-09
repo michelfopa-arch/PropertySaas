@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Runtira.Application.Abstractions;
 using Runtira.Infrastructure.Data;
+using Runtira.Infrastructure.Mocks;
 using Runtira.Infrastructure.Options;
 using Runtira.Infrastructure.Services;
 using Runtira.Infrastructure.Services.Billing;
@@ -37,7 +38,17 @@ namespace Runtira.Infrastructure
             configuration.GetSection("Cosmos").Bind(cosmosOptions);
             services.AddSingleton(cosmosOptions);
 
-            if (cosmosOptions.Enabled
+            // Mock mode must always win over Cosmos, even when an Endpoint/Key happen to be configured
+            // (e.g. via user-secrets on a dev machine): staying mocked should never depend on accidentally
+            // leaving credentials empty. Only wire the real Cosmos-backed stores when mock mode is off.
+            if (cosmosOptions.MockModeEnabled)
+            {
+                services.AddSingleton<MockTenantDataStore>();
+                services.AddSingleton<IRuntiraAssetWorkspaceStore, MockAssetWorkspaceStore>();
+                services.AddSingleton<IRuntiraLeadWorkspaceStore, MockLeadWorkspaceStore>();
+                services.AddSingleton<IRuntiraReadModelStore, MockReadModelStore>();
+            }
+            else if (cosmosOptions.Enabled
                 && !string.IsNullOrWhiteSpace(cosmosOptions.Endpoint)
                 && !string.IsNullOrWhiteSpace(cosmosOptions.Key))
             {

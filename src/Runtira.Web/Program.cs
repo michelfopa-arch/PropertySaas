@@ -43,7 +43,10 @@ var authenticationBuilder = builder.Services.AddAuthentication(options =>
 });
 
 var cosmosEnabled = builder.Configuration.GetSection("Cosmos").GetValue("Enabled", false);
-var runtiraInfrastructureEnabled = cosmosEnabled;
+var mockModeEnabled = builder.Configuration.GetSection("Cosmos").GetValue("MockModeEnabled", true);
+// Mock mode must be able to serve the Leads/Assets/Inbox pages on its own, without a real Cosmos
+// connection, so infrastructure registration must run whenever either mock mode or Cosmos is enabled.
+var runtiraInfrastructureEnabled = cosmosEnabled || mockModeEnabled;
 
 if (runtiraInfrastructureEnabled)
 {
@@ -52,7 +55,6 @@ if (runtiraInfrastructureEnabled)
 
 var clerkSection = builder.Configuration.GetSection("Clerk");
 var clerkOptions = clerkSection.Get<ClerkOptions>();
-var mockModeEnabled = builder.Configuration.GetSection("Cosmos").GetValue("MockModeEnabled", true);
 var useClerkAuthentication = !useLocalDevelopmentAuth
     && !mockModeEnabled
     && !string.IsNullOrWhiteSpace(clerkOptions?.Authority)
